@@ -381,9 +381,9 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="C:\Users\aalca\Documents\GitHub\-engine\Engine\Main.cpp" />
-    <ClCompile Include="C:\Users\aalca\Documents\GitHub\-engine\Engine\Application.cpp" />
-    <ClCompile Include="C:\Users\aalca\Documents\GitHub\-engine\Engine\Window.cpp" />
+    <ClCompile Include="C:\Users\aalca\Documents\GitHub\-engine\Engine\src\Application.cpp" />
+    <ClCompile Include="C:\Users\aalca\Documents\GitHub\-engine\Engine\src\Main.cpp" />
+    <ClCompile Include="C:\Users\aalca\Documents\GitHub\-engine\Engine\src\Window.cpp" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

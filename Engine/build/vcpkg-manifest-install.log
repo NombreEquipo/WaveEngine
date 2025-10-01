@@ -1,6 +1,6 @@
-Detectando hash del compilador para el triplete x64-windows...
-Se encontr├│ el compilador: C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.43.34808/bin/Hostx64/x64/cl.exe
-Los siguientes paquetes ya est├ín instalados:
+Detecting compiler hash for triplet x64-windows...
+Compiler found: C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.43.34808/bin/Hostx64/x64/cl.exe
+The following packages are already installed:
     fmt:x64-windows@12.0.0 -- git+https://github.com/microsoft/vcpkg@c5dcb90bc1da6e7ba3d6e62e62a0b7df3192f51c
     sdl3:x64-windows@3.2.22 -- git+https://github.com/microsoft/vcpkg@ef1517d02481885e951bcb8aee2e41d7cec6c2ab
   * vcpkg-cmake:x64-windows@2024-04-23 -- git+https://github.com/microsoft/vcpkg@e74aa1e8f93278a8e71372f1fa08c3df420eb840
@@ -19,4 +19,4 @@ sdl3 provides CMake targets:
   find_package(SDL3 CONFIG REQUIRED)
   target_link_libraries(main PRIVATE SDL3::SDL3)
 
-Todas las instalaciones solicitadas se completaron correctamente en: 1.07 ms
+All requested installations completed successfully in: 1.15 ms
