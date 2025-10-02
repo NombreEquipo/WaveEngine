@@ -10,7 +10,7 @@ Window::~Window()
 {
 }
 
-bool Window::Init()
+bool Window::Start() 
 {
     std::cout << "Init SDL3 Window & Renderer" << std::endl;
 
@@ -67,6 +67,12 @@ bool Window::Update()
         }
     }
 
+    return true;
+}
+
+bool Window::PostUpdate()
+{
+    Render(); 
     return true;
 }
 

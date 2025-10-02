@@ -5,6 +5,8 @@ Application::Application() : isRunning(true)
 {
     std::cout << "Application Constructor" << std::endl;
     window = std::make_shared<Window>();
+
+    AddModule(std::static_pointer_cast<Module>(window));
 }
 
 Application& Application::GetInstance()
@@ -13,14 +15,25 @@ Application& Application::GetInstance()
     return instance;
 }
 
-bool Application::Init()
+// Add module to the list (for when we have more modules)
+void Application::AddModule(std::shared_ptr<Module> module)
 {
-    std::cout << "Application Init" << std::endl;
+    moduleList.push_back(module);
+}
 
-    if (!window->Init())
-    {
-        std::cerr << "Failed to initialize Window!" << std::endl;
-        return false;
+bool Application::Awake() 
+{
+    return true;
+}
+
+bool Application::Start()
+{
+    bool result = true;
+    for (const auto& module : moduleList) {
+        result = module.get()->Start();
+        if (!result) {
+            break;
+        }
     }
 
     return true;
@@ -28,36 +41,78 @@ bool Application::Init()
 
 bool Application::Update()
 {
-    // Update window (handles events)
-    if (!window->Update())
-    {
-        isRunning = false;
+    bool ret = true;
+
+    /*if (input->GetWindowEvent(WE_QUIT) == true)
+        ret = false;*/
+
+    if (ret == true)
+        ret = PreUpdate();
+
+    if (ret == true)
+        ret = DoUpdate();
+
+    if (ret == true)
+        ret = PostUpdate();
+
+    return ret;
+}
+
+bool Application::PreUpdate() 
+{
+    //Iterates the module list and calls PreUpdate on each module
+    bool result = true;
+    for (const auto& module : moduleList) {
+        result = module.get()->PreUpdate();
+        if (!result) {
+            break;
+        }
     }
 
-    // Clear screen to black and present
-    window->Render();
+    return result;
+}
 
-    return isRunning;
+// Call modules on each loop iteration
+bool Application::DoUpdate()
+{
+    //Iterates the module list and calls Update on each module
+    bool result = true;
+    for (const auto& module : moduleList) {
+        result = module.get()->Update();
+        if (!result) {
+            break;
+        }
+    }
+
+    return result;
+}
+
+// Call modules on each loop iteration
+bool Application::PostUpdate()
+{
+    //Iterates the module list and calls Update on each module
+    bool result = true;
+    for (const auto& module : moduleList) {
+        result = module.get()->PostUpdate();
+        if (!result) {
+            break;
+        }
+    }
+
+    return result;
 }
 
 bool Application::CleanUp()
 {
     std::cout << "Application CleanUp" << std::endl;
 
-    if (window)
-    {
-        window->CleanUp();
+    bool result = true;
+    for (const auto& module : moduleList) {
+        result = module.get()->CleanUp();
+        if (!result) {
+            break;
+        }
     }
 
-    return true;
+    return result;
 }
-
-
-
-// para cuando tengamos mas modulos
-//void Engine::AddModule(std::shared_ptr<Module> module) {
-//    module->Init();
-//    moduleList.push_back(module);
-//}
-// llamar en el constructor a esta funcion y añadir por ej.     AddModule(std::static_pointer_cast<Module>(window));
-// luego para todas las cosas donde tengamos que recorrer modulos (ej. update?) usamos esa lista

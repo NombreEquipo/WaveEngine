@@ -7,10 +7,17 @@ int main(int argc, char* argv[])
 
     Application& app = Application::GetInstance();
 
-    // Initialize
-    if (!app.Init())
+    // Awake
+    if (!app.Awake())
     {
-        std::cerr << "Failed to initialize application!" << std::endl;
+        std::cerr << "Failed to awake application!" << std::endl;
+        return -1;
+    }
+
+    // Start
+    if (!app.Start())
+    {
+        std::cerr << "Failed to start application!" << std::endl;
         return -1;
     }
 

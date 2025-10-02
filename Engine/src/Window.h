@@ -1,24 +1,26 @@
 #pragma once
 
 #include <SDL3/SDL.h>
+#include "Module.h"
 
-class Window
+class Window : public Module
 {
 public:
     Window();
     ~Window();
 
-    // Initialize window and renderer
-    bool Init();
+    bool Start() override; 
 
     // Handle events (returns false if quit requested)
-    bool Update();
+    bool Update() override;
 
     // Clear screen and present
     void Render();
 
+    bool PostUpdate() override;
+
     // Clean up resources
-    bool CleanUp();
+    bool CleanUp() override;
 
     // Getters
     void GetWindowSize(int& width, int& height) const;
