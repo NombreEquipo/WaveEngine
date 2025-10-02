@@ -2,9 +2,4 @@
 C:\Users\aalca\Documents\GitHub\-engine\Engine\src\Module.h(1,1): warning C4828: The file contains a character starting at offset 0x1f4 that is illegal in the current source character set (codepage 65001).
   (compiling source file '../src/Application.cpp')
   
-  Window.cpp
-C:\Users\aalca\Documents\GitHub\-engine\Engine\src\Module.h(1,1): warning C4828: The file contains a character starting at offset 0x1f4 that is illegal in the current source character set (codepage 65001).
-  (compiling source file '../src/Window.cpp')
-  
-  Generating Code...
   Engine.vcxproj -> C:\Users\aalca\Documents\GitHub\-engine\Engine\build\Debug\Engine.exe
