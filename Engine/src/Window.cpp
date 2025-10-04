@@ -1,7 +1,7 @@
 #include "Window.h"
 #include <iostream>
 
-Window::Window() : window(nullptr), renderer(nullptr), width(1280), height(720), scale(1)
+Window::Window() : window(nullptr), width(1280), height(720), scale(1)
 {
     std::cout << "Window Constructor" << std::endl;
 }
@@ -10,9 +10,9 @@ Window::~Window()
 {
 }
 
-bool Window::Start() 
+bool Window::Start()
 {
-    std::cout << "Init SDL3 Window & Renderer" << std::endl;
+    std::cout << "Init SDL3 Window" << std::endl;
 
     // Initialize SDL3
     if (!SDL_Init(SDL_INIT_VIDEO))
@@ -21,12 +21,26 @@ bool Window::Start()
         return false;
     }
 
-    // Create window
+    // Set OpenGL version to 3.3
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);  // Major version
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);  // Minor version
+
+    // Use the core OpenGL profile (modern functions only)
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+
+    // Enable double buffering to prevent flickering
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+
+    // Set depth buffer to 24 bits for proper 3D rendering
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+
+
+    // Create window WITH OpenGL flag
     window = SDL_CreateWindow(
-        "SDL3 Window",
+        "SDL3 OpenGL Window",
         width,
         height,
-        SDL_WINDOW_RESIZABLE
+        SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE  // Añade SDL_WINDOW_OPENGL
     );
 
     if (window == nullptr)
@@ -35,16 +49,6 @@ bool Window::Start()
         return false;
     }
 
-    // Create renderer
-    renderer = SDL_CreateRenderer(window, nullptr);
-
-    if (renderer == nullptr)
-    {
-        std::cerr << "Renderer creation failed! SDL Error: " << SDL_GetError() << std::endl;
-        return false;
-    }
-
-    std::cout << "Window and Renderer created successfully" << std::endl;
     return true;
 }
 
@@ -78,24 +82,12 @@ bool Window::PostUpdate()
 
 void Window::Render()
 {
-    // Clear screen to black
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderClear(renderer);
-
-    // Present the rendered frame
-    SDL_RenderPresent(renderer);
+    SDL_GL_SwapWindow(window);
 }
 
 bool Window::CleanUp()
 {
-    std::cout << "Destroying SDL Window and Renderer" << std::endl;
-
-    if (renderer != nullptr)
-    {
-        SDL_DestroyRenderer(renderer);
-        renderer = nullptr;
-    }
-
+    std::cout << "Destroying SDL Window" << std::endl;
     if (window != nullptr)
     {
         SDL_DestroyWindow(window);

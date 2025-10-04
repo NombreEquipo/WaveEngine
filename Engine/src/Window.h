@@ -26,9 +26,11 @@ public:
     void GetWindowSize(int& width, int& height) const;
     int GetScale() const;
 
+    SDL_Window* GetWindow() const { return window; }
+
 private:
     SDL_Window* window;
-    SDL_Renderer* renderer;
+    //SDL_Renderer* renderer;
 
     int width;
     int height;

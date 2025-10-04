@@ -27,7 +27,7 @@ public:
 	Input();
 
 	// Destructor
-	virtual ~Input();
+	~Input();
 
 	// Called before render is available
 	bool Awake() override;

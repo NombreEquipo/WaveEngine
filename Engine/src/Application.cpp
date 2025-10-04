@@ -6,9 +6,11 @@ Application::Application() : isRunning(true)
     std::cout << "Application Constructor" << std::endl;
     window = std::make_shared<Window>();
     input = std::make_shared<Input>();
+    opengl = std::make_shared<OpenGL>();
 
     AddModule(std::static_pointer_cast<Module>(window));
     AddModule(std::static_pointer_cast<Input>(input));
+    AddModule(std::static_pointer_cast<OpenGL>(opengl));
 }
 
 Application& Application::GetInstance()
