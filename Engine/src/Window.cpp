@@ -34,7 +34,6 @@ bool Window::Start()
     // Set depth buffer to 24 bits for proper 3D rendering
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-
     // Create window WITH OpenGL flag
     window = SDL_CreateWindow(
         "SDL3 OpenGL Window",
@@ -54,23 +53,6 @@ bool Window::Start()
 
 bool Window::Update()
 {
-    /*SDL_Event event;*/
-
-    // Poll events
-    //while (SDL_PollEvent(&event))
-    //{
-    //    if (event.type == SDL_EVENT_QUIT)
-    //    {
-    //        return false;
-    //    }
-
-    //    // Handle window close button
-    //    if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
-    //    {
-    //        return false;
-    //    }
-    //}
-
     return true;
 }
 

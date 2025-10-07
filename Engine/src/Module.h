@@ -2,8 +2,6 @@
 
 #include <string>
 
-class GuiControl;
-
 class Module
 {
 public:

@@ -1,23 +1,20 @@
 #pragma once
 #include "Module.h"
-#include <SDL3/SDL.h> //Buscar una mas concreta para usar SDL_GLContext
-struct SDL_Window;
+#include <SDL3/SDL_video.h>  
 
 class OpenGL : public Module
 {
 public:
-	OpenGL();
-	~OpenGL();
+    OpenGL();
+    ~OpenGL();
 
-	SDL_GLContext glContext;
-	unsigned int shaderProgram;
-	unsigned int VAO;
-	unsigned int VBO;
-
-	//Revisar porque esta publico o privado
+    bool Start() override;
+    bool Update() override;
+    bool CleanUp() override;
 
 private:
-	bool Start() override;
-	bool CleanUp() override;
-	bool Update() override;
+    SDL_GLContext glContext;
+    unsigned int shaderProgram;
+    unsigned int VAO;
+    unsigned int VBO;
 };

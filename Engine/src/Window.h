@@ -1,6 +1,7 @@
 #pragma once
 
-#include <SDL3/SDL.h>
+#include <SDL3/SDL_init.h>       // SDL_Init, SDL_Quit
+#include <SDL3/SDL_error.h>      // SDL_GetError
 #include "Module.h"
 
 class Window : public Module
