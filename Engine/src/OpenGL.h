@@ -12,9 +12,17 @@ public:
     bool Update() override;
     bool CleanUp() override;
 
+    unsigned int CreateTriangle();
+    unsigned int CreateCube(); 
+
 private:
+
+    typedef unsigned int Uint, uint;
+
     SDL_GLContext glContext;
     unsigned int shaderProgram;
-    unsigned int VAO;
-    unsigned int VBO;
+    Uint VAO_Triangle, VAO_Cube;
+    Uint VBO, EBO;
+    // EBO = Element buffer object
+
 };

@@ -4,7 +4,7 @@
 #include <glad/glad.h>
 #include <iostream>
 
-OpenGL::OpenGL() : glContext(nullptr), shaderProgram(0), VAO(0), VBO(0)
+OpenGL::OpenGL() : glContext(nullptr), shaderProgram(0), VAO_Triangle(0), VBO(0), VAO_Cube(0)
 {
     std::cout << "OpenGL Constructor" << std::endl;
 }
@@ -88,38 +88,96 @@ bool OpenGL::Start()
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    // Vertex data
-    float vertices[] = {
-        -0.5f, -0.5f, 0.0f,
-         0.5f, -0.5f, 0.0f,
-         0.0f,  0.5f, 0.0f
-    };
+    VAO_Triangle = CreateTriangle(); 
+    //glBindVertexArray(VAO_Triangle);
 
-    // Generate and bind VAO
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-
-    // Generate and bind VBO
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    // Configure vertex attributes
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    //    glBindVertexArray(0);  
+    VAO_Cube = CreateCube();
+    //glBindVertexArray(VAO_Cube);
 
     std::cout << "OpenGL initialized successfully" << std::endl;
 
     return true;
 }
 
+unsigned int OpenGL::CreateTriangle() 
+{
+    static float vertices[] = {
+       -0.5f, -0.5f, 0.0f,
+        0.5f, -0.5f, 0.0f,
+        0.0f,  0.5f, 0.0f
+    };
+
+    unsigned int VAO, VBO;
+
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);  // activate
+
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glBindVertexArray(0);  // desactivate
+
+    return VAO;
+}
+
+unsigned int OpenGL::CreateCube()
+{
+    static float vertices[] = {
+        -0.5f, -0.5f,  0.5f,  // 0
+         0.5f, -0.5f,  0.5f,  // 1
+         0.5f,  0.5f,  0.5f,  // 2
+        -0.5f,  0.5f,  0.5f,  // 3
+        -0.5f, -0.5f, -0.5f,  // 4
+         0.5f, -0.5f, -0.5f,  // 5
+         0.5f,  0.5f, -0.5f,  // 6
+        -0.5f,  0.5f, -0.5f   // 7
+    };
+
+    static Uint indices[] = {  
+        0, 1, 2,  2, 3, 0,  // frontal
+        5, 4, 7,  7, 6, 5,  // trasera
+        4, 0, 3,  3, 7, 4,  // izquierda
+        1, 5, 6,  6, 2, 1,  // derecha
+        3, 2, 6,  6, 7, 3,  // superior
+        4, 5, 1,  1, 0, 4   // inferior
+    };
+
+    Uint VAO, VBO, EBO;
+
+    // 
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    // VBO for vertices
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    // EBO for indexes
+    glGenBuffers(1, &EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glBindVertexArray(0);
+
+    return VAO;
+}
+
 bool OpenGL::Update()
 {
     glUseProgram(shaderProgram);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-
+    //glBindVertexArray(VAO_Triangle);
+    //glDrawArrays(GL_TRIANGLES, 0, 3);
+   
+    glBindVertexArray(VAO_Cube);
+    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
     return true;
 }
 
@@ -128,7 +186,7 @@ bool OpenGL::CleanUp()
     std::cout << "Destroying OpenGL Context" << std::endl;
 
     // Delete OpenGL resources
-    glDeleteVertexArrays(1, &VAO);
+    glDeleteVertexArrays(1, &VAO_Triangle);
     glDeleteBuffers(1, &VBO);
     glDeleteProgram(shaderProgram);
 
