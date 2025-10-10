@@ -3,6 +3,7 @@
 #include <SDL3/SDL.h>
 #include <glad/glad.h>
 #include <iostream>
+#include "FileSystem.h"
 
 OpenGL::OpenGL() : glContext(nullptr), shaderProgram(0), VAO_Triangle(0), VBO(0), VAO_Cube(0), VAO_Pyramid(0), VAO_Cylinder(0), EBO(0)
 {

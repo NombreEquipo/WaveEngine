@@ -1,6 +1,7 @@
 #pragma once
 #include "Module.h"
 #include <SDL3/SDL_video.h>  
+#include <iostream>
 
 class OpenGL : public Module
 {
@@ -15,12 +16,9 @@ public:
     unsigned int CreateTriangle();
     unsigned int CreateCube(); 
     unsigned int CreatePyramid();
-    unsigned int CreateSphere();
-    unsigned int CreateCylinder();
+
 
 private:
-
-    typedef unsigned int Uint, uint;
 
     SDL_GLContext glContext;
     unsigned int shaderProgram;

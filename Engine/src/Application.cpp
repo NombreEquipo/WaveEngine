@@ -7,10 +7,12 @@ Application::Application() : isRunning(true)
     window = std::make_shared<Window>();
     input = std::make_shared<Input>();
     opengl = std::make_shared<OpenGL>();
+    filesystem = std::make_shared<FileSystem>();
 
     AddModule(std::static_pointer_cast<Module>(window));
     AddModule(std::static_pointer_cast<Input>(input));
     AddModule(std::static_pointer_cast<OpenGL>(opengl));
+    AddModule(std::static_pointer_cast<FileSystem>(filesystem));
 }
 
 Application& Application::GetInstance()

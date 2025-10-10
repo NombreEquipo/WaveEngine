@@ -34,7 +34,7 @@ bool Input::Awake()
 }
 
 // Called before the first frame
-bool Input::Start()
+bool Input::Start() 
 {
 	return true;
 }

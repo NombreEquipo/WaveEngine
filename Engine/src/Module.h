@@ -51,6 +51,8 @@ public:
 		return true;
 	}
 
+	typedef unsigned int Uint, uint;
+
 public:
 
 	std::string name;

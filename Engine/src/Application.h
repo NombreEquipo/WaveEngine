@@ -6,6 +6,7 @@
 #include "Module.h"
 #include "Input.h"
 #include "OpenGL.h"
+#include "FileSystem.h"
 
 class Module;
 
@@ -31,6 +32,7 @@ public:
     std::shared_ptr<Window> window;
     std::shared_ptr<Input> input;
     std::shared_ptr<OpenGL> opengl;
+    std::shared_ptr<FileSystem> filesystem;
 
 private:
     // Private constructor for singleton

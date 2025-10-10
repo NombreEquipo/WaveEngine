@@ -1,13 +1,13 @@
 {
   "dependencies": [
-    "fmt",
+    "assimp",
     {
       "name": "glad",
       "features": [
         "gl-api-46"
       ]
     },
-    "sdl3",
-    "glm"
+    "glm",
+    "sdl3"
   ]
 }
