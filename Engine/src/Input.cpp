@@ -73,7 +73,7 @@ bool Input::PreUpdate()
 			mouseButtons[i] = KEY_IDLE;
 	}
 
-	while (SDL_PollEvent(&event)) 
+	while (SDL_PollEvent(&event))
 	{
 		switch (event.type)
 		{
@@ -93,7 +93,6 @@ bool Input::PreUpdate()
 			break;
 		case SDL_EVENT_MOUSE_BUTTON_DOWN:
 			mouseButtons[event.button.button - 1] = KEY_DOWN;
-			mouseButtons[event.button.button - 1] = KEY_DOWN;
 			if (event.button.button == SDL_BUTTON_RIGHT)
 			{
 				Camera* camera = Application::GetInstance().renderer->GetCamera();
@@ -106,10 +105,10 @@ bool Input::PreUpdate()
 		case SDL_EVENT_MOUSE_MOTION:
 		{
 			int scale = Application::GetInstance().window.get()->GetScale();
-			mouseMotionX = event.motion.xrel / scale;
-			mouseMotionY = event.motion.yrel / scale;
-			float mouseXf = static_cast<float>(event.motion.x) / scale;
-			float mouseYf = static_cast<float>(event.motion.y) / scale;
+			mouseMotionX = static_cast<int>(event.motion.xrel / scale);
+			mouseMotionY = static_cast<int>(event.motion.yrel / scale);
+			float mouseXf = static_cast<float>(event.motion.x) / static_cast<float>(scale);
+			float mouseYf = static_cast<float>(event.motion.y) / static_cast<float>(scale);
 
 			// Manejo del raton para la camara
 			if (mouseButtons[SDL_BUTTON_RIGHT - 1] == KEY_REPEAT || mouseButtons[SDL_BUTTON_RIGHT - 1] == KEY_DOWN)
@@ -129,8 +128,14 @@ bool Input::PreUpdate()
 				std::cout << "File dropped: " << droppedFilePath << std::endl;
 			}
 			break;
-		}
 
+		case SDL_EVENT_MOUSE_WHEEL:
+		{
+			Camera* camera = Application::GetInstance().renderer->GetCamera();
+			camera->HandleScrollInput(static_cast<float>(event.wheel.y));
+		}
+		break;
+		}
 	}
 
 	// Solo activo cuando presionas click derecho
@@ -167,4 +172,3 @@ bool Input::GetWindowEvent(EventWindow ev)
 {
 	return windowEvents[ev];
 }
-

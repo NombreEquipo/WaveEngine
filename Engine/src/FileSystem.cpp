@@ -62,8 +62,12 @@ bool FileSystem::LoadFBX(const std::string& file_path, unsigned int flag)
 {
 	std::cout << "Loading FBX: " << file_path << std::endl;
 
-	const aiScene* scene = aiImportFile(file_path.c_str(),
-		flag != 0 ? flag : aiProcessPreset_TargetRealtime_MaxQuality);
+	// Flags con conversion de coordenadas
+	unsigned int importFlags = flag != 0 ? flag :
+		aiProcessPreset_TargetRealtime_MaxQuality |
+		aiProcess_ConvertToLeftHanded;
+
+	const aiScene* scene = aiImportFile(file_path.c_str(), importFlags);
 
 	if (scene == nullptr)
 	{
@@ -87,6 +91,26 @@ bool FileSystem::LoadFBX(const std::string& file_path, unsigned int flag)
 		mesh.vertices = new float[mesh.num_vertices * 3];
 		memcpy(mesh.vertices, aiMesh->mVertices, sizeof(float) * mesh.num_vertices * 3);
 
+		if (aiMesh->HasTextureCoords(0))
+		{
+			mesh.texCoords = new float[mesh.num_vertices * 2];
+			for (unsigned int v = 0; v < mesh.num_vertices; ++v)
+			{
+				mesh.texCoords[v * 2] = aiMesh->mTextureCoords[0][v].x;
+				mesh.texCoords[v * 2 + 1] = aiMesh->mTextureCoords[0][v].y;
+			}
+		}
+		else
+		{
+			// If there are no UVs, create default coordinates
+			mesh.texCoords = new float[mesh.num_vertices * 2];
+			for (unsigned int v = 0; v < mesh.num_vertices; ++v)
+			{
+				mesh.texCoords[v * 2] = 0.0f;
+				mesh.texCoords[v * 2 + 1] = 0.0f;
+			}
+		}
+
 		// Indices
 		if (aiMesh->HasFaces())
 		{
@@ -106,7 +130,6 @@ bool FileSystem::LoadFBX(const std::string& file_path, unsigned int flag)
 	aiReleaseImport(scene);
 	return true;
 }
-
 bool FileSystem::LoadFBXFromAssets(const std::string& filename)
 {
 	return LoadFBX("Assets/" + filename, aiProcessPreset_TargetRealtime_MaxQuality);
@@ -124,6 +147,7 @@ void FileSystem::ClearMeshes()
 		Application::GetInstance().renderer->UnloadMesh(mesh);
 		delete[] mesh.vertices;
 		delete[] mesh.indices;
+		delete[] mesh.texCoords;  
 	}
 	meshes.clear();
 	std::cout << "All meshes cleared" << std::endl;

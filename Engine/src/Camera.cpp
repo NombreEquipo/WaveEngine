@@ -6,11 +6,14 @@ Camera::Camera()
 	: cameraPos(0.0f, 0.0f, 3.0f),
 	cameraFront(0.0f, 0.0f, -1.0f),
 	cameraUp(0.0f, 1.0f, 0.0f),
+	viewMatrix(1.0f),
+	projectionMatrix(1.0f),
 	yaw(-90.0f),
 	pitch(0.0f),
 	lastX(400.0f),
 	lastY(300.0f),
-	firstMouse(true)
+	firstMouse(true),
+	fov(45.0f)
 {
 }
 
@@ -62,13 +65,21 @@ void Camera::HandleMouseInput(float xpos, float ypos)
 	ProcessMouseMovement(xoffset, yoffset);
 }
 
+void Camera::HandleScrollInput(float yoffset)
+{
+	fov -= yoffset;
+
+	if (fov < 1.0f)
+		fov = 1.0f;
+	if (fov > 45.0f)
+		fov = 45.0f;
+}
+
 void Camera::Update()
 {
 	UpdateCameraVectors();
 
-	// Crear matriz de proyección (perspectiva)
-	projectionMatrix = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+	projectionMatrix = glm::perspective(glm::radians(fov), 800.0f / 600.0f, 0.1f, 100.0f);
 
-	// Crear matriz de vista
 	viewMatrix = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 }

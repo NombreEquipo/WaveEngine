@@ -17,6 +17,12 @@ Mesh Primitives::CreateTriangle()
             0.0f, 0.5f, 0.0f
         };
 
+    mesh.texCoords = new float[6] {
+        0.0f, 0.0f,
+            1.0f, 0.0f,
+            0.5f, 1.0f
+        };
+
     mesh.num_indices = 3;
     mesh.indices = new unsigned int[3] { 0, 1, 2 };
 
@@ -27,26 +33,39 @@ Mesh Primitives::CreateCube()
 {
     Mesh mesh;
 
-    mesh.num_vertices = 8;
-    mesh.vertices = new float[24] {
-        -0.5f, -0.5f, 0.5f,  // 0
-            0.5f, -0.5f, 0.5f,  // 1
-            0.5f, 0.5f, 0.5f,  // 2
-            -0.5f, 0.5f, 0.5f,  // 3
-            -0.5f, -0.5f, -0.5f,  // 4
-            0.5f, -0.5f, -0.5f,  // 5
-            0.5f, 0.5f, -0.5f,  // 6
-            -0.5f, 0.5f, -0.5f   // 7
+    mesh.num_vertices = 24;
+    mesh.vertices = new float[72] {
+        // Front face
+        -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f, 0.5f, 0.5f, 0.5f, -0.5f, 0.5f, 0.5f,
+            // Back face
+            0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f, -0.5f,
+            // Left face
+            -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f, -0.5f,
+            // Right face
+            0.5f, -0.5f, 0.5f, 0.5f, -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f, 0.5f, 0.5f,
+            // Top face
+            -0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, -0.5f, -0.5f, 0.5f, -0.5f,
+            // Bottom face
+            -0.5f, -0.5f, -0.5f, 0.5f, -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, -0.5f, -0.5f, 0.5f
         };
+
+    mesh.texCoords = new float[48];
+    // All faces have the same UVs
+    for (int i = 0; i < 6; i++) {
+        mesh.texCoords[i * 8 + 0] = 0.0f; mesh.texCoords[i * 8 + 1] = 0.0f;
+        mesh.texCoords[i * 8 + 2] = 1.0f; mesh.texCoords[i * 8 + 3] = 0.0f;
+        mesh.texCoords[i * 8 + 4] = 1.0f; mesh.texCoords[i * 8 + 5] = 1.0f;
+        mesh.texCoords[i * 8 + 6] = 0.0f; mesh.texCoords[i * 8 + 7] = 1.0f;
+    }
 
     mesh.num_indices = 36;
     mesh.indices = new unsigned int[36] {
-        0, 1, 2, 2, 3, 0,  // frontal
-            5, 4, 7, 7, 6, 5,  // trasera
-            4, 0, 3, 3, 7, 4,  // izquierda
-            1, 5, 6, 6, 2, 1,  // derecha
-            3, 2, 6, 6, 7, 3,  // superior
-            4, 5, 1, 1, 0, 4   // inferior
+        0, 1, 2, 2, 3, 0,      // Front
+            4, 5, 6, 6, 7, 4,      // Back
+            8, 9, 10, 10, 11, 8,   // Left
+            12, 13, 14, 14, 15, 12, // Right
+            16, 17, 18, 18, 19, 16, // Top
+            20, 21, 22, 22, 23, 20  // Bottom
         };
 
     return mesh;
@@ -56,28 +75,47 @@ Mesh Primitives::CreatePyramid()
 {
     Mesh mesh;
 
-    mesh.num_vertices = 5;
-    mesh.vertices = new float[15] {
-        -0.5f, -0.5f, 0.5f,  // 0
-            0.5f, -0.5f, 0.5f,  // 1
-            0.5f, -0.5f, -0.5f,  // 2
-            -0.5f, -0.5f, -0.5f,  // 3
-            0.0f, 0.5f, 0.0f   // 4 
+    mesh.num_vertices = 18;  
+    mesh.vertices = new float[54] {  
+        // Front face (triángulo)
+        -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f, 0.0f, 0.5f, 0.0f,
+            // Right face
+            0.5f, -0.5f, 0.5f, 0.5f, -0.5f, -0.5f, 0.0f, 0.5f, 0.0f,
+            // Back face
+            0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, 0.0f, 0.5f, 0.0f,
+            // Left face
+            -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, 0.5f, 0.0f, 0.5f, 0.0f,
+            // Bottom face (2 triangles = 6 vertices)
+            -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, -0.5f, 0.5f, -0.5f, 0.5f,
+            -0.5f, -0.5f, 0.5f, -0.5f, -0.5f, -0.5f, 0.5f, -0.5f, -0.5f
+        };
+
+    mesh.texCoords = new float[36] {  
+        // Front
+        0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f,
+            // Right
+            0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f,
+            // Back
+            0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f,
+            // Left
+            0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f,
+            // Bottom
+            0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f
         };
 
     mesh.num_indices = 18;
     mesh.indices = new unsigned int[18] {
-        0, 1, 4,  // frontal
-            1, 2, 4,  // derecha
-            2, 3, 4,  // trasera
-            3, 0, 4,  // izquierda
-            0, 2, 1,  // base
-            0, 3, 2   // base
+        0, 1, 2,       // Front
+            3, 4, 5,       // Right
+            6, 7, 8,       // Back
+            9, 10, 11,     // Left
+            12, 13, 14,    // Bottom triangle 1
+            15, 16, 17     // Bottom triangle 2
         };
 
     return mesh;
 }
-
 Mesh Primitives::CreatePlane(float width, float height)
 {
     Mesh mesh;
@@ -87,10 +125,17 @@ Mesh Primitives::CreatePlane(float width, float height)
     float halfH = height * 0.5f;
 
     mesh.vertices = new float[12] {
-        -halfW, 0.0f, -halfH,  // 0
-            halfW, 0.0f, -halfH,  // 1
-            halfW, 0.0f, halfH,  // 2
-            -halfW, 0.0f, halfH   // 3
+        -halfW, 0.0f, -halfH,
+            halfW, 0.0f, -halfH,
+            halfW, 0.0f, halfH,
+            -halfW, 0.0f, halfH
+        };
+
+    mesh.texCoords = new float[8] {
+        0.0f, 0.0f,
+            1.0f, 0.0f,
+            1.0f, 1.0f,
+            0.0f, 1.0f
         };
 
     mesh.num_indices = 6;
@@ -105,6 +150,7 @@ Mesh Primitives::CreatePlane(float width, float height)
 Mesh Primitives::CreateSphere(float radius, unsigned int rings, unsigned int sectors)
 {
     std::vector<float> vertices;
+    std::vector<float> texCoords;
     std::vector<unsigned int> indices;
 
     float const R = 1.0f / (float)(rings - 1);
@@ -121,6 +167,9 @@ Mesh Primitives::CreateSphere(float radius, unsigned int rings, unsigned int sec
             vertices.push_back(x * radius);
             vertices.push_back(y * radius);
             vertices.push_back(z * radius);
+
+            texCoords.push_back(s * S);
+            texCoords.push_back(r * R);
         }
     }
 
@@ -143,6 +192,9 @@ Mesh Primitives::CreateSphere(float radius, unsigned int rings, unsigned int sec
     mesh.vertices = new float[vertices.size()];
     memcpy(mesh.vertices, vertices.data(), vertices.size() * sizeof(float));
 
+    mesh.texCoords = new float[texCoords.size()];
+    memcpy(mesh.texCoords, texCoords.data(), texCoords.size() * sizeof(float));
+
     mesh.num_indices = indices.size();
     mesh.indices = new unsigned int[indices.size()];
     memcpy(mesh.indices, indices.data(), indices.size() * sizeof(unsigned int));
@@ -153,6 +205,7 @@ Mesh Primitives::CreateSphere(float radius, unsigned int rings, unsigned int sec
 Mesh Primitives::CreateCylinder(float radius, float height, unsigned int segments)
 {
     std::vector<float> vertices;
+    std::vector<float> texCoords;
     std::vector<unsigned int> indices;
 
     float halfHeight = height * 0.5f;
@@ -161,11 +214,15 @@ Mesh Primitives::CreateCylinder(float radius, float height, unsigned int segment
     vertices.push_back(0.0f);
     vertices.push_back(halfHeight);
     vertices.push_back(0.0f);
+    texCoords.push_back(0.5f);
+    texCoords.push_back(0.5f);
 
     // Bottom center
     vertices.push_back(0.0f);
     vertices.push_back(-halfHeight);
     vertices.push_back(0.0f);
+    texCoords.push_back(0.5f);
+    texCoords.push_back(0.5f);
 
     // Top and bottom circle vertices
     for (unsigned int i = 0; i <= segments; i++)
@@ -178,11 +235,15 @@ Mesh Primitives::CreateCylinder(float radius, float height, unsigned int segment
         vertices.push_back(x);
         vertices.push_back(halfHeight);
         vertices.push_back(z);
+        texCoords.push_back((float)i / segments);
+        texCoords.push_back(0.0f);
 
         // Bottom circle
         vertices.push_back(x);
         vertices.push_back(-halfHeight);
         vertices.push_back(z);
+        texCoords.push_back((float)i / segments);
+        texCoords.push_back(1.0f);
     }
 
     // Top cap
@@ -222,6 +283,9 @@ Mesh Primitives::CreateCylinder(float radius, float height, unsigned int segment
     mesh.num_vertices = vertices.size() / 3;
     mesh.vertices = new float[vertices.size()];
     memcpy(mesh.vertices, vertices.data(), vertices.size() * sizeof(float));
+
+    mesh.texCoords = new float[texCoords.size()];
+    memcpy(mesh.texCoords, texCoords.data(), texCoords.size() * sizeof(float));
 
     mesh.num_indices = indices.size();
     mesh.indices = new unsigned int[indices.size()];

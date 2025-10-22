@@ -50,7 +50,7 @@ bool Renderer::Start()
 
 void Renderer::LoadMesh(Mesh& mesh)
 {
-    unsigned int VAO, VBO, EBO;
+    unsigned int VAO, VBO, EBO, texVBO;
 
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
@@ -60,14 +60,28 @@ void Renderer::LoadMesh(Mesh& mesh)
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, mesh.num_vertices * 3 * sizeof(float), mesh.vertices, GL_STATIC_DRAW);
 
+    // Position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    // VBO for texture coordinates
+    if (mesh.texCoords != nullptr)
+    {
+        glGenBuffers(1, &texVBO);
+        glBindBuffer(GL_ARRAY_BUFFER, texVBO);
+        glBufferData(GL_ARRAY_BUFFER, mesh.num_vertices * 2 * sizeof(float), mesh.texCoords, GL_STATIC_DRAW);
+
+        // Texture coordinate attribute
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+
+        mesh.id_texcoord = texVBO;
+    }
+
     // EBO for indices
     glGenBuffers(1, &EBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.num_indices * sizeof(unsigned int), mesh.indices, GL_STATIC_DRAW);
-
-    // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
 
     // Save IDs in mesh
     mesh.id_vertex = VBO;
@@ -109,8 +123,13 @@ void Renderer::UnloadMesh(Mesh& mesh)
         glDeleteBuffers(1, &mesh.id_index);
         mesh.id_index = 0;
     }
-}
 
+    if (mesh.id_texcoord != 0)
+    {
+        glDeleteBuffers(1, &mesh.id_texcoord);
+        mesh.id_texcoord = 0;
+    }
+}
 bool Renderer::PreUpdate()
 {
     return true;

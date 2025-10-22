@@ -12,8 +12,11 @@ struct Mesh {
 	unsigned int num_indices = 0;
 	unsigned int* indices = nullptr;
 
+	float* texCoords = nullptr;  
+
 	unsigned int id_vertex = 0;   // VBO
 	unsigned int id_index = 0;    // EBO
+	unsigned int id_texcoord = 0; 
 	unsigned int id_VAO = 0;
 };
 
