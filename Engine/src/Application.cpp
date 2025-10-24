@@ -12,6 +12,7 @@ Application::Application() : isRunning(true)
     filesystem = std::make_shared<FileSystem>();
     time = std::make_shared<Time>();
 	scene = std::make_shared<ModuleScene>();
+    grid = std::make_shared<Grid>();
 
     AddModule(std::static_pointer_cast<Module>(window));
     AddModule(std::static_pointer_cast<Module>(input));
@@ -20,6 +21,7 @@ Application::Application() : isRunning(true)
     AddModule(std::static_pointer_cast<Module>(filesystem));
     AddModule(std::static_pointer_cast<Module>(scene));
     AddModule(std::static_pointer_cast<Module>(time));
+    AddModule(std::static_pointer_cast<Module>(grid)); 
 }
 
 Application& Application::GetInstance()
