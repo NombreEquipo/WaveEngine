@@ -7,6 +7,7 @@ find_package(glad CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(assimp CONFIG REQUIRED)
 find_package(DevIL REQUIRED)
+find_package(imgui REQUIRED)
 
 set(CORE_SRC 
     src/Main.cpp 
@@ -74,3 +75,4 @@ target_link_libraries(Engine PRIVATE glm::glm)
 target_link_libraries(Engine PRIVATE assimp::assimp)
 target_link_libraries(Engine PRIVATE DevIL::IL)
 target_link_libraries(Engine PRIVATE DevIL::ILU)
+target_link_libraries(Engine PRIVATE imgui::imgui)
