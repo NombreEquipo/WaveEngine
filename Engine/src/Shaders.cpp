@@ -20,6 +20,7 @@ bool Shader::Create()
         "out vec2 TexCoord;\n"
         "uniform mat4 view;\n"
         "uniform mat4 projection;\n"
+		"uniform mat4 model;\n"
         "void main()\n"
         "{\n"
         "   gl_Position = projection * view * vec4(aPos, 1.0);\n"

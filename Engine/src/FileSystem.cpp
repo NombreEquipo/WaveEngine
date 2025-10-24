@@ -1,10 +1,13 @@
-#include "FileSystem.h"
+﻿#include "FileSystem.h"
 #include <assimp/scene.h>
 #include <assimp/postprocess.h> 
 #include <assimp/cimport.h>
-#include <iostream>
 #include <windows.h>
 #include "Application.h"
+#include "GameObject.h"
+#include "Transform.h"
+#include "ComponentMesh.h"
+#include "ComponentMaterial.h"
 
 FileSystem::FileSystem() : Module() {}
 FileSystem::~FileSystem() {}
@@ -57,17 +60,32 @@ bool FileSystem::Update()
 
 		if (fileType == DROPPED_FBX)
 		{
-			// Clean up previous meshes before loading new ones
-			ClearMeshes();
-
-			if (LoadFBX(filePath))
+			GameObject* loadedModel = LoadFBXAsGameObject(filePath);
+			if (loadedModel != nullptr)
 			{
-				std::cout << "Successfully loaded FBX file!" << std::endl;
+				GameObject* root = Application::GetInstance().scene->GetRoot();
+				root->AddChild(loadedModel);
+
+				std::cout << "Model loaded" << std::endl;
+				std::cout << "   Root GameObject: " << loadedModel->GetName() << std::endl;
+				std::cout << "   Children: " << loadedModel->GetChildren().size() << std::endl;
 			}
 			else
 			{
-				std::cerr << "Failed to load FBX file!" << std::endl;
+				std::cerr << "Failed to load FBX" << std::endl;
 			}
+
+			// Clean up previous meshes before loading new ones
+			//ClearMeshes();
+
+			//if (LoadFBX(filePath))
+			//{
+			//	std::cout << "Successfully loaded FBX file!" << std::endl;
+			//}
+			//else
+			//{
+			//	std::cerr << "Failed to load FBX file!" << std::endl;
+			//}
 		}
 		else if (fileType == DROPPED_TEXTURE)
 		{
@@ -189,3 +207,166 @@ bool FileSystem::CleanUp()
 	aiDetachAllLogStreams();
 	return true;
 }
+
+GameObject* FileSystem::LoadFBXAsGameObject(const std::string& file_path)
+{
+
+	unsigned int importFlags = aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_ConvertToLeftHanded;
+
+	const aiScene* scene = aiImportFile(file_path.c_str(), importFlags);
+
+	if (scene == nullptr)
+	{
+		LOG("Corrupt archive");
+		return nullptr;
+	}
+
+	if (!scene->HasMeshes())
+	{
+		LOG("No meshes");
+		aiReleaseImport(scene);
+		return nullptr;
+	}
+
+	std::cout << "FBX loaded successfully!" << std::endl;
+	std::cout << "  Meshes: " << scene->mNumMeshes << std::endl;
+	std::cout << "  Materials: " << scene->mNumMaterials << std::endl;
+
+	GameObject* rootObject = ProcessNode(scene->mRootNode, scene);
+
+	aiReleaseImport(scene);
+
+	LOG("GameObject created");
+	return rootObject;
+}
+
+GameObject* FileSystem::ProcessNode(aiNode* node, const aiScene* scene)
+{
+	// ======================================================== 1 ====================================================
+	//Create GameObject 
+	std::string nodeName = node->mName.C_Str();
+	if (nodeName.empty()) nodeName = "Unnamed";
+
+	GameObject* gameObject = new GameObject(nodeName);
+
+	// ======================================================== 2 ====================================================
+
+	//Get Transform component
+	Transform* transform = static_cast<Transform*>(gameObject->GetComponent(ComponentType::TRANSFORM));
+
+	if (transform != nullptr)
+	{
+		// Get transformation from aiNode
+		aiVector3D position, scaling;
+		aiQuaternion rotation;
+		node->mTransformation.Decompose(scaling, rotation, position);
+
+		// Set transform
+		transform->SetPosition(glm::vec3(position.x, position.y, position.z));
+		transform->SetScale(glm::vec3(scaling.x, scaling.y, scaling.z));
+		transform->SetRotationQuat(glm::quat(rotation.w, rotation.x, rotation.y, rotation.z));
+	}
+
+	// ======================================================== 3 ====================================================
+	// Process meshes
+	for (unsigned int i = 0; i < node->mNumMeshes; i++)
+	{
+		unsigned int meshIndex = node->mMeshes[i];
+		aiMesh* aiMesh = scene->mMeshes[meshIndex];
+
+		ComponentMesh* meshComponent = static_cast<ComponentMesh*>(gameObject->CreateComponent(ComponentType::MESH));
+
+		Mesh mesh;
+		mesh.num_vertices = aiMesh->mNumVertices;
+		mesh.vertices = new float[mesh.num_vertices * 3];
+
+		// Copy vertexes
+		for (unsigned int v = 0; v < mesh.num_vertices; v++)
+		{
+			mesh.vertices[v * 3 + 0] = aiMesh->mVertices[v].x;
+			mesh.vertices[v * 3 + 1] = aiMesh->mVertices[v].y;
+			mesh.vertices[v * 3 + 2] = aiMesh->mVertices[v].z;
+		}
+
+		// Copy texture coordinates
+		if (aiMesh->HasTextureCoords(0))
+		{
+			mesh.texCoords = new float[mesh.num_vertices * 2];
+			for (unsigned int v = 0; v < mesh.num_vertices; v++)
+			{
+				mesh.texCoords[v * 2 + 0] = aiMesh->mTextureCoords[0][v].x;
+				mesh.texCoords[v * 2 + 1] = aiMesh->mTextureCoords[0][v].y;
+			}
+		}
+		else
+		{
+			mesh.texCoords = new float[mesh.num_vertices * 2];
+			for (unsigned int v = 0; v < mesh.num_vertices * 2; v++)
+			{
+				mesh.texCoords[v] = 0.0f;
+			}
+		}
+
+		// Copy indexes
+		if (aiMesh->HasFaces())
+		{
+			mesh.num_indices = aiMesh->mNumFaces * 3;
+			mesh.indices = new unsigned int[mesh.num_indices];
+
+			for (unsigned int f = 0; f < aiMesh->mNumFaces; f++)
+			{
+				memcpy(&mesh.indices[f * 3], aiMesh->mFaces[f].mIndices, 3 * sizeof(unsigned int));
+			}
+		}
+
+		meshComponent->SetMesh(mesh);
+
+		delete[] mesh.vertices;
+		delete[] mesh.indices;
+		delete[] mesh.texCoords;
+
+		// ======================================================== 4 ====================================================
+
+		// Material 
+		if (aiMesh->mMaterialIndex >= 0)
+		{
+			aiMaterial* material = scene->mMaterials[aiMesh->mMaterialIndex];
+
+			// Has base color?
+			if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0)
+			{
+				aiString texturePath;
+				material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath);
+
+				// Create ComponentMaterial
+				ComponentMaterial* matComponent = static_cast<ComponentMaterial*>(gameObject->GetComponent(ComponentType::MATERIAL));
+
+				//If we don't have one
+				if (matComponent == nullptr)
+				{
+					matComponent = static_cast<ComponentMaterial*>(gameObject->CreateComponent(ComponentType::MATERIAL));
+				}
+
+				// Assign texture to material
+				std::string textureFile = texturePath.C_Str();
+
+				matComponent->LoadTexture(textureFile);
+			}
+		}
+	}
+
+	//========================================================= 5 ====================================================
+
+	// Recursive for children
+	for (unsigned int i = 0; i < node->mNumChildren; i++)
+	{
+		GameObject* child = ProcessNode(node->mChildren[i], scene);
+		if (child != nullptr)
+		{
+			gameObject->AddChild(child);
+		}
+	}
+
+	return gameObject;
+}
+

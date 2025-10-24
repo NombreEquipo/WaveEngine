@@ -5,6 +5,10 @@
 #include <vector>
 #include <string>
 
+class GameObject;
+struct aiNode;
+struct aiScene;
+
 struct Mesh {
 	unsigned int num_vertices = 0;
 	float* vertices = nullptr;
@@ -45,8 +49,15 @@ public:
 
 	// Clear all meshes
 	void ClearMeshes();
+	
+	// Load FBX and convert to GameObject 
+	GameObject* LoadFBXAsGameObject(const std::string& file_path);
+
 
 private:
+
+	GameObject* ProcessNode(aiNode* node, const aiScene* scene);
+
 	std::vector<Mesh> meshes;
 	std::string assetsPath;
 

@@ -11,12 +11,14 @@ Application::Application() : isRunning(true)
     renderer = std::make_shared<Renderer>();
     filesystem = std::make_shared<FileSystem>();
     time = std::make_shared<Time>();
+	scene = std::make_shared<ModuleScene>();
 
     AddModule(std::static_pointer_cast<Module>(window));
     AddModule(std::static_pointer_cast<Module>(input));
     AddModule(std::static_pointer_cast<Module>(renderContext));
     AddModule(std::static_pointer_cast<Module>(renderer));
     AddModule(std::static_pointer_cast<Module>(filesystem));
+    AddModule(std::static_pointer_cast<Module>(scene));
     AddModule(std::static_pointer_cast<Module>(time));
 }
 

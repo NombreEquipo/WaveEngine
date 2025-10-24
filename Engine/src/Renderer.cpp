@@ -1,4 +1,4 @@
-#include "Renderer.h"
+﻿#include "Renderer.h"
 #include "Application.h"
 #include <glad/glad.h>
 #include <iostream>
@@ -6,6 +6,11 @@
 #include "Shaders.h"
 #include <glm/gtc/type_ptr.hpp>
 #include "Camera.h"
+#include "GameObject.h"
+#include "Transform.h"
+#include "ComponentMesh.h"
+#include "ComponentMaterial.h"
+
 
 Renderer::Renderer()
 {
@@ -172,32 +177,51 @@ bool Renderer::Update()
     float aspectRatio = (float)width / (float)height;
     camera->SetAspectRatio(aspectRatio);
 
+    GLuint shaderProgram = defaultShader->GetProgramID();
+
     // send matrix to shader
-    glUniformMatrix4fv(glGetUniformLocation(defaultShader->GetProgramID(), "projection"), 1, GL_FALSE, glm::value_ptr(camera->GetProjectionMatrix()));
-    glUniformMatrix4fv(glGetUniformLocation(defaultShader->GetProgramID(), "view"), 1, GL_FALSE, glm::value_ptr(camera->GetViewMatrix()));
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(camera->GetProjectionMatrix()));
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(camera->GetViewMatrix()));
 
     // activate and bind texture 
     glActiveTexture(GL_TEXTURE0);
-    defaultTexture->Bind();
 
-    glUniform1i(glGetUniformLocation(defaultShader->GetProgramID(), "texture1"), 0);
+    glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), 0);
 
-    // render all meshes loaded in filesystem
-    const vector<Mesh>& meshes = Application::GetInstance().filesystem->GetMeshes();
+    GameObject* root = Application::GetInstance().scene->GetRoot();
 
-    if (!meshes.empty())
+    if (root != nullptr && root->GetChildren().size() > 0)
     {
-        for (const auto& mesh : meshes)
-        {
-            DrawMesh(mesh);
-        }
+        DrawScene();
     }
     else
     {
-        // if there inst any meshes show pyramid
-        DrawMesh(pyramid);
-    }
+     
+        defaultTexture->Bind();
 
+        const vector<Mesh>& meshes = Application::GetInstance().filesystem->GetMeshes();
+
+        if (!meshes.empty())
+        {
+            glm::mat4 modelMatrix = glm::mat4(1.0f);
+            glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(modelMatrix));
+
+            for (const auto& mesh : meshes)
+            {
+                DrawMesh(mesh);
+            }
+        }
+        else
+        {
+            glm::mat4 modelMatrix = glm::mat4(1.0f);
+            glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"),1, GL_FALSE,glm::value_ptr(modelMatrix));
+
+            DrawMesh(pyramid);
+        }
+
+        defaultTexture->Unbind();
+    }
+     
     defaultTexture->Unbind();
 
     return true;
@@ -214,3 +238,83 @@ bool Renderer::CleanUp()
 
     return true;
 }
+
+void Renderer::DrawScene()
+{
+    GameObject* root = Application::GetInstance().scene->GetRoot();
+
+    if (root == nullptr)
+        return;
+
+    DrawGameObjectRecursive(root);
+}
+
+void Renderer::DrawGameObject(GameObject* gameObject)
+{
+    if (gameObject == nullptr || !gameObject->IsActive())
+        return;
+
+    DrawGameObjectRecursive(gameObject);
+}
+
+void Renderer::DrawGameObjectRecursive(GameObject* gameObject)
+{
+    if (!gameObject->IsActive())
+        return;
+
+    Transform* transform = static_cast<Transform*>(gameObject->GetComponent(ComponentType::TRANSFORM));
+
+    if (transform == nullptr) return; 
+
+	// Global matrix 
+    glm::mat4 modelMatrix = transform->GetGlobalMatrix();
+
+	// Send matrix to shader
+    GLuint shaderProgram = defaultShader->GetProgramID();
+    GLint modelLoc = glGetUniformLocation(shaderProgram, "model");
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+
+    ComponentMaterial* material = static_cast<ComponentMaterial*>(gameObject->GetComponent(ComponentType::MATERIAL));
+
+	// Check if material exists and is active
+    if (material != nullptr && material->IsActive())
+    {
+        material->Use();  
+    }
+    else
+    {
+        defaultTexture->Bind();
+    }
+
+	// Draw all mesh components
+    std::vector<Component*> meshComponents = gameObject->GetComponentsOfType(ComponentType::MESH);
+
+    for (Component* comp : meshComponents)
+    {
+        ComponentMesh* meshComp = static_cast<ComponentMesh*>(comp);
+
+        if (meshComp->IsActive() && meshComp->HasMesh())
+        {
+            const Mesh& mesh = meshComp->GetMesh();
+            DrawMesh(mesh); 
+        }
+    }
+
+	// Desbind material or default texture
+    if (material != nullptr && material->IsActive())
+    {
+        material->Unbind();
+    }
+    else
+    {
+        defaultTexture->Unbind();
+    }
+
+	// Recursively draw children
+    const std::vector<GameObject*>& children = gameObject->GetChildren();
+    for (GameObject* child : children)
+    {
+        DrawGameObjectRecursive(child);  
+    }
+}
+
