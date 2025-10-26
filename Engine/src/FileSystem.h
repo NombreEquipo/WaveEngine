@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Module.h"
 #include <iostream>
@@ -57,6 +57,8 @@ public:
 private:
 
 	GameObject* ProcessNode(aiNode* node, const aiScene* scene);
+
+	int CountNodes(aiNode* node);
 
 	std::vector<Mesh> meshes;
 	std::string assetsPath;

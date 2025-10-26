@@ -36,15 +36,25 @@ bool FileSystem::Start()
 
 	std::cout << "Trying to load: " << housePath << std::endl;
 
-	unsigned int importFlags = aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_ConvertToLeftHanded;
+	GameObject* houseModel = LoadFBXAsGameObject(housePath);
 
-	if (LoadFBX(housePath, importFlags))
+	if (houseModel != nullptr)
 	{
-		std::cout << "Successfully loaded warrior.fbx!" << std::endl;
+		GameObject* root = Application::GetInstance().scene->GetRoot();
+		root->AddChild(houseModel);
+		std::cout << "FBX loaded" << std::endl;
 	}
 	else
 	{
-		std::cerr << "Failed to load warrior.fbx. Use drag & drop." << std::endl;
+		GameObject* pyramidObject = new GameObject("Pyramid");
+		ComponentMesh* meshComp = static_cast<ComponentMesh*>(pyramidObject->CreateComponent(ComponentType::MESH));
+		Mesh pyramidMesh = Primitives::CreatePyramid();
+		meshComp->SetMesh(pyramidMesh);
+
+		GameObject* root = Application::GetInstance().scene->GetRoot();
+		root->AddChild(pyramidObject);
+
+		std::cerr << "Failed to load FBX. Use drag & drop." << std::endl;
 	}
 	// For loading Baker_house at the beggining
 	return true;
@@ -210,6 +220,7 @@ bool FileSystem::CleanUp()
 
 GameObject* FileSystem::LoadFBXAsGameObject(const std::string& file_path)
 {
+	LOG("Loading FBX as GameObject: %s", file_path.c_str());
 
 	unsigned int importFlags = aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_ConvertToLeftHanded;
 
@@ -228,9 +239,10 @@ GameObject* FileSystem::LoadFBXAsGameObject(const std::string& file_path)
 		return nullptr;
 	}
 
-	std::cout << "FBX loaded successfully!" << std::endl;
+	std::cout << "==== FBX loaded ====" << std::endl;
 	std::cout << "  Meshes: " << scene->mNumMeshes << std::endl;
 	std::cout << "  Materials: " << scene->mNumMaterials << std::endl;
+	std::cout << "  Nodes: " << CountNodes(scene->mRootNode) << std::endl;
 
 	GameObject* rootObject = ProcessNode(scene->mRootNode, scene);
 
@@ -240,14 +252,27 @@ GameObject* FileSystem::LoadFBXAsGameObject(const std::string& file_path)
 	return rootObject;
 }
 
+int FileSystem::CountNodes(aiNode* node)
+{
+	int count = 1;
+	for (unsigned int i = 0; i < node->mNumChildren; i++)
+	{
+		count += CountNodes(node->mChildren[i]);
+	}
+	return count;
+}
+
 GameObject* FileSystem::ProcessNode(aiNode* node, const aiScene* scene)
 {
 	// ======================================================== 1 ====================================================
 	//Create GameObject 
+
 	std::string nodeName = node->mName.C_Str();
 	if (nodeName.empty()) nodeName = "Unnamed";
 
 	GameObject* gameObject = new GameObject(nodeName);
+
+	LOG("Processing node: %s", nodeName.c_str());
 
 	// ======================================================== 2 ====================================================
 
@@ -262,9 +287,12 @@ GameObject* FileSystem::ProcessNode(aiNode* node, const aiScene* scene)
 		node->mTransformation.Decompose(scaling, rotation, position);
 
 		// Set transform
+		float scale = 0.01f; 
 		transform->SetPosition(glm::vec3(position.x, position.y, position.z));
 		transform->SetScale(glm::vec3(scaling.x, scaling.y, scaling.z));
 		transform->SetRotationQuat(glm::quat(rotation.w, rotation.x, rotation.y, rotation.z));
+
+		LOG("  Transform - Pos: (%.2f, %.2f, %.2f), Scale: (%.2f, %.2f, %.2f)", position.x, position.y, position.z, scaling.x, scaling.y, scaling.z);
 	}
 
 	// ======================================================== 3 ====================================================
@@ -273,6 +301,8 @@ GameObject* FileSystem::ProcessNode(aiNode* node, const aiScene* scene)
 	{
 		unsigned int meshIndex = node->mMeshes[i];
 		aiMesh* aiMesh = scene->mMeshes[meshIndex];
+
+		LOG("  Processing mesh %d: %s", i, aiMesh->mName.C_Str());
 
 		ComponentMesh* meshComponent = static_cast<ComponentMesh*>(gameObject->CreateComponent(ComponentType::MESH));
 
@@ -297,6 +327,7 @@ GameObject* FileSystem::ProcessNode(aiNode* node, const aiScene* scene)
 				mesh.texCoords[v * 2 + 0] = aiMesh->mTextureCoords[0][v].x;
 				mesh.texCoords[v * 2 + 1] = aiMesh->mTextureCoords[0][v].y;
 			}
+			LOG("    UV coordinates: YES");
 		}
 		else
 		{
@@ -305,6 +336,7 @@ GameObject* FileSystem::ProcessNode(aiNode* node, const aiScene* scene)
 			{
 				mesh.texCoords[v] = 0.0f;
 			}
+			LOG("    UV coordinates: NO");
 		}
 
 		// Copy indexes
@@ -318,6 +350,8 @@ GameObject* FileSystem::ProcessNode(aiNode* node, const aiScene* scene)
 				memcpy(&mesh.indices[f * 3], aiMesh->mFaces[f].mIndices, 3 * sizeof(unsigned int));
 			}
 		}
+		
+		LOG("    Vertices: %d, Indices: %d", mesh.num_vertices, mesh.num_indices);
 
 		meshComponent->SetMesh(mesh);
 
@@ -338,9 +372,11 @@ GameObject* FileSystem::ProcessNode(aiNode* node, const aiScene* scene)
 				aiString texturePath;
 				material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath);
 
+				LOG("    Material has texture: %s", texturePath.C_Str());
+
 				// Create ComponentMaterial
 				ComponentMaterial* matComponent = static_cast<ComponentMaterial*>(gameObject->GetComponent(ComponentType::MATERIAL));
-
+				
 				//If we don't have one
 				if (matComponent == nullptr)
 				{
@@ -349,6 +385,11 @@ GameObject* FileSystem::ProcessNode(aiNode* node, const aiScene* scene)
 
 				// Assign texture to material
 				std::string textureFile = texturePath.C_Str();
+
+				if (textureFile.find('/') == std::string::npos && textureFile.find('\\') == std::string::npos)
+				{
+					textureFile = "Assets\\" + textureFile;
+				}
 
 				matComponent->LoadTexture(textureFile);
 			}

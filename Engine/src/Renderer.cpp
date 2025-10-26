@@ -194,34 +194,7 @@ bool Renderer::Update()
     {
         DrawScene();
     }
-    else
-    {
-     
-        defaultTexture->Bind();
 
-        const vector<Mesh>& meshes = Application::GetInstance().filesystem->GetMeshes();
-
-        if (!meshes.empty())
-        {
-            glm::mat4 modelMatrix = glm::mat4(1.0f);
-            glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(modelMatrix));
-
-            for (const auto& mesh : meshes)
-            {
-                DrawMesh(mesh);
-            }
-        }
-        else
-        {
-            glm::mat4 modelMatrix = glm::mat4(1.0f);
-            glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"),1, GL_FALSE,glm::value_ptr(modelMatrix));
-
-            DrawMesh(pyramid);
-        }
-
-        defaultTexture->Unbind();
-    }
-     
     defaultTexture->Unbind();
 
     return true;
