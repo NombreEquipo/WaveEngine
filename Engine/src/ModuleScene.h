@@ -1,7 +1,10 @@
 ﻿#pragma once
 #include "Module.h"
-#include "GameObject.h"
+#include "imgui.h"
+#include "imgui_impl_sdl3.h"
+#include "imgui_impl_opengl3.h"
 
+class GameObject;
 class FileSystem;
 class Renderer;
 
@@ -14,6 +17,7 @@ public:
     bool Awake() override;
     bool Start() override;
     bool Update() override;
+	bool PostUpdate() override;
     bool CleanUp() override;
 
     GameObject* CreateGameObject(const std::string& name);
@@ -23,6 +27,7 @@ public:
 private:
 
     GameObject* root = nullptr;
+
 	Renderer* renderer = nullptr;
 	FileSystem* filesystem = nullptr;
 };

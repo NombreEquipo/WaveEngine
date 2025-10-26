@@ -4,7 +4,6 @@
 Application::Application() : isRunning(true)
 {
     std::cout << "Application Constructor" << std::endl;
-
     window = std::make_shared<Window>();
     input = std::make_shared<Input>();
     renderContext = std::make_shared<RenderContext>();
@@ -22,6 +21,7 @@ Application::Application() : isRunning(true)
     AddModule(std::static_pointer_cast<Module>(filesystem));
     AddModule(std::static_pointer_cast<Module>(time));
     AddModule(std::static_pointer_cast<Module>(grid)); 
+
 }
 
 Application& Application::GetInstance()
@@ -106,11 +106,20 @@ bool Application::PostUpdate()
 {
     //Iterates the module list and calls PostUpdate on each module
     bool result = true;
+
     for (const auto& module : moduleList) {
+        if (module == window) {
+            continue;
+        }
+
         result = module.get()->PostUpdate();
         if (!result) {
             break;
         }
+    }
+
+    if (result) {
+        result = window->PostUpdate();
     }
 
     return result;

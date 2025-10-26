@@ -3,6 +3,8 @@
 #include "Application.h"
 #include <iostream>
 #include "Camera.h"
+#include "imgui.h"
+#include "imgui_impl_sdl3.h"
 
 #define MAX_KEYS 300
 
@@ -73,8 +75,15 @@ bool Input::PreUpdate()
 			mouseButtons[i] = KEY_IDLE;
 	}
 
+	ImGuiIO& io = ImGui::GetIO();
+	bool imguiWantCaptureMouse = io.WantCaptureMouse;
+	bool imguiWantCaptureKeyboard = io.WantCaptureKeyboard;
+
 	while (SDL_PollEvent(&event))
 	{
+		// Imgui event
+		ImGui_ImplSDL3_ProcessEvent(&event);
+
 		switch (event.type)
 		{
 		case SDL_EVENT_QUIT:
@@ -93,51 +102,60 @@ bool Input::PreUpdate()
 			break;
 		case SDL_EVENT_MOUSE_BUTTON_DOWN:
 		{
-			mouseButtons[event.button.button - 1] = KEY_DOWN;
-			Camera* camera = Application::GetInstance().renderer->GetCamera();
+			if (!imguiWantCaptureMouse)
+			{
+				mouseButtons[event.button.button - 1] = KEY_DOWN;
+				Camera* camera = Application::GetInstance().renderer->GetCamera();
 
-			if (event.button.button == SDL_BUTTON_RIGHT)
-			{
-				camera->ResetMouseInput();
-			}
-			else if (event.button.button == SDL_BUTTON_LEFT)
-			{
-				camera->ResetOrbitInput();
-			}
-			else if (event.button.button == SDL_BUTTON_MIDDLE)
-			{
-				camera->ResetPanInput();
+				if (event.button.button == SDL_BUTTON_RIGHT)
+				{
+					camera->ResetMouseInput();
+				}
+				else if (event.button.button == SDL_BUTTON_LEFT)
+				{
+					camera->ResetOrbitInput();
+				}
+				else if (event.button.button == SDL_BUTTON_MIDDLE)
+				{
+					camera->ResetPanInput();
+				}
 			}
 			break;
 		}
 		case SDL_EVENT_MOUSE_BUTTON_UP:
-			mouseButtons[event.button.button - 1] = KEY_UP;
+			if (!imguiWantCaptureMouse)
+			{
+				mouseButtons[event.button.button - 1] = KEY_UP;
+			}
 			break;
 		case SDL_EVENT_MOUSE_MOTION:
 		{
-			int scale = Application::GetInstance().window.get()->GetScale();
-			mouseMotionX = static_cast<int>(event.motion.xrel / scale);
-			mouseMotionY = static_cast<int>(event.motion.yrel / scale);
-			float mouseXf = static_cast<float>(event.motion.x) / static_cast<float>(scale);
-			float mouseYf = static_cast<float>(event.motion.y) / static_cast<float>(scale);
+			if (!imguiWantCaptureMouse)
+			{
+				int scale = Application::GetInstance().window.get()->GetScale();
+				mouseMotionX = static_cast<int>(event.motion.xrel / scale);
+				mouseMotionY = static_cast<int>(event.motion.yrel / scale);
+				float mouseXf = static_cast<float>(event.motion.x) / static_cast<float>(scale);
+				float mouseYf = static_cast<float>(event.motion.y) / static_cast<float>(scale);
 
-			Camera* camera = Application::GetInstance().renderer->GetCamera();
+				Camera* camera = Application::GetInstance().renderer->GetCamera();
 
-			// Alt + Click Izquierdo - orbit
-			if ((keys[SDL_SCANCODE_LALT] || keys[SDL_SCANCODE_RALT]) &&
-				(mouseButtons[SDL_BUTTON_LEFT - 1] == KEY_REPEAT || mouseButtons[SDL_BUTTON_LEFT - 1] == KEY_DOWN))
-			{
-				camera->HandleOrbitInput(mouseXf, mouseYf);
-			}
-			// Click Medio - Pan
-			else if (mouseButtons[SDL_BUTTON_MIDDLE - 1] == KEY_REPEAT || mouseButtons[SDL_BUTTON_MIDDLE - 1] == KEY_DOWN)
-			{
-				camera->HandlePanInput(static_cast<float>(mouseMotionX), static_cast<float>(mouseMotionY));
-			}
-			// Click Derecho - Look around 
-			else if (mouseButtons[SDL_BUTTON_RIGHT - 1] == KEY_REPEAT || mouseButtons[SDL_BUTTON_RIGHT - 1] == KEY_DOWN)
-			{
-				camera->HandleMouseInput(mouseXf, mouseYf);
+				// Alt + Click Izquierdo - orbit
+				if ((keys[SDL_SCANCODE_LALT] || keys[SDL_SCANCODE_RALT]) &&
+					(mouseButtons[SDL_BUTTON_LEFT - 1] == KEY_REPEAT || mouseButtons[SDL_BUTTON_LEFT - 1] == KEY_DOWN))
+				{
+					camera->HandleOrbitInput(mouseXf, mouseYf);
+				}
+				// Click Medio - Pan
+				else if (mouseButtons[SDL_BUTTON_MIDDLE - 1] == KEY_REPEAT || mouseButtons[SDL_BUTTON_MIDDLE - 1] == KEY_DOWN)
+				{
+					camera->HandlePanInput(static_cast<float>(mouseMotionX), static_cast<float>(mouseMotionY));
+				}
+				// Click Derecho - Look around 
+				else if (mouseButtons[SDL_BUTTON_RIGHT - 1] == KEY_REPEAT || mouseButtons[SDL_BUTTON_RIGHT - 1] == KEY_DOWN)
+				{
+					camera->HandleMouseInput(mouseXf, mouseYf);
+				}
 			}
 		}
 		break;
@@ -174,8 +192,11 @@ bool Input::PreUpdate()
 
 		case SDL_EVENT_MOUSE_WHEEL:
 		{
-			Camera* camera = Application::GetInstance().renderer->GetCamera();
-			camera->HandleScrollInput(static_cast<float>(event.wheel.y));
+			if (!imguiWantCaptureMouse)
+			{
+				Camera* camera = Application::GetInstance().renderer->GetCamera();
+				camera->HandleScrollInput(static_cast<float>(event.wheel.y));
+			}
 		}
 		break;
 		}
@@ -191,7 +212,7 @@ bool Input::PreUpdate()
 	//}
 
 	// Only active when you press right-click (WASD movement)
-	if (mouseButtons[SDL_BUTTON_RIGHT - 1] == KEY_REPEAT || mouseButtons[SDL_BUTTON_RIGHT - 1] == KEY_DOWN)
+	if (!io.WantCaptureKeyboard && (mouseButtons[SDL_BUTTON_RIGHT - 1] == KEY_REPEAT || mouseButtons[SDL_BUTTON_RIGHT - 1] == KEY_DOWN)) 
 	{
 		const float cameraBaseSpeed = 2.5f;
 		float speedMultiplier = keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT] ? 2.0f : 1.0f;
