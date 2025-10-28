@@ -17,6 +17,11 @@ public:
 	bool CleanUp() override;
 
 private:
+	bool ShowMenuBar();
 	bool ShowTest();
 
+	bool showConsole = false;
+	bool showHierarchy = false;
+	bool showInspector = false;
+	bool showAbout = false;
 };

@@ -253,25 +253,25 @@ Mesh FileSystem::ProcessMesh(aiMesh* aiMesh, const aiScene* scene)
 {
     Mesh mesh;
 
-    // Reservar espacio para eficiencia
+    // Reserve space for efficiency
     mesh.vertices.reserve(aiMesh->mNumVertices);
     mesh.indices.reserve(aiMesh->mNumFaces * 3);
 
-    // ======================================================== 
-    // Procesar vértices
-    // ======================================================== 
+    // ========================================================
+    // Process vertices
+    // ========================================================
     for (unsigned int i = 0; i < aiMesh->mNumVertices; i++)
     {
         Vertex vertex;
 
-        // Posición
+        // Position
         vertex.position = glm::vec3(
             aiMesh->mVertices[i].x,
             aiMesh->mVertices[i].y,
             aiMesh->mVertices[i].z
         );
 
-        // Normales
+        // Normals
         if (aiMesh->HasNormals())
         {
             vertex.normal = glm::vec3(
@@ -285,7 +285,7 @@ Mesh FileSystem::ProcessMesh(aiMesh* aiMesh, const aiScene* scene)
             vertex.normal = glm::vec3(0.0f, 1.0f, 0.0f);
         }
 
-        // Coordenadas de textura
+        // Texture coordinates
         if (aiMesh->HasTextureCoords(0))
         {
             vertex.texCoords = glm::vec2(
@@ -301,9 +301,9 @@ Mesh FileSystem::ProcessMesh(aiMesh* aiMesh, const aiScene* scene)
         mesh.vertices.push_back(vertex);
     }
 
-    // ======================================================== 
-    // Procesar índices
-    // ======================================================== 
+    // ========================================================
+    // Process indices
+    // ========================================================
     for (unsigned int i = 0; i < aiMesh->mNumFaces; i++)
     {
         aiFace face = aiMesh->mFaces[i];

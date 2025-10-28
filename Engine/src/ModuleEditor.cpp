@@ -3,6 +3,7 @@
 #include "Log.h"
 #include <gl/GL.h>
 #include <SDL3/SDL_timer.h>
+#include <SDL3/SDL.h>
 
 ModuleEditor::ModuleEditor() {
 	name = "ModuleEditor";
@@ -45,6 +46,7 @@ bool ModuleEditor::PostUpdate() {
 	ImGui_ImplSDL3_NewFrame();
 	ImGui::NewFrame();
 
+	ShowMenuBar();
 	ShowTest();
 
 	ImGui::Render();
@@ -59,6 +61,47 @@ bool ModuleEditor::CleanUp() {
 	ImGui_ImplSDL3_Shutdown();
 	ImGui::DestroyContext();
 
+	return true;
+}
+
+bool ModuleEditor::ShowMenuBar() {
+	if (ImGui::BeginMainMenuBar()) {
+
+		if (ImGui::BeginMenu("File")) {
+			if (ImGui::MenuItem("Exit")) {
+				// Exit the application
+				Application::GetInstance().RequestExit();
+			}
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("View")) {
+			ImGui::MenuItem("Console", NULL, &showConsole);
+			ImGui::MenuItem("Hierarchy", NULL, &showHierarchy);
+			ImGui::MenuItem("Inspector", NULL, &showInspector);
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Help")) {
+			if (ImGui::MenuItem("Documentation")) {
+				// Open browser with documentation
+				SDL_OpenURL("https://github.com/Audra0000/Engine");
+			}
+			if (ImGui::MenuItem("Report a Bug")) {
+				// Open browser with issue tracker
+				SDL_OpenURL("https://github.com/Audra0000/Engine/issues");
+			}
+			if (ImGui::MenuItem("Download Latest")) {
+				// Open browser with latest releases
+				SDL_OpenURL("https://github.com/Audra0000/Engine/releases");
+			}
+			ImGui::Separator();
+			ImGui::MenuItem("About", NULL, &showAbout);
+			ImGui::EndMenu();
+		}
+
+		ImGui::EndMainMenuBar();
+	}
 	return true;
 }
 
@@ -80,8 +123,8 @@ bool ModuleEditor::ShowTest() {
 	ImGui::PlotLines("FPS", fpsHistory.data(), fpsHistory.size(), 0, NULL, 0.0f, FLT_MAX, ImVec2(0, 80));
 	ImGui::Separator();
 	ImGui::PlotHistogram("FPS", fpsHistory.data(), fpsHistory.size(), 0, NULL, 0.0f, FLT_MAX, ImVec2(0, 80));
-	
-	
+
+
 	if (ImGui::Button("Save")) {
 		//etc
 	}

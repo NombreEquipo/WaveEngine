@@ -45,6 +45,8 @@ set(UTILS_SRC
     src/Texture.cpp
     src/Grid.cpp
     src/Grid.h
+    src/ModuleEditor.cpp
+    src/ModuleEditor.h
 )
 
 set(GAMEOBJECTS_SRC 
