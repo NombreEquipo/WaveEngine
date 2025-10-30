@@ -12,7 +12,7 @@ struct aiScene;
 struct aiMesh;
 struct aiMaterial;
 
-// Modern vertex structure
+// Vertex data structure
 struct Vertex {
     glm::vec3 position;
     glm::vec3 normal;
@@ -21,12 +21,12 @@ struct Vertex {
 
 // Texture information
 struct TextureInfo {
-    unsigned int id;
-    std::string type;   // e.g., "texture_diffuse", "texture_specular"
+    unsigned int id = 0;
+    std::string type;  // e.g., "diffuse", "specular", "normal"
     std::string path;
 };
 
-// Mesh data container (no OpenGL logic)
+// Mesh container with vertex data and OpenGL buffer IDs
 struct Mesh {
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
@@ -36,18 +36,11 @@ struct Mesh {
     unsigned int VAO = 0;
     unsigned int VBO = 0;
     unsigned int EBO = 0;
+
+    bool IsValid() const { return VAO != 0; }
 };
 
-// Model containing multiple meshes
-class Model {
-public:
-    std::vector<Mesh> meshes;
-    std::string directory;
-
-    Model() = default;
-    ~Model() = default;
-};
-
+// FBX/Model loading and management
 class FileSystem : public Module
 {
 public:
@@ -62,12 +55,22 @@ public:
     // Loads an FBX file and converts it into a GameObject hierarchy
     GameObject* LoadFBXAsGameObject(const std::string& file_path);
 
+    // Apply texture to a GameObject and its children
+    bool ApplyTextureToGameObject(GameObject* obj, const std::string& texturePath);
+
 private:
+    // Recursively process scene nodes
     GameObject* ProcessNode(aiNode* node, const aiScene* scene, const std::string& directory);
+
+    // Convert Assimp mesh to engine mesh format
     Mesh ProcessMesh(aiMesh* aiMesh, const aiScene* scene);
-    std::vector<TextureInfo> LoadMaterialTextures(aiMaterial* mat, unsigned int type, const std::string& typeName, const std::string& directory);
 
-    int CountNodes(aiNode* node);
+    // Scale model to fit target size
+    void NormalizeModelScale(GameObject* rootObject, float targetSize);
 
-    std::string assetsPath;
+    // Calculate world-space bounding box
+    void CalculateBoundingBox(GameObject* obj, glm::vec3& minBounds, glm::vec3& maxBounds, const glm::mat4& parentTransform);
+
+    // Detect and return rotation correction (Z-up to Y-up conversion)
+    glm::quat DetectCorrectionRotation(const aiScene* scene, const glm::vec3& modelSize);
 };

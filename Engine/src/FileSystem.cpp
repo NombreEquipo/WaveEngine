@@ -1,8 +1,11 @@
 ﻿#include "FileSystem.h"
+#define NOMINMAX  
 #include <assimp/scene.h>
 #include <assimp/postprocess.h> 
 #include <assimp/cimport.h>
 #include <windows.h>
+#include <algorithm>
+#include <limits>
 #include "Application.h"
 #include "GameObject.h"
 #include "Transform.h"
@@ -23,14 +26,15 @@ bool FileSystem::Start()
     LOG_DEBUG("Initializing FileSystem module");
     LOG_CONSOLE("FileSystem initialized");
 
-    // Get directory of executable
+    // Get executable directory and move to Assets folder
     char buffer[MAX_PATH];
     GetModuleFileNameA(NULL, buffer, MAX_PATH);
     std::string execPath(buffer);
+
     size_t pos = execPath.find_last_of("\\/");
     std::string execDir = execPath.substr(0, pos);
 
-    // Move up two levels: from build/ to Engine/, then to root
+    // Go up two levels: build/ -> Engine/ -> root/
     pos = execDir.find_last_of("\\/");
     std::string parentDir = execDir.substr(0, pos);
     pos = parentDir.find_last_of("\\/");
@@ -45,14 +49,6 @@ bool FileSystem::Start()
 
     if (houseModel != nullptr)
     {
-        //FORCE correct position and scale
-        Transform* t = static_cast<Transform*>(houseModel->GetComponent(ComponentType::TRANSFORM));
-        if (t != nullptr)
-        {
-            t->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
-            t->SetScale(glm::vec3(0.01f, 0.01f, 0.01f));  // <-- IMPORTANTE REVISAR: escala pequeña
-        }
-
         GameObject* root = Application::GetInstance().scene->GetRoot();
         root->AddChild(houseModel);
         LOG_DEBUG("FBX loaded from: %s", housePath.c_str());
@@ -133,8 +129,14 @@ GameObject* FileSystem::LoadFBXAsGameObject(const std::string& file_path)
     LOG_DEBUG("File: %s", file_path.c_str());
     LOG_CONSOLE("Loading model with ASSIMP...");
 
-    unsigned int importFlags = aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_ConvertToLeftHanded;
-
+    unsigned int importFlags =
+        aiProcess_Triangulate |
+        aiProcess_GenNormals |
+        aiProcess_FlipUVs |
+        aiProcess_JoinIdenticalVertices |
+        aiProcess_OptimizeMeshes |
+        aiProcess_ValidateDataStructure;
+        
     LOG_DEBUG("ASSIMP import flags: TargetRealtime_MaxQuality | ConvertToLeftHanded");
 
     const aiScene* scene = aiImportFile(file_path.c_str(), importFlags);
@@ -151,54 +153,80 @@ GameObject* FileSystem::LoadFBXAsGameObject(const std::string& file_path)
     {
         LOG_DEBUG("ERROR: No meshes found in scene");
         LOG_CONSOLE("ERROR: No geometry found in model");
-
         aiReleaseImport(scene);
         return nullptr;
     }
 
-    // Extraer directorio del archivo para texturas
     std::string directory = file_path.substr(0, file_path.find_last_of("/\\"));
 
     LOG_DEBUG("=== ASSIMP Scene Information ===");
     LOG_DEBUG("  Meshes: %d", scene->mNumMeshes);
     LOG_DEBUG("  Materials: %d", scene->mNumMaterials);
-    LOG_DEBUG("  Nodes: %d", CountNodes(scene->mRootNode));
-    LOG_CONSOLE("ASSIMP: Found %d meshes, %d materials, %d nodes", scene->mNumMeshes, scene->mNumMaterials, CountNodes(scene->mRootNode));
+    LOG_CONSOLE("ASSIMP: Found %d meshes, %d materials", scene->mNumMeshes, scene->mNumMaterials);
 
-    GameObject* rootObject = ProcessNode(scene->mRootNode, scene, directory);
+    GameObject* rootObj = ProcessNode(scene->mRootNode, scene, directory);
+
+    glm::vec3 minBounds(std::numeric_limits<float>::max());
+    glm::vec3 maxBounds(std::numeric_limits<float>::lowest());
+    glm::mat4 identity(1.0f);
+    CalculateBoundingBox(rootObj, minBounds, maxBounds, identity);
+
+    glm::vec3 size = maxBounds - minBounds;
+    LOG_DEBUG("Model Dimensions: X=%.2f Y=%.2f Z=%.2f", size.x, size.y, size.z);
+
+    std::string fileName = file_path.substr(file_path.find_last_of("/\\") + 1);
+    std::transform(fileName.begin(), fileName.end(), fileName.begin(), ::tolower);
+
+    glm::quat correction = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+
+    // Hardcoded rotation fix for BakerHouse model
+    if (fileName.find("baker") != std::string::npos || fileName.find("house") != std::string::npos)
+    {
+        correction = glm::angleAxis(glm::radians(90.0f), glm::vec3(1, 0, 0));
+    }
+    else
+    {
+        correction = DetectCorrectionRotation(scene, size);
+    }
+
+    glm::quat identity_quat(1.0f, 0.0f, 0.0f, 0.0f);
+    float dot_product = glm::dot(correction, identity_quat);
+
+    if (std::abs(dot_product - 1.0f) > 0.0001f)
+    {
+        Transform* rootTransform = static_cast<Transform*>(rootObj->GetComponent(ComponentType::TRANSFORM));
+        if (rootTransform)
+        {
+            LOG_DEBUG("Applying rotation correction to root transform");
+            glm::quat existing = rootTransform->GetRotationQuat();
+            rootTransform->SetRotationQuat(correction * existing);
+        }
+    }
+    else
+    {
+        LOG_DEBUG("No rotation correction needed");
+    }
+
+    // Normalize scale
+    NormalizeModelScale(rootObj, 5.0f);
 
     aiReleaseImport(scene);
 
     LOG_DEBUG("=== FBX Loading Complete ===");
     LOG_DEBUG("GameObject hierarchy created successfully");
     LOG_CONSOLE("Model loaded successfully");
-
-    return rootObject;
-}
-
-int FileSystem::CountNodes(aiNode* node)
-{
-    int count = 1;
-    for (unsigned int i = 0; i < node->mNumChildren; i++)
-    {
-        count += CountNodes(node->mChildren[i]);
-    }
-    return count;
+    
+    return rootObj;
 }
 
 GameObject* FileSystem::ProcessNode(aiNode* node, const aiScene* scene, const std::string& directory)
 {
-    // ======================================================== 1 ====================================================
-    // Create GameObject 
     std::string nodeName = node->mName.C_Str();
     if (nodeName.empty()) nodeName = "Unnamed";
 
     GameObject* gameObject = new GameObject(nodeName);
 
     LOG_DEBUG("Processing node: %s", nodeName.c_str());
-
-    // ======================================================== 2 ====================================================
-    // Get Transform component
 
     Transform* transform = static_cast<Transform*>(gameObject->GetComponent(ComponentType::TRANSFORM));
 
@@ -210,15 +238,10 @@ GameObject* FileSystem::ProcessNode(aiNode* node, const aiScene* scene, const st
 
         transform->SetPosition(glm::vec3(position.x, position.y, position.z));
         transform->SetScale(glm::vec3(scaling.x, scaling.y, scaling.z));
-
-        // NO aplicar la rotación del FBX
-        // transform->SetRotationQuat(glm::quat(rotation.w, rotation.x, rotation.y, rotation.z));
-        // En su lugar, dejar rotación por defecto (identidad)
-        transform->SetRotationQuat(glm::quat(1.0f, 0.0f, 0.0f, 0.0f));
+        transform->SetRotationQuat(glm::quat(rotation.w, rotation.x, rotation.y, rotation.z));
     }
 
-    // ======================================================== 3 ====================================================
-    // Process meshes
+    // Process all meshes for this node
     for (unsigned int i = 0; i < node->mNumMeshes; i++)
     {
         unsigned int meshIndex = node->mMeshes[i];
@@ -226,15 +249,12 @@ GameObject* FileSystem::ProcessNode(aiNode* node, const aiScene* scene, const st
 
         LOG_DEBUG("  Processing mesh %d: %s", i, aiMesh->mName.C_Str());
 
-        // Procesar mesh con nueva estructura
         Mesh mesh = ProcessMesh(aiMesh, scene);
 
-        // Crear ComponentMesh y asignar
         ComponentMesh* meshComponent = static_cast<ComponentMesh*>(gameObject->CreateComponent(ComponentType::MESH));
         meshComponent->SetMesh(mesh);
 
-        // ======================================================== 4 ====================================================
-        // Material handling
+        // Load diffuse textures if available
         if (aiMesh->mMaterialIndex >= 0)
         {
             aiMaterial* material = scene->mMaterials[aiMesh->mMaterialIndex];
@@ -254,18 +274,41 @@ GameObject* FileSystem::ProcessNode(aiNode* node, const aiScene* scene, const st
                 }
 
                 std::string textureFile = texturePath.C_Str();
-                if (textureFile.find('/') == std::string::npos && textureFile.find('\\') == std::string::npos)
+                std::string fileName;
+
+                size_t lastSlash = textureFile.find_last_of("/\\");
+                if (lastSlash != std::string::npos)
+                    fileName = textureFile.substr(lastSlash + 1);
+                else
+                    fileName = textureFile;
+
+                std::vector<std::string> searchPaths = {
+                    directory + "\\" + fileName,
+                    directory + "\\Textures\\" + fileName,
+                    textureFile
+                };
+
+                bool loaded = false;
+                for (const auto& path : searchPaths)
                 {
-                    textureFile = directory + "\\" + textureFile;
+                    LOG_DEBUG("      Trying texture at: %s", path.c_str());
+                    if (matComponent->LoadTexture(path))
+                    {
+                        LOG_DEBUG("      Texture loaded successfully from: %s", path.c_str());
+                        loaded = true;
+                        break;
+                    }
                 }
 
-                matComponent->LoadTexture(textureFile);
+                if (!loaded)
+                {
+                    LOG_DEBUG("      Texture '%s' not found, using checkerboard", fileName.c_str());
+                }
             }
         }
     }
 
-    // ======================================================== 5 ====================================================
-    // Recursive for children
+    // Recursively process child nodes
     for (unsigned int i = 0; i < node->mNumChildren; i++)
     {
         GameObject* child = ProcessNode(node->mChildren[i], scene, directory);
@@ -282,25 +325,20 @@ Mesh FileSystem::ProcessMesh(aiMesh* aiMesh, const aiScene* scene)
 {
     Mesh mesh;
 
-    // Reserve space for efficiency
     mesh.vertices.reserve(aiMesh->mNumVertices);
     mesh.indices.reserve(aiMesh->mNumFaces * 3);
 
-    // ========================================================
-    // Process vertices
-    // ========================================================
+    // Vertices
     for (unsigned int i = 0; i < aiMesh->mNumVertices; i++)
     {
         Vertex vertex;
 
-        // Position
         vertex.position = glm::vec3(
             aiMesh->mVertices[i].x,
             aiMesh->mVertices[i].y,
             aiMesh->mVertices[i].z
         );
 
-        // Normals
         if (aiMesh->HasNormals())
         {
             vertex.normal = glm::vec3(
@@ -314,7 +352,6 @@ Mesh FileSystem::ProcessMesh(aiMesh* aiMesh, const aiScene* scene)
             vertex.normal = glm::vec3(0.0f, 1.0f, 0.0f);
         }
 
-        // Texture coordinates
         if (aiMesh->HasTextureCoords(0))
         {
             vertex.texCoords = glm::vec2(
@@ -330,9 +367,7 @@ Mesh FileSystem::ProcessMesh(aiMesh* aiMesh, const aiScene* scene)
         mesh.vertices.push_back(vertex);
     }
 
-    // ========================================================
-    // Process indices
-    // ========================================================
+    // Indices
     for (unsigned int i = 0; i < aiMesh->mNumFaces; i++)
     {
         aiFace face = aiMesh->mFaces[i];
@@ -347,25 +382,178 @@ Mesh FileSystem::ProcessMesh(aiMesh* aiMesh, const aiScene* scene)
     return mesh;
 }
 
-std::vector<TextureInfo> FileSystem::LoadMaterialTextures(aiMaterial* mat, unsigned int type,
-    const std::string& typeName,
-    const std::string& directory)
+void FileSystem::NormalizeModelScale(GameObject* rootObject, float targetSize)
 {
-    std::vector<TextureInfo> textures;
+    glm::vec3 minBounds(std::numeric_limits<float>::max());
+    glm::vec3 maxBounds(std::numeric_limits<float>::lowest());
 
-    for (unsigned int i = 0; i < mat->GetTextureCount((aiTextureType)type); i++)
+    glm::mat4 identity(1.0f);
+    CalculateBoundingBox(rootObject, minBounds, maxBounds, identity);
+
+    glm::vec3 size = maxBounds - minBounds;
+
+    float maxDimension = std::max({ size.x, size.y, size.z });
+
+    if (maxDimension > 0.0f)
     {
-        aiString str;
-        mat->GetTexture((aiTextureType)type, i, &str);
+        float scale = targetSize / maxDimension;
+        Transform* t = static_cast<Transform*>(rootObject->GetComponent(ComponentType::TRANSFORM));
+        if (t != nullptr)
+        {
+            glm::vec3 currentScale = t->GetScale();
+            t->SetScale(currentScale * scale);
+        }
 
-        TextureInfo texture;
-        texture.path = directory + "/" + str.C_Str();
-        texture.type = typeName;
-        // El ID se asignará después en el Renderer
-        texture.id = 0;
+        LOG_DEBUG("Model normalized: %.2f -> scale=%.4f", maxDimension, scale);
+        LOG_CONSOLE("Model scaled to fit viewport (scale: %.4f)", scale);
+    }
+}
 
-        textures.push_back(texture);
+void FileSystem::CalculateBoundingBox(GameObject* obj, glm::vec3& minBounds, glm::vec3& maxBounds, const glm::mat4& parentTransform)
+{
+    Transform* t = static_cast<Transform*>(obj->GetComponent(ComponentType::TRANSFORM));
+    glm::mat4 localTransform(1.0f);
+
+    if (t != nullptr)
+    {
+        glm::vec3 pos = t->GetPosition();
+        glm::vec3 scale = t->GetScale();
+        glm::quat rot = t->GetRotationQuat();
+
+        glm::mat4 translation = glm::translate(glm::mat4(1.0f), pos);
+        glm::mat4 rotation = glm::mat4_cast(rot);
+        glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scale);
+
+        localTransform = translation * rotation * scaleMatrix;
     }
 
-    return textures;
+    glm::mat4 worldTransform = parentTransform * localTransform;
+
+    ComponentMesh* meshComp = static_cast<ComponentMesh*>(obj->GetComponent(ComponentType::MESH));
+    if (meshComp != nullptr)
+    {
+        const Mesh& mesh = meshComp->GetMesh();
+
+        for (const auto& vertex : mesh.vertices)
+        {
+            glm::vec4 worldPos = worldTransform * glm::vec4(vertex.position, 1.0f);
+            glm::vec3 pos3(worldPos.x, worldPos.y, worldPos.z);
+
+            minBounds.x = std::min(minBounds.x, pos3.x);
+            minBounds.y = std::min(minBounds.y, pos3.y);
+            minBounds.z = std::min(minBounds.z, pos3.z);
+
+            maxBounds.x = std::max(maxBounds.x, pos3.x);
+            maxBounds.y = std::max(maxBounds.y, pos3.y);
+            maxBounds.z = std::max(maxBounds.z, pos3.z);
+        }
+    }
+
+    for (GameObject* child : obj->GetChildren())
+    {
+        CalculateBoundingBox(child, minBounds, maxBounds, worldTransform);
+    }
+}
+
+glm::quat FileSystem::DetectCorrectionRotation(const aiScene* scene, const glm::vec3& modelSize)
+{
+    LOG_DEBUG("=== Rotation Detection ===");
+    LOG_DEBUG("Model size - X: %.2f Y: %.2f Z: %.2f", modelSize.x, modelSize.y, modelSize.z);
+
+    glm::quat correction = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+
+    // Try reading metadata first
+    if (scene && scene->mMetaData)
+    {
+        LOG_DEBUG("Metadata found in scene");
+
+        int upAxis = 1;
+        int upAxisSign = 1;
+
+        bool hasUpAxis = scene->mMetaData->Get("UpAxis", upAxis);
+        bool hasUpAxisSign = scene->mMetaData->Get("UpAxisSign", upAxisSign);
+
+        LOG_DEBUG("UpAxis: %d (found: %s)", upAxis, hasUpAxis ? "yes" : "no");
+        LOG_DEBUG("UpAxisSign: %d (found: %s)", upAxisSign, hasUpAxisSign ? "yes" : "no");
+
+        if (upAxis == 2) // Z-up detected
+        {
+            LOG_DEBUG(">>> Z-up detected! Applying -90° X rotation");
+            LOG_CONSOLE("Model orientation corrected (Z-up to Y-up)");
+            correction = glm::angleAxis(glm::radians(-90.0f * (float)upAxisSign), glm::vec3(1, 0, 0));
+            return correction;
+        }
+        else if (upAxis == 1) // Y-up (OpenGL)
+        {
+            LOG_DEBUG(">>> Y-up detected, no correction needed");
+        }
+    }
+    else
+    {
+        LOG_DEBUG("No metadata found, using heuristic detection");
+    }
+
+    float yzRatio = (modelSize.y > 0.0001f) ? (modelSize.z / modelSize.y) : 0.0f;
+
+    LOG_DEBUG("YZ Ratio: %.2f (threshold: 1.4)", yzRatio);
+
+    if (yzRatio > 1.4f)
+    {
+        LOG_DEBUG(">>> Heuristic: Z dimension dominant, applying -90° X rotation");
+        LOG_CONSOLE("Model orientation corrected (heuristic)");
+        correction = glm::angleAxis(glm::radians(-90.0f), glm::vec3(1, 0, 0));
+    }
+    else
+    {
+        LOG_DEBUG(">>> No correction applied");
+    }
+
+    LOG_DEBUG("======================");
+    return correction;
+}
+
+bool FileSystem::ApplyTextureToGameObject(GameObject* obj, const std::string& texturePath)
+{
+    if (!obj || !obj->IsActive())
+        return false;
+
+    bool applied = false;
+
+    // Verificar si el objeto tiene un mesh
+    ComponentMesh* meshComp = static_cast<ComponentMesh*>(obj->GetComponent(ComponentType::MESH));
+
+    if (meshComp && meshComp->IsActive() && meshComp->HasMesh())
+    {
+        // Obtener o crear el componente de material
+        ComponentMaterial* matComp = static_cast<ComponentMaterial*>(
+            obj->GetComponent(ComponentType::MATERIAL));
+
+        if (matComp == nullptr)
+        {
+            matComp = static_cast<ComponentMaterial*>(
+                obj->CreateComponent(ComponentType::MATERIAL));
+        }
+
+        // Cargar la textura
+        if (matComp->LoadTexture(texturePath))
+        {
+            LOG_DEBUG("  ✓ Texture applied to: %s", obj->GetName().c_str());
+            applied = true;
+        }
+        else
+        {
+            LOG_DEBUG("  ✗ Failed to apply texture to: %s", obj->GetName().c_str());
+        }
+    }
+
+    // Aplicar recursivamente a los hijos
+    for (GameObject* child : obj->GetChildren())
+    {
+        if (ApplyTextureToGameObject(child, texturePath))
+        {
+            applied = true;
+        }
+    }
+
+    return applied;
 }
