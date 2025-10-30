@@ -81,17 +81,41 @@ bool FileSystem::Update()
                 GameObject* root = Application::GetInstance().scene->GetRoot();
                 root->AddChild(loadedModel);
 
-                std::cout << "Model loaded: " << loadedModel->GetName() << std::endl;
-                std::cout << "Children count: " << loadedModel->GetChildren().size() << std::endl;
+                LOG( "Model loaded: %s", loadedModel->GetName().c_str());
+                LOG( "Children count: %zu", loadedModel->GetChildren().size());
             }
             else
             {
-                std::cerr << "Failed to load FBX" << std::endl;
+                LOG("✗ Failed to load FBX");
             }
         }
         else if (fileType == DROPPED_TEXTURE)
         {
-            Application::GetInstance().renderer->LoadTexture(filePath);
+            // Get all selected objects in the editor
+            std::vector<GameObject*> selectedObjects =
+                Application::GetInstance().selectionManager->GetSelectedObjects();
+
+            if (!selectedObjects.empty())
+            {
+                // Apply the texture to all selected objects
+                int successCount = 0;
+                for (GameObject* obj : selectedObjects)
+                {
+                    if (ApplyTextureToGameObject(obj, filePath))
+                    {
+                        successCount++;
+                    }
+                }
+
+                LOG( "✓ Texture applied to %d of %zu selected objects",
+                    successCount, selectedObjects.size());
+            }
+            else
+            {
+                // Fallback behavior: load the texture globally if no objects are selected
+                LOG( "No objects selected. Loading texture globally.");
+                Application::GetInstance().renderer->LoadTexture(filePath);
+            }
         }
     }
 
@@ -103,6 +127,53 @@ bool FileSystem::CleanUp()
     aiDetachAllLogStreams();
     return true;
 }
+
+bool FileSystem::ApplyTextureToGameObject(GameObject* obj, const std::string& texturePath)
+{
+    if (!obj || !obj->IsActive())
+        return false;
+
+    bool applied = false;
+
+    // Check if the object has a mesh
+    ComponentMesh* meshComp = static_cast<ComponentMesh*>(obj->GetComponent(ComponentType::MESH));
+
+    if (meshComp && meshComp->IsActive() && meshComp->HasMesh())
+    {
+        // Get or create the material component
+        ComponentMaterial* matComp = static_cast<ComponentMaterial*>(
+            obj->GetComponent(ComponentType::MATERIAL));
+
+        if (matComp == nullptr)
+        {
+            matComp = static_cast<ComponentMaterial*>(
+                obj->CreateComponent(ComponentType::MATERIAL));
+        }
+
+        // Load the texture
+        if (matComp->LoadTexture(texturePath))
+        {
+            LOG(__FILE__, __LINE__, "✓ Texture applied to: %s", obj->GetName().c_str());
+            applied = true;
+        }
+        else
+        {
+            LOG(__FILE__, __LINE__, "✗ Failed to apply texture to: %s", obj->GetName().c_str());
+        }
+    }
+
+    // Recursively apply to children
+    for (GameObject* child : obj->GetChildren())
+    {
+        if (ApplyTextureToGameObject(child, texturePath))
+        {
+            applied = true;
+        }
+    }
+
+    return applied;
+}
+
 
 GameObject* FileSystem::LoadFBXAsGameObject(const std::string& file_path)
 {

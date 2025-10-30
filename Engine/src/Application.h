@@ -12,6 +12,7 @@
 #include "ModuleScene.h"
 #include "Grid.h"
 #include "ModuleEditor.h"
+#include "SelectionManager.h"
 
 class Module;
 
@@ -46,6 +47,8 @@ public:
     std::shared_ptr<ModuleScene> scene;
     std::shared_ptr<ModuleEditor> editor;
     std::shared_ptr<Grid> grid;
+
+    SelectionManager* selectionManager;
 
 private:
     // Private constructor for singleton

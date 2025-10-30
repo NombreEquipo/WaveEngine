@@ -185,3 +185,27 @@ void Camera::Update()
 	UpdateCameraVectors();
 	viewMatrix = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 }
+
+glm::vec3 Camera::ScreenToWorldRay(int mouseX, int mouseY, int screenWidth, int screenHeight) const
+{
+	// Convert screen coordinates to Normalized Device Coordinates (NDC)
+	float x = (2.0f * mouseX) / screenWidth - 1.0f;
+	float y = 1.0f - (2.0f * mouseY) / screenHeight;  // Invert Y axis because screen Y goes down
+
+	// Create a point in clip space (homogeneous coordinates)
+	glm::vec4 rayClip = glm::vec4(x, y, -1.0f, 1.0f);
+
+	// Convert from clip space to eye (camera) space
+	glm::mat4 projMatrix = GetProjectionMatrix();
+	glm::vec4 rayEye = glm::inverse(projMatrix) * rayClip;
+	rayEye = glm::vec4(rayEye.x, rayEye.y, -1.0f, 0.0f); // Set forward direction in eye space
+
+	// Convert from eye space to world space
+	glm::mat4 viewMatrix = GetViewMatrix();
+	glm::vec4 rayWorld = glm::inverse(viewMatrix) * rayEye;
+
+	// Normalize the direction vector
+	glm::vec3 rayDir = glm::normalize(glm::vec3(rayWorld));
+
+	return rayDir;
+}

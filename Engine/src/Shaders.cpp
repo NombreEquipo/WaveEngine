@@ -14,7 +14,7 @@ Shader::~Shader()
 
 bool Shader::Create()
 {
-    // Vertex Shader - Simple y funcional
+    // Vertex Shader 
     const char* vertexShaderSource = "#version 330 core\n"
         "layout (location = 0) in vec3 aPos;\n"
         "layout (location = 1) in vec3 aNormal;\n"
@@ -53,9 +53,11 @@ bool Shader::Create()
         "out vec4 FragColor;\n"
         "in vec2 TexCoord;\n"
         "uniform sampler2D texture1;\n"
+        "uniform vec3 tintColor;\n"  //
         "void main()\n"
         "{\n"
-        "   FragColor = texture(texture1, TexCoord);\n"
+        "   vec4 texColor = texture(texture1, TexCoord);\n"
+        "   FragColor = vec4(texColor.rgb * tintColor, texColor.a);\n"  
         "}\0";
 
     unsigned int fragmentShader;

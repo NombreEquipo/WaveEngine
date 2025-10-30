@@ -237,20 +237,29 @@ void Renderer::DrawGameObjectRecursive(GameObject* gameObject)
         return;
 
     Transform* transform = static_cast<Transform*>(gameObject->GetComponent(ComponentType::TRANSFORM));
+    if (transform == nullptr) return;
 
-    if (transform == nullptr) return; 
-
-	// Global matrix 
     glm::mat4 modelMatrix = transform->GetGlobalMatrix();
 
-	// Send matrix to shader
     GLuint shaderProgram = defaultShader->GetProgramID();
     GLint modelLoc = glGetUniformLocation(shaderProgram, "model");
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
+    //Selection tint============================
+    SelectionManager* selectionMgr = Application::GetInstance().selectionManager;
+
+    if (selectionMgr->IsSelected(gameObject))
+    {
+        defaultShader->SetVec3("tintColor", glm::vec3(1.5f, 1.5f, 0.3f)); // yellow
+    }
+    else
+    {
+        defaultShader->SetVec3("tintColor", glm::vec3(1.0f, 1.0f, 1.0f)); // Normal
+    }
+    // ==========================================
+
     ComponentMaterial* material = static_cast<ComponentMaterial*>(gameObject->GetComponent(ComponentType::MATERIAL));
 
-    // Use material texture or default texture
     if (material != nullptr && material->IsActive())
     {
         material->Use();
@@ -260,7 +269,7 @@ void Renderer::DrawGameObjectRecursive(GameObject* gameObject)
         defaultTexture->Bind();
     }
 
-	// Draw all mesh components
+    // Draw all mesh components
     std::vector<Component*> meshComponents = gameObject->GetComponentsOfType(ComponentType::MESH);
 
     for (Component* comp : meshComponents)
@@ -270,7 +279,7 @@ void Renderer::DrawGameObjectRecursive(GameObject* gameObject)
         if (meshComp->IsActive() && meshComp->HasMesh())
         {
             const Mesh& mesh = meshComp->GetMesh();
-            DrawMesh(mesh); 
+            DrawMesh(mesh);
         }
     }
 

@@ -33,6 +33,7 @@ public:
 	glm::vec3 GetOrbitTarget() const { return orbitTarget; }
 	void ResetOrbitInput() { firstOrbit = true; }
 	void ResetPanInput() { firstPan = true; }
+	glm::vec3 ScreenToWorldRay(int mouseX, int mouseY, int screenWidth, int screenHeight) const;
 
 private:
 	glm::vec3 cameraPos;

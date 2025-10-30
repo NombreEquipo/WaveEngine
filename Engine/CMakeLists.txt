@@ -62,6 +62,8 @@ set(GAMEOBJECTS_SRC
     src/ModuleScene.h 
     src/Transform.cpp 
     src/Transform.h 
+    src/SelectionManager.h
+    src/SelectionManager.cpp
 )
 
 source_group("Source\\Core" FILES ${CORE_SRC})

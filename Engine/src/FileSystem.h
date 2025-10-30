@@ -55,8 +55,14 @@ public:
     // Loads an FBX file and converts it into a GameObject hierarchy
     GameObject* LoadFBXAsGameObject(const std::string& file_path);
 
+    // Apply texture to a GameObject and its children
+    bool ApplyTextureToGameObject(GameObject* obj, const std::string& texturePath);
+
 private:
+    // Recursively process scene nodes
     GameObject* ProcessNode(aiNode* node, const aiScene* scene, const std::string& directory);
+
+    // Convert Assimp mesh to engine mesh format
     Mesh ProcessMesh(aiMesh* aiMesh, const aiScene* scene);
 
     // Scale model to fit target size

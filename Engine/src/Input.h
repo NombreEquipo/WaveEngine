@@ -1,6 +1,9 @@
 #pragma once
 #include "Module.h"
 #include <string>
+#include <glm/glm.hpp>
+
+class GameObject;
 
 #define NUM_MOUSE_BUTTONS 5
 
@@ -27,9 +30,14 @@ enum DroppedFileType
 	DROPPED_TEXTURE
 };
 
+// Helper functions for object picking 
+bool RayIntersectsAABB(const glm::vec3& rayOrigin, const glm::vec3& rayDir,
+	const glm::vec3& aabbMin, const glm::vec3& aabbMax,
+	float& distance);
+GameObject* FindClosestObjectToRay(GameObject* obj, const glm::vec3& rayOrigin, const glm::vec3& rayDir, float& minDist);
+
 class Input : public Module
 {
-
 public:
 
 	Input();
@@ -57,6 +65,9 @@ public:
 	const std::string& GetDroppedFilePath() const { return droppedFilePath; }
 	DroppedFileType GetDroppedFileType() const { return droppedFileType; }
 	void ClearDroppedFile() { droppedFile = false; droppedFilePath.clear(); droppedFileType = DROPPED_NONE; }
+
+	int GetMouseX() const { return mouseX; }
+	int GetMouseY() const { return mouseY; }
 
 private:
 	bool windowEvents[WE_COUNT];

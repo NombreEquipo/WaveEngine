@@ -24,6 +24,7 @@ Application::Application() : isRunning(true)
     AddModule(std::static_pointer_cast<Module>(time));
     AddModule(std::static_pointer_cast<Module>(grid));
 
+    selectionManager = new SelectionManager();
 }
 
 Application& Application::GetInstance()
@@ -142,6 +143,6 @@ bool Application::CleanUp()
             break;
         }
     }
-
+    delete selectionManager;
     return result;
 }
