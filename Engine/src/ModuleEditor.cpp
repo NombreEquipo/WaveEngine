@@ -102,20 +102,8 @@ bool ModuleEditor::Update()
         DrawInspectorWindow();
     }
 
-    //if (showConfiguration)
-    //    DrawConfigurationWindow();
-
-    //if (showConsole)
-    //    DrawConsoleWindow();
-
-    //if (showHierarchy)
-    //    DrawHierarchyWindow();
-
-    //if (showInspector)
-    //    DrawInspectorWindow();
-
-    //if (showAbout)
-    //    DrawAboutWindow();
+    if (showAbout)
+        DrawAboutWindow();
 
     return true;
 }
@@ -182,7 +170,7 @@ bool ModuleEditor::ShowMenuBar() {
 
         if (ImGui::BeginMenu("Help")) {
             if (ImGui::MenuItem("Documentation")) {
-                SDL_OpenURL("https://github.com/Audra0000/Engine");
+                SDL_OpenURL("https://github.com/Audra0000/Engine/blob/main/README.md"); 
             }
             if (ImGui::MenuItem("Report a Bug")) {
                 SDL_OpenURL("https://github.com/Audra0000/Engine/issues");
@@ -250,7 +238,7 @@ void ModuleEditor::CreatePrimitiveGameObject(const std::string& name, Mesh mesh)
     else if (name == "Cylinder")
         selectedMesh = Primitives::CreateCylinder();
     else
-        selectedMesh = mesh; // Usar el mesh pasado por par�metro si no coincide
+        selectedMesh = mesh; 
 
     meshComp->SetMesh(selectedMesh);
 
@@ -700,14 +688,14 @@ void ModuleEditor::DrawAboutWindow()
 {
     ImGui::Begin("About", &showAbout);
 
-    ImGui::Text("Engine Name: Audra Engine");
+    ImGui::Text("Engine Name: Engine");
     ImGui::Text("Version: 0.1.0");
 
     ImGui::Separator();
 
     ImGui::Text("Team Members:");
-    ImGui::BulletText("Developer 1");
-    ImGui::BulletText("Developer 2");
+    ImGui::BulletText("Haosheng Li");
+    ImGui::BulletText("");
 
     ImGui::Separator();
 
@@ -733,11 +721,17 @@ void ModuleEditor::DrawAboutWindow()
     int devilPatch = devilVersion % 10;
     ImGui::BulletText("DevIL: %d.%d.%d", devilMajor, devilMinor, devilPatch);
 
+    ImGui::BulletText("Glad");
+
+    ImGui::BulletText("Glm");
+
+    ImGui::BulletText("Assimp");
+
     ImGui::Separator();
 
     ImGui::TextWrapped("MIT License");
     ImGui::Spacing();
-    ImGui::TextWrapped("Copyright (c) 2025 Audra Engine");
+    ImGui::TextWrapped("Copyright (c) 2025 Engine");
     ImGui::Spacing();
     ImGui::TextWrapped(
         "Permission is hereby granted, free of charge, to any person obtaining a copy "
