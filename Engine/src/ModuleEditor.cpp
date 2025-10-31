@@ -439,42 +439,71 @@ void ModuleEditor::DrawInspectorWindow()
             glm::vec3 rotation = transform->GetRotation();
             glm::vec3 scale = transform->GetScale();
 
-            ImGui::PushItemWidth(80); 
-            ImGui::BeginDisabled();
+            bool transformChanged = false;
 
             // Position
             ImGui::Text("Position");
+            ImGui::PushItemWidth(80);
             ImGui::Text("X"); ImGui::SameLine(20);
-            ImGui::DragFloat("##PosX", &position.x, 0.1f); ImGui::SameLine(120);
+            if (ImGui::DragFloat("##PosX", &position.x, 0.1f)) transformChanged = true;
+            ImGui::SameLine(120);
             ImGui::Text("Y"); ImGui::SameLine(130);
-            ImGui::DragFloat("##PosY", &position.y, 0.1f); ImGui::SameLine(230);
+            if (ImGui::DragFloat("##PosY", &position.y, 0.1f)) transformChanged = true;
+            ImGui::SameLine(230);
             ImGui::Text("Z"); ImGui::SameLine(240);
-            ImGui::DragFloat("##PosZ", &position.z, 0.1f);
+            if (ImGui::DragFloat("##PosZ", &position.z, 0.1f)) transformChanged = true;
 
             ImGui::Spacing();
 
             // Rotation
             ImGui::Text("Rotation");
             ImGui::Text("X"); ImGui::SameLine(20);
-            ImGui::DragFloat("##RotX", &rotation.x, 0.1f); ImGui::SameLine(120);
+            if (ImGui::DragFloat("##RotX", &rotation.x, 0.1f)) transformChanged = true;
+            ImGui::SameLine(120);
             ImGui::Text("Y"); ImGui::SameLine(130);
-            ImGui::DragFloat("##RotY", &rotation.y, 0.1f); ImGui::SameLine(230);
+            if (ImGui::DragFloat("##RotY", &rotation.y, 0.1f)) transformChanged = true;
+            ImGui::SameLine(230);
             ImGui::Text("Z"); ImGui::SameLine(240);
-            ImGui::DragFloat("##RotZ", &rotation.z, 0.1f);
+            if (ImGui::DragFloat("##RotZ", &rotation.z, 0.1f)) transformChanged = true;
 
             ImGui::Spacing();
 
             // Scale
             ImGui::Text("Scale");
             ImGui::Text("X"); ImGui::SameLine(20);
-            ImGui::DragFloat("##ScaleX", &scale.x, 0.1f); ImGui::SameLine(120);
+            if (ImGui::DragFloat("##ScaleX", &scale.x, 0.1f)) transformChanged = true;
+            ImGui::SameLine(120);
             ImGui::Text("Y"); ImGui::SameLine(130);
-            ImGui::DragFloat("##ScaleY", &scale.y, 0.1f); ImGui::SameLine(230);
+            if (ImGui::DragFloat("##ScaleY", &scale.y, 0.1f)) transformChanged = true;
+            ImGui::SameLine(230);
             ImGui::Text("Z"); ImGui::SameLine(240);
-            ImGui::DragFloat("##ScaleZ", &scale.z, 0.1f);
+            if (ImGui::DragFloat("##ScaleZ", &scale.z, 0.1f)) transformChanged = true;
 
-            ImGui::EndDisabled();
             ImGui::PopItemWidth();
+
+            if (transformChanged)
+            {
+                transform->SetPosition(position);
+                transform->SetRotation(rotation);
+                transform->SetScale(scale);
+            }
+
+            ImGui::Spacing();
+
+            if (ImGui::Button("Reset Transform"))
+            {
+                transform->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+                transform->SetRotation(glm::vec3(0.0f, 0.0f, 0.0f));
+                transform->SetScale(glm::vec3(1.0f, 1.0f, 1.0f));
+
+                LOG_DEBUG("Transform reset for: %s", selectedObject->GetName().c_str());
+                LOG_CONSOLE("Transform reset for: %s", selectedObject->GetName().c_str());
+            }
+
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Reset position to (0,0,0), rotation to (0,0,0), and scale to (1,1,1)");
+            }
         }
     }
     // Mesh
