@@ -36,7 +36,6 @@ This stage represents the core structure upon which future features and systems 
 | Orbit | Left Alt | Left Mouse Button |
 | Focus | F | |
 | Select | Left Mouse Button | |
-| Deselect | | |
 | Multiple select | Shift | Left Mouse Button |
 | Delete object | Backspace | |
 
