@@ -71,6 +71,6 @@ private:
     // Calculate world-space bounding box
     void CalculateBoundingBox(GameObject* obj, glm::vec3& minBounds, glm::vec3& maxBounds, const glm::mat4& parentTransform);
 
-    // Detect and return rotation correction (Z-up to Y-up conversion)
-    glm::quat DetectCorrectionRotation(const aiScene* scene, const glm::vec3& modelSize);
+    //// Detect and return rotation correction (Z-up to Y-up conversion)
+    //glm::quat DetectCorrectionRotation(const aiScene* scene, const glm::vec3& modelSize);
 };

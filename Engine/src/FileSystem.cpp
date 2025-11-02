@@ -197,38 +197,38 @@ GameObject* FileSystem::LoadFBXAsGameObject(const std::string& file_path)
     glm::vec3 size = maxBounds - minBounds;
     LOG_DEBUG("Model Dimensions: X=%.2f Y=%.2f Z=%.2f", size.x, size.y, size.z);
 
-    std::string fileName = file_path.substr(file_path.find_last_of("/\\") + 1);
-    std::transform(fileName.begin(), fileName.end(), fileName.begin(), ::tolower);
+    //std::string fileName = file_path.substr(file_path.find_last_of("/\\") + 1);
+    //std::transform(fileName.begin(), fileName.end(), fileName.begin(), ::tolower);
 
-    glm::quat correction = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+    //glm::quat correction = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 
-    // Hardcoded rotation fix for BakerHouse model
-    if (fileName.find("baker") != std::string::npos || fileName.find("house") != std::string::npos)
-    {
-        correction = glm::angleAxis(glm::radians(90.0f), glm::vec3(1, 0, 0));
-    }
-    else
-    {
-        correction = DetectCorrectionRotation(scene, size);
-    }
+    //// Hardcoded rotation fix for BakerHouse model
+    //if (fileName.find("baker") != std::string::npos || fileName.find("house") != std::string::npos)
+    //{
+    //    correction = glm::angleAxis(glm::radians(90.0f), glm::vec3(1, 0, 0));
+    //}
+    //else
+    //{
+    //    correction = DetectCorrectionRotation(scene, size);
+    //}
 
-    glm::quat identity_quat(1.0f, 0.0f, 0.0f, 0.0f);
-    float dot_product = glm::dot(correction, identity_quat);
+    //glm::quat identity_quat(1.0f, 0.0f, 0.0f, 0.0f);
+    //float dot_product = glm::dot(correction, identity_quat);
 
-    if (std::abs(dot_product - 1.0f) > 0.0001f)
-    {
-        Transform* rootTransform = static_cast<Transform*>(rootObj->GetComponent(ComponentType::TRANSFORM));
-        if (rootTransform)
-        {
-            LOG_DEBUG("Applying rotation correction to root transform");
-            glm::quat existing = rootTransform->GetRotationQuat();
-            rootTransform->SetRotationQuat(correction * existing);
-        }
-    }
-    else
-    {
-        LOG_DEBUG("No rotation correction needed");
-    }
+    //if (std::abs(dot_product - 1.0f) > 0.0001f)
+    //{
+    //    Transform* rootTransform = static_cast<Transform*>(rootObj->GetComponent(ComponentType::TRANSFORM));
+    //    if (rootTransform)
+    //    {
+    //        LOG_DEBUG("Applying rotation correction to root transform");
+    //        glm::quat existing = rootTransform->GetRotationQuat();
+    //        rootTransform->SetRotationQuat(correction * existing);
+    //    }
+    //}
+    //else
+    //{
+    //    LOG_DEBUG("No rotation correction needed");
+    //}
 
     // Normalize scale
     NormalizeModelScale(rootObj, 5.0f);
@@ -478,62 +478,62 @@ void FileSystem::CalculateBoundingBox(GameObject* obj, glm::vec3& minBounds, glm
     }
 }
 
-glm::quat FileSystem::DetectCorrectionRotation(const aiScene* scene, const glm::vec3& modelSize)
-{
-    LOG_DEBUG("=== Rotation Detection ===");
-    LOG_DEBUG("Model size - X: %.2f Y: %.2f Z: %.2f", modelSize.x, modelSize.y, modelSize.z);
-
-    glm::quat correction = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
-
-    // Try reading metadata first
-    if (scene && scene->mMetaData)
-    {
-        LOG_DEBUG("Metadata found in scene");
-
-        int upAxis = 1;
-        int upAxisSign = 1;
-
-        bool hasUpAxis = scene->mMetaData->Get("UpAxis", upAxis);
-        bool hasUpAxisSign = scene->mMetaData->Get("UpAxisSign", upAxisSign);
-
-        LOG_DEBUG("UpAxis: %d (found: %s)", upAxis, hasUpAxis ? "yes" : "no");
-        LOG_DEBUG("UpAxisSign: %d (found: %s)", upAxisSign, hasUpAxisSign ? "yes" : "no");
-
-        if (upAxis == 2) // Z-up detected
-        {
-            LOG_DEBUG(">>> Z-up detected! Applying -90° X rotation");
-            LOG_CONSOLE("Model orientation corrected (Z-up to Y-up)");
-            correction = glm::angleAxis(glm::radians(-90.0f * (float)upAxisSign), glm::vec3(1, 0, 0));
-            return correction;
-        }
-        else if (upAxis == 1) // Y-up (OpenGL)
-        {
-            LOG_DEBUG(">>> Y-up detected, no correction needed");
-        }
-    }
-    else
-    {
-        LOG_DEBUG("No metadata found, using heuristic detection");
-    }
-
-    float yzRatio = (modelSize.y > 0.0001f) ? (modelSize.z / modelSize.y) : 0.0f;
-
-    LOG_DEBUG("YZ Ratio: %.2f (threshold: 1.4)", yzRatio);
-
-    if (yzRatio > 1.4f)
-    {
-        LOG_DEBUG(">>> Heuristic: Z dimension dominant, applying -90° X rotation");
-        LOG_CONSOLE("Model orientation corrected (heuristic)");
-        correction = glm::angleAxis(glm::radians(-90.0f), glm::vec3(1, 0, 0));
-    }
-    else
-    {
-        LOG_DEBUG(">>> No correction applied");
-    }
-
-    LOG_DEBUG("======================");
-    return correction;
-}
+//glm::quat FileSystem::DetectCorrectionRotation(const aiScene* scene, const glm::vec3& modelSize)
+//{
+//    LOG_DEBUG("=== Rotation Detection ===");
+//    LOG_DEBUG("Model size - X: %.2f Y: %.2f Z: %.2f", modelSize.x, modelSize.y, modelSize.z);
+//
+//    glm::quat correction = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+//
+//    // Try reading metadata first
+//    if (scene && scene->mMetaData)
+//    {
+//        LOG_DEBUG("Metadata found in scene");
+//
+//        int upAxis = 1;
+//        int upAxisSign = 1;
+//
+//        bool hasUpAxis = scene->mMetaData->Get("UpAxis", upAxis);
+//        bool hasUpAxisSign = scene->mMetaData->Get("UpAxisSign", upAxisSign);
+//
+//        LOG_DEBUG("UpAxis: %d (found: %s)", upAxis, hasUpAxis ? "yes" : "no");
+//        LOG_DEBUG("UpAxisSign: %d (found: %s)", upAxisSign, hasUpAxisSign ? "yes" : "no");
+//
+//        if (upAxis == 2) // Z-up detected
+//        {
+//            LOG_DEBUG(">>> Z-up detected! Applying -90° X rotation");
+//            LOG_CONSOLE("Model orientation corrected (Z-up to Y-up)");
+//            correction = glm::angleAxis(glm::radians(-90.0f * (float)upAxisSign), glm::vec3(1, 0, 0));
+//            return correction;
+//        }
+//        else if (upAxis == 1) // Y-up (OpenGL)
+//        {
+//            LOG_DEBUG(">>> Y-up detected, no correction needed");
+//        }
+//    }
+//    else
+//    {
+//        LOG_DEBUG("No metadata found, using heuristic detection");
+//    }
+//
+//    float yzRatio = (modelSize.y > 0.0001f) ? (modelSize.z / modelSize.y) : 0.0f;
+//
+//    LOG_DEBUG("YZ Ratio: %.2f (threshold: 1.4)", yzRatio);
+//
+//    if (yzRatio > 1.4f)
+//    {
+//        LOG_DEBUG(">>> Heuristic: Z dimension dominant, applying -90° X rotation");
+//        LOG_CONSOLE("Model orientation corrected (heuristic)");
+//        correction = glm::angleAxis(glm::radians(-90.0f), glm::vec3(1, 0, 0));
+//    }
+//    else
+//    {
+//        LOG_DEBUG(">>> No correction applied");
+//    }
+//
+//    LOG_DEBUG("======================");
+//    return correction;
+//}
 
 bool FileSystem::ApplyTextureToGameObject(GameObject* obj, const std::string& texturePath)
 {
