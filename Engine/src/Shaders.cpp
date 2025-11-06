@@ -54,11 +54,13 @@ bool Shader::Create()
         "out vec4 FragColor;\n"
         "in vec2 TexCoord;\n"
         "uniform sampler2D texture1;\n"
-        "uniform vec3 tintColor;\n"  //
+        "uniform vec3 tintColor;\n"
         "void main()\n"
         "{\n"
         "   vec4 texColor = texture(texture1, TexCoord);\n"
-        "   FragColor = vec4(texColor.rgb * tintColor, texColor.a);\n"  
+        "   if(texColor.a < 0.1)\n"  
+        "       discard;\n"
+        "   FragColor = vec4(texColor.rgb * tintColor, texColor.a);\n"
         "}\0";
 
     unsigned int fragmentShader;
@@ -137,6 +139,9 @@ bool Shader::CreateSimpleColor()
     // Vertex Shader 
     const char* vertexShaderSource = "#version 330 core\n"
         "layout (location = 0) in vec3 aPos;\n"
+        "layout (location = 1) in vec2 aTexCoords;\n"
+        "\n"
+        "out vec2 TexCoords;\n"
         "\n"
         "uniform mat4 model;\n"
         "uniform mat4 view;\n"
@@ -145,6 +150,7 @@ bool Shader::CreateSimpleColor()
         "void main()\n"
         "{\n"
         "   gl_Position = projection * view * model * vec4(aPos, 1.0);\n"
+        "   TexCoords = aTexCoords;\n"
         "}\0";
 
     unsigned int vertexShader;
@@ -166,10 +172,17 @@ bool Shader::CreateSimpleColor()
     // Fragment Shader
     const char* fragmentShaderSource = "#version 330 core\n"
         "out vec4 FragColor;\n"
-        "uniform vec3 color;\n"
+        "in vec2 TexCoords;\n"
+        "\n"
+        "uniform sampler2D texture1;\n"
+        "uniform vec3 tintColor;\n" 
+        "\n"
         "void main()\n"
         "{\n"
-        "   FragColor = vec4(color, 1.0);\n"
+        "   vec4 texColor = texture(texture1, TexCoords);\n"
+        "   if(texColor.a < 0.1)\n"
+        "       discard;\n"
+        "   FragColor = vec4(texColor.rgb * tintColor, texColor.a);\n"  
         "}\0";
 
     unsigned int fragmentShader;
