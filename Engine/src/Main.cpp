@@ -3,21 +3,21 @@
 
 int main(int argc, char* argv[])
 {
-    std::cout << "Starting Application..." << std::endl;
+    LOG_CONSOLE("Starting Application...");
 
     Application& app = Application::GetInstance();
 
     // Awake
     if (!app.Awake())
     {
-        std::cerr << "Failed to awake application!" << std::endl;
+        LOG_CONSOLE("Failed to awake application!");
         return -1;
     }
 
     // Start
     if (!app.Start())
     {
-        std::cerr << "Failed to start application!" << std::endl;
+        LOG_CONSOLE("Failed to start application!");
         return -1;
     }
 
@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
     // Clean up
     app.CleanUp();
 
-    std::cout << "Application closed successfully" << std::endl;
+    LOG_CONSOLE("Application closed successfully");
 
     return 0;
 }

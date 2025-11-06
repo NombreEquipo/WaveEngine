@@ -5,7 +5,7 @@
 
 Window::Window() : window(nullptr), width(1280), height(720), scale(1)
 {
-    std::cout << "Window Constructor" << std::endl;
+   LOG_CONSOLE("Window Constructor");
 }
 
 Window::~Window()

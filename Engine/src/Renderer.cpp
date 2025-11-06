@@ -115,14 +115,6 @@ void Renderer::DrawMesh(const Mesh& mesh)
     glBindVertexArray(mesh.VAO);
     glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
-
-    //std::cout << "=== LoadMesh DEBUG ===" << std::endl;
-    //std::cout << "Vertices: " << mesh.vertices.size() << std::endl;
-    //std::cout << "Indices: " << mesh.indices.size() << std::endl;
-    //std::cout << "VAO: " << mesh.VAO << std::endl;
-    //std::cout << "VBO: " << mesh.VBO << std::endl;
-    //std::cout << "EBO: " << mesh.EBO << std::endl;
-
 }
 
 void Renderer::UnloadMesh(Mesh& mesh)

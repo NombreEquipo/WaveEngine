@@ -2,6 +2,7 @@
 #include <glad/glad.h>
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
+#include "Log.h"
 
 Shader::Shader() : shaderProgram(0)
 {
@@ -96,7 +97,7 @@ bool Shader::Create()
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    std::cout << "Shader created successfully!" << std::endl;
+    LOG_CONSOLE("Shader created successfully!"); 
 
     return true;
 }
@@ -197,7 +198,6 @@ bool Shader::CreateSimpleColor()
     if (!success)
     {
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cerr << "ERROR: Simple Shader Program Linking Failed\n" << infoLog << std::endl;
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
         return false;
@@ -207,7 +207,7 @@ bool Shader::CreateSimpleColor()
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    std::cout << "Simple color shader created successfully!" << std::endl;
+    LOG_CONSOLE("Simple color shader created successfully!");
 
     return true;
 }

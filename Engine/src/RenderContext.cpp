@@ -7,7 +7,7 @@
 
 RenderContext::RenderContext() : glContext(nullptr)
 {
-    std::cout << "RenderContext Constructor" << std::endl;
+    LOG_CONSOLE("RenderContext Constructor");
 }
 
 RenderContext::~RenderContext()
@@ -16,7 +16,7 @@ RenderContext::~RenderContext()
 
 bool RenderContext::Start()
 {
-    std::cout << "Init OpenGL Context & GLAD" << std::endl;
+    LOG_CONSOLE("Init OpenGL Context & GLAD");
 
     SDL_Window* window = Application::GetInstance().window->GetWindow();
     glContext = SDL_GL_CreateContext(window);
@@ -42,10 +42,6 @@ bool RenderContext::Start()
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
-    std::cout << "OpenGL Context initialized successfully" << std::endl;
-    std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
-    std::cout << "GLSL Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
-
     return true;
 }
 
@@ -64,7 +60,7 @@ bool RenderContext::Update()
 
 bool RenderContext::CleanUp()
 {
-    std::cout << "Destroying OpenGL Context" << std::endl;
+    LOG_CONSOLE("Destroying OpenGL Context");
 
     if (glContext != nullptr)
     {
