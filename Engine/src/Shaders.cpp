@@ -58,8 +58,11 @@ bool Shader::Create()
         "void main()\n"
         "{\n"
         "   vec4 texColor = texture(texture1, TexCoord);\n"
-        "   if(texColor.a < 0.1)\n"  
+        "   \n"
+        "   // Discard  (hierba, hojas,.)\n"
+        "   if(texColor.a < 0.1)\n"
         "       discard;\n"
+        "   \n"
         "   FragColor = vec4(texColor.rgb * tintColor, texColor.a);\n"
         "}\0";
 
@@ -99,7 +102,7 @@ bool Shader::Create()
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    LOG_CONSOLE("Shader created successfully!"); 
+    LOG_CONSOLE("Shader created successfully!");
 
     return true;
 }
@@ -135,8 +138,6 @@ void Shader::SetMat4(const std::string& name, const glm::mat4& mat) const
 
 bool Shader::CreateSimpleColor()
 {
-
-    // Vertex Shader 
     const char* vertexShaderSource = "#version 330 core\n"
         "layout (location = 0) in vec3 aPos;\n"
         "layout (location = 1) in vec2 aTexCoords;\n"
@@ -169,20 +170,19 @@ bool Shader::CreateSimpleColor()
         return false;
     }
 
-    // Fragment Shader
+    // Fragment Shader - Para transparencias parciales (ventanas, vidrio)
     const char* fragmentShaderSource = "#version 330 core\n"
         "out vec4 FragColor;\n"
         "in vec2 TexCoords;\n"
         "\n"
         "uniform sampler2D texture1;\n"
-        "uniform vec3 tintColor;\n" 
+        "uniform vec3 tintColor;\n"
         "\n"
         "void main()\n"
         "{\n"
         "   vec4 texColor = texture(texture1, TexCoords);\n"
-        "   if(texColor.a < 0.1)\n"
-        "       discard;\n"
-        "   FragColor = vec4(texColor.rgb * tintColor, texColor.a);\n"  
+        "   \n"
+        "   FragColor = vec4(texColor.rgb * tintColor, texColor.a);\n"
         "}\0";
 
     unsigned int fragmentShader;
@@ -221,6 +221,91 @@ bool Shader::CreateSimpleColor()
     glDeleteShader(fragmentShader);
 
     LOG_CONSOLE("Simple color shader created successfully!");
+
+    return true;
+}
+
+bool Shader::CreateWithDiscard()
+{
+    const char* vertexShaderSource = "#version 330 core\n"
+        "layout (location = 0) in vec3 aPos;\n"
+        "layout (location = 1) in vec3 aNormal;\n"
+        "layout (location = 2) in vec2 aTexCoord;\n"
+        "\n"
+        "out vec2 TexCoord;\n"
+        "\n"
+        "uniform mat4 model;\n"
+        "uniform mat4 view;\n"
+        "uniform mat4 projection;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "   gl_Position = projection * view * model * vec4(aPos, 1.0);\n"
+        "   TexCoord = aTexCoord;\n"
+        "}\0";
+
+    unsigned int vertexShader;
+    vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    glCompileShader(vertexShader);
+
+    int success;
+    char infoLog[512];
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+        std::cerr << "ERROR: Discard Vertex Shader Compilation Failed\n" << infoLog << std::endl;
+        return false;
+    }
+
+    const char* fragmentShaderSource = "#version 330 core\n"
+        "out vec4 FragColor;\n"
+        "in vec2 TexCoord;\n"
+        "uniform sampler2D texture1;\n"
+        "uniform vec3 tintColor;\n"
+        "void main()\n"
+        "{\n"
+        "   vec4 texColor = texture(texture1, TexCoord);\n"
+        "   \n"
+        "   if(texColor.a < 0.1)\n"
+        "       discard;\n"
+        "   \n"
+        "   FragColor = vec4(texColor.rgb * tintColor, texColor.a);\n"
+        "}\0";
+
+    unsigned int fragmentShader;
+    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    glCompileShader(fragmentShader);
+
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+        std::cerr << "ERROR: Discard Fragment Shader Compilation Failed\n" << infoLog << std::endl;
+        glDeleteShader(vertexShader);
+        return false;
+    }
+
+    shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        return false;
+    }
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    LOG_CONSOLE("Discard shader created successfully!");
 
     return true;
 }

@@ -9,6 +9,16 @@
 
 class GameObject;
 
+struct TransparentObject
+{
+    GameObject* gameObject;
+    float distanceToCamera;
+
+    TransparentObject(GameObject* obj, float dist)
+        : gameObject(obj), distanceToCamera(dist) {
+    }
+};
+
 class Renderer : public Module
 {
 public:
@@ -27,6 +37,11 @@ public:
 
     void DrawScene();
     void DrawGameObject(GameObject* gameObject);
+
+    bool HasTransparency(GameObject* gameObject);
+    void CollectTransparentObjects(GameObject* gameObject,
+        std::vector<TransparentObject>& transparentObjects);
+
 
     void DrawVertexNormals(const Mesh& mesh, const glm::mat4& modelMatrix);
     void DrawFaceNormals(const Mesh& mesh, const glm::mat4& modelMatrix);
@@ -54,7 +69,7 @@ public:
 
 private:
 
-    void DrawGameObjectRecursive(GameObject* gameObject);
+    void DrawGameObjectRecursive(GameObject* gameObject, bool renderTransparentOnly = false);
     void ApplyRenderSettings();
 
     std::unique_ptr<Shader> defaultShader;

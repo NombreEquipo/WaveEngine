@@ -231,25 +231,72 @@ bool Renderer::CleanUp()
     return true;
 }
 
+bool Renderer::HasTransparency(GameObject* gameObject)
+{
+    ComponentMaterial* material = static_cast<ComponentMaterial*>(
+        gameObject->GetComponent(ComponentType::MATERIAL));
+
+    if (material && material->IsActive())
+    {
+        // Aqui falta verificar si material alpha < 1.0 ??
+        return true; 
+    }
+
+    return false;
+}
+
+void Renderer::CollectTransparentObjects(GameObject* gameObject,
+    std::vector<TransparentObject>& transparentObjects)
+{
+    if (!gameObject->IsActive())
+        return;
+
+    Transform* transform = static_cast<Transform*>(
+        gameObject->GetComponent(ComponentType::TRANSFORM));
+
+    if (transform != nullptr && HasTransparency(gameObject))
+    {
+        // Compute distance to the camera
+        glm::vec3 objectPos = glm::vec3(transform->GetGlobalMatrix()[3]);
+        float distance = glm::length(camera->GetPosition() - objectPos);
+
+        transparentObjects.emplace_back(gameObject, distance);
+    }
+
+    // Recursively process child objects
+    for (GameObject* child : gameObject->GetChildren())
+    {
+        CollectTransparentObjects(child, transparentObjects);
+    }
+}
+
 void Renderer::DrawScene()
 {
     GameObject* root = Application::GetInstance().scene->GetRoot();
-
     if (root == nullptr)
         return;
 
-    DrawGameObjectRecursive(root);
+    // Render opaque objects first
+    DrawGameObjectRecursive(root, false); // false = render opaque objects only
+
+    // Collect all transparent objects
+    std::vector<TransparentObject> transparentObjects;
+    CollectTransparentObjects(root, transparentObjects);
+
+    // Sort transparent objects from farthest to nearest relative to the camera
+    std::sort(transparentObjects.begin(), transparentObjects.end(),
+        [](const TransparentObject& a, const TransparentObject& b) {
+            return a.distanceToCamera > b.distanceToCamera; // Render objects with greater distance first
+        });
+
+    // Render transparent objects in sorted order
+    for (const auto& transparentObj : transparentObjects)
+    {
+        DrawGameObjectRecursive(transparentObj.gameObject, true); // true = render transparent objects only
+    }
 }
 
-void Renderer::DrawGameObject(GameObject* gameObject)
-{
-    if (gameObject == nullptr || !gameObject->IsActive())
-        return;
-
-    DrawGameObjectRecursive(gameObject);
-}
-
-void Renderer::DrawGameObjectRecursive(GameObject* gameObject)
+void Renderer::DrawGameObjectRecursive(GameObject* gameObject, bool renderTransparentOnly)
 {
     if (!gameObject->IsActive())
         return;
@@ -257,13 +304,25 @@ void Renderer::DrawGameObjectRecursive(GameObject* gameObject)
     Transform* transform = static_cast<Transform*>(gameObject->GetComponent(ComponentType::TRANSFORM));
     if (transform == nullptr) return;
 
+    bool isTransparent = HasTransparency(gameObject);
+
+    // When rendering opaque objects, skip transparent ones, and vice versa
+    if (renderTransparentOnly != isTransparent)
+    {
+        // Continue with child objects
+        for (GameObject* child : gameObject->GetChildren())
+        {
+            DrawGameObjectRecursive(child, renderTransparentOnly);
+        }
+        return;
+    }
+
     const glm::mat4& modelMatrix = transform->GetGlobalMatrix();
     glUniformMatrix4fv(defaultUniforms.model, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
     SelectionManager* selectionMgr = Application::GetInstance().selectionManager;
     bool isSelected = selectionMgr->IsSelected(gameObject);
 
-    // Set tint solo una vez
     defaultShader->SetVec3("tintColor", isSelected ?
         glm::vec3(1.0f, 0.75f, 0.8f) : glm::vec3(1.0f));
 
@@ -287,7 +346,6 @@ void Renderer::DrawGameObjectRecursive(GameObject* gameObject)
 
     ModuleEditor* editor = Application::GetInstance().editor.get();
 
-    // Calcula una vez si debe dibujar normales
     bool shouldDrawNormals = false;
     if (editor && isSelected)
     {
@@ -327,16 +385,14 @@ void Renderer::DrawGameObjectRecursive(GameObject* gameObject)
         }
     }
 
-    // Unbind una sola vez
     if (materialBound)
         material->Unbind();
     else
         defaultTexture->Unbind();
 
-    // Recursion
     for (GameObject* child : gameObject->GetChildren())
     {
-        DrawGameObjectRecursive(child);
+        DrawGameObjectRecursive(child, renderTransparentOnly);
     }
 }
 
@@ -363,7 +419,7 @@ void Renderer::DrawVertexNormals(const Mesh& mesh, const glm::mat4& modelMatrix)
             });
     }
 
-    // Reuse VAO/VBO si es posible
+    // Reuse VAO/VBO when possible
     if (normalLinesVAO == 0)
     {
         glGenVertexArrays(1, &normalLinesVAO);
@@ -380,7 +436,7 @@ void Renderer::DrawVertexNormals(const Mesh& mesh, const glm::mat4& modelMatrix)
         glBindBuffer(GL_ARRAY_BUFFER, normalLinesVBO);
     }
 
-    // Resize buffer si necesario
+    // Resize buffer if necessary
     size_t requiredSize = lineVertices.size() * sizeof(float);
     if (requiredSize > normalLinesCapacity)
     {

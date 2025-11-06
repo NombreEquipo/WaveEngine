@@ -11,8 +11,11 @@ public:
 
     bool Create();
     bool CreateSimpleColor();
+    bool CreateWithDiscard();
     void Use() const;
     void Delete();
+
+
 
     unsigned int GetProgramID() const { return shaderProgram; }
 
