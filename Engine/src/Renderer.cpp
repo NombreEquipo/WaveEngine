@@ -1,16 +1,13 @@
 ﻿#include "Renderer.h"
 #include "Application.h"
-#include <glad/glad.h>
-#include <iostream>
-#include "Texture.h"
-#include "Shaders.h"
-#include <glm/gtc/type_ptr.hpp>
-#include "Camera.h"
 #include "GameObject.h"
 #include "Transform.h"
 #include "ComponentMesh.h"
 #include "ComponentMaterial.h"
 #include "ModuleEditor.h"
+
+#include <glad/glad.h>
+#include <glm/gtc/type_ptr.hpp>
 
 Renderer::Renderer()
 {
@@ -67,6 +64,11 @@ bool Renderer::Start()
 
     LOG_DEBUG("Renderer initialized successfully");
     LOG_CONSOLE("Renderer ready");
+
+    defaultUniforms.projection = glGetUniformLocation(defaultShader->GetProgramID(), "projection");
+    defaultUniforms.view = glGetUniformLocation(defaultShader->GetProgramID(), "view");
+    defaultUniforms.model = glGetUniformLocation(defaultShader->GetProgramID(), "model");
+    defaultUniforms.texture1 = glGetUniformLocation(defaultShader->GetProgramID(), "texture1");
 
     return true;
 }
@@ -182,12 +184,12 @@ bool Renderer::Update()
 
     GLuint shaderProgram = defaultShader->GetProgramID();
 
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(camera->GetProjectionMatrix()));
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(camera->GetViewMatrix()));
+    glUniformMatrix4fv(defaultUniforms.projection, 1, GL_FALSE, glm::value_ptr(camera->GetProjectionMatrix()));
+    glUniformMatrix4fv(defaultUniforms.view, 1, GL_FALSE, glm::value_ptr(camera->GetViewMatrix()));
 
     // Activate and bind default texture 
     glActiveTexture(GL_TEXTURE0);
-    glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), 0);
+    glUniform1i(defaultUniforms.texture1, 0);
 
     GameObject* root = Application::GetInstance().scene->GetRoot();
 
@@ -213,6 +215,12 @@ bool Renderer::CleanUp()
     if (defaultShader)
     {
         defaultShader->Delete();
+    }
+
+    if (normalLinesVAO != 0)
+    {
+        glDeleteVertexArrays(1, &normalLinesVAO);
+        glDeleteBuffers(1, &normalLinesVBO);
     }
 
     LOG_DEBUG("Renderer cleaned up successfully");
@@ -247,39 +255,58 @@ void Renderer::DrawGameObjectRecursive(GameObject* gameObject)
     Transform* transform = static_cast<Transform*>(gameObject->GetComponent(ComponentType::TRANSFORM));
     if (transform == nullptr) return;
 
-    glm::mat4 modelMatrix = transform->GetGlobalMatrix();
+    const glm::mat4& modelMatrix = transform->GetGlobalMatrix();
+    glUniformMatrix4fv(defaultUniforms.model, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
-    GLuint shaderProgram = defaultShader->GetProgramID();
-    GLint modelLoc = glGetUniformLocation(shaderProgram, "model");
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-
-    //Selection tint============================
     SelectionManager* selectionMgr = Application::GetInstance().selectionManager;
+    bool isSelected = selectionMgr->IsSelected(gameObject);
 
-    if (selectionMgr->IsSelected(gameObject))
-    {
-        defaultShader->SetVec3("tintColor", glm::vec3(1.0f, 0.75f, 0.8f));
-        // yellow
-    }
-    else
-    {
-        defaultShader->SetVec3("tintColor", glm::vec3(1.0f, 1.0f, 1.0f)); // Normal
-    }
-    // ==========================================
+    // Set tint solo una vez
+    defaultShader->SetVec3("tintColor", isSelected ?
+        glm::vec3(1.0f, 0.75f, 0.8f) : glm::vec3(1.0f));
 
-    ComponentMaterial* material = static_cast<ComponentMaterial*>(gameObject->GetComponent(ComponentType::MATERIAL));
+    ComponentMaterial* material = static_cast<ComponentMaterial*>(
+        gameObject->GetComponent(ComponentType::MATERIAL));
 
-    if (material != nullptr && material->IsActive())
+    bool materialBound = false;
+    if (material && material->IsActive())
     {
         material->Use();
+        materialBound = true;
     }
     else
     {
         defaultTexture->Bind();
     }
 
-    // Draw all mesh components
-    std::vector<Component*> meshComponents = gameObject->GetComponentsOfType(ComponentType::MESH);
+    // Draw meshes
+    const std::vector<Component*>& meshComponents =
+        gameObject->GetComponentsOfType(ComponentType::MESH);
+
+    ModuleEditor* editor = Application::GetInstance().editor.get();
+
+    // Calcula una vez si debe dibujar normales
+    bool shouldDrawNormals = false;
+    if (editor && isSelected)
+    {
+        shouldDrawNormals = true;
+    }
+    else if (editor)
+    {
+        GameObject* parent = gameObject->GetParent();
+        while (parent)
+        {
+            if (selectionMgr->IsSelected(parent))
+            {
+                shouldDrawNormals = true;
+                break;
+            }
+            parent = parent->GetParent();
+        }
+    }
+
+    const bool showVertex = editor && editor->ShouldShowVertexNormals();
+    const bool showFace = editor && editor->ShouldShowFaceNormals();
 
     for (Component* comp : meshComponents)
     {
@@ -290,120 +317,91 @@ void Renderer::DrawGameObjectRecursive(GameObject* gameObject)
             const Mesh& mesh = meshComp->GetMesh();
             DrawMesh(mesh);
 
-            ModuleEditor* editor = Application::GetInstance().editor.get();
-            SelectionManager* selectionManager = Application::GetInstance().selectionManager;
-
-            if (editor != nullptr && selectionManager != nullptr)
+            if (shouldDrawNormals)
             {
-                bool shouldDrawNormals = false;
-                if (selectionMgr->IsSelected(gameObject))
-                {
-                    shouldDrawNormals = true;
-                }
-                else
-                {
-                    GameObject* parent = gameObject->GetParent();
-                    while (parent != nullptr)
-                    {
-                        if (selectionMgr->IsSelected(parent))
-                        {
-                            shouldDrawNormals = true;
-                            break;
-                        }
-                        parent = parent->GetParent();
-                    }
-                }
-                if (shouldDrawNormals)
-                {
-                    if (editor->ShouldShowVertexNormals())
-                    {
-                        DrawVertexNormals(mesh, modelMatrix);
-                    }
-                    if (editor->ShouldShowFaceNormals())
-                    {
-                        DrawFaceNormals(mesh, modelMatrix);
-                    }
-                }
+                if (showVertex) DrawVertexNormals(mesh, modelMatrix);
+                if (showFace) DrawFaceNormals(mesh, modelMatrix);
             }
         }
     }
 
-    // Unbind material or default texture
-    if (material != nullptr && material->IsActive())
-    {
+    // Unbind una sola vez
+    if (materialBound)
         material->Unbind();
-    }
     else
-    {
         defaultTexture->Unbind();
-    }
 
-    // Recursively draw children
-    const std::vector<GameObject*>& children = gameObject->GetChildren();
-    for (GameObject* child : children)
+    // Recursion
+    for (GameObject* child : gameObject->GetChildren())
     {
         DrawGameObjectRecursive(child);
     }
 }
-
 
 void Renderer::DrawVertexNormals(const Mesh& mesh, const glm::mat4& modelMatrix)
 {
     if (!mesh.IsValid() || mesh.vertices.empty())
         return;
 
-	std::vector<float> lineVertices; // Store line vertex positions
-	float normalLength = 0.2f; // <== We can change the length with this ==>
+    std::vector<float> lineVertices;
+    lineVertices.reserve(mesh.vertices.size() * 6); // Pre-allocate
+
+    const float normalLength = 0.2f;
+    const glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(modelMatrix)));
 
     for (const auto& vertex : mesh.vertices)
     {
         glm::vec4 worldPos = modelMatrix * glm::vec4(vertex.position, 1.0f);
-
-		// Transform normal to world space
-        glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(modelMatrix)));
         glm::vec3 worldNormal = glm::normalize(normalMatrix * vertex.normal);
-
-		// End point of the normal line
         glm::vec3 endPoint = glm::vec3(worldPos) + worldNormal * normalLength;
 
-        // Start point
-        lineVertices.push_back(worldPos.x);
-        lineVertices.push_back(worldPos.y);
-        lineVertices.push_back(worldPos.z);
-
-        // End point
-        lineVertices.push_back(endPoint.x);
-        lineVertices.push_back(endPoint.y);
-        lineVertices.push_back(endPoint.z);
+        lineVertices.insert(lineVertices.end(), {
+            worldPos.x, worldPos.y, worldPos.z,
+            endPoint.x, endPoint.y, endPoint.z
+            });
     }
 
-    GLuint lineVAO, lineVBO;
-    glGenVertexArrays(1, &lineVAO);
-    glGenBuffers(1, &lineVBO);
+    // Reuse VAO/VBO si es posible
+    if (normalLinesVAO == 0)
+    {
+        glGenVertexArrays(1, &normalLinesVAO);
+        glGenBuffers(1, &normalLinesVBO);
 
-    glBindVertexArray(lineVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
-    glBufferData(GL_ARRAY_BUFFER, lineVertices.size() * sizeof(float), lineVertices.data(), GL_STATIC_DRAW);
+        glBindVertexArray(normalLinesVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, normalLinesVBO);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
+    }
+    else
+    {
+        glBindVertexArray(normalLinesVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, normalLinesVBO);
+    }
 
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-
+    // Resize buffer si necesario
+    size_t requiredSize = lineVertices.size() * sizeof(float);
+    if (requiredSize > normalLinesCapacity)
+    {
+        glBufferData(GL_ARRAY_BUFFER, requiredSize, lineVertices.data(), GL_DYNAMIC_DRAW);
+        normalLinesCapacity = requiredSize;
+    }
+    else
+    {
+        glBufferSubData(GL_ARRAY_BUFFER, 0, requiredSize, lineVertices.data());
+    }
 
     lineShader->Use();
-    GLuint shaderProgram = lineShader->GetProgramID();
+    glUniformMatrix4fv(glGetUniformLocation(lineShader->GetProgramID(), "projection"),
+        1, GL_FALSE, glm::value_ptr(camera->GetProjectionMatrix()));
+    glUniformMatrix4fv(glGetUniformLocation(lineShader->GetProgramID(), "view"),
+        1, GL_FALSE, glm::value_ptr(camera->GetViewMatrix()));
+    glUniformMatrix4fv(glGetUniformLocation(lineShader->GetProgramID(), "model"),
+        1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
 
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(camera->GetProjectionMatrix()));
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(camera->GetViewMatrix()));
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f))); 
-
-	lineShader->SetVec3("color", glm::vec3(0.0f, 0.5f, 1.0f)); // Can be changed to whatever color
-
+    lineShader->SetVec3("color", glm::vec3(0.0f, 0.5f, 1.0f));
     glDrawArrays(GL_LINES, 0, lineVertices.size() / 3);
 
     glBindVertexArray(0);
-    glDeleteBuffers(1, &lineVBO);
-    glDeleteVertexArrays(1, &lineVAO);
-
     defaultShader->Use();
 }
 

@@ -72,4 +72,15 @@ private:
     float clearColorG = 0.25f;
     float clearColorB = 0.3f;
     int cullFaceMode = 0; // 0=GL_BACK, 1=GL_FRONT, 2=GL_FRONT_AND_BACK
+
+    GLuint normalLinesVAO = 0;
+    GLuint normalLinesVBO = 0;
+    size_t normalLinesCapacity = 0;
+
+    struct ShaderUniforms {
+        GLint projection = -1;
+        GLint view = -1;
+        GLint model = -1;
+        GLint texture1 = -1;
+    } defaultUniforms, lineUniforms;
 };
