@@ -45,6 +45,14 @@ bool Input::Start()
 	return true;
 }
 
+bool IsMouseOverSceneWindow(float mouseX, float mouseY)
+{
+	ImVec2 scenePos = Application::GetInstance().editor->sceneViewportPos;
+	ImVec2 sceneSize = Application::GetInstance().editor->sceneViewportSize;
+
+	return (mouseX >= scenePos.x && mouseX <= scenePos.x + sceneSize.x && mouseY >= scenePos.y && mouseY <= scenePos.y + sceneSize.y);
+}
+
 bool Input::PreUpdate()
 {
 	static SDL_Event event;
@@ -109,82 +117,82 @@ bool Input::PreUpdate()
 			// Update button state first before processing logic
 			mouseButtons[event.button.button - 1] = KEY_DOWN;
 
-			// Only process gameplay logic if not over ImGui
-			if (!imguiWantCaptureMouse)
+			Camera* camera = Application::GetInstance().renderer->GetCamera();
+
+			float mouseXf, mouseYf;
+			SDL_GetMouseState(&mouseXf, &mouseYf);
+			int scale = Application::GetInstance().window.get()->GetScale();
+			mouseXf /= scale;
+			mouseYf /= scale;
+
+			bool overSceneWindow = IsMouseOverSceneWindow(mouseXf, mouseYf);
+
+			if (event.button.button == SDL_BUTTON_RIGHT && overSceneWindow)
 			{
-				Camera* camera = Application::GetInstance().renderer->GetCamera();
+				// Right button over Scene: reset camera input and initialize look-around
+				camera->ResetMouseInput();
+				camera->HandleMouseInput(mouseXf, mouseYf);
+			}
+			else if (event.button.button == SDL_BUTTON_LEFT && overSceneWindow)
+			{
+				// Left button over Scene: reset orbit and initialize orbit input
+				camera->ResetOrbitInput();
+				camera->HandleOrbitInput(mouseXf, mouseYf);
 
-				// Get current mouse position
-				float mouseXf, mouseYf;
-				SDL_GetMouseState(&mouseXf, &mouseYf);
-				int scale = Application::GetInstance().window.get()->GetScale();
-				mouseXf /= scale;
-				mouseYf /= scale;
-
-				if (event.button.button == SDL_BUTTON_RIGHT)
+				// Object selection: only if ALT is not pressed
+				if (!keys[SDL_SCANCODE_LALT] && !keys[SDL_SCANCODE_RALT])
 				{
-					// Right button: reset camera input and initialize look-around
-					camera->ResetMouseInput();
-					camera->HandleMouseInput(mouseXf, mouseYf);
-				}
-				else if (event.button.button == SDL_BUTTON_LEFT)
-				{
-					// Left button: reset orbit and initialize orbit input
-					camera->ResetOrbitInput();
-					camera->HandleOrbitInput(mouseXf, mouseYf);
+					// Convert mouse position to Scene viewport coordinates
+					ImVec2 scenePos = Application::GetInstance().editor->sceneViewportPos;
+					ImVec2 sceneSize = Application::GetInstance().editor->sceneViewportSize;
 
-					// Object selection: only if ALT is not pressed
-					if (!keys[SDL_SCANCODE_LALT] && !keys[SDL_SCANCODE_RALT])
+					// Mouse position relative to Scene window
+					float relativeX = mouseXf - scenePos.x;
+					float relativeY = mouseYf - scenePos.y;
+
+					// Create a ray from camera through mouse position
+					glm::vec3 rayOrigin = camera->GetPosition();
+					glm::vec3 rayDir = camera->ScreenToWorldRay(
+						static_cast<int>(relativeX),
+						static_cast<int>(relativeY),
+						static_cast<int>(sceneSize.x),
+						static_cast<int>(sceneSize.y)
+					);
+
+					// Find the closest object intersected by the ray
+					GameObject* root = Application::GetInstance().scene->GetRoot();
+					float minDist = std::numeric_limits<float>::max();
+					GameObject* clicked = FindClosestObjectToRay(root, rayOrigin, rayDir, minDist);
+
+					bool shiftPressed = keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT];
+
+					if (clicked)
 					{
-						// Get window dimensions and mouse position
-						int screenWidth, screenHeight;
-						SDL_GetWindowSize(Application::GetInstance().window.get()->GetWindow(),
-							&screenWidth, &screenHeight);
-
-						int mouseX = static_cast<int>(mouseXf);
-						int mouseY = static_cast<int>(mouseYf);
-
-						// Create a ray from camera through mouse position
-						glm::vec3 rayOrigin = camera->GetPosition();
-						glm::vec3 rayDir = camera->ScreenToWorldRay(mouseX, mouseY,
-							screenWidth / scale,
-							screenHeight / scale);
-
-						// Find the closest object intersected by the ray
-						GameObject* root = Application::GetInstance().scene->GetRoot();
-						float minDist = std::numeric_limits<float>::max();
-						GameObject* clicked = FindClosestObjectToRay(root, rayOrigin, rayDir, minDist);
-
-						bool shiftPressed = keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT];
-
-						if (clicked)
+						if (shiftPressed)
 						{
-							if (shiftPressed)
-							{
-								// Shift + click: toggle selection
-								Application::GetInstance().selectionManager->ToggleSelection(clicked);
-							}
-							else
-							{
-								// Normal click: select single object
-								Application::GetInstance().selectionManager->SetSelectedObject(clicked);
-							}
+							// Shift + click: toggle selection
+							Application::GetInstance().selectionManager->ToggleSelection(clicked);
 						}
 						else
 						{
-							// Clicked empty space: clear selection unless Shift is pressed
-							if (!shiftPressed)
-							{
-								Application::GetInstance().selectionManager->ClearSelection();
-							}
+							// Normal click: select single object
+							Application::GetInstance().selectionManager->SetSelectedObject(clicked);
+						}
+					}
+					else
+					{
+						// Clicked empty space: clear selection unless Shift is pressed
+						if (!shiftPressed)
+						{
+							Application::GetInstance().selectionManager->ClearSelection();
 						}
 					}
 				}
-				else if (event.button.button == SDL_BUTTON_MIDDLE)
-				{
-					// Middle button: reset pan input
-					camera->ResetPanInput();
-				}
+			}
+			else if (event.button.button == SDL_BUTTON_MIDDLE && overSceneWindow)
+			{
+				// Middle button over Scene: reset pan input
+				camera->ResetPanInput();
 			}
 			break;
 		}
@@ -204,8 +212,17 @@ bool Input::PreUpdate()
 			float mouseXf = static_cast<float>(event.motion.x) / static_cast<float>(scale);
 			float mouseYf = static_cast<float>(event.motion.y) / static_cast<float>(scale);
 
-			// Camera movement only if not over ImGui
-			if (!imguiWantCaptureMouse)
+			bool overSceneWindow = IsMouseOverSceneWindow(mouseXf, mouseYf);
+			bool isDragging = (mouseButtons[SDL_BUTTON_LEFT - 1] == KEY_REPEAT ||
+							   mouseButtons[SDL_BUTTON_LEFT - 1] == KEY_DOWN ||
+				               mouseButtons[SDL_BUTTON_MIDDLE - 1] == KEY_REPEAT ||
+				               mouseButtons[SDL_BUTTON_MIDDLE - 1] == KEY_DOWN ||
+				               mouseButtons[SDL_BUTTON_RIGHT - 1] == KEY_REPEAT ||
+				               mouseButtons[SDL_BUTTON_RIGHT - 1] == KEY_DOWN);
+
+
+			// Camera movement only if over Scene window and dragging
+			if (overSceneWindow || isDragging)
 			{
 				Camera* camera = Application::GetInstance().renderer->GetCamera();
 
@@ -252,7 +269,13 @@ bool Input::PreUpdate()
 			break;
 
 		case SDL_EVENT_MOUSE_WHEEL:
-			if (!imguiWantCaptureMouse)
+			float mouseXf, mouseYf;
+			SDL_GetMouseState(&mouseXf, &mouseYf);
+			int scale = Application::GetInstance().window.get()->GetScale();
+			mouseXf /= scale;
+			mouseYf /= scale;
+
+			if (IsMouseOverSceneWindow(mouseXf, mouseYf))
 			{
 				Camera* camera = Application::GetInstance().renderer->GetCamera();
 				camera->HandleScrollInput(static_cast<float>(event.wheel.y));

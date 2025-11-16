@@ -80,16 +80,16 @@ void Grid::CreateGrid()
 
 bool Grid::Update()
 {
-    if (enabled)
-    {
-        Draw();
-    }
+    //if (enabled)
+    //{
+    //    Draw();
+    //}
     return true;
 }
 
 void Grid::Draw()
 {
-    if (VAO == 0) return;
+    if (!enabled || VAO == 0) return;
 
     Shader* shader = Application::GetInstance().renderer->GetDefaultShader();
     if (shader == nullptr) return;

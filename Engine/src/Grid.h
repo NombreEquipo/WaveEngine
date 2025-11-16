@@ -13,6 +13,9 @@ public:
 
     void Draw();
 
+    bool IsEnabled() const { return enabled; }
+    void SetEnabled(bool state) { enabled = state; }
+
 private:
     void CreateGrid();
 

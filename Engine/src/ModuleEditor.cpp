@@ -40,6 +40,7 @@ bool ModuleEditor::Start()
     ImGuiIO& io = ImGui::GetIO();
     //io.IniFilename = NULL;  // for testing
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     ImGui_ImplSDL3_InitForOpenGL(Application::GetInstance().window->GetWindow(), Application::GetInstance().renderContext->GetContext());
     ImGui_ImplOpenGL3_Init();
@@ -63,42 +64,77 @@ bool ModuleEditor::PreUpdate()
 bool ModuleEditor::Update()
 {
 
-    int windowWidth, windowHeight;
-    Application::GetInstance().window->GetWindowSize(windowWidth, windowHeight);
+    // Create fullscreen dockspace window
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->Pos);
+    ImGui::SetNextWindowSize(viewport->Size);
+    ImGui::SetNextWindowViewport(viewport->ID);
 
-    bool windowResized = (windowWidth != lastWindowWidth || windowHeight != lastWindowHeight);
-    lastWindowWidth = windowWidth;
-    lastWindowHeight = windowHeight;
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+    window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
+    window_flags |= ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+    window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+    window_flags |= ImGuiWindowFlags_NoBackground;
 
-    float halfHeight = (windowHeight - 20) * 0.5f;
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 
-    ImGuiCond condition = windowResized ? ImGuiCond_Always : ImGuiCond_FirstUseEver;
+    ImGui::Begin("DockSpaceWindow", nullptr, window_flags);
+    ImGui::PopStyleVar(3);
 
-    // Up left
+    // Menu Bar
+    if (ImGui::BeginMenuBar()) {
+        ShowMenuBar();
+        ImGui::EndMenuBar();
+    }
+
+    // Create DockSpace
+    ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
+
+    ImGui::End();
+
+    // Scene Window
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    ImGui::Begin("Scene");
+
+    sceneViewportPos = ImGui::GetCursorScreenPos();
+    sceneViewportSize = ImGui::GetContentRegionAvail();
+
+    GLuint sceneTexture = Application::GetInstance().renderer->GetSceneTexture();
+    if (sceneTexture != 0 && sceneViewportSize.x > 0 && sceneViewportSize.y > 0)
+    {
+        // Display the scene texture
+        ImTextureID texID = (ImTextureID)(uintptr_t)sceneTexture;
+        ImGui::Image(texID, sceneViewportSize, ImVec2(0, 1), ImVec2(1, 0));
+    }
+    else
+    {
+        // Fallback: reserve space if texture is not ready
+        ImGui::InvisibleButton("SceneView", sceneViewportSize);
+    }
+
+    ImGui::End();
+    ImGui::PopStyleVar();
+
+    // Configuration Window
     if (showConfiguration) {
-        ImGui::SetNextWindowPos(ImVec2(windowWidth * 0.75f, 20 + halfHeight + (halfHeight * 0.25f)), condition);
-        ImGui::SetNextWindowSize(ImVec2(windowWidth * 0.25f, halfHeight * 0.75f), condition);
         DrawConfigurationWindow();
     }
 
-    // Down left
+    // Console Window
     if (showConsole) {
-        ImGui::SetNextWindowPos(ImVec2(0, 20 + halfHeight + (halfHeight * 0.5f)), condition);
-        ImGui::SetNextWindowSize(ImVec2(windowWidth * 0.75f, halfHeight * 0.5f), condition);
         DrawConsoleWindow();
     }
 
-    // Down right
+    // Hierarchy Window
     if (showHierarchy) {
-        ImGui::SetNextWindowPos(ImVec2(0, 20), condition);
-        ImGui::SetNextWindowSize(ImVec2(windowWidth * 0.30f, halfHeight + (halfHeight * 0.5f)), condition);
         DrawHierarchyWindow();
     }
 
-    // Up right
+    // Inspector Window
     if (showInspector) {
-        ImGui::SetNextWindowPos(ImVec2(windowWidth * 0.75f, 20), condition);
-        ImGui::SetNextWindowSize(ImVec2(windowWidth * 0.25f, halfHeight + (halfHeight * 0.25f)), condition);
         DrawInspectorWindow();
     }
 
@@ -112,7 +148,7 @@ bool ModuleEditor::Update()
 
 bool ModuleEditor::PostUpdate()
 {
-    ShowMenuBar();
+    //ShowMenuBar();
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -131,7 +167,7 @@ bool ModuleEditor::CleanUp()
 }
 
 bool ModuleEditor::ShowMenuBar() {
-    if (ImGui::BeginMainMenuBar()) {
+    if (ImGui::BeginMenuBar()) {
 
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("Exit")) {
@@ -187,7 +223,7 @@ bool ModuleEditor::ShowMenuBar() {
             ImGui::EndMenu();
         }
 
-        ImGui::EndMainMenuBar();
+        ImGui::EndMenuBar();
     }
     return true;
 }

@@ -95,6 +95,9 @@ bool Renderer::Start()
     outlineUniforms.view = glGetUniformLocation(outlineShader->GetProgramID(), "view");
     outlineUniforms.model = glGetUniformLocation(outlineShader->GetProgramID(), "model");
 
+	// Create framebuffer
+    CreateFramebuffer(framebufferWidth, framebufferHeight);
+
     return true;
 }
 
@@ -191,6 +194,17 @@ bool Renderer::PreUpdate()
 
 bool Renderer::Update()
 {
+
+    ModuleEditor* editor = Application::GetInstance().editor.get();
+    ImVec2 viewportSize = editor->sceneViewportSize;
+
+    if (viewportSize.x > 0 && viewportSize.y > 0)
+    {
+        ResizeFramebuffer((int)viewportSize.x, (int)viewportSize.y);
+    }
+
+    BindFramebuffer();
+
     // Clear buffers
     glClearColor(clearColorR, clearColorG, clearColorB, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -200,10 +214,7 @@ bool Renderer::Update()
     camera->Update();
 
     // Update projection matrix with current aspect ratio
-    int width, height;
-    Application::GetInstance().window->GetWindowSize(width, height);
-
-    float aspectRatio = (float)width / (float)height;
+    float aspectRatio = (float)framebufferWidth / (float)framebufferHeight;
     camera->SetAspectRatio(aspectRatio);
 
     GLuint shaderProgram = defaultShader->GetProgramID();
@@ -218,6 +229,11 @@ bool Renderer::Update()
 
     GameObject* root = Application::GetInstance().scene->GetRoot();
 
+    if (Application::GetInstance().grid)
+    {
+        Application::GetInstance().grid->Draw();
+    }
+
     if (root != nullptr && root->GetChildren().size() > 0)
     {
         DrawScene();
@@ -225,6 +241,8 @@ bool Renderer::Update()
 
     defaultTexture->Unbind();
 
+    UnbindFramebuffer();
+        
     return true;
 }
 
@@ -258,10 +276,100 @@ bool Renderer::CleanUp()
         glDeleteBuffers(1, &normalLinesVBO);
     }
 
+    if (sceneTexture != 0)
+    {
+        glDeleteTextures(1, &sceneTexture);
+        sceneTexture = 0;
+    }
+
+    if (rbo != 0)
+    {
+        glDeleteRenderbuffers(1, &rbo);
+        rbo = 0;
+    }
+
+    if (fbo != 0)
+    {
+        glDeleteFramebuffers(1, &fbo);
+        fbo = 0;
+    }
+
     LOG_DEBUG("Renderer cleaned up successfully");
     LOG_CONSOLE("Renderer shutdown complete");
 
     return true;
+}
+
+void Renderer::CreateFramebuffer(int width, int height)
+{
+    framebufferWidth = width;
+    framebufferHeight = height;
+
+	glGenFramebuffers(1, &fbo); // Create framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+	// Creating a texture for a framebuffer
+    glGenTextures(1, &sceneTexture);
+    glBindTexture(GL_TEXTURE_2D, sceneTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // Attach texture to framebuffer
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sceneTexture, 0);
+
+    // Renderbuffer objects
+	glGenRenderbuffers(1, &rbo); // Create renderbuffer
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height); // Used to create depth and stencil buffer
+	// Attach renderbuffer to framebuffer
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+    // Check framebuffer completeness
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    {
+        LOG_DEBUG("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
+        LOG_CONSOLE("ERROR: Failed to create scene framebuffer");
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Renderer::ResizeFramebuffer(int width, int height)
+{
+    if (width <= 0 || height <= 0)
+        return;
+
+    if (framebufferWidth == width && framebufferHeight == height)
+        return;
+
+    framebufferWidth = width;
+    framebufferHeight = height;
+
+    // Delete old framebuffer resources
+    if (sceneTexture != 0)
+        glDeleteTextures(1, &sceneTexture);
+    if (rbo != 0)
+        glDeleteRenderbuffers(1, &rbo);
+    if (fbo != 0)
+        glDeleteFramebuffers(1, &fbo);
+
+    CreateFramebuffer(width, height);
+
+}
+
+void Renderer::BindFramebuffer()
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glViewport(0, 0, framebufferWidth, framebufferHeight);
+}
+
+void Renderer::UnbindFramebuffer()
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    int width, height;
+    Application::GetInstance().window->GetWindowSize(width, height);
+    glViewport(0, 0, width, height);
 }
 
 bool Renderer::HasTransparency(GameObject* gameObject)
