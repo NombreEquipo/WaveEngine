@@ -187,9 +187,7 @@ void ComponentCamera::HandleScrollInput(float yoffset)
     if (transform)
     {
         glm::vec3 position = GetPosition();
-        glm::vec3 front = GetFront();
-
-        position += front * yoffset * scrollSpeed;
+        position += cameraFront * yoffset * scrollSpeed;
         transform->SetPosition(position);
 
         orbitDistance = glm::length(position - orbitTarget);
@@ -204,8 +202,8 @@ void ComponentCamera::HandleOrbitInput(float xpos, float ypos)
         lastOrbitY = ypos;
         firstOrbit = false;
         glm::vec3 position = GetPosition();
-        glm::vec3 front = GetFront();
-        orbitTarget = position + front * orbitDistance;
+        orbitTarget = position + cameraFront * orbitDistance;
+        // Calculate the current distance to the target
         orbitDistance = glm::length(position - orbitTarget);
         return;
     }
@@ -259,10 +257,9 @@ void ComponentCamera::UpdateOrbitPosition()
 
 void ComponentCamera::HandlePanInput(float xoffset, float yoffset)
 {
-    glm::vec3 front = GetFront();
-    glm::vec3 up = GetUp();
-    glm::vec3 right = glm::normalize(glm::cross(front, up));
-    up = glm::normalize(glm::cross(right, front));
+    // Calculate the right and up vectors of the camera
+    glm::vec3 right = glm::normalize(glm::cross(cameraFront, cameraUp));
+    glm::vec3 up = glm::normalize(glm::cross(right, cameraFront));
 
     glm::vec3 offset = right * (-xoffset * panSensitivity * orbitDistance) +
         up * (yoffset * panSensitivity * orbitDistance);
