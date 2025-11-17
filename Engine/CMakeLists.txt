@@ -31,8 +31,8 @@ set(RENDERING_SRC
     src/Renderer.cpp 
     src/Shaders.h 
     src/Shaders.cpp 
-        src/Frustrum.h 
-    src/Frustrum.cpp 
+    src/Frustum.h 
+    src/Frustum.cpp 
 )
 
 set(UTILS_SRC 
@@ -43,6 +43,8 @@ set(UTILS_SRC
     src/Time.h 
     src/Grid.cpp
     src/Grid.h
+    src/ModuleCamera.cpp 
+    src/ModuleCamera.h 
     src/ModuleEditor.cpp
     src/ModuleEditor.h
     src/SelectionManager.h
@@ -65,8 +67,6 @@ set(COMPONENTS_SRC
     src/ComponentMesh.cpp 
     src/Transform.cpp 
     src/Transform.h 
-    src/ModuleCamera.cpp 
-    src/ModuleCamera.h 
     src/ComponentCamera.cpp 
     src/ComponentCamera.h 
 
