@@ -77,6 +77,13 @@ public:
     int GetCullFaceMode() const { return cullFaceMode; }
     void SetCullFaceMode(int mode); // 0=Back, 1=Front, 2=Both
 
+	// Framebuffer management
+    void CreateFramebuffer(int width, int height);
+    void ResizeFramebuffer(int width, int height);
+    void BindFramebuffer();
+    void UnbindFramebuffer();
+    GLuint GetSceneTexture() const { return sceneTexture; }
+
 private:
     // Internal rendering methods
     void DrawGameObjectRecursive(GameObject* gameObject,
@@ -85,6 +92,9 @@ private:
         ComponentCamera* cullingCamera);
     void DrawGameObjectWithStencil(GameObject* gameObject);
     void ApplyRenderSettings();
+
+    //Checkers
+    bool IsGameObjectAndParentsActive(GameObject* gameObject) const;
 
     // Shaders
     std::unique_ptr<Shader> defaultShader;
@@ -116,4 +126,11 @@ private:
         GLint model = -1;
         GLint texture1 = -1;
     } defaultUniforms, lineUniforms, outlineUniforms;
+
+    // Framebuffer
+    GLuint fbo = 0;
+    GLuint sceneTexture = 0;
+    GLuint rbo = 0;
+    int framebufferWidth = 1280;
+    int framebufferHeight = 720;
 };

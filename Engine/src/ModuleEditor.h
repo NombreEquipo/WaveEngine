@@ -23,6 +23,10 @@ public:
 
     bool ShouldShowVertexNormals() const { return showVertexNormals; }
     bool ShouldShowFaceNormals() const { return showFaceNormals; }
+
+    ImVec2 sceneViewportPos;
+    ImVec2 sceneViewportSize;
+
 private:
 
     bool ShowMenuBar();
