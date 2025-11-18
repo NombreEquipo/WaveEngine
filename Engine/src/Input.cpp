@@ -311,13 +311,13 @@ bool Input::PreUpdate()
 		glm::vec3 cameraRight = glm::normalize(glm::cross(cameraFront, camera->GetUp()));
 
 		if (keys[SDL_SCANCODE_W])
-			cameraPos -= cameraSpeed * cameraFront;
-		if (keys[SDL_SCANCODE_S])
 			cameraPos += cameraSpeed * cameraFront;
+		if (keys[SDL_SCANCODE_S])
+			cameraPos -= cameraSpeed * cameraFront;
 		if (keys[SDL_SCANCODE_A])
-			cameraPos += cameraRight * cameraSpeed;
-		if (keys[SDL_SCANCODE_D])
 			cameraPos -= cameraRight * cameraSpeed;
+		if (keys[SDL_SCANCODE_D])
+			cameraPos += cameraRight * cameraSpeed;
 
 		cameraTransform->SetPosition(cameraPos);
 	}

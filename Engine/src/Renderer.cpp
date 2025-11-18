@@ -214,9 +214,11 @@ bool Renderer::Update()
     if (!camera) return true;
 
     // Update projection matrix with current aspect ratio
-    int width, height;
-    Application::GetInstance().window->GetWindowSize(width, height);
-
+    float aspectRatio = viewportSize.x / viewportSize.y;
+    if (viewportSize.x > 0 && viewportSize.y > 0)
+    {
+        camera->SetAspectRatio(aspectRatio);
+    }
     GLuint shaderProgram = defaultShader->GetProgramID();
 
     // Update camera matrices
@@ -311,7 +313,7 @@ void Renderer::CreateFramebuffer(int width, int height)
 	// Creating a texture for a framebuffer
     glGenTextures(1, &sceneTexture);
     glBindTexture(GL_TEXTURE_2D, sceneTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     // Attach texture to framebuffer
@@ -812,7 +814,7 @@ void Renderer::DrawVertexNormals(const Mesh& mesh, const glm::mat4& modelMatrix)
     glUniformMatrix4fv(glGetUniformLocation(lineShader->GetProgramID(), "model"),
         1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
 
-    lineShader->SetVec3("color", glm::vec3(0.0f, 0.5f, 1.0f));
+    lineShader->SetVec3("tintColor", glm::vec3(0.0f, 0.5f, 1.0f));
     glDrawArrays(GL_LINES, 0, lineVertices.size() / 3);
 
     glBindVertexArray(0);
@@ -877,7 +879,7 @@ void Renderer::DrawFaceNormals(const Mesh& mesh, const glm::mat4& modelMatrix)
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(camera->GetViewMatrix()));
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
 
-    lineShader->SetVec3("color", glm::vec3(0.0f, 1.0f, 0.5f));
+    lineShader->SetVec3("tintColor", glm::vec3(0.0f, 1.0f, 0.5f));
 
     glDrawArrays(GL_LINES, 0, lineVertices.size() / 3);
 

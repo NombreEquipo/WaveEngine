@@ -92,10 +92,9 @@ bool ModuleEditor::Update()
     ImGui::PopStyleVar(3);
 
     // Menu Bar
-    if (ImGui::BeginMenuBar()) {
-        ShowMenuBar();
-        ImGui::EndMenuBar();
-    }
+
+    ShowMenuBar();
+
 
     // Create DockSpace
     ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
