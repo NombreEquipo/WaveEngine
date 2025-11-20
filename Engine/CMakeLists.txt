@@ -49,6 +49,8 @@ set(UTILS_SRC
     src/ModuleEditor.h
     src/SelectionManager.h
     src/SelectionManager.cpp
+    src/Octree.h
+    src/Octree.cpp
 )
 
 set(GAMEOBJECTS_SRC 
