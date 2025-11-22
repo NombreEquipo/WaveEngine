@@ -15,7 +15,7 @@ public:
     bool Awake() override;
     bool Start() override;
     bool Update() override;
-	bool PostUpdate() override;
+    bool PostUpdate() override;
     bool CleanUp() override;
 
     GameObject* CreateGameObject(const std::string& name);
@@ -29,17 +29,15 @@ public:
     void UpdateObjectInOctree(GameObject* obj);
 
     // for raycast visualization
-    glm::vec3 lastRayOrigin;
-    glm::vec3 lastRayDirection;
+    glm::vec3 lastRayOrigin = glm::vec3(0.0f);
+    glm::vec3 lastRayDirection = glm::vec3(0.0f);
     float lastRayLength = 0.0f;
 
 private:
-
     std::unique_ptr<Octree> octree;
     bool needsOctreeRebuild = false;
     GameObject* root = nullptr;
 
-	Renderer* renderer = nullptr;
-	FileSystem* filesystem = nullptr;
+    Renderer* renderer = nullptr;
+    FileSystem* filesystem = nullptr;
 };
-

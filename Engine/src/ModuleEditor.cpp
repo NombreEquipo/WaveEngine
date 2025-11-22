@@ -307,7 +307,7 @@ void ModuleEditor::CreatePrimitiveGameObject(const std::string& name, Mesh mesh)
     GameObject* Object = new GameObject(name);
     ComponentMesh* meshComp = static_cast<ComponentMesh*>(Object->CreateComponent(ComponentType::MESH));
 
-    // Seleccionar primitiva seg�n el nombre
+    // Select primitive based on name
     Mesh selectedMesh;
 
     if (name == "Cube")
@@ -321,12 +321,15 @@ void ModuleEditor::CreatePrimitiveGameObject(const std::string& name, Mesh mesh)
     else if (name == "Cylinder")
         selectedMesh = Primitives::CreateCylinder();
     else
-        selectedMesh = mesh; 
+        selectedMesh = mesh;
 
     meshComp->SetMesh(selectedMesh);
 
     GameObject* root = Application::GetInstance().scene->GetRoot();
     root->AddChild(Object);
+
+    // Trigger octree rebuild
+    Application::GetInstance().scene->RebuildOctree();
 
     LOG_CONSOLE("%s created", name.c_str());
     LOG_DEBUG("Primitive created: %s", name.c_str());

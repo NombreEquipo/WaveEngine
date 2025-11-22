@@ -193,7 +193,6 @@ bool Renderer::PreUpdate()
 
 bool Renderer::Update()
 {
-
     ModuleEditor* editor = Application::GetInstance().editor.get();
     ImVec2 viewportSize = editor->sceneViewportSize;
 
@@ -243,8 +242,55 @@ bool Renderer::Update()
 
     defaultTexture->Unbind();
 
+    if (editor)
+    {
+        // Draw AABBs if enabled
+        if (editor->ShouldShowAABB())
+        {
+            DrawAllAABBs(root);
+        }
+
+        // Draw Octree if enabled
+        if (editor->ShouldShowOctree())
+        {
+            Octree* octree = Application::GetInstance().scene->GetOctree();
+            if (octree)
+            {
+                LOG_DEBUG(" Drawing octree with %d nodes, %d objects",
+                    octree->GetTotalNodeCount(),
+                    octree->GetTotalObjectCount());
+                octree->DebugDraw();
+            }
+            else
+            {
+                LOG_DEBUG(" Octree is NULL!");
+            }
+        }
+
+        // Draw Raycast if enabled
+        if (editor->ShouldShowRaycast())
+        {
+            ModuleScene* scene = Application::GetInstance().scene.get();
+            if (scene && scene->lastRayLength > 0.0f)
+            {
+                LOG_DEBUG("Drawing raycast: origin(%.2f,%.2f,%.2f) length %.2f",
+                    scene->lastRayOrigin.x, scene->lastRayOrigin.y, scene->lastRayOrigin.z,
+                    scene->lastRayLength);
+                DrawRay(scene->lastRayOrigin,
+                    scene->lastRayDirection,
+                    scene->lastRayLength,
+                    glm::vec3(1.0f, 0.0f, 1.0f)); // Magenta color
+            }
+            else
+            {
+                LOG_DEBUG("No ray to draw (lastRayLength = %.2f)",
+                    scene ? scene->lastRayLength : -1.0f);
+            }
+        }
+    }
+
     UnbindFramebuffer();
-        
+
     return true;
 }
 
@@ -573,28 +619,6 @@ void Renderer::DrawScene()
     {
         DrawGameObjectRecursive(transparentObj.gameObject, true, renderCamera, cullingCamera);
     }
-
-    ModuleEditor* editor = Application::GetInstance().editor.get();
-
-    if (editor)
-    {
-        // draw aabbs it necessary
-        if (editor->ShouldShowAABB())
-        {
-            DrawAllAABBs(root);
-        }
-
-        // draw octree it necessary
-        if (editor->ShouldShowOctree())
-        {
-            Octree* octree = Application::GetInstance().scene->GetOctree();
-            if (octree)
-            {
-                octree->DebugDraw();
-            }
-        }
-    }
-
 }
 
 void Renderer::DrawAllAABBs(GameObject* gameObject)

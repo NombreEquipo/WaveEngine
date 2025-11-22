@@ -47,6 +47,6 @@ private:
 
     void UpdateQuaternionFromEuler();
     void UpdateEulerFromQuaternion();
-
+    void UpdateOctree();
     void MarkChildrenGlobalDirty();
 };

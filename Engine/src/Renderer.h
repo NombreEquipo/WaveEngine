@@ -56,6 +56,7 @@ public:
     // Shader access
     Shader* GetDefaultShader() const { return defaultShader.get(); }
     Shader* GetOutlineShader() const { return outlineShader.get(); }
+    Shader* GetLineShader() const { return lineShader.get(); }
 
     ComponentCamera* GetCamera();
 

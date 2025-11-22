@@ -3,6 +3,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/euler_angles.hpp>
+#include "Application.h"
 
 Transform::Transform(GameObject* owner)
     : Component(owner, ComponentType::TRANSFORM),
@@ -35,6 +36,8 @@ void Transform::SetPosition(const glm::vec3& pos)
         localDirty = true;
         globalDirty = true;
         MarkChildrenGlobalDirty();
+
+        UpdateOctree();
     }
 }
 
@@ -47,6 +50,8 @@ void Transform::SetRotation(const glm::vec3& rot)
         localDirty = true;
         globalDirty = true;
         MarkChildrenGlobalDirty();
+
+        UpdateOctree();
     }
 }
 
@@ -59,6 +64,8 @@ void Transform::SetRotationQuat(const glm::quat& quat)
         localDirty = true;
         globalDirty = true;
         MarkChildrenGlobalDirty();
+
+        UpdateOctree();
     }
 }
 
@@ -70,6 +77,8 @@ void Transform::SetScale(const glm::vec3& scl)
         localDirty = true;
         globalDirty = true;
         MarkChildrenGlobalDirty();
+
+        UpdateOctree();
     }
 }
 
@@ -156,4 +165,13 @@ void Transform::UpdateQuaternionFromEuler()
 void Transform::UpdateEulerFromQuaternion()
 {
     rotation = glm::degrees(glm::eulerAngles(rotationQuat));
+}
+
+void Transform::UpdateOctree()
+{
+    Application& app = Application::GetInstance();
+    if (app.scene && owner)
+    {
+        app.scene->UpdateObjectInOctree(owner);
+    }
 }

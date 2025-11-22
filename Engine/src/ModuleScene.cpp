@@ -10,6 +10,8 @@ ModuleScene::ModuleScene() : Module()
 {
     name = "ModuleScene";
     root = nullptr;
+    renderer = nullptr;
+    filesystem = nullptr;
 }
 
 ModuleScene::~ModuleScene()
@@ -33,54 +35,41 @@ bool ModuleScene::Start()
     root = new GameObject("Root");
     LOG_CONSOLE("Scene ready");
 
-    octree = std::make_unique<Octree>(
-        glm::vec3(-100.0f, -100.0f, -100.0f),
-        glm::vec3(100.0f, 100.0f, 100.0f),
-        4,  // max objects per node
-        5   // max depth
-    );
 
-    LOG_DEBUG("Octree initialized with default bounds");
-    LOG_CONSOLE("Spatial partitioning system ready");
+    LOG_DEBUG("Scene initialized - octree will be built when objects are loaded");
+    LOG_CONSOLE("Scene manager ready");
 
     return true;
 }
-
 void ModuleScene::RebuildOctree()
 {
-    if (!octree)
-    {
-        LOG_DEBUG("ERROR: Octree not initialized");
-        return;
-    }
+    LOG_DEBUG("====================================");
+    LOG_DEBUG("REBUILDING OCTREE");
+    LOG_DEBUG("====================================");
 
-    if (!root)
-    {
-        LOG_DEBUG("WARNING: No root GameObject, octree will be empty");
-        return;
-    }
+    glm::vec3 sceneMin(std::numeric_limits<float>::max());
+    glm::vec3 sceneMax(std::numeric_limits<float>::lowest());
 
-    octree->Clear();
-
-    // Ccalculate bounds of all the scene
-    glm::vec3 sceneMin(FLT_MAX);
-    glm::vec3 sceneMax(-FLT_MAX);
     bool hasObjects = false;
 
+    // Función para calcular bounds de todos los objetos
     std::function<void(GameObject*)> calculateBounds = [&](GameObject* obj) {
         if (!obj || !obj->IsActive()) return;
 
-        ComponentMesh* meshComp = static_cast<ComponentMesh*>(
-            obj->GetComponent(ComponentType::MESH));
-
-        if (meshComp && meshComp->IsActive() && meshComp->HasMesh())
+        ComponentMesh* mesh = static_cast<ComponentMesh*>(obj->GetComponent(ComponentType::MESH));
+        if (mesh && mesh->IsActive() && mesh->HasMesh())
         {
-            glm::vec3 worldMin, worldMax;
-            meshComp->GetWorldAABB(worldMin, worldMax);
+            glm::vec3 objMin, objMax;
+            mesh->GetWorldAABB(objMin, objMax);
 
-            sceneMin = glm::min(sceneMin, worldMin);
-            sceneMax = glm::max(sceneMax, worldMax);
+            sceneMin = glm::min(sceneMin, objMin);
+            sceneMax = glm::max(sceneMax, objMax);
             hasObjects = true;
+
+            LOG_DEBUG("   Object '%s' AABB: min(%.2f,%.2f,%.2f) max(%.2f,%.2f,%.2f)",
+                obj->GetName().c_str(),
+                objMin.x, objMin.y, objMin.z,
+                objMax.x, objMax.y, objMax.z);
         }
 
         for (GameObject* child : obj->GetChildren())
@@ -89,63 +78,159 @@ void ModuleScene::RebuildOctree()
         }
         };
 
-    calculateBounds(root);
-
-    if (!hasObjects)
+    if (root)
     {
-        LOG_DEBUG("No objects with meshes found, using default octree bounds");
-        LOG_CONSOLE("Octree empty - no objects to partition");
-        return;
+        calculateBounds(root);
     }
 
-    // Expandir bounds para evitar objetos en los bordes
-    glm::vec3 expansion = (sceneMax - sceneMin) * 0.1f; // 10% expansion
-    expansion = glm::max(expansion, glm::vec3(5.0f)); // Mínimo 5 unidades
-    sceneMin -= expansion;
-    sceneMax += expansion;
+    // Si no hay objetos con mesh, usar bounds por defecto
+    if (!hasObjects)
+    {
+        sceneMin = glm::vec3(-10.0f, -10.0f, -10.0f);
+        sceneMax = glm::vec3(10.0f, 10.0f, 10.0f);
+        LOG_DEBUG(" No objects with meshes found, using default bounds");
+    }
+    else
+    {
+        // Expandir un poco los límites para dar margen (30%)
+        glm::vec3 size = sceneMax - sceneMin;
+        glm::vec3 margin = size * 0.3f;
+        sceneMin -= margin;
+        sceneMax += margin;
+    }
 
-    // recreate octree with new calculated bounds
-    octree->Create(sceneMin, sceneMax, 4, 5);
-
-    LOG_DEBUG("Octree bounds: min(%.2f, %.2f, %.2f) max(%.2f, %.2f, %.2f)",
+    LOG_DEBUG("Octree bounds: min(%.2f,%.2f,%.2f) max(%.2f,%.2f,%.2f)",
         sceneMin.x, sceneMin.y, sceneMin.z,
         sceneMax.x, sceneMax.y, sceneMax.z);
 
-    // insert all the gameobjects with mesh in the octree
-    std::function<void(GameObject*)> insertIntoOctree = [&](GameObject* obj) {
-        if (!obj || !obj->IsActive()) return;
+    if (!octree)
+    {
+        LOG_DEBUG("Creating new octree with calculated bounds...");
+        octree = std::make_unique<Octree>(sceneMin, sceneMax, 4, 5);
+    }
+    else
+    {
+        LOG_DEBUG("Clearing and recreating octree with calculated bounds...");
+        octree->Clear();
+        octree->Create(sceneMin, sceneMax, 4, 5);
+    }
 
-        ComponentMesh* meshComp = static_cast<ComponentMesh*>(
-            obj->GetComponent(ComponentType::MESH));
+    LOG_DEBUG("Starting object collection...");
+    LOG_DEBUG("   Root exists: %s", root ? "YES" : "NO");
 
-        if (meshComp && meshComp->IsActive() && meshComp->HasMesh())
+    if (root)
+    {
+        LOG_DEBUG("   Root children count: %d", (int)root->GetChildren().size());
+
+        // List all root children
+        for (GameObject* child : root->GetChildren())
         {
-            bool inserted = octree->Insert(obj);
-            if (!inserted)
+            if (child)
             {
-                LOG_DEBUG("WARNING: Failed to insert '%s' into octree",
-                    obj->GetName().c_str());
+                LOG_DEBUG("   - Child: '%s' (active: %s)",
+                    child->GetName().c_str(),
+                    child->IsActive() ? "YES" : "NO");
+            }
+        }
+    }
+
+    // Insert all game objects
+    int insertedCount = 0;
+    int attemptedCount = 0;
+    int skippedNoMesh = 0;
+    int skippedInactive = 0;
+
+    std::function<void(GameObject*)> insertRecursive = [&](GameObject* obj) {
+        if (!obj)
+        {
+            LOG_DEBUG("    NULL object encountered");
+            return;
+        }
+
+        attemptedCount++;
+        LOG_DEBUG("    Checking '%s' (active: %s)",
+            obj->GetName().c_str(),
+            obj->IsActive() ? "YES" : "NO");
+
+        if (!obj->IsActive())
+        {
+            LOG_DEBUG("      Skipped: inactive");
+            skippedInactive++;
+            return;
+        }
+
+        ComponentMesh* mesh = static_cast<ComponentMesh*>(obj->GetComponent(ComponentType::MESH));
+
+        if (!mesh)
+        {
+            LOG_DEBUG("       No mesh component");
+            skippedNoMesh++;
+        }
+        else if (!mesh->IsActive())
+        {
+            LOG_DEBUG("       Mesh component inactive");
+            skippedInactive++;
+        }
+        else if (!mesh->HasMesh())
+        {
+            LOG_DEBUG("       Mesh component has no mesh data");
+            skippedNoMesh++;
+        }
+        else
+        {
+            LOG_DEBUG("      Has valid mesh, attempting insert...");
+
+            if (octree->Insert(obj))
+            {
+                insertedCount++;
+                LOG_DEBUG("       Successfully inserted '%s'", obj->GetName().c_str());
+            }
+            else
+            {
+                LOG_DEBUG("       Insert FAILED for '%s'", obj->GetName().c_str());
+
+                // Get AABB to see why it failed
+                glm::vec3 min, max;
+                mesh->GetWorldAABB(min, max);
+                LOG_DEBUG("         AABB: min(%.2f,%.2f,%.2f) max(%.2f,%.2f,%.2f)",
+                    min.x, min.y, min.z, max.x, max.y, max.z);
             }
         }
 
         for (GameObject* child : obj->GetChildren())
         {
-            insertIntoOctree(child);
+            insertRecursive(child);
         }
         };
 
-    insertIntoOctree(root);
+    if (root)
+    {
+        insertRecursive(root);
+    }
 
-    int totalObjects = octree->GetTotalObjectCount();
-    int totalNodes = octree->GetTotalNodeCount();
+    LOG_DEBUG("====================================");
+    LOG_DEBUG("=== Octree Rebuild Complete ===");
+    LOG_DEBUG("Objects checked: %d", attemptedCount);
+    LOG_DEBUG("Skipped (no mesh): %d", skippedNoMesh);
+    LOG_DEBUG("Skipped (inactive): %d", skippedInactive);
+    LOG_DEBUG("Successfully inserted: %d", insertedCount);
+    LOG_DEBUG("Total nodes: %d", octree->GetTotalNodeCount());
+    LOG_DEBUG("Total objects in octree: %d", octree->GetTotalObjectCount());
+    LOG_DEBUG("====================================");
 
-    LOG_DEBUG("Octree rebuilt: %d objects in %d nodes", totalObjects, totalNodes);
-    LOG_CONSOLE("Spatial partitioning updated: %d objects in %d nodes",
-        totalObjects, totalNodes);
+    if (insertedCount != octree->GetTotalObjectCount())
+    {
+        LOG_DEBUG(" WARNING: Mismatch between inserted (%d) and reported (%d)!",
+            insertedCount, octree->GetTotalObjectCount());
+    }
 
-    needsOctreeRebuild = false;
+    LOG_CONSOLE("Octree rebuilt: %d objects in %d nodes (bounds: %.1fx%.1fx%.1f)",
+        octree->GetTotalObjectCount(),
+        octree->GetTotalNodeCount(),
+        sceneMax.x - sceneMin.x,
+        sceneMax.y - sceneMin.y,
+        sceneMax.z - sceneMin.z);
 }
-
 void ModuleScene::UpdateObjectInOctree(GameObject* obj)
 {
     if (!octree || !obj)
