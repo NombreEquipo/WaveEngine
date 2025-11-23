@@ -412,7 +412,7 @@ void ModuleEditor::CreatePrimitiveGameObject(const std::string& name, Mesh mesh)
     GameObject* Object = new GameObject(name);
     ComponentMesh* meshComp = static_cast<ComponentMesh*>(Object->CreateComponent(ComponentType::MESH));
 
-    // Seleccionar primitiva seg�n el nombre
+    // Select primitive based on name
     Mesh selectedMesh;
 
     if (name == "Cube")
@@ -426,12 +426,15 @@ void ModuleEditor::CreatePrimitiveGameObject(const std::string& name, Mesh mesh)
     else if (name == "Cylinder")
         selectedMesh = Primitives::CreateCylinder();
     else
-        selectedMesh = mesh; 
+        selectedMesh = mesh;
 
     meshComp->SetMesh(selectedMesh);
 
     GameObject* root = Application::GetInstance().scene->GetRoot();
     root->AddChild(Object);
+
+    // Trigger octree rebuild
+    Application::GetInstance().scene->RebuildOctree();
 
     LOG_CONSOLE("%s created", name.c_str());
     LOG_DEBUG("Primitive created: %s", name.c_str());
@@ -1314,6 +1317,28 @@ void ModuleEditor::DrawRendererSettings()
         LOG_CONSOLE("All renderer settings reset to defaults");
         LOG_DEBUG("All renderer settings reset to defaults");
     }
+
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Text("Debug Visualization");
+
+    if (ImGui::Checkbox("Show AABB", &showAABB))
+    {
+        LOG_DEBUG("AABB visualization: %s", showAABB ? "ON" : "OFF");
+    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Show axis-aligned bounding boxes for all meshes");
+
+    if (ImGui::Checkbox("Show Octree", &showOctree))
+    {
+        LOG_DEBUG("Octree visualization: %s", showOctree ? "ON" : "OFF");
+    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Show octree spatial partitioning structure");
+
+    if (ImGui::Checkbox("Show Raycast", &showRaycast))
+    {
+        LOG_DEBUG("Raycast visualization: %s", showRaycast ? "ON" : "OFF");
+    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Show ray used for mouse picking");
 
     ImGui::Spacing();
 }

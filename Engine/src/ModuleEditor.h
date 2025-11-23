@@ -29,6 +29,10 @@ public:
     ImVec2 sceneViewportPos;
     ImVec2 sceneViewportSize;
 
+    bool ShouldShowAABB() const { return showAABB; }
+    bool ShouldShowOctree() const { return showOctree; }
+    bool ShouldShowRaycast() const { return showRaycast; }
+
 private:
 
     bool ShowMenuBar();
@@ -94,7 +98,6 @@ private:
     bool showLibraryInfo = true;
     bool autoScroll = true;
     bool scrollToBottom = false;
-  
     
 	// Hierarchy
     GameObject* renamingObject = nullptr;
@@ -114,4 +117,9 @@ private:
     // ImGuizmo
 	ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::TRANSLATE; // Translate, Rotate, Scale
 	ImGuizmo::MODE currentGizmoMode = ImGuizmo::WORLD;              // Local or World
+    
+    // Debug Visualization 
+    bool showAABB = false;
+    bool showOctree = false;
+    bool showRaycast = false;
 };
