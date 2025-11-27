@@ -9,6 +9,7 @@ find_package(assimp CONFIG REQUIRED)
 find_package(DevIL REQUIRED)
 find_package(imgui REQUIRED)
 find_package(imguizmo CONFIG REQUIRED)
+find_package(Tracy CONFIG REQUIRED)
 
 set(CORE_SRC 
     src/Main.cpp 
@@ -116,3 +117,4 @@ target_link_libraries(Engine PRIVATE DevIL::IL)
 target_link_libraries(Engine PRIVATE DevIL::ILU)
 target_link_libraries(Engine PRIVATE imgui::imgui)
 target_link_libraries(Engine PRIVATE imguizmo::imguizmo)
+target_link_libraries(Engine PRIVATE Tracy::TracyClient)

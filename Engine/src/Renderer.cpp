@@ -9,6 +9,8 @@
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "tracy/Tracy.hpp"
+
 Renderer::Renderer()
 {
     LOG_DEBUG("Renderer Constructor");
@@ -193,6 +195,9 @@ bool Renderer::PreUpdate()
 
 bool Renderer::Update()
 {
+
+    ZoneScopedN("RendererUpdate");
+
     ModuleEditor* editor = Application::GetInstance().editor.get();
     ImVec2 viewportSize = editor->sceneViewportSize;
 
@@ -520,6 +525,8 @@ bool Renderer::ShouldCullGameObject(GameObject* gameObject, const Frustum& frust
 }
 void Renderer::DrawScene()
 {
+    ZoneScoped;
+
     GameObject* root = Application::GetInstance().scene->GetRoot();
     if (root == nullptr)
         return;
