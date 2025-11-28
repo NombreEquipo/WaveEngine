@@ -1,9 +1,12 @@
 #include "LibraryManager.h"
 #include <iostream>
 #include <windows.h>
+#include "MetaFile.h"
+
+namespace fs = std::filesystem;
 
 bool LibraryManager::s_initialized = false;
-std::string LibraryManager::s_projectRoot = "";
+fs::path LibraryManager::s_projectRoot;
 
 void LibraryManager::Initialize() {
     if (s_initialized) {
@@ -15,64 +18,52 @@ void LibraryManager::Initialize() {
     // Get executable directory
     char buffer[MAX_PATH];
     GetModuleFileNameA(NULL, buffer, MAX_PATH);
-    std::string execPath(buffer);
+    fs::path execPath(buffer);
 
-    size_t pos = execPath.find_last_of("\\/");
-    std::string currentDir = execPath.substr(0, pos);
+    // Get directory containing executable
+    fs::path currentDir = execPath.parent_path();
 
     // Go up 2 levels from executable (build/Debug/ -> build/ -> ProjectRoot/)
-    // First level up (Debug/ -> build/)
-    pos = currentDir.find_last_of("\\/");
-    if (pos != std::string::npos) {
-        currentDir = currentDir.substr(0, pos);
-
-        // Second level up (build/ -> ProjectRoot/)
-        pos = currentDir.find_last_of("\\/");
-        if (pos != std::string::npos) {
-            currentDir = currentDir.substr(0, pos);
-        }
-    }
+    currentDir = currentDir.parent_path().parent_path();
 
     // Verify Assets folder exists at this level
-    std::string testPath = currentDir + "\\Assets";
-    DWORD attribs = GetFileAttributesA(testPath.c_str());
-    bool assetsFound = (attribs != INVALID_FILE_ATTRIBUTES && (attribs & FILE_ATTRIBUTE_DIRECTORY));
+    fs::path assetsPath = currentDir / "Assets";
+    bool assetsFound = fs::exists(assetsPath) && fs::is_directory(assetsPath);
 
     if (assetsFound) {
         s_projectRoot = currentDir;
-        std::cout << "[LibraryManager] Project root found at: " << s_projectRoot << std::endl;
+        std::cout << "[LibraryManager] Project root found at: " << s_projectRoot.string() << std::endl;
     }
 
-    if (!assetsFound)
-    {
+    if (!assetsFound) {
         std::cerr << "[LibraryManager] ERROR: Could not find project root (Assets folder not found)" << std::endl;
         return;
     }
 
     // Create Library root at project level
-    std::string libraryRoot = s_projectRoot + "\\Library";
+    fs::path libraryRoot = s_projectRoot / "Library";
     EnsureDirectoryExists(libraryRoot);
 
     // Create all Library subdirectories
-    EnsureDirectoryExists(libraryRoot + "\\Meshes");
-    EnsureDirectoryExists(libraryRoot + "\\Materials");
-    EnsureDirectoryExists(libraryRoot + "\\Textures");
-    EnsureDirectoryExists(libraryRoot + "\\Models");
-    EnsureDirectoryExists(libraryRoot + "\\Animations");
+    EnsureDirectoryExists(libraryRoot / "Meshes");
+    EnsureDirectoryExists(libraryRoot / "Materials");
+    EnsureDirectoryExists(libraryRoot / "Textures");
+    EnsureDirectoryExists(libraryRoot / "Models");
+    EnsureDirectoryExists(libraryRoot / "Animations");
 
     s_initialized = true;
     std::cout << "[LibraryManager] Library structure initialized successfully!" << std::endl;
 }
 
-void LibraryManager::EnsureDirectoryExists(const std::string& path) {
+void LibraryManager::EnsureDirectoryExists(const fs::path& path) {
     try {
-        if (!std::filesystem::exists(path)) {
-            std::filesystem::create_directories(path);
-            std::cout << "[LibraryManager] Created directory: " << path << std::endl;
+        if (!fs::exists(path)) {
+            fs::create_directories(path);
+            std::cout << "[LibraryManager] Created directory: " << path.string() << std::endl;
         }
     }
-    catch (const std::filesystem::filesystem_error& e) {
-        std::cerr << "[LibraryManager] Error creating directory " << path << ": " << e.what() << std::endl;
+    catch (const fs::filesystem_error& e) {
+        std::cerr << "[LibraryManager] Error creating directory " << path.string() << ": " << e.what() << std::endl;
     }
 }
 
@@ -81,33 +72,107 @@ bool LibraryManager::IsInitialized() {
 }
 
 std::string LibraryManager::GetLibraryRoot() {
-    return s_projectRoot + "\\Library\\";
+    return (s_projectRoot / "Library").string();
 }
 
 std::string LibraryManager::GetAssetsRoot() {
-    return s_projectRoot + "\\Assets\\";
+    return (s_projectRoot / "Assets").string();
 }
 
 std::string LibraryManager::GetMeshPath(const std::string& filename) {
-    return GetLibraryRoot() + "Meshes\\" + filename;
+    return (s_projectRoot / "Library" / "Meshes" / filename).string();
 }
 
 std::string LibraryManager::GetMaterialPath(const std::string& filename) {
-    return GetLibraryRoot() + "Materials\\" + filename;
+    return (s_projectRoot / "Library" / "Materials" / filename).string();
 }
 
 std::string LibraryManager::GetTexturePath(const std::string& filename) {
-    return GetLibraryRoot() + "Textures\\" + filename;
+    return (s_projectRoot / "Library" / "Textures" / filename).string();
 }
 
 std::string LibraryManager::GetModelPath(const std::string& filename) {
-    return GetLibraryRoot() + "Models\\" + filename;
+    return (s_projectRoot / "Library" / "Models" / filename).string();
 }
 
 std::string LibraryManager::GetAnimationPath(const std::string& filename) {
-    return GetLibraryRoot() + "Animations\\" + filename;
+    return (s_projectRoot / "Library" / "Animations" / filename).string();
 }
 
-bool LibraryManager::FileExists(const std::string& path) {
-    return std::filesystem::exists(path);
+bool LibraryManager::FileExists(const fs::path& path) {
+    return fs::exists(path);
+}
+
+void LibraryManager::ClearLibrary() {
+    fs::path libraryPath = s_projectRoot / "Library";
+
+    std::cout << "\n[LibraryManager] ========================================" << std::endl;
+    std::cout << "[LibraryManager] CLEARING LIBRARY FOLDER" << std::endl;
+    std::cout << "[LibraryManager] ========================================\n" << std::endl;
+
+    try {
+        if (fs::exists(libraryPath)) {
+            int filesDeleted = 0;
+
+            // Eliminar todos los archivos en Library/ recursivamente
+            for (const auto& entry : fs::recursive_directory_iterator(libraryPath)) {
+                if (entry.is_regular_file()) {
+                    fs::remove(entry.path());
+                    filesDeleted++;
+                }
+            }
+
+            std::cout << "[LibraryManager] Deleted " << filesDeleted << " files from Library" << std::endl;
+
+            // Recrear estructura de carpetas
+            Initialize();
+        }
+    }
+    catch (const fs::filesystem_error& e) {
+        std::cerr << "[LibraryManager] ERROR: " << e.what() << std::endl;
+    }
+
+    std::cout << "[LibraryManager] Library cleared successfully\n" << std::endl;
+}
+
+void LibraryManager::RegenerateFromAssets() {
+    std::cout << "\n[LibraryManager] ========================================" << std::endl;
+    std::cout << "[LibraryManager] REGENERATING LIBRARY FROM ASSETS" << std::endl;
+    std::cout << "[LibraryManager] ========================================\n" << std::endl;
+
+    // Paso 1: Limpiar Library
+    ClearLibrary();
+
+    // Paso 2: Escanear Assets y crear/actualizar .meta
+    MetaFileManager::ScanAssets();
+
+    // Paso 3: Procesar todos los assets que necesitan reimportación
+    fs::path assetsPath = GetAssetsRoot();
+    int processed = 0;
+
+    for (const auto& entry : fs::recursive_directory_iterator(assetsPath)) {
+        if (!entry.is_regular_file()) continue;
+
+        fs::path assetPath = entry.path();
+        std::string extension = assetPath.extension().string();
+
+        // Ignorar .meta
+        if (extension == ".meta") continue;
+
+        AssetType type = MetaFile::GetAssetType(extension);
+        if (type == AssetType::UNKNOWN) continue;
+
+        // Verificar si necesita reimportación
+        if (MetaFileManager::NeedsReimport(assetPath.string())) {
+            std::cout << "[LibraryManager] Processing: " << assetPath.filename().string() << std::endl;
+
+            // TODO: Aquí llamarías a la función específica de importación
+            // Por ejemplo: ImportFBX(assetPath), ImportTexture(assetPath), etc.
+
+            processed++;
+        }
+    }
+
+    std::cout << "\n[LibraryManager] Regeneration complete: " << processed << " assets processed" << std::endl;
+    std::cout << "[LibraryManager] ========================================\n" << std::endl;
 }

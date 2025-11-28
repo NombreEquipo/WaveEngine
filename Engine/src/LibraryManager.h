@@ -3,6 +3,8 @@
 #include <string>
 #include <filesystem>
 
+namespace fs = std::filesystem;
+
 // Centralized manager for Library folder structure
 class LibraryManager {
 public:
@@ -10,7 +12,7 @@ public:
     static void Initialize();
 
     // Ensure specific directory exists
-    static void EnsureDirectoryExists(const std::string& path);
+    static void EnsureDirectoryExists(const fs::path& path);
 
     // Check if library is initialized
     static bool IsInitialized();
@@ -23,13 +25,19 @@ public:
     static std::string GetAnimationPath(const std::string& filename);
 
     // Check if a file exists in library
-    static bool FileExists(const std::string& path);
+    static bool FileExists(const fs::path& path);
 
     // Get base paths
     static std::string GetLibraryRoot();
     static std::string GetAssetsRoot();
 
+    // Limpiar completamente la carpeta Library
+    static void ClearLibrary();
+
+    // Regenerar Library desde Assets usando archivos .meta
+    static void RegenerateFromAssets();
+
 private:
     static bool s_initialized;
-    static std::string s_projectRoot;  // Root directory of the project (parent of build/)
+    static fs::path s_projectRoot;  // Root directory of the project (parent of build/)
 };

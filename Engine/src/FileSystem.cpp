@@ -13,6 +13,8 @@
 #include "MeshImporter.h"
 #include "LibraryManager.h"  
 #include "ComponentMaterial.h"
+#include "MetaFile.h"
+#include "LibraryManager.h"
 
 FileSystem::FileSystem() : Module() {}
 FileSystem::~FileSystem() {}
@@ -24,10 +26,14 @@ bool FileSystem::Awake()
 
 bool FileSystem::Start()
 {
-
+    // Inicializar estructura de Library
     LibraryManager::Initialize();
     LOG_DEBUG("Library structure initialized");
     LOG_CONSOLE("Library folders initialized");
+
+    MetaFileManager::Initialize();
+    LOG_DEBUG("MetaFile system initialized");
+    LOG_CONSOLE("Metadata system initialized");
 
     LOG_DEBUG("Initializing FileSystem module");
     LOG_CONSOLE("FileSystem initialized");
@@ -41,12 +47,9 @@ bool FileSystem::Start()
     std::string currentDir = execPath.substr(0, pos);
 
     // Go up 2 levels from executable (build/Debug/ -> build/ -> ProjectRoot/)
-    // First level up (Debug/ -> build/)
     pos = currentDir.find_last_of("\\/");
     if (pos != std::string::npos) {
         currentDir = currentDir.substr(0, pos);
-
-        // Second level up (build/ -> ProjectRoot/)
         pos = currentDir.find_last_of("\\/");
         if (pos != std::string::npos) {
             currentDir = currentDir.substr(0, pos);
@@ -230,6 +233,8 @@ GameObject* FileSystem::LoadFBXAsGameObject(const std::string& file_path)
     LOG_DEBUG("  Materials: %d", scene->mNumMaterials);
     LOG_CONSOLE("ASSIMP: Found %d meshes, %d materials", scene->mNumMeshes, scene->mNumMaterials);
 
+    MetaFile meta = MetaFileManager::GetOrCreateMeta(file_path);
+
     GameObject* rootObj = ProcessNode(scene->mRootNode, scene, directory);
 
     glm::vec3 minBounds(std::numeric_limits<float>::max());
@@ -240,8 +245,19 @@ GameObject* FileSystem::LoadFBXAsGameObject(const std::string& file_path)
     glm::vec3 size = maxBounds - minBounds;
     LOG_DEBUG("Model Dimensions: X=%.2f Y=%.2f Z=%.2f", size.x, size.y, size.z);
 
-    // Normalize scale
     NormalizeModelScale(rootObj, 5.0f);
+
+    std::string modelFilename = MeshImporter::GenerateMeshFilename(
+        std::filesystem::path(file_path).stem().string()
+    );
+    meta.libraryPath = LibraryManager::GetModelPath(modelFilename);
+    meta.lastModified = MetaFileManager::GetFileTimestamp(file_path);
+
+    // Guardar el .meta actualizado
+    std::string metaPath = file_path + ".meta";
+    meta.Save(metaPath);
+
+    LOG_DEBUG("✓ Updated .meta with library path: %s", meta.libraryPath.c_str());
 
     aiReleaseImport(scene);
 
@@ -359,23 +375,23 @@ Mesh FileSystem::ProcessMesh(aiMesh* aiMesh, const aiScene* scene)
     LOG_DEBUG("=== Processing Mesh with Custom Format ===");
     LOG_DEBUG("Mesh name: %s", aiMesh->mName.C_Str());
 
-    // generate file name based in mesh
+    // Generar nombre de archivo basado en el mesh
     std::string meshFilename = MeshImporter::GenerateMeshFilename(aiMesh->mName.C_Str());
     std::string fullPath = LibraryManager::GetMeshPath(meshFilename);
 
+    // PASO 1: Verificar si el archivo ya existe en Library Y si está actualizado
     if (LibraryManager::FileExists(fullPath))
     {
-        LOG_DEBUG(" Usando Library para cargar modelo: %s", meshFilename.c_str());
-        LOG_CONSOLE(" Usando Library para cargar modelo: %s", meshFilename.c_str());
+        LOG_DEBUG("✓ Mesh encontrado en Library: %s", meshFilename.c_str());
 
-        //load from the saved file
+        // Cargar directamente desde el archivo guardado
         Mesh loadedMesh = MeshImporter::LoadFromCustomFormat(meshFilename);
 
         if (loadedMesh.vertices.size() > 0 && loadedMesh.indices.size() > 0)
         {
-            LOG_DEBUG(" Mesh cargado desde Library - %d vertices, %d triangles",
+            LOG_DEBUG("  ✓ Usando Library para cargar modelo - %d vertices, %d triangles",
                 loadedMesh.vertices.size(), loadedMesh.indices.size() / 3);
-            LOG_CONSOLE(" Mesh cargado desde Library: %d vertices, %d triangles",
+            LOG_CONSOLE("  ✓ Usando Library: %d vertices, %d triangles",
                 loadedMesh.vertices.size(),
                 loadedMesh.indices.size() / 3);
 
@@ -383,16 +399,40 @@ Mesh FileSystem::ProcessMesh(aiMesh* aiMesh, const aiScene* scene)
         }
         else
         {
-            LOG_DEBUG(" Mesh en Library corrupto, regenerando desde FBX...");
-            LOG_CONSOLE("Regenerando mesh corrupto...");
+            LOG_DEBUG("  ⚠ Mesh en Library corrupto, regenerando desde FBX...");
+            LOG_CONSOLE("  ⚠ Regenerando mesh corrupto...");
         }
     }
 
+    // PASO 2: Si no existe o está corrupto, procesarlo normalmente
+    LOG_DEBUG("  ⚙ Procesando mesh desde FBX (no existe en Library)...");
+    LOG_CONSOLE("  ⚙ Procesando nuevo mesh desde FBX...");
+
+    // 2.1: IMPORT - Assimp -> Our Mesh Structure
     Mesh mesh = MeshImporter::ImportFromAssimp(aiMesh);
+    LOG_DEBUG("  [IMPORT] Complete");
+
+    // 2.2: SAVE - Our Mesh -> Custom Binary Format (para futura carga rápida)
+    bool saveSuccess = MeshImporter::SaveToCustomFormat(mesh, meshFilename);
+
+    if (saveSuccess) {
+        LOG_DEBUG("  ✓ Mesh guardado en Library: %s", meshFilename.c_str());
+        LOG_CONSOLE("  ✓ Mesh guardado en Library para futuras cargas");
+    }
+    else {
+        LOG_DEBUG("  ✗ ERROR: No se pudo guardar en Library!");
+        LOG_CONSOLE("  ⚠ Advertencia: No se pudo cachear el mesh");
+    }
+
+    LOG_DEBUG("  ✓ Mesh procesado correctamente: %d vertices, %d triangles",
+        mesh.vertices.size(), mesh.indices.size() / 3);
+
+    LOG_CONSOLE("  ✓ Mesh procesado: %d vertices, %d triangles",
+        mesh.vertices.size(),
+        mesh.indices.size() / 3);
 
     return mesh;
 }
-
 void FileSystem::NormalizeModelScale(GameObject* rootObject, float targetSize)
 {
     glm::vec3 minBounds(std::numeric_limits<float>::max());

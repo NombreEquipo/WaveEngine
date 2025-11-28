@@ -106,6 +106,8 @@ set(IMPORTERS_SRC
     src/MeshImporter.h 
     src/LibraryManager.cpp 
     src/LibraryManager.h 
+    src/MetaFile.cpp 
+    src/MetaFile.h 
 )
 
 source_group("Source\\Core" FILES ${CORE_SRC})
