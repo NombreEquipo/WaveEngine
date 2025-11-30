@@ -12,7 +12,8 @@ enum class AssetType {
     MODEL_FBX,
     TEXTURE_PNG,
     TEXTURE_JPG,
-    TEXTURE_DDS
+    TEXTURE_DDS,
+    TEXTURE_TGA  
 };
 
 // Metadata de un asset
@@ -45,6 +46,12 @@ struct MetaFile {
 
     // Verificar si el asset ha sido modificado
     bool NeedsReimport(const std::string& assetPath) const;
+
+    // Convertir ruta absoluta a relativa desde project root
+    static std::string MakeRelativeToProject(const std::string& absolutePath);
+
+    // Convertir ruta relativa a absoluta
+    static std::string MakeAbsoluteFromProject(const std::string& relativePath);
 };
 
 // Manager de archivos .meta

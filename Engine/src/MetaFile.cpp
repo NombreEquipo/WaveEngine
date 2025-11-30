@@ -5,8 +5,6 @@
 #include <iostream>
 #include <windows.h>
 
-// MetaFile Implementation
-
 std::string MetaFile::GenerateGUID() {
     std::random_device rd;
     std::mt19937_64 gen(rd());
@@ -31,6 +29,7 @@ AssetType MetaFile::GetAssetType(const std::string& extension) {
     if (ext == ".png") return AssetType::TEXTURE_PNG;
     if (ext == ".jpg" || ext == ".jpeg") return AssetType::TEXTURE_JPG;
     if (ext == ".dds") return AssetType::TEXTURE_DDS;
+    if (ext == ".tga") return AssetType::TEXTURE_TGA;  
 
     return AssetType::UNKNOWN;
 }
@@ -42,19 +41,68 @@ bool MetaFile::Save(const std::string& metaFilePath) const {
         return false;
     }
 
-    // Formato simple key-value
-    file << "guid: " << guid << "\n";
-    file << "type: " << static_cast<int>(type) << "\n";
-    file << "originalPath: " << originalPath << "\n";
-    file << "libraryPath: " << libraryPath << "\n";
-    file << "lastModified: " << lastModified << "\n";
-    file << "importScale: " << importSettings.importScale << "\n";
-    file << "generateNormals: " << importSettings.generateNormals << "\n";
-    file << "flipUVs: " << importSettings.flipUVs << "\n";
-    file << "optimizeMeshes: " << importSettings.optimizeMeshes << "\n";
+    // Convertir rutas absolutas a relativas antes de guardar
+    std::string relativeOriginalPath = MakeRelativeToProject(originalPath);
+    std::string relativeLibraryPath = MakeRelativeToProject(libraryPath);
 
     file.close();
     return true;
+}
+
+std::string MetaFile::MakeRelativeToProject(const std::string& absolutePath) {
+    if (absolutePath.empty()) {
+        return "";
+    }
+
+    try {
+        std::filesystem::path absPath(absolutePath);
+        std::filesystem::path projectRoot = LibraryManager::GetAssetsRoot();
+        projectRoot = projectRoot.parent_path(); // Assets/ -> Project root
+
+        // Si ya es relativa o no se puede hacer relativa, devolver como esta
+        if (absPath.is_relative()) {
+            return absolutePath;
+        }
+
+        // Hacer relativa respecto al project root
+        std::filesystem::path relativePath = std::filesystem::relative(absPath, projectRoot);
+
+        std::string result = relativePath.string();
+        std::replace(result.begin(), result.end(), '\\', '/');
+
+        return result;
+    }
+    catch (...) {
+      
+        return absolutePath;
+    }
+}
+
+std::string MetaFile::MakeAbsoluteFromProject(const std::string& relativePath) {
+    if (relativePath.empty()) {
+        return "";
+    }
+
+    try {
+        std::filesystem::path relPath(relativePath);
+
+        // Si ya es absoluta, devolver como esta
+        if (relPath.is_absolute()) {
+            return relativePath;
+        }
+
+        // Obtener project root
+        std::filesystem::path projectRoot = LibraryManager::GetAssetsRoot();
+        projectRoot = projectRoot.parent_path();
+
+        // Combinar project root + relative path
+        std::filesystem::path absolutePath = projectRoot / relPath;
+
+        return absolutePath.string();
+    }
+    catch (...) {
+        return relativePath;
+    }
 }
 
 MetaFile MetaFile::Load(const std::string& metaFilePath) {
@@ -62,7 +110,7 @@ MetaFile MetaFile::Load(const std::string& metaFilePath) {
 
     std::ifstream file(metaFilePath);
     if (!file.is_open()) {
-        return meta; // Retorna meta vacío si falla
+        return meta;
     }
 
     std::string line;
@@ -71,12 +119,18 @@ MetaFile MetaFile::Load(const std::string& metaFilePath) {
         if (colonPos == std::string::npos) continue;
 
         std::string key = line.substr(0, colonPos);
-        std::string value = line.substr(colonPos + 2); // +2 para saltar ": "
+        std::string value = line.substr(colonPos + 2);
 
         if (key == "guid") meta.guid = value;
         else if (key == "type") meta.type = static_cast<AssetType>(std::stoi(value));
-        else if (key == "originalPath") meta.originalPath = value;
-        else if (key == "libraryPath") meta.libraryPath = value;
+        else if (key == "originalPath") {
+            // Convertir de relativa a absoluta
+            meta.originalPath = MakeAbsoluteFromProject(value);
+        }
+        else if (key == "libraryPath") {
+            // Convertir de relativa a absoluta
+            meta.libraryPath = MakeAbsoluteFromProject(value);
+        }
         else if (key == "lastModified") meta.lastModified = std::stoll(value);
         else if (key == "importScale") meta.importSettings.importScale = std::stof(value);
         else if (key == "generateNormals") meta.importSettings.generateNormals = (value == "1");
@@ -90,35 +144,34 @@ MetaFile MetaFile::Load(const std::string& metaFilePath) {
 
 bool MetaFile::NeedsReimport(const std::string& assetPath) const {
     if (!std::filesystem::exists(assetPath)) {
-        return false; // El asset no existe
+        return false;
     }
 
-    long long currentTimestamp = std::filesystem::last_write_time(assetPath).time_since_epoch().count();
+    long long currentTimestamp = std::filesystem::last_write_time(assetPath)
+        .time_since_epoch().count();
 
-    // Si el timestamp cambió, necesita reimportación
-    return currentTimestamp != lastModified;
+    // Tolerancia de algunos segundos 
+    const long long tolerance = 20000000000; // u de 100 nanosegundos
+
+    long long diff = std::abs(currentTimestamp - lastModified);
+
+    return diff > tolerance;
 }
 
-// MetaFileManager Implementation
+
+///// MetaFileManager Implementation/////
 
 void MetaFileManager::Initialize() {
-    std::cout << "[MetaFileManager] Initializing metadata system..." << std::endl;
 
-    // Escanear Assets/ y crear .meta para archivos nuevos
     ScanAssets();
-
-    std::cout << "[MetaFileManager] Metadata system initialized" << std::endl;
 }
 
 void MetaFileManager::ScanAssets() {
     std::string assetsPath = LibraryManager::GetAssetsRoot();
 
     if (!std::filesystem::exists(assetsPath)) {
-        std::cerr << "[MetaFileManager] ERROR: Assets folder not found" << std::endl;
         return;
     }
-
-    std::cout << "[MetaFileManager] Scanning Assets folder..." << std::endl;
 
     int metasCreated = 0;
     int metasUpdated = 0;
@@ -146,10 +199,9 @@ void MetaFileManager::ScanAssets() {
             meta.type = type;
             meta.originalPath = assetPath;
             meta.lastModified = GetFileTimestamp(assetPath);
-            meta.libraryPath = ""; // Se asignará durante importación
+            meta.libraryPath = ""; // Se asignara durante importación
 
             if (meta.Save(metaPath)) {
-                std::cout << "  [+] Created .meta: " << entry.path().filename().string() << ".meta" << std::endl;
                 metasCreated++;
             }
         }
@@ -159,14 +211,11 @@ void MetaFileManager::ScanAssets() {
             long long currentTimestamp = GetFileTimestamp(assetPath);
 
             if (meta.lastModified != currentTimestamp) {
-                std::cout << "  [*] Asset modified: " << entry.path().filename().string() << std::endl;
                 metasUpdated++;
             }
         }
     }
 
-    std::cout << "[MetaFileManager] Scan complete: " << metasCreated << " created, "
-        << metasUpdated << " need reimport" << std::endl;
 }
 
 MetaFile MetaFileManager::GetOrCreateMeta(const std::string& assetPath) {
@@ -201,15 +250,7 @@ bool MetaFileManager::NeedsReimport(const std::string& assetPath) {
 }
 
 void MetaFileManager::RegenerateLibrary() {
-    std::cout << "\n[MetaFileManager] ========================================" << std::endl;
-    std::cout << "[MetaFileManager] REGENERATING LIBRARY FROM ASSETS" << std::endl;
-    std::cout << "[MetaFileManager] ========================================\n" << std::endl;
-
-    // TODO: Implementar reimportación completa
-    // Por ahora, solo escaneamos
     ScanAssets();
-
-    std::cout << "\n[MetaFileManager] Library regeneration complete" << std::endl;
 }
 
 // Private Helpers

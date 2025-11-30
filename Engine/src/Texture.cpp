@@ -115,7 +115,7 @@ bool FileExists(const std::string& path)
     return file.good();
 }
 
-bool Texture::LoadFromFile(const std::string& path, bool flipVertically)
+bool Texture::LoadFromLibraryOrFile(const std::string& path, bool flipVertically)
 {
     // Generar nombre de archivo en Library
     std::string textureFilename = TextureImporter::GenerateTextureFilename(path);

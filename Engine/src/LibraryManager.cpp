@@ -1,4 +1,5 @@
 #include "LibraryManager.h"
+#include "Log.h"
 #include <iostream>
 #include <windows.h>
 #include "MetaFile.h"
@@ -14,7 +15,7 @@ void LibraryManager::Initialize() {
         return;
     }
 
-    std::cout << "[LibraryManager] Initializing library structure..." << std::endl;
+    LOG_CONSOLE("[LibraryManager] Initializing library structure...");
 
     // Get executable directory
     char buffer[MAX_PATH];
@@ -33,11 +34,11 @@ void LibraryManager::Initialize() {
 
     if (assetsFound) {
         s_projectRoot = currentDir;
-        std::cout << "[LibraryManager] Project root found at: " << s_projectRoot.string() << std::endl;
+        LOG_CONSOLE("[LibraryManager] Project root found at: %s", s_projectRoot.string().c_str());
     }
-
-    if (!assetsFound) {
-        std::cerr << "[LibraryManager] ERROR: Could not find project root (Assets folder not found)" << std::endl;
+    else {
+        LOG_CONSOLE("[LibraryManager] ERROR: Could not find Assets folder at: %s", assetsPath.string().c_str());
+        LOG_DEBUG("Current dir: %s", currentDir.string().c_str());
         return;
     }
 
@@ -53,18 +54,18 @@ void LibraryManager::Initialize() {
     EnsureDirectoryExists(libraryRoot / "Animations");
 
     s_initialized = true;
-    std::cout << "[LibraryManager] Library structure initialized successfully!" << std::endl;
+    LOG_CONSOLE("[LibraryManager] Library initialized successfully");
 }
 
 void LibraryManager::EnsureDirectoryExists(const fs::path& path) {
     try {
         if (!fs::exists(path)) {
             fs::create_directories(path);
-            std::cout << "[LibraryManager] Created directory: " << path.string() << std::endl;
+            LOG_DEBUG("Created directory: %s", path.string().c_str());
         }
     }
     catch (const fs::filesystem_error& e) {
-        std::cerr << "[LibraryManager] Error creating directory " << path.string() << ": " << e.what() << std::endl;
+        LOG_CONSOLE("[LibraryManager] ERROR creating directory %s: %s", path.string().c_str(), e.what());
     }
 }
 
@@ -107,9 +108,7 @@ bool LibraryManager::FileExists(const fs::path& path) {
 void LibraryManager::ClearLibrary() {
     fs::path libraryPath = s_projectRoot / "Library";
 
-    std::cout << "\n[LibraryManager] ========================================" << std::endl;
-    std::cout << "[LibraryManager] CLEARING LIBRARY FOLDER" << std::endl;
-    std::cout << "[LibraryManager] ========================================\n" << std::endl;
+    LOG_CONSOLE("[LibraryManager] Clearing Library folder...");
 
     try {
         if (fs::exists(libraryPath)) {
@@ -123,23 +122,19 @@ void LibraryManager::ClearLibrary() {
                 }
             }
 
-            std::cout << "[LibraryManager] Deleted " << filesDeleted << " files from Library" << std::endl;
+            LOG_CONSOLE("[LibraryManager] Deleted %d files from Library", filesDeleted);
 
             // Recrear estructura de carpetas
             Initialize();
         }
     }
     catch (const fs::filesystem_error& e) {
-        std::cerr << "[LibraryManager] ERROR: " << e.what() << std::endl;
+        LOG_CONSOLE("[LibraryManager] ERROR clearing library: %s", e.what());
     }
-
-    std::cout << "[LibraryManager] Library cleared successfully\n" << std::endl;
 }
 
 void LibraryManager::RegenerateFromAssets() {
-    std::cout << "\n[LibraryManager] ========================================" << std::endl;
-    std::cout << "[LibraryManager] REGENERATING LIBRARY FROM ASSETS" << std::endl;
-    std::cout << "[LibraryManager] ========================================\n" << std::endl;
+    LOG_CONSOLE("[LibraryManager] Starting Library regeneration from Assets...");
 
     // Paso 1: Limpiar Library
     ClearLibrary();
@@ -150,50 +145,58 @@ void LibraryManager::RegenerateFromAssets() {
     // Paso 3: Procesar todos los assets que necesitan reimportación
     fs::path assetsPath = GetAssetsRoot();
     int processed = 0;
+    int errors = 0;
 
-    for (const auto& entry : fs::recursive_directory_iterator(assetsPath)) {
-        if (!entry.is_regular_file()) continue;
+    try {
+        for (const auto& entry : fs::recursive_directory_iterator(assetsPath)) {
+            if (!entry.is_regular_file()) continue;
 
-        fs::path assetPath = entry.path();
-        std::string extension = assetPath.extension().string();
+            fs::path assetPath = entry.path();
+            std::string extension = assetPath.extension().string();
 
-        // Ignorar .meta
-        if (extension == ".meta") continue;
+            // Ignorar .meta
+            if (extension == ".meta") continue;
 
-        AssetType type = MetaFile::GetAssetType(extension);
-        if (type == AssetType::UNKNOWN) continue;
+            AssetType type = MetaFile::GetAssetType(extension);
+            if (type == AssetType::UNKNOWN) continue;
 
-        // Verificar si necesita reimportación
-        if (MetaFileManager::NeedsReimport(assetPath.string())) {
-            std::cout << "[LibraryManager] Processing: " << assetPath.filename().string() << std::endl;
+            // Verificar si necesita reimportación
+            if (MetaFileManager::NeedsReimport(assetPath.string())) {
+                LOG_DEBUG("Processing asset: %s", assetPath.filename().string().c_str());
 
-            // Procesar según el tipo
-            switch (type) {
-            case AssetType::MODEL_FBX:
-                // El FBXLoader ya maneja esto automáticamente
-                break;
+                // Procesar según el tipo
+                switch (type) {
+                case AssetType::MODEL_FBX:
+                    // El FBXLoader ya maneja esto automáticamente
+                    processed++;
+                    break;
 
-            case AssetType::TEXTURE_PNG:
-            case AssetType::TEXTURE_JPG:
-            case AssetType::TEXTURE_DDS: {
-                // Importar textura
-                TextureData texture = TextureImporter::ImportFromFile(assetPath.string());
-                if (texture.IsValid()) {
-                    std::string filename = TextureImporter::GenerateTextureFilename(assetPath.string());
-                    TextureImporter::SaveToCustomFormat(texture, filename);
-                    std::cout << "  ? Texture processed: " << filename << std::endl;
+                case AssetType::TEXTURE_PNG:
+                case AssetType::TEXTURE_JPG:
+                case AssetType::TEXTURE_DDS: {
+                    // Importar textura
+                    TextureData texture = TextureImporter::ImportFromFile(assetPath.string());
+                    if (texture.IsValid()) {
+                        std::string filename = TextureImporter::GenerateTextureFilename(assetPath.string());
+                        TextureImporter::SaveToCustomFormat(texture, filename);
+                        processed++;
+                    }
+                    else {
+                        LOG_CONSOLE("[LibraryManager] ERROR: Failed to import texture: %s", assetPath.filename().string().c_str());
+                        errors++;
+                    }
+                    break;
                 }
-                break;
-            }
 
-            default:
-                break;
+                default:
+                    break;
+                }
             }
-
-            processed++;
         }
     }
+    catch (const fs::filesystem_error& e) {
+        LOG_CONSOLE("[LibraryManager] ERROR during regeneration: %s", e.what());
+    }
 
-    std::cout << "\n[LibraryManager] Regeneration complete: " << processed << " assets processed" << std::endl;
-    std::cout << "[LibraryManager] ========================================\n" << std::endl;
+    LOG_CONSOLE("[LibraryManager] Regeneration complete: %d assets processed, %d errors", processed, errors);
 }

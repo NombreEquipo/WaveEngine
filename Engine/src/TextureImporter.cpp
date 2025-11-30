@@ -1,4 +1,4 @@
-#include "TextureImporter.h"
+﻿#include "TextureImporter.h"
 #include "LibraryManager.h"
 #include "Log.h"
 #include <IL/il.h>
@@ -235,6 +235,7 @@ TextureData TextureImporter::LoadFromCustomFormat(const std::string& filename) {
         return texture;
     }
 
+
     // Safety check: max 100MB
     if (header.dataSize > 100000000) {
         LOG_DEBUG("[TextureImporter] ERROR: Data size too large: %u bytes", header.dataSize);
@@ -281,7 +282,6 @@ TextureData TextureImporter::LoadFromCustomFormat(const std::string& filename) {
 }
 
 std::string TextureImporter::GenerateTextureFilename(const std::string& originalPath) {
-    // Normalizar el path ANTES de generar el hash
     std::filesystem::path path(originalPath);
 
     std::string canonicalPath;
@@ -297,41 +297,41 @@ std::string TextureImporter::GenerateTextureFilename(const std::string& original
         canonicalPath = originalPath;
     }
 
-    // Convertir a lowercase para evitar diferencias Windows (C: vs c:)
+    // convert to lwercase
     std::transform(canonicalPath.begin(), canonicalPath.end(),
         canonicalPath.begin(), ::tolower);
 
-    // Reemplazar backslashes por forward slashes 
     std::replace(canonicalPath.begin(), canonicalPath.end(), '\\', '/');
 
     LOG_DEBUG("[TextureImporter] Normalized path: %s", canonicalPath.c_str());
     LOG_DEBUG("[TextureImporter] Original path: %s", originalPath.c_str());
 
-    // Extract filename without extension (del path original, no del normalizado)
+    // Extract filename without extension
     std::string basename = path.stem().string();
 
     if (basename.empty()) {
         basename = "unnamed_texture";
     }
 
-    // Sanitize: remove spaces and special characters
+    // Sanitize
     std::replace(basename.begin(), basename.end(), ' ', '_');
-
     basename.erase(
         std::remove_if(basename.begin(), basename.end(),
             [](char c) { return !std::isalnum(c) && c != '_'; }),
         basename.end()
     );
-
-    // Convert to lowercase for consistency
     std::transform(basename.begin(), basename.end(), basename.begin(), ::tolower);
 
-    // Generate hash from CANONICAL path for uniqueness
+    // Generate hash
     std::hash<std::string> hasher;
-    size_t hashValue = hasher(canonicalPath);  //  Usa el path normalizado
+    size_t hashValue = hasher(canonicalPath);
+
+    std::string originalExtension = path.extension().string();
+    std::transform(originalExtension.begin(), originalExtension.end(),
+        originalExtension.begin(), ::tolower);
 
     std::stringstream ss;
-    ss << basename << "_" << std::hex << hashValue << ".texture";
+    ss << basename << "_" << std::hex << hashValue << originalExtension;  // ← .png, .jpg, etc.
 
     std::string result = ss.str();
     LOG_DEBUG("[TextureImporter] Generated filename: %s", result.c_str());
