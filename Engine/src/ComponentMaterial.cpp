@@ -34,37 +34,6 @@ void ComponentMaterial::OnEditor()
 
 bool ComponentMaterial::LoadTexture(const std::string& path)
 {
-    MetaFile meta = MetaFileManager::GetOrCreateMeta(path);
-
-    std::string textureFilename = TextureImporter::GenerateTextureFilename(path);
-    std::string libraryPath = LibraryManager::GetTexturePath(textureFilename);
-
-    bool needsImport = !LibraryManager::FileExists(libraryPath) ||
-        MetaFileManager::NeedsReimport(path);
-
-    if (needsImport)
-    {
-        TextureData texData = TextureImporter::ImportFromFile(path);
-
-        if (!texData.IsValid())
-        {
-            LOG_CONSOLE("Failed to import texture: %s", path.c_str());
-            return false;
-        }
-
-        if (!TextureImporter::SaveToCustomFormat(texData, textureFilename))
-        {
-            LOG_CONSOLE("Failed to save texture to Library");
-            return false;
-        }
-
-        meta.libraryPath = libraryPath;
-        meta.lastModified = MetaFileManager::GetFileTimestamp(path);
-
-        std::string metaPath = path + ".meta";
-        meta.Save(metaPath);
-    }
-
     auto newTexture = std::make_unique<Texture>();
 
     if (newTexture->LoadFromLibraryOrFile(path))
@@ -75,13 +44,21 @@ bool ComponentMaterial::LoadTexture(const std::string& path)
         hasOriginalTexture = true;
 
         LOG_CONSOLE("Texture loaded: %s", path.c_str());
+
+        // Actualizar metadata
+        MetaFile meta = MetaFileManager::GetOrCreateMeta(path);
+        std::string textureFilename = TextureImporter::GenerateTextureFilename(path);
+        meta.libraryPath = LibraryManager::GetTexturePath(textureFilename);
+        meta.lastModified = MetaFileManager::GetFileTimestamp(path);
+        std::string metaPath = path + ".meta";
+        meta.Save(metaPath);
+
         return true;
     }
 
     LOG_CONSOLE("Failed to load texture: %s", path.c_str());
     return false;
 }
-
 void ComponentMaterial::CreateCheckerboardTexture()
 {
     texture = std::make_unique<Texture>();
