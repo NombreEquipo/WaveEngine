@@ -183,7 +183,7 @@ void Renderer::LoadTexture(const std::string& path)
 
     auto newTexture = make_unique<Texture>();
 
-    if (newTexture->LoadFromFile(path))
+    if (newTexture->LoadFromLibraryOrFile(path))
     {
         defaultTexture = std::move(newTexture);
         LOG_DEBUG("Renderer: Texture applied successfully");

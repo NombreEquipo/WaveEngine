@@ -3,6 +3,9 @@
 #include "Texture.h"
 #include <iostream>
 #include "Log.h"
+#include "TextureImporter.h"
+#include "MetaFile.h"
+#include "LibraryManager.h"
 
 ComponentMaterial::ComponentMaterial(GameObject* owner)
     : Component(owner, ComponentType::MATERIAL),
@@ -31,41 +34,58 @@ void ComponentMaterial::OnEditor()
 
 bool ComponentMaterial::LoadTexture(const std::string& path)
 {
-    LOG_DEBUG("ComponentMaterial: Loading texture from %s", path.c_str());
+    MetaFile meta = MetaFileManager::GetOrCreateMeta(path);
+
+    std::string textureFilename = TextureImporter::GenerateTextureFilename(path);
+    std::string libraryPath = LibraryManager::GetTexturePath(textureFilename);
+
+    bool needsImport = !LibraryManager::FileExists(libraryPath) ||
+        MetaFileManager::NeedsReimport(path);
+
+    if (needsImport)
+    {
+        TextureData texData = TextureImporter::ImportFromFile(path);
+
+        if (!texData.IsValid())
+        {
+            LOG_CONSOLE("Failed to import texture: %s", path.c_str());
+            return false;
+        }
+
+        if (!TextureImporter::SaveToCustomFormat(texData, textureFilename))
+        {
+            LOG_CONSOLE("Failed to save texture to Library");
+            return false;
+        }
+
+        meta.libraryPath = libraryPath;
+        meta.lastModified = MetaFileManager::GetFileTimestamp(path);
+
+        std::string metaPath = path + ".meta";
+        meta.Save(metaPath);
+    }
 
     auto newTexture = std::make_unique<Texture>();
 
-    if (newTexture->LoadFromFile(path))
+    if (newTexture->LoadFromLibraryOrFile(path))
     {
         texture = std::move(newTexture);
         texturePath = path;
-
         originalTexturePath = path;
         hasOriginalTexture = true;
 
-        LOG_DEBUG("ComponentMaterial: Texture loaded");
         LOG_CONSOLE("Texture loaded: %s", path.c_str());
-
         return true;
     }
-    else
-    {
-        LOG_DEBUG("ComponentMaterial: Failed to load texture: %s", path.c_str());
-        LOG_CONSOLE("Failed to load texture");
 
-        return false;
-    }
+    LOG_CONSOLE("Failed to load texture: %s", path.c_str());
+    return false;
 }
 
 void ComponentMaterial::CreateCheckerboardTexture()
 {
-
-    LOG_DEBUG("ComponentMaterial: Checkerboard texture created");
-
     texture = std::make_unique<Texture>();
-
     texture->CreateCheckerboard();
-
     texturePath = "[Checkerboard Pattern]";
 }
 
@@ -109,25 +129,20 @@ void ComponentMaterial::RestoreOriginalTexture()
     {
         auto newTexture = std::make_unique<Texture>();
 
-        if (newTexture->LoadFromFile(originalTexturePath))
+        if (newTexture->LoadFromLibraryOrFile(originalTexturePath))
         {
-			texture = std::move(newTexture); // Move is used here to transfer ownership
+            texture = std::move(newTexture);
             texturePath = originalTexturePath;
-
-            LOG_DEBUG("ComponentMaterial: Original texture restored");
             LOG_CONSOLE("Original texture restored: %s", originalTexturePath.c_str());
         }
         else
         {
-            LOG_DEBUG("ComponentMaterial: Failed to restore original texture");
             LOG_CONSOLE("Failed to restore original texture");
-
             CreateCheckerboardTexture();
         }
     }
     else
     {
-        LOG_DEBUG("ComponentMaterial: No original texture to restore");
         LOG_CONSOLE("No original texture available to restore");
     }
 }

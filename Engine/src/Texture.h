@@ -15,7 +15,7 @@ public:
     void CreateCheckerboard();
 
     // Load texture from file
-    bool LoadFromFile(const std::string& path, bool flipVertically = true);
+    bool LoadFromLibraryOrFile(const std::string& path, bool flipVertically = true);
 
     // Bind/Unbind
     void Bind();
