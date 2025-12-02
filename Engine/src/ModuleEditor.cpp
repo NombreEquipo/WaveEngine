@@ -106,6 +106,7 @@ bool ModuleEditor::Update()
     ImGui::PopStyleVar(3);
 
     ShowMenuBar();
+    ShowPlayToolbar();
 
     ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
     ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
@@ -256,6 +257,19 @@ void ModuleEditor::ShowMenuBar()
                 }
                 ImGui::EndMenu();
             }
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Add Auto Rotate Component"))
+            {
+                GameObject* selected = Application::GetInstance().selectionManager->GetSelectedObject();
+                if (selected != nullptr)
+                {
+                    selected->CreateComponent(ComponentType::ROTATE);
+                    LOG_CONSOLE("Auto Rotate component added to %s", selected->GetName().c_str());
+                }
+            }
+
             ImGui::EndMenu();
         }
 
@@ -283,6 +297,101 @@ void ModuleEditor::ShowMenuBar()
 
         ImGui::EndMenuBar();
     }
+}
+
+void ModuleEditor::ShowPlayToolbar()
+{
+    Application& app = Application::GetInstance();
+    Application::PlayState currentState = app.GetPlayState();
+
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 4));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 4));
+
+    // Left side: Play controls
+    float windowWidth = ImGui::GetWindowWidth();
+    ImGui::SetCursorPosX(10.0f);
+
+    // Play button
+    bool isPlaying = currentState == Application::PlayState::PLAYING;
+    if (isPlaying) {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.8f, 0.2f, 1.0f));
+    }
+
+    if (ImGui::Button("Play", ImVec2(40, 0))) {
+        app.Play();
+    }
+
+    if (isPlaying) {
+        ImGui::PopStyleColor();
+    }
+
+    ImGui::SameLine();
+
+    // Pause button
+    bool isPaused = currentState == Application::PlayState::PAUSED;
+    if (isPaused) {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.8f, 0.2f, 1.0f));
+    }
+
+    if (ImGui::Button("Pause", ImVec2(50, 0))) {
+        app.Pause();
+    }
+
+    if (isPaused) {
+        ImGui::PopStyleColor();
+    }
+
+    ImGui::SameLine();
+
+    // Stop button
+    if (ImGui::Button("Stop", ImVec2(40, 0))) {
+        app.Stop();
+    }
+
+    ImGui::SameLine();
+
+    // Step button (only when game is paused or stopped)
+    bool canStep = (currentState == Application::PlayState::PAUSED);
+    if (!canStep) {
+        ImGui::BeginDisabled();
+    }
+
+    if (ImGui::Button("Step", ImVec2(40, 0))) {
+        app.Step();
+    }
+
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+        ImGui::SetTooltip("Advance one frame (only when paused)");
+    }
+
+    if (!canStep) {
+        ImGui::EndDisabled();
+    }
+
+    // Center: Time display
+    ImGui::SameLine(windowWidth * 0.4f);
+
+    float gameTime = app.time->GetTotalTime();
+    float realDt = app.time->GetRealDeltaTime();
+    ImGui::Text("Game Time: %.2fs | FPS: %.0f", gameTime, realDt > 0 ? 1.0f / realDt : 0.0f);
+
+    // Right side: Time scale
+    ImGui::SameLine(windowWidth - 220.0f);
+    ImGui::Text("Time Scale:");
+
+    ImGui::SameLine();
+    float timeScale = app.time->GetTimeScale();
+    ImGui::SetNextItemWidth(80.0f);
+    if (ImGui::DragFloat("##timescale", &timeScale, 0.05f, 0.0f, 5.0f, "%.2fx")) {
+        app.time->SetTimeScale(timeScale);
+    }
+
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Game speed multiplier\n0.5x = slow motion\n2.0x = fast forward\n5.0x = super fast!");
+    }
+
+    ImGui::PopStyleVar(2);
+    ImGui::Separator();
 }
 
 void ModuleEditor::DrawAboutWindow()

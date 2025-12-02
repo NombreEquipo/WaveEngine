@@ -59,6 +59,7 @@ public:
 
 private:
     void ShowMenuBar();
+    void ShowPlayToolbar();
     void DrawAboutWindow();
     void CreatePrimitiveGameObject(const std::string& name, Mesh mesh);
     void HandleDeleteKey();

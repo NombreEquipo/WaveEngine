@@ -1,7 +1,7 @@
 #include "Application.h"
 #include <iostream>
 
-Application::Application() : isRunning(true)
+Application::Application() : isRunning(true), playState(PlayState::EDITING)
 {
     LOG_DEBUG("=== Creating Application Instance ===");
     LOG_CONSOLE("Starting engine...");
@@ -120,6 +120,11 @@ bool Application::DoUpdate()
     //Iterates the module list and calls Update on each module
     bool result = true;
     for (const auto& module : moduleList) {
+        // Skip scene updates when in editing mode
+        if (playState == PlayState::EDITING && module == scene) {
+            continue;
+        }
+
         result = module.get()->Update();
         if (!result) {
             break;
@@ -151,6 +156,33 @@ bool Application::PostUpdate()
     }
 
     return result;
+}
+
+void Application::Play()
+{
+    playState = PlayState::PLAYING;
+    time->Resume();
+}
+
+void Application::Pause()
+{
+    playState = PlayState::PAUSED;
+    time->Pause();
+}
+
+void Application::Stop()
+{
+    playState = PlayState::EDITING;
+    time->Reset();
+    time->Pause();
+}
+
+void Application::Step()
+{
+    if (playState != PlayState::EDITING)
+    {
+        time->StepFrame();
+    }
 }
 
 bool Application::CleanUp()

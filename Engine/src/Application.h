@@ -38,6 +38,20 @@ public:
     // Request application exit
     void RequestExit() { isRunning = false; }
 
+    // Play mode control
+    enum class PlayState
+    {
+        EDITING,
+        PLAYING,
+        PAUSED
+    };
+
+    void Play();
+    void Pause();
+    void Stop();
+    void Step();
+    PlayState GetPlayState() const { return playState; }
+
     // Modules
     std::shared_ptr<Window> window;
     std::shared_ptr<Input> input;
@@ -65,6 +79,7 @@ private:
     std::list<std::shared_ptr<Module>> moduleList;
 
     bool isRunning;
+    PlayState playState;
 
     // Call modules before each loop iteration
     bool PreUpdate();

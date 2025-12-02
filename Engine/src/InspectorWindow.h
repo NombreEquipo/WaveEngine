@@ -30,6 +30,7 @@ private:
     void DrawCameraComponent(GameObject* selectedObject);
     void DrawMeshComponent(GameObject* selectedObject);
     void DrawMaterialComponent(GameObject* selectedObject);
+    void DrawRotateComponent(GameObject* selectedObject);
 
     // Gizmo state
     ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::TRANSLATE;

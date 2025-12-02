@@ -64,18 +64,19 @@ set(GAMEOBJECTS_SRC
     src/ModuleScene.h 
 )
 
-set(COMPONENTS_SRC 
-    src/Component.h  
-    src/Component.cpp 
-    src/ComponentMaterial.cpp 
-    src/ComponentMaterial.h  
-    src/ComponentMesh.h  
-    src/ComponentMesh.cpp 
-    src/Transform.cpp 
-    src/Transform.h 
-    src/ComponentCamera.cpp 
-    src/ComponentCamera.h 
-
+set(COMPONENTS_SRC
+    src/Component.h
+    src/Component.cpp
+    src/ComponentMaterial.cpp
+    src/ComponentMaterial.h
+    src/ComponentMesh.h
+    src/ComponentMesh.cpp
+    src/Transform.cpp
+    src/Transform.h
+    src/ComponentCamera.cpp
+    src/ComponentCamera.h
+    src/ComponentRotate.cpp
+    src/ComponentRotate.h
 )
 
 set(LOADERS_SRC 

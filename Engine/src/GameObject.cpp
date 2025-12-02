@@ -4,6 +4,7 @@
 #include "ComponentMesh.h"
 #include "ComponentMaterial.h"
 #include "ComponentCamera.h"
+#include "ComponentRotate.h"
 
 GameObject::GameObject(const std::string& name) : name(name), active(true), parent(nullptr) {
     CreateComponent(ComponentType::TRANSFORM);
@@ -47,6 +48,10 @@ Component* GameObject::CreateComponent(ComponentType type) {
             return GetComponent(ComponentType::CAMERA);
         }
         newComponent = new ComponentCamera(this);
+        break;
+
+    case ComponentType::ROTATE:
+        newComponent = new ComponentRotate(this);
         break;
 
     default:

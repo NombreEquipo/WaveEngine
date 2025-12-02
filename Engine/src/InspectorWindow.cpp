@@ -6,6 +6,7 @@
 #include "Transform.h"
 #include "ComponentMesh.h"
 #include "ComponentMaterial.h"
+#include "ComponentRotate.h"
 #include "Log.h"
 
 InspectorWindow::InspectorWindow()
@@ -49,6 +50,7 @@ void InspectorWindow::Draw()
     DrawCameraComponent(selectedObject);
     DrawMeshComponent(selectedObject);
     DrawMaterialComponent(selectedObject);
+    DrawRotateComponent(selectedObject);
 
     ImGui::End();
 }
@@ -451,5 +453,23 @@ void InspectorWindow::DrawMaterialComponent(GameObject* selectedObject)
                 ImGui::Text("No material component");
             }
         }
+    }
+}
+
+void InspectorWindow::DrawRotateComponent(GameObject* selectedObject)
+{
+    ComponentRotate* rotateComp = static_cast<ComponentRotate*>(selectedObject->GetComponent(ComponentType::ROTATE));
+
+    if (rotateComp == nullptr) return;
+
+    if (ImGui::CollapsingHeader("Auto Rotate", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        bool active = rotateComp->IsActive();
+        if (ImGui::Checkbox("Enable Auto Rotation", &active))
+        {
+            rotateComp->SetActive(active);
+        }
+
+        rotateComp->OnEditor();
     }
 }
