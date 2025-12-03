@@ -55,7 +55,7 @@ bool FileSystem::Start()
     }
 
     // Verify Assets folder exists at project root
-    std::string assetsPath = currentDir + "\\Assets";
+    std::string assetsPath = currentDir + "\\Assets\\Street";
     DWORD attribs = GetFileAttributesA(assetsPath.c_str());
     bool assetsFound = (attribs != INVALID_FILE_ATTRIBUTES && (attribs & FILE_ATTRIBUTE_DIRECTORY));
 
@@ -74,7 +74,7 @@ bool FileSystem::Start()
         return true;
     }
 
-    std::string housePath = assetsPath + "\\BakerHouse.fbx";
+    std::string housePath = assetsPath + "\\street2.fbx";
 
     GameObject* houseModel = LoadFBXAsGameObject(housePath);
 
