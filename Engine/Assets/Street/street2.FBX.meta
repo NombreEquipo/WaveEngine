@@ -1,9 +1,12 @@
-guid: cd6e050db08278b150bef10c97f476c8
+guid: 2d491152903c824e6d75e25de1d3007a
+uid: 3900376263281745588
 type: 1
-originalPath: 
-libraryPath: Library/Models/street2_5e3b539318f44d64.mesh
+originalPath: Assets/Street/street2.FBX
+libraryPath: 
 lastModified: 134092582211747322
 importScale: 1
 generateNormals: 1
 flipUVs: 1
 optimizeMeshes: 1
+generateMipmaps: 1
+wrapMode: 0

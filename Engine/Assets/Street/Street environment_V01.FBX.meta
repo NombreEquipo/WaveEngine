@@ -1,4 +1,5 @@
-guid: 20e5d8a846d38b4d622d51ac8f84aa0b
+guid: 61f9372f50aedd007d30d57eb347571f
+uid: 15969641954711556106
 type: 1
 originalPath: Assets/Street/Street environment_V01.FBX
 libraryPath: 
@@ -7,3 +8,5 @@ importScale: 1
 generateNormals: 1
 flipUVs: 1
 optimizeMeshes: 1
+generateMipmaps: 1
+wrapMode: 0
