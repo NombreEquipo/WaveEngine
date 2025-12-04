@@ -201,6 +201,7 @@ GameObject* FileSystem::LoadFBXAsGameObject(const std::string& file_path)
     long long currentTimestamp = MetaFileManager::GetFileTimestamp(file_path);
     if (meta.lastModified != currentTimestamp) {
         // El archivo cambió, actualizar metadata
+        std::string modelFilename = MeshImporter::GenerateMeshFilename(
             std::filesystem::path(file_path).stem().string()
         );
         meta.libraryPath = LibraryManager::GetModelPath(modelFilename);
