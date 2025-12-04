@@ -1,4 +1,5 @@
 guid: 48614e07932b34c5649baad9fc40de0f
+uid: 16844868804249411348
 type: 2
 originalPath: Assets/BakerHouse/Baker_house.png
 libraryPath: Library/Textures/baker_house_ac6e807796a54516.texture
@@ -7,3 +8,5 @@ importScale: 1
 generateNormals: 1
 flipUVs: 1
 optimizeMeshes: 1
+generateMipmaps: 1
+wrapMode: 0

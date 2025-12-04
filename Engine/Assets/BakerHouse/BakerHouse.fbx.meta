@@ -1,4 +1,5 @@
 guid: 419bd281a48fb96198a046eeed3e742a
+uid: 5310042310102045429
 type: 1
 originalPath: Assets/BakerHouse/BakerHouse.fbx
 libraryPath: Library/Models/bakerhouse_5c355be1fb78cfe6.mesh
@@ -7,3 +8,5 @@ importScale: 1
 generateNormals: 1
 flipUVs: 1
 optimizeMeshes: 1
+generateMipmaps: 1
+wrapMode: 0

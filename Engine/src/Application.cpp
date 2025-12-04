@@ -1,4 +1,4 @@
-#include "Application.h"
+﻿#include "Application.h"
 #include <iostream>
 
 Application::Application() : isRunning(true), playState(PlayState::EDITING)

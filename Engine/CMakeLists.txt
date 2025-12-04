@@ -100,6 +100,8 @@ set(EDITOR_SRC
     src/HierarchyWindow.cpp 
     src/InspectorWindow.h
     src/InspectorWindow.cpp 
+    src/AssetsWindow.h
+    src/AssetsWindow.cpp 
 )
 
 set(IMPORTERS_SRC 
