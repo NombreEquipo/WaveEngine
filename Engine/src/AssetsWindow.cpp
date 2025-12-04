@@ -4,7 +4,7 @@
 #include "LibraryManager.h"
 #include "MetaFile.h"
 #include "ModuleResources.h"
-#include "Log.h"
+#include "Log.h"  
 
 AssetsWindow::AssetsWindow()
     : EditorWindow("Assets"), selectedAsset(nullptr), iconSize(64.0f), showInMemoryOnly(false)
@@ -26,17 +26,17 @@ void AssetsWindow::Draw()
 {
     if (!isOpen) return;
 
-    // Refresh en el primer frame de dibujo si es necesario
     static bool firstDraw = true;
     if (firstDraw) {
         RefreshAssets();
         firstDraw = false;
     }
+
     if (ImGui::Begin(name.c_str(), &isOpen))
     {
         isHovered = ImGui::IsWindowHovered();
 
-        // Toolbar
+        // toolbar
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
 
         if (ImGui::Button("Refresh"))
@@ -52,10 +52,8 @@ void AssetsWindow::Draw()
         ImGui::SliderFloat("Icon Size", &iconSize, 32.0f, 128.0f, "%.0f");
 
         ImGui::PopStyleVar();
-
         ImGui::Separator();
 
-        // Show current path with breadcrumb navigation
         ImGui::Text("Path: ");
         ImGui::SameLine();
 
@@ -66,7 +64,8 @@ void AssetsWindow::Draw()
         }
         else
         {
-            if (ImGui::SmallButton("Assets"))
+            // ID ÚNICO para el botón raíz
+            if (ImGui::SmallButton("Assets##BreadcrumbRoot"))
             {
                 currentPath = assetsRootPath;
                 RefreshAssets();
@@ -85,13 +84,15 @@ void AssetsWindow::Draw()
                 ImGui::SameLine();
 
                 accumulatedPath /= token;
-                std::string pathCopy = accumulatedPath.string();
 
+                // ID ÚNICO para cada botón de carpeta usando PushID
+                ImGui::PushID(accumulatedPath.string().c_str());
                 if (ImGui::SmallButton(token.c_str()))
                 {
-                    currentPath = pathCopy;
+                    currentPath = accumulatedPath.string();
                     RefreshAssets();
                 }
+                ImGui::PopID();
 
                 pathStr.erase(0, pos + 1);
             }
@@ -107,7 +108,7 @@ void AssetsWindow::Draw()
 
         ImGui::Separator();
 
-        // Split view: Folder tree on left, assets grid on right
+        // split view
         ImGui::BeginChild("FolderTree", ImVec2(200, 0), true);
         DrawFolderTree(assetsRootPath, "Assets");
         ImGui::EndChild();
@@ -120,14 +121,11 @@ void AssetsWindow::Draw()
     }
     ImGui::End();
 }
-
 void AssetsWindow::DrawFolderTree(const fs::path& path, const std::string& label)
 {
+
     if (!fs::exists(path) || !fs::is_directory(path))
-    {
-        LOG_CONSOLE("Path doesn't exist or is not directory: %s", path.string().c_str());
         return;
-    }
 
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
 
@@ -135,42 +133,65 @@ void AssetsWindow::DrawFolderTree(const fs::path& path, const std::string& label
         flags |= ImGuiTreeNodeFlags_Selected;
 
     bool hasSubfolders = false;
-    int subfolderCount = 0;
-    for (const auto& entry : fs::directory_iterator(path))
-    {
-        if (entry.is_directory())
-        {
-            hasSubfolders = true;
-            subfolderCount++;
+    try {
+        for (const auto& entry : fs::directory_iterator(path)) {
+            if (entry.is_directory()) {
+                hasSubfolders = true;
+                break;
+            }
         }
     }
+    catch (...) {}
 
     if (!hasSubfolders)
+    {
         flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+    }
 
+    // 1. PUSH ID
     ImGui::PushID(path.string().c_str());
-    bool nodeOpen = ImGui::TreeNodeEx(label.c_str(), flags);
-    ImGui::PopID();
 
+    // 2. DIBUJAR NODO
+    bool nodeOpen = ImGui::TreeNodeEx(label.c_str(), flags);
+
+    // 3. CLICK LOGIC
     if (ImGui::IsItemClicked())
     {
+        LOG_DEBUG("CLICKED: %s", path.string().c_str());
         currentPath = path.string();
-        LOG_CONSOLE("Clicked folder, new currentPath: %s", currentPath.c_str());
         RefreshAssets();
     }
 
-    if (nodeOpen && hasSubfolders)
+    // 4. RECURSIVIDAD
+    if (nodeOpen)
     {
-        for (const auto& entry : fs::directory_iterator(path))
+        if (hasSubfolders)
         {
-            if (entry.is_directory())
-            {
-                std::string folderName = entry.path().filename().string();
-                DrawFolderTree(entry.path(), folderName);
+            // LOG_CONSOLE("DEBUG: Entering recursion for %s", label.c_str());
+            try {
+                for (const auto& entry : fs::directory_iterator(path))
+                {
+                    if (entry.is_directory())
+                    {
+                        std::string folderName = entry.path().filename().string();
+                        DrawFolderTree(entry.path(), folderName);
+                    }
+                }
             }
+            catch (...) {}
+
+            LOG_DEBUG("DEBUG: TreePop for %s", label.c_str());
+            ImGui::TreePop();
         }
-        ImGui::TreePop();
+        else
+        {
+            LOG_DEBUG("DEBUG: Node open but LEAF (No TreePop needed) for %s", label.c_str());
+        }
     }
+
+    // 5. POP ID
+    ImGui::PopID();
+    //LOG_DEBUG("DEBUG: PopID done for %s", label.c_str());
 }
 
 void AssetsWindow::DrawAssetsList()
@@ -194,12 +215,15 @@ void AssetsWindow::DrawAssetsList()
     // Display assets in grid
     int currentColumn = 0;
 
+    std::string pathPendingToLoad = "";
+
     for (auto& asset : currentAssets)
     {
         if (showInMemoryOnly && !asset.inMemory)
             continue;
 
-        DrawAssetItem(asset);
+        // Pasamos la variable por referencia
+        DrawAssetItem(asset, pathPendingToLoad);
 
         currentColumn++;
         if (currentColumn < columns)
@@ -211,10 +235,18 @@ void AssetsWindow::DrawAssetsList()
             currentColumn = 0;
         }
     }
+
+    if (!pathPendingToLoad.empty())
+    {
+        currentPath = pathPendingToLoad;
+        RefreshAssets();
+    }
 }
 
-void AssetsWindow::DrawAssetItem(const AssetEntry& asset)
+void AssetsWindow::DrawAssetItem(const AssetEntry& asset, std::string& pathPendingToLoad)
 {
+    // ID Scope Único para todo el item basado en su ruta
+    ImGui::PushID(asset.path.c_str());
     ImGui::BeginGroup();
 
     // Icon button
@@ -230,8 +262,7 @@ void AssetsWindow::DrawAssetItem(const AssetEntry& asset)
     {
         if (asset.isDirectory)
         {
-            currentPath = asset.path;
-            RefreshAssets();
+            pathPendingToLoad = asset.path;
         }
         else
         {
@@ -242,21 +273,27 @@ void AssetsWindow::DrawAssetItem(const AssetEntry& asset)
 
     ImGui::PopStyleColor();
 
-    // Double click to open/import
+    // Doble clic
     if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
     {
         if (!asset.isDirectory)
         {
             LOG_CONSOLE("Opening: %s", asset.path.c_str());
         }
+        else
+        {
+            pathPendingToLoad = asset.path;
+        }
     }
 
-    // Show name below icon
+    // Nombre
     ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + iconSize);
+
     ImGui::TextWrapped("%s", asset.name.c_str());
+
     ImGui::PopTextWrapPos();
 
-    // Show memory info
+    // Info memoria
     if (asset.inMemory)
     {
         ImGui::TextColored(ImVec4(0.3f, 1.0f, 0.3f, 1.0f), "Refs: %d", asset.references);
@@ -264,64 +301,24 @@ void AssetsWindow::DrawAssetItem(const AssetEntry& asset)
 
     ImGui::EndGroup();
 
-    // Usar la ruta completa del asset como ID único
+    // Context Menu (abreviado para que veas donde va)
     std::string popupID = "AssetContextMenu##" + asset.path;
     if (ImGui::BeginPopupContextItem(popupID.c_str()))
     {
-        if (!asset.isDirectory)
-        {
-            if (ImGui::MenuItem("Reimport"))
-            {
-                LOG_CONSOLE("Reimporting: %s", asset.path.c_str());
-                // Trigger reimport
-            }
-
-            if (ImGui::MenuItem("Show in Explorer"))
-            {
-                std::string command = "explorer /select,\"" + asset.path + "\"";
-                system(command.c_str());
-            }
-
-            ImGui::Separator();
-
-            ImGui::Text("UID: %llu", asset.uid);
-            ImGui::Text("In Memory: %s", asset.inMemory ? "Yes" : "No");
-            if (asset.inMemory)
-            {
-                ImGui::Text("References: %d", asset.references);
-            }
-        }
-        else
-        {
-            if (ImGui::MenuItem("Open in Explorer"))
-            {
-                std::string command = "explorer \"" + asset.path + "\"";
-                system(command.c_str());
-            }
-        }
-
         ImGui::EndPopup();
     }
 
-    // Tooltip with full info
+    // Tooltip
     if (ImGui::IsItemHovered())
     {
         ImGui::BeginTooltip();
         ImGui::Text("%s", asset.name.c_str());
-        if (!asset.isDirectory)
-        {
-            ImGui::Separator();
-            ImGui::Text("Type: %s", asset.extension.c_str());
-            ImGui::Text("UID: %llu", asset.uid);
-            ImGui::Text("In Memory: %s", asset.inMemory ? "Yes" : "No");
-            if (asset.inMemory)
-            {
-                ImGui::Text("References: %d", asset.references);
-            }
-        }
         ImGui::EndTooltip();
     }
+
+    ImGui::PopID();
 }
+
 void AssetsWindow::RefreshAssets()
 {
     currentAssets.clear();
@@ -339,92 +336,72 @@ void AssetsWindow::RefreshAssets()
 
 void AssetsWindow::ScanDirectory(const fs::path& directory, std::vector<AssetEntry>& outAssets)
 {
-    LOG_CONSOLE("=== Scanning directory: %s ===", directory.string().c_str());
+    // LOG_CONSOLE("=== Scanning directory: %s ===", directory.string().c_str());
 
-    try
+    if (!fs::exists(directory))
+        return;
+
+    for (const auto& entry : fs::directory_iterator(directory))
     {
-        int totalEntries = 0;
-        int skippedMeta = 0;
-        int skippedExtension = 0;
-        int addedAssets = 0;
+        const auto& path = entry.path();
+        std::string filename = path.filename().string();
+        std::string extension = path.extension().string();
 
-        for (const auto& entry : fs::directory_iterator(directory))
+        std::transform(extension.begin(), extension.end(), extension.begin(),
+            [](unsigned char c) { return std::tolower(c); });
+
+        // Ignorar archivos .meta
+        if (extension == ".meta")
         {
-            totalEntries++;
-            AssetEntry asset;
-            asset.path = entry.path().string();
-            asset.name = entry.path().filename().string();
-            asset.isDirectory = entry.is_directory();
-
-            LOG_CONSOLE("Found entry: %s (isDir: %d)", asset.name.c_str(), asset.isDirectory);
-
-            asset.uid = 0;
-            asset.inMemory = false;
-            asset.references = 0;
-
-            // Skip .meta files
-            if (asset.name.find(".meta") != std::string::npos)
-            {
-                LOG_CONSOLE("  -> Skipped (meta file)");
-                skippedMeta++;
-                continue;
-            }
-
-            if (!asset.isDirectory)
-            {
-                asset.extension = entry.path().extension().string();
-                LOG_CONSOLE("  -> Extension: '%s'", asset.extension.c_str());
-
-                // Skip unknown file types
-                if (!IsAssetFile(asset.extension))
-                {
-                    LOG_CONSOLE("  -> Skipped (unknown extension)");
-                    skippedExtension++;
-                    continue;
-                }
-
-                // Try to get UID from meta file
-                asset.uid = MetaFileManager::GetUIDFromAsset(asset.path);
-
-                // Check if resource is in memory
-                if (asset.uid != 0)
-                {
-                    const Resource* resource = Application::GetInstance().resources->RequestResource(asset.uid);
-                    if (resource)
-                    {
-                        asset.inMemory = resource->IsLoadedToMemory();
-                        asset.references = resource->GetReferenceCount();
-                        Application::GetInstance().resources->ReleaseResource(asset.uid);
-                    }
-                }
-            }
-
-            LOG_CONSOLE("  -> ADDED to list");
-            outAssets.push_back(asset);
-            addedAssets++;
+            // LOG_CONSOLE("Found entry: %s (isDir: 0) -> Skipped (meta file)", filename.c_str());
+            continue;
         }
 
-        LOG_CONSOLE("=== SUMMARY ===");
-        LOG_CONSOLE("Total entries found: %d", totalEntries);
-        LOG_CONSOLE("Skipped meta files: %d", skippedMeta);
-        LOG_CONSOLE("Skipped unknown extensions: %d", skippedExtension);
-        LOG_CONSOLE("Assets added: %d", addedAssets);
-        LOG_CONSOLE("Final outAssets.size(): %d", (int)outAssets.size());
+        bool isDirectory = entry.is_directory();
 
-        // Sort: directories first, then alphabetically
-        std::sort(outAssets.begin(), outAssets.end(), [](const AssetEntry& a, const AssetEntry& b)
+        if (!isDirectory)
+        {
+            if (!IsAssetFile(extension))
             {
-                if (a.isDirectory != b.isDirectory)
-                    return a.isDirectory > b.isDirectory;
-                return a.name < b.name;
-            });
-    }
-    catch (const fs::filesystem_error& e)
-    {
-        LOG_DEBUG("[AssetsWindow] Error scanning directory: %s", e.what());
-    }
-}
+                LOG_CONSOLE("Found entry: %s -> Skipped (unknown extension: '%s')", filename.c_str(), extension.c_str());
+                continue;
+            }
+        }
 
+        AssetEntry asset;
+        asset.name = filename;
+        asset.path = path.string();
+        asset.isDirectory = isDirectory;
+        asset.extension = extension;
+        asset.inMemory = false;
+        asset.references = 0;
+        asset.uid = 0;
+
+        // Intentar obtener UID del archivo .meta si existe
+        std::string metaPath = asset.path + ".meta";
+        if (fs::exists(metaPath))
+        {
+            // Aquí deberías leer el UID real del meta. 
+            // Por ahora simulamos o leemos si tienes la función implementada.
+            //asset.uid = LoadUIDFromMeta(metaPath); 
+        }
+
+        // Check if loaded in memory (en  ModuleResources)
+        // if (!isDirectory && App->resources->IsResourceLoaded(asset.uid)) { ... }
+
+        outAssets.push_back(asset);
+
+        // LOG_CONSOLE("Found entry: %s (isDir: %d) -> Added", filename.c_str(), isDirectory);
+    }
+
+    // Ordenar: Carpetas primero, luego alfabéticamente
+    std::sort(outAssets.begin(), outAssets.end(), [](const AssetEntry& a, const AssetEntry& b)
+        {
+            if (a.isDirectory != b.isDirectory)
+                return a.isDirectory > b.isDirectory;
+            return a.name < b.name;
+        });
+}
 const char* AssetsWindow::GetAssetIcon(const std::string& extension) const
 {
     if (extension == ".fbx" || extension == ".obj")

@@ -1,4 +1,5 @@
 guid: afe35433bf221f9e9331cf24ef64df34
+uid: 13419081459379960855
 type: 2
 originalPath: Assets/Pruebas/SphereEngine_Texture.png
 libraryPath: 
@@ -7,3 +8,5 @@ importScale: 1
 generateNormals: 1
 flipUVs: 1
 optimizeMeshes: 1
+generateMipmaps: 1
+wrapMode: 0

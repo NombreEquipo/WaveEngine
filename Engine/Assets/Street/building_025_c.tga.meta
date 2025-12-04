@@ -1,4 +1,5 @@
 guid: ef403f269ac61e9ad7ce9f09d75be8fe
+uid: 14349506274237133487
 type: 5
 originalPath: 
 libraryPath: Library/Textures/building_025_c_be6748fab85cbcb1.texture
@@ -7,3 +8,5 @@ importScale: 1
 generateNormals: 1
 flipUVs: 1
 optimizeMeshes: 1
+generateMipmaps: 1
+wrapMode: 0

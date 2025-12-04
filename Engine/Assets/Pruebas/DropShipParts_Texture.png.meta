@@ -1,4 +1,5 @@
 guid: 3547c04adc0b338b31b5a8257656bd3c
+uid: 4389836521379713657
 type: 2
 originalPath: Assets/Pruebas/DropShipParts_Texture.png
 libraryPath: 
@@ -7,3 +8,5 @@ importScale: 1
 generateNormals: 1
 flipUVs: 1
 optimizeMeshes: 1
+generateMipmaps: 1
+wrapMode: 0

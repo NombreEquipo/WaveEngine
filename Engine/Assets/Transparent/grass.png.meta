@@ -1,4 +1,5 @@
 guid: 3498d373ccf1d24873a4f195c654ae5c
+uid: 2991045701383219198
 type: 2
 originalPath: Assets/Transparent/grass.png
 libraryPath: 
@@ -7,3 +8,5 @@ importScale: 1
 generateNormals: 1
 flipUVs: 1
 optimizeMeshes: 1
+generateMipmaps: 1
+wrapMode: 0

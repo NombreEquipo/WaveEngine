@@ -29,8 +29,7 @@ public:
 private:
     void DrawFolderTree(const fs::path& path, const std::string& label);
     void DrawAssetsList();
-    void DrawAssetItem(const AssetEntry& asset);
-    void RefreshAssets();
+    void DrawAssetItem(const AssetEntry& asset, std::string& pathPendingToLoad);    void RefreshAssets();
     void ScanDirectory(const fs::path& directory, std::vector<AssetEntry>& outAssets);
 
     const char* GetAssetIcon(const std::string& extension) const;

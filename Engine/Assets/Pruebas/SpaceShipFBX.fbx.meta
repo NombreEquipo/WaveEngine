@@ -1,4 +1,5 @@
 guid: 9726dcd129047199ae5de023c8117b3b
+uid: 16589998324084049746
 type: 1
 originalPath: Assets/Pruebas/SpaceShipFBX.fbx
 libraryPath: 
@@ -7,3 +8,5 @@ importScale: 1
 generateNormals: 1
 flipUVs: 1
 optimizeMeshes: 1
+generateMipmaps: 1
+wrapMode: 0

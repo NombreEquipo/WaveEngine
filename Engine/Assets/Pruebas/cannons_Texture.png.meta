@@ -1,4 +1,5 @@
 guid: aa94c8646775afdaa3b6c2c4b9d9f877
+uid: 11342742854725294705
 type: 2
 originalPath: Assets/Pruebas/cannons_Texture.png
 libraryPath: 
@@ -7,3 +8,5 @@ importScale: 1
 generateNormals: 1
 flipUVs: 1
 optimizeMeshes: 1
+generateMipmaps: 1
+wrapMode: 0
