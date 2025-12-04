@@ -511,3 +511,34 @@ bool ModuleResources::GetResourceInfo(UID uid, std::string& outAssetPath, std::s
 
     return false;
 }
+
+void ModuleResources::RemoveResource(UID uid) {
+    auto it = resources.find(uid);
+    
+    if (it == resources.end()) {
+        LOG_DEBUG("[ModuleResources] Resource %llu not found, nothing to remove", uid);
+        return;
+    }
+    
+    Resource* resource = it->second;
+    
+    // Check if resource is still being used
+    if (resource->GetReferenceCount() > 0) {
+        LOG_CONSOLE("[ModuleResources] WARNING: Removing resource %llu that still has %u references",
+            uid, resource->GetReferenceCount());
+    }
+    
+    // Unload from memory if loaded
+    if (resource->IsLoadedToMemory()) {
+        LOG_DEBUG("[ModuleResources] Unloading resource %llu before removal", uid);
+        resource->UnloadFromMemory();
+    }
+    
+    // Delete resource object
+    delete resource;
+    
+    // Remove from map
+    resources.erase(it);
+    
+    LOG_CONSOLE("[ModuleResources] Resource %llu removed from system", uid);
+}

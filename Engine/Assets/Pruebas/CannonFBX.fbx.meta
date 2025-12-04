@@ -1,8 +1,10 @@
-guid: 9b990e67d54fa6e5c69ae2f5c91eb78f
-uid: 186686040542928237
+guid: 9ca0ebf2023acf73ef01ca9402c12a22
+uid: 5378265305413459237
 type: 1
 originalPath: Assets/Pruebas/CannonFBX.fbx
-libraryPath: 
+libraryPath: Library/Meshes/cannon_73530baa63d7ec9c.mesh
+libraryPathCount: 1
+libraryPath0: Library/Meshes/cannon_73530baa63d7ec9c.mesh
 lastModified: 134090049245279672
 importScale: 1
 generateNormals: 1

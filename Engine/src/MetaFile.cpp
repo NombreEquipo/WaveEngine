@@ -62,6 +62,13 @@ bool MetaFile::Save(const std::string& metaFilePath) const {
     file << "type: " << static_cast<int>(type) << "\n";
     file << "originalPath: " << relativeOriginalPath << "\n";
     file << "libraryPath: " << relativeLibraryPath << "\n";
+
+    file << "libraryPathCount: " << libraryPaths.size() << "\n";
+    for (size_t i = 0; i < libraryPaths.size(); ++i) {
+        std::string relativePath = MakeRelativeToProject(libraryPaths[i]);
+        file << "libraryPath" << i << ": " << relativePath << "\n";
+    }
+
     file << "lastModified: " << lastModified << "\n";
     file << "importScale: " << importSettings.importScale << "\n";
     file << "generateNormals: " << (importSettings.generateNormals ? "1" : "0") << "\n";
@@ -82,7 +89,9 @@ MetaFile MetaFile::Load(const std::string& metaFilePath) {
         return meta;
     }
 
+    int libraryPathCount = 0;
     std::string line;
+
     while (std::getline(file, line)) {
         size_t colonPos = line.find(':');
         if (colonPos == std::string::npos) continue;
@@ -104,6 +113,17 @@ MetaFile MetaFile::Load(const std::string& metaFilePath) {
         }
         else if (key == "libraryPath") {
             meta.libraryPath = MakeAbsoluteFromProject(value);
+        }
+        else if (key == "libraryPathCount") {
+            libraryPathCount = std::stoi(value);
+            meta.libraryPaths.reserve(libraryPathCount);
+        }
+        else if (key.find("libraryPath") == 0 && key.length() > 11) {
+            // Este es un libraryPath0, libraryPath1, etc.
+            std::string path = MakeAbsoluteFromProject(value);
+            if (!path.empty()) {
+                meta.libraryPaths.push_back(path);
+            }
         }
         else if (key == "lastModified") {
             meta.lastModified = std::stoll(value);
@@ -129,6 +149,12 @@ MetaFile MetaFile::Load(const std::string& metaFilePath) {
     }
 
     file.close();
+
+    // Si libraryPaths está vacío pero libraryPath no, agregar libraryPath a la lista
+    if (meta.libraryPaths.empty() && !meta.libraryPath.empty()) {
+        meta.libraryPaths.push_back(meta.libraryPath);
+    }
+
     return meta;
 }
 
@@ -359,6 +385,22 @@ std::string MetaFileManager::GetAssetFromUID(UID uid) {
     }
 
     return "";  // No encontrado
+}
+
+void MetaFile::AddLibraryPath(const std::string& path) {
+    if (path.empty()) return;
+
+    // Evitar duplicados
+    for (const auto& existingPath : libraryPaths) {
+        if (existingPath == path) return;
+    }
+
+    libraryPaths.push_back(path);
+
+    // Actualizar libraryPath principal con el primer path
+    if (libraryPath.empty() && !libraryPaths.empty()) {
+        libraryPath = libraryPaths[0];
+    }
 }
 
 long long MetaFileManager::GetFileTimestamp(const std::string& filePath) {

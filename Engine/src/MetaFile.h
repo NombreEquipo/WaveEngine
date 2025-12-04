@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <string>
+#include <vector>
 #include <fstream>
 #include <sstream>
 #include <filesystem>
@@ -30,10 +31,13 @@ struct ImportSettings {
 
 struct MetaFile {
     UID uid = 0;                    // UID único del recurso
-    std::string guid;               // GUID (mantener por compatibilidad)
+    std::string guid;               // GUID
     AssetType type = AssetType::UNKNOWN;
     std::string originalPath;
-    std::string libraryPath;
+
+    std::string libraryPath;                    // Path principal (para compatibilidad)
+    std::vector<std::string> libraryPaths;     
+
     long long lastModified = 0;
     ImportSettings importSettings;
 
@@ -49,6 +53,8 @@ struct MetaFile {
     // Helpers para rutas relativas
     static std::string MakeRelativeToProject(const std::string& absolutePath);
     static std::string MakeAbsoluteFromProject(const std::string& relativePath);
+
+    const std::vector<std::string>& GetAllLibraryPaths() const { return libraryPaths; }
 };
 
 // Manager para archivos .meta

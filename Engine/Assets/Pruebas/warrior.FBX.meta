@@ -1,8 +1,10 @@
-guid: 422505c12123cb5c2302931b4dd855f8
-uid: 9160372206699983695
+guid: 4b2442ded701514d42dea4a6b029a796
+uid: 22229078947994429
 type: 1
 originalPath: Assets/Pruebas/warrior.FBX
-libraryPath: 
+libraryPath: Library/Meshes/rpgcharactermesh_310a5cd5d16c2408.mesh
+libraryPathCount: 1
+libraryPath0: Library/Meshes/rpgcharactermesh_310a5cd5d16c2408.mesh
 lastModified: 134090049249557522
 importScale: 1
 generateNormals: 1

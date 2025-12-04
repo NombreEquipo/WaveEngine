@@ -162,6 +162,17 @@ void LibraryManager::RegenerateFromAssets() {
             AssetType type = MetaFile::GetAssetType(extension);
             if (type == AssetType::UNKNOWN) continue;
 
+            // Cargar el .meta file
+            std::string assetPathStr = assetPath.string();
+            MetaFile meta = MetaFileManager::LoadMeta(assetPathStr);
+
+            if (meta.uid == 0) {
+                LOG_CONSOLE("[LibraryManager] ERROR: No UID in meta for: %s",
+                    assetPath.filename().string().c_str());
+                errors++;
+                continue;
+            }
+
             // Procesar según el tipo
             switch (type) {
             case AssetType::MODEL_FBX: {
@@ -187,15 +198,48 @@ void LibraryManager::RegenerateFromAssets() {
                     if (!allMeshesExist) {
                         // Importar todas las meshes del FBX
                         LOG_DEBUG("Importing FBX: %s", assetPath.filename().string().c_str());
+
+                        meta.libraryPaths.clear();
+
                         for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
                             aiMesh* aiMesh = scene->mMeshes[i];
                             Mesh mesh = MeshImporter::ImportFromAssimp(aiMesh);
                             std::string meshFilename = MeshImporter::GenerateMeshFilename(aiMesh->mName.C_Str());
-                            MeshImporter::SaveToCustomFormat(mesh, meshFilename);
+
+                            if (MeshImporter::SaveToCustomFormat(mesh, meshFilename)) {
+                                std::string fullMeshPath = GetMeshPath(meshFilename);
+                                meta.AddLibraryPath(fullMeshPath);
+                                LOG_DEBUG("[LibraryManager] Added mesh to meta: %s", fullMeshPath.c_str());
+                            }
                         }
+
+                        // Guardar .meta con TODAS las rutas
+                        if (!meta.libraryPaths.empty()) {
+                            std::string metaPath = assetPathStr + ".meta";
+                            if (meta.Save(metaPath)) {
+                                LOG_DEBUG("[LibraryManager] Updated .meta with %d library paths",
+                                    (int)meta.libraryPaths.size());
+                            }
+                        }
+
                         processed++;
                     }
                     else {
+                        // Ya existe, pero verificar que el .meta tenga todos los libraryPaths
+                        if (meta.libraryPaths.empty()) {
+                            // Reconstruir la lista de paths
+                            for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
+                                aiMesh* aiMesh = scene->mMeshes[i];
+                                std::string meshFilename = MeshImporter::GenerateMeshFilename(aiMesh->mName.C_Str());
+                                std::string fullMeshPath = GetMeshPath(meshFilename);
+                                meta.AddLibraryPath(fullMeshPath);
+                            }
+
+                            std::string metaPath = assetPathStr + ".meta";
+                            meta.Save(metaPath);
+                            LOG_DEBUG("[LibraryManager] Fixed empty libraryPaths in .meta with %d paths",
+                                (int)meta.libraryPaths.size());
+                        }
                         skipped++;
                     }
 
@@ -212,16 +256,32 @@ void LibraryManager::RegenerateFromAssets() {
             case AssetType::TEXTURE_PNG:
             case AssetType::TEXTURE_JPG:
             case AssetType::TEXTURE_DDS: {
-                // Verificar si ya está en Library
+                // Generar el nombre de archivo en Library
                 std::string filename = TextureImporter::GenerateTextureFilename(assetPath.string());
                 std::string fullPath = GetTexturePath(filename);
 
+                // Verificar si ya está en Library
                 if (!FileExists(fullPath)) {
                     LOG_DEBUG("Importing texture: %s", assetPath.filename().string().c_str());
                     TextureData texture = TextureImporter::ImportFromFile(assetPath.string());
+
                     if (texture.IsValid()) {
-                        TextureImporter::SaveToCustomFormat(texture, filename);
-                        processed++;
+                        if (TextureImporter::SaveToCustomFormat(texture, filename)) {
+                            meta.libraryPath = fullPath;
+
+                            std::string metaPath = assetPathStr + ".meta";
+                            if (meta.Save(metaPath)) {
+                                LOG_DEBUG("[LibraryManager] Updated .meta with library path: %s",
+                                    fullPath.c_str());
+                            }
+
+                            processed++;
+                        }
+                        else {
+                            LOG_CONSOLE("[LibraryManager] ERROR: Failed to save texture: %s",
+                                assetPath.filename().string().c_str());
+                            errors++;
+                        }
                     }
                     else {
                         LOG_CONSOLE("[LibraryManager] ERROR: Failed to import texture: %s",
@@ -230,6 +290,15 @@ void LibraryManager::RegenerateFromAssets() {
                     }
                 }
                 else {
+                    // Ya existe, pero verificar que el .meta tenga libraryPath
+                    if (meta.libraryPath.empty()) {
+                        meta.libraryPath = fullPath;
+
+                        std::string metaPath = assetPathStr + ".meta";
+                        meta.Save(metaPath);
+                        LOG_DEBUG("[LibraryManager] Fixed empty libraryPath in .meta: %s",
+                            fullPath.c_str());
+                    }
                     skipped++;
                 }
                 break;

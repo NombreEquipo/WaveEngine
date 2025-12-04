@@ -29,8 +29,12 @@ public:
 private:
     void DrawFolderTree(const fs::path& path, const std::string& label);
     void DrawAssetsList();
-    void DrawAssetItem(const AssetEntry& asset, std::string& pathPendingToLoad);    void RefreshAssets();
+    void DrawAssetItem(const AssetEntry& asset, std::string& pathPendingToLoad);
+    void RefreshAssets();
     void ScanDirectory(const fs::path& directory, std::vector<AssetEntry>& outAssets);
+
+    bool DeleteAsset(const AssetEntry& asset);
+    bool DeleteDirectory(const fs::path& dirPath);
 
     const char* GetAssetIcon(const std::string& extension) const;
     bool IsAssetFile(const std::string& extension) const;
@@ -42,4 +46,7 @@ private:
     AssetEntry* selectedAsset;
     float iconSize;
     bool showInMemoryOnly;
+
+    bool showDeleteConfirmation;
+    AssetEntry assetToDelete;
 };

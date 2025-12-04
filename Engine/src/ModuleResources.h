@@ -79,6 +79,7 @@ public:
     bool ModuleResources::GetResourceInfo(UID uid, std::string& outAssetPath, std::string& outLibraryPath);
     // Obtener tipo de recurso según extensión
     Resource::Type GetResourceTypeFromExtension(const std::string& extension) const;
+    void RemoveResource(UID uid);
 
 private:
     // Crear un nuevo recurso según su tipo

@@ -7,9 +7,9 @@
 #include "Log.h"  
 
 AssetsWindow::AssetsWindow()
-    : EditorWindow("Assets"), selectedAsset(nullptr), iconSize(64.0f), showInMemoryOnly(false)
+    : EditorWindow("Assets"), selectedAsset(nullptr), iconSize(64.0f),
+    showInMemoryOnly(false), showDeleteConfirmation(false)
 {
-    // Asegurar que LibraryManager esté inicializado
     if (!LibraryManager::IsInitialized()) {
         LibraryManager::Initialize();
     }
@@ -19,7 +19,6 @@ AssetsWindow::AssetsWindow()
 
     LOG_CONSOLE("Assets root path: %s", assetsRootPath.c_str());
     LOG_CONSOLE("Absolute path: %s", fs::absolute(currentPath).string().c_str());
-
 }
 
 void AssetsWindow::Draw()
@@ -30,6 +29,43 @@ void AssetsWindow::Draw()
     if (firstDraw) {
         RefreshAssets();
         firstDraw = false;
+    }
+
+    // Delete confirmation popup
+    if (showDeleteConfirmation) {
+        ImGui::OpenPopup("Delete Asset?");
+        showDeleteConfirmation = false;
+    }
+
+    if (ImGui::BeginPopupModal("Delete Asset?", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Are you sure you want to delete:");
+        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "%s", assetToDelete.name.c_str());
+        ImGui::Separator();
+
+        if (assetToDelete.isDirectory) {
+            ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "This will delete the entire folder and all its contents!");
+        }
+        else {
+            ImGui::Text("This will also delete the corresponding Library file(s).");
+        }
+
+        ImGui::Separator();
+
+        if (ImGui::Button("Delete", ImVec2(120, 0))) {
+            if (DeleteAsset(assetToDelete)) {
+                LOG_CONSOLE("Deleted: %s", assetToDelete.name.c_str());
+                RefreshAssets();
+            }
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
     }
 
     if (ImGui::Begin(name.c_str(), &isOpen))
@@ -64,7 +100,6 @@ void AssetsWindow::Draw()
         }
         else
         {
-            // ID ÚNICO para el botón raíz
             if (ImGui::SmallButton("Assets##BreadcrumbRoot"))
             {
                 currentPath = assetsRootPath;
@@ -85,7 +120,6 @@ void AssetsWindow::Draw()
 
                 accumulatedPath /= token;
 
-                // ID ÚNICO para cada botón de carpeta usando PushID
                 ImGui::PushID(accumulatedPath.string().c_str());
                 if (ImGui::SmallButton(token.c_str()))
                 {
@@ -121,9 +155,9 @@ void AssetsWindow::Draw()
     }
     ImGui::End();
 }
+
 void AssetsWindow::DrawFolderTree(const fs::path& path, const std::string& label)
 {
-
     if (!fs::exists(path) || !fs::is_directory(path))
         return;
 
@@ -148,13 +182,10 @@ void AssetsWindow::DrawFolderTree(const fs::path& path, const std::string& label
         flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
     }
 
-    // 1. PUSH ID
     ImGui::PushID(path.string().c_str());
 
-    // 2. DIBUJAR NODO
     bool nodeOpen = ImGui::TreeNodeEx(label.c_str(), flags);
 
-    // 3. CLICK LOGIC
     if (ImGui::IsItemClicked())
     {
         LOG_DEBUG("CLICKED: %s", path.string().c_str());
@@ -162,12 +193,10 @@ void AssetsWindow::DrawFolderTree(const fs::path& path, const std::string& label
         RefreshAssets();
     }
 
-    // 4. RECURSIVIDAD
     if (nodeOpen)
     {
         if (hasSubfolders)
         {
-            // LOG_CONSOLE("DEBUG: Entering recursion for %s", label.c_str());
             try {
                 for (const auto& entry : fs::directory_iterator(path))
                 {
@@ -189,14 +218,11 @@ void AssetsWindow::DrawFolderTree(const fs::path& path, const std::string& label
         }
     }
 
-    // 5. POP ID
     ImGui::PopID();
-    //LOG_DEBUG("DEBUG: PopID done for %s", label.c_str());
 }
 
 void AssetsWindow::DrawAssetsList()
 {
-    // Navigation buttons
     if (currentPath != assetsRootPath)
     {
         if (ImGui::Button("<- Back"))
@@ -207,14 +233,11 @@ void AssetsWindow::DrawAssetsList()
         ImGui::Separator();
     }
 
-    // Calculate grid layout
     float windowWidth = ImGui::GetContentRegionAvail().x;
     int columns = (int)(windowWidth / (iconSize + 10.0f));
     if (columns < 1) columns = 1;
 
-    // Display assets in grid
     int currentColumn = 0;
-
     std::string pathPendingToLoad = "";
 
     for (auto& asset : currentAssets)
@@ -222,7 +245,6 @@ void AssetsWindow::DrawAssetsList()
         if (showInMemoryOnly && !asset.inMemory)
             continue;
 
-        // Pasamos la variable por referencia
         DrawAssetItem(asset, pathPendingToLoad);
 
         currentColumn++;
@@ -245,11 +267,9 @@ void AssetsWindow::DrawAssetsList()
 
 void AssetsWindow::DrawAssetItem(const AssetEntry& asset, std::string& pathPendingToLoad)
 {
-    // ID Scope Único para todo el item basado en su ruta
     ImGui::PushID(asset.path.c_str());
     ImGui::BeginGroup();
 
-    // Icon button
     const char* icon = GetAssetIcon(asset.extension);
 
     ImVec4 buttonColor = asset.isDirectory ?
@@ -273,7 +293,6 @@ void AssetsWindow::DrawAssetItem(const AssetEntry& asset, std::string& pathPendi
 
     ImGui::PopStyleColor();
 
-    // Doble clic
     if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
     {
         if (!asset.isDirectory)
@@ -286,14 +305,10 @@ void AssetsWindow::DrawAssetItem(const AssetEntry& asset, std::string& pathPendi
         }
     }
 
-    // Nombre
     ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + iconSize);
-
     ImGui::TextWrapped("%s", asset.name.c_str());
-
     ImGui::PopTextWrapPos();
 
-    // Info memoria
     if (asset.inMemory)
     {
         ImGui::TextColored(ImVec4(0.3f, 1.0f, 0.3f, 1.0f), "Refs: %d", asset.references);
@@ -301,22 +316,143 @@ void AssetsWindow::DrawAssetItem(const AssetEntry& asset, std::string& pathPendi
 
     ImGui::EndGroup();
 
-    // Context Menu (abreviado para que veas donde va)
+    // Context Menu with Delete option
     std::string popupID = "AssetContextMenu##" + asset.path;
     if (ImGui::BeginPopupContextItem(popupID.c_str()))
     {
+        ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "%s", asset.name.c_str());
+        ImGui::Separator();
+
+        if (ImGui::MenuItem("Delete"))
+        {
+            assetToDelete = asset;
+            showDeleteConfirmation = true;
+        }
+
+        if (!asset.isDirectory && asset.uid != 0)
+        {
+            ImGui::Separator();
+            ImGui::Text("UID: %llu", asset.uid);
+
+            if (asset.inMemory)
+            {
+                ImGui::TextColored(ImVec4(0.3f, 1.0f, 0.3f, 1.0f), "Loaded in memory");
+            }
+        }
+
         ImGui::EndPopup();
     }
 
-    // Tooltip
     if (ImGui::IsItemHovered())
     {
         ImGui::BeginTooltip();
         ImGui::Text("%s", asset.name.c_str());
+        if (!asset.isDirectory && asset.uid != 0) {
+            ImGui::Text("UID: %llu", asset.uid);
+        }
         ImGui::EndTooltip();
     }
 
     ImGui::PopID();
+}
+
+bool AssetsWindow::DeleteAsset(const AssetEntry& asset)
+{
+    LOG_CONSOLE("[AssetsWindow] Deleting asset: %s", asset.path.c_str());
+
+    try {
+        if (asset.isDirectory)
+        {
+            return DeleteDirectory(fs::path(asset.path));
+        }
+        else
+        {
+            // 1. Load .meta file to get UID and library paths
+            std::string metaPath = asset.path + ".meta";
+            unsigned long long uid = 0;
+            std::vector<std::string> libraryPaths;
+
+            if (fs::exists(metaPath)) {
+                MetaFile meta = MetaFile::Load(metaPath);
+                uid = meta.uid;
+                libraryPaths = meta.GetAllLibraryPaths();
+            }
+
+            // 2. Delete library files
+            for (const auto& libPath : libraryPaths) {
+                if (!libPath.empty() && fs::exists(libPath)) {
+                    LOG_CONSOLE("[AssetsWindow] Deleting library file: %s", libPath.c_str());
+                    fs::remove(libPath);
+                }
+            }
+
+            // 3. Delete .meta file
+            if (fs::exists(metaPath)) {
+                LOG_CONSOLE("[AssetsWindow] Deleting meta file: %s", metaPath.c_str());
+                fs::remove(metaPath);
+            }
+
+            // 4. Delete asset file
+            if (fs::exists(asset.path)) {
+                LOG_CONSOLE("[AssetsWindow] Deleting asset file: %s", asset.path.c_str());
+                fs::remove(asset.path);
+            }
+
+            // 5. Remove from ModuleResources
+            if (uid != 0 && Application::GetInstance().resources) {
+                Application::GetInstance().resources->RemoveResource(uid);
+            }
+
+            return true;
+        }
+    }
+    catch (const fs::filesystem_error& e) {
+        LOG_CONSOLE("[AssetsWindow] ERROR deleting asset: %s", e.what());
+        return false;
+    }
+}
+
+bool AssetsWindow::DeleteDirectory(const fs::path& dirPath)
+{
+    LOG_CONSOLE("[AssetsWindow] Deleting directory: %s", dirPath.string().c_str());
+
+    try {
+        // 1. Collect UIDs and library paths from .meta files
+        std::vector<std::pair<unsigned long long, std::vector<std::string>>> filesToDelete;
+
+        for (const auto& entry : fs::recursive_directory_iterator(dirPath)) {
+            if (entry.is_regular_file() && entry.path().extension() == ".meta") {
+                MetaFile meta = MetaFile::Load(entry.path().string());
+                if (meta.uid != 0) {
+                    filesToDelete.push_back({ meta.uid, meta.GetAllLibraryPaths() });
+                }
+            }
+        }
+
+        // 2. Delete library files and remove from resources
+        for (const auto& [uid, libraryPaths] : filesToDelete) {
+            for (const auto& libPath : libraryPaths) {
+                if (!libPath.empty() && fs::exists(libPath)) {
+                    LOG_CONSOLE("[AssetsWindow] Deleting library file: %s", libPath.c_str());
+                    fs::remove(libPath);
+                }
+            }
+
+            if (Application::GetInstance().resources) {
+                Application::GetInstance().resources->RemoveResource(uid);
+            }
+        }
+
+        // 3. Delete entire directory
+        fs::remove_all(dirPath);
+
+        LOG_CONSOLE("[AssetsWindow] Directory deleted successfully");
+        return true;
+    }
+    catch (const fs::filesystem_error& e) {
+        LOG_CONSOLE("[AssetsWindow] ERROR deleting directory: %s", e.what());
+        return false;
+    }
 }
 
 void AssetsWindow::RefreshAssets()
@@ -336,8 +472,6 @@ void AssetsWindow::RefreshAssets()
 
 void AssetsWindow::ScanDirectory(const fs::path& directory, std::vector<AssetEntry>& outAssets)
 {
-    // LOG_CONSOLE("=== Scanning directory: %s ===", directory.string().c_str());
-
     if (!fs::exists(directory))
         return;
 
@@ -350,22 +484,16 @@ void AssetsWindow::ScanDirectory(const fs::path& directory, std::vector<AssetEnt
         std::transform(extension.begin(), extension.end(), extension.begin(),
             [](unsigned char c) { return std::tolower(c); });
 
-        // Ignorar archivos .meta
         if (extension == ".meta")
         {
-            // LOG_CONSOLE("Found entry: %s (isDir: 0) -> Skipped (meta file)", filename.c_str());
             continue;
         }
 
         bool isDirectory = entry.is_directory();
 
-        if (!isDirectory)
+        if (!isDirectory && !IsAssetFile(extension))
         {
-            if (!IsAssetFile(extension))
-            {
-                LOG_CONSOLE("Found entry: %s -> Skipped (unknown extension: '%s')", filename.c_str(), extension.c_str());
-                continue;
-            }
+            continue;
         }
 
         AssetEntry asset;
@@ -377,24 +505,16 @@ void AssetsWindow::ScanDirectory(const fs::path& directory, std::vector<AssetEnt
         asset.references = 0;
         asset.uid = 0;
 
-        // Intentar obtener UID del archivo .meta si existe
         std::string metaPath = asset.path + ".meta";
         if (fs::exists(metaPath))
         {
-            // Aquí deberías leer el UID real del meta. 
-            // Por ahora simulamos o leemos si tienes la función implementada.
-            //asset.uid = LoadUIDFromMeta(metaPath); 
+            MetaFile meta = MetaFile::Load(metaPath);
+            asset.uid = meta.uid;
         }
 
-        // Check if loaded in memory (en  ModuleResources)
-        // if (!isDirectory && App->resources->IsResourceLoaded(asset.uid)) { ... }
-
         outAssets.push_back(asset);
-
-        // LOG_CONSOLE("Found entry: %s (isDir: %d) -> Added", filename.c_str(), isDirectory);
     }
 
-    // Ordenar: Carpetas primero, luego alfabéticamente
     std::sort(outAssets.begin(), outAssets.end(), [](const AssetEntry& a, const AssetEntry& b)
         {
             if (a.isDirectory != b.isDirectory)
@@ -402,6 +522,7 @@ void AssetsWindow::ScanDirectory(const fs::path& directory, std::vector<AssetEnt
             return a.name < b.name;
         });
 }
+
 const char* AssetsWindow::GetAssetIcon(const std::string& extension) const
 {
     if (extension == ".fbx" || extension == ".obj")
