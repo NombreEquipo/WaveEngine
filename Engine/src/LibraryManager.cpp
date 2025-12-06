@@ -34,7 +34,7 @@ void LibraryManager::Initialize() {
     // Go up 2 levels from executable (build/Debug/ -> build/ -> ProjectRoot/)
     currentDir = currentDir.parent_path().parent_path();
 
-    // Verify Assets folder exists at this level
+    // Check if Assets folder exists at this level
     fs::path assetsPath = currentDir / "Assets";
     bool assetsFound = fs::exists(assetsPath) && fs::is_directory(assetsPath);
 
@@ -120,7 +120,7 @@ void LibraryManager::ClearLibrary() {
         if (fs::exists(libraryPath)) {
             int filesDeleted = 0;
 
-            // Eliminar todos los archivos en Library/ recursivamente
+            // Delete all files in Library/ recursively
             for (const auto& entry : fs::recursive_directory_iterator(libraryPath)) {
                 if (entry.is_regular_file()) {
                     fs::remove(entry.path());
@@ -130,7 +130,7 @@ void LibraryManager::ClearLibrary() {
 
             LOG_CONSOLE("[LibraryManager] Deleted %d files from Library", filesDeleted);
 
-            // Recrear estructura de carpetas
+            // Recreate folder structure
             Initialize();
         }
     }
@@ -156,13 +156,13 @@ void LibraryManager::RegenerateFromAssets() {
             fs::path assetPath = entry.path();
             std::string extension = assetPath.extension().string();
 
-            // Ignorar .meta
+            // Skip .meta files
             if (extension == ".meta") continue;
 
             AssetType type = MetaFile::GetAssetType(extension);
             if (type == AssetType::UNKNOWN) continue;
 
-            // Cargar el .meta file
+            // Load .meta file
             std::string assetPathStr = assetPath.string();
             MetaFile meta = MetaFileManager::LoadMeta(assetPathStr);
 
@@ -173,17 +173,17 @@ void LibraryManager::RegenerateFromAssets() {
                 continue;
             }
 
-            // Procesar según el tipo
+            // Process by type
             switch (type) {
             case AssetType::MODEL_FBX: {
-                // Verificar si ya está en Library
+                // Check if already in Library
                 const aiScene* scene = aiImportFile(assetPath.string().c_str(),
                     aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_FlipUVs);
 
                 if (scene && scene->HasMeshes()) {
                     bool allMeshesExist = true;
 
-                    // Verificar si todas las meshes ya existen
+                    // Check if all meshes already exist
                     for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
                         aiMesh* aiMesh = scene->mMeshes[i];
                         std::string meshFilename = MeshImporter::GenerateMeshFilename(aiMesh->mName.C_Str());
@@ -196,7 +196,7 @@ void LibraryManager::RegenerateFromAssets() {
                     }
 
                     if (!allMeshesExist) {
-                        // Importar todas las meshes del FBX
+                        // Import all meshes from FBX
                         LOG_DEBUG("Importing FBX: %s", assetPath.filename().string().c_str());
 
                         meta.libraryPaths.clear();
@@ -213,7 +213,7 @@ void LibraryManager::RegenerateFromAssets() {
                             }
                         }
 
-                        // Guardar .meta con TODAS las rutas
+                        // Save .meta with all paths
                         if (!meta.libraryPaths.empty()) {
                             std::string metaPath = assetPathStr + ".meta";
                             if (meta.Save(metaPath)) {
@@ -225,9 +225,9 @@ void LibraryManager::RegenerateFromAssets() {
                         processed++;
                     }
                     else {
-                        // Ya existe, pero verificar que el .meta tenga todos los libraryPaths
+                        // Already exists, but check .meta has all libraryPaths
                         if (meta.libraryPaths.empty()) {
-                            // Reconstruir la lista de paths
+                            // Rebuild path list
                             for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
                                 aiMesh* aiMesh = scene->mMeshes[i];
                                 std::string meshFilename = MeshImporter::GenerateMeshFilename(aiMesh->mName.C_Str());
@@ -256,11 +256,11 @@ void LibraryManager::RegenerateFromAssets() {
             case AssetType::TEXTURE_PNG:
             case AssetType::TEXTURE_JPG:
             case AssetType::TEXTURE_DDS: {
-                // Generar el nombre de archivo en Library
+                // Generate filename in Library
                 std::string filename = TextureImporter::GenerateTextureFilename(assetPath.string());
                 std::string fullPath = GetTexturePath(filename);
 
-                // Verificar si ya está en Library
+                // Check if already in Library
                 if (!FileExists(fullPath)) {
                     LOG_DEBUG("Importing texture: %s", assetPath.filename().string().c_str());
                     TextureData texture = TextureImporter::ImportFromFile(assetPath.string());
@@ -290,7 +290,7 @@ void LibraryManager::RegenerateFromAssets() {
                     }
                 }
                 else {
-                    // Ya existe, pero verificar que el .meta tenga libraryPath
+                    // Already exists, but check .meta has libraryPath
                     if (meta.libraryPath.empty()) {
                         meta.libraryPath = fullPath;
 

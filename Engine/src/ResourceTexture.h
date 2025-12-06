@@ -17,11 +17,11 @@ public:
     ResourceTexture(UID uid);
     virtual ~ResourceTexture();
 
-    // Implementación de métodos virtuales
+    // Virtual method implementation
     bool LoadInMemory() override;
     void UnloadFromMemory() override;
 
-    // Getters específicos de textura
+    // Texture-specific getters
     unsigned int GetWidth() const { return width; }
     unsigned int GetHeight() const { return height; }
     unsigned int GetDepth() const { return depth; }

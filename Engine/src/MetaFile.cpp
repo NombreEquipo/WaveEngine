@@ -48,14 +48,14 @@ AssetType MetaFile::GetAssetType(const std::string& extension) {
 void MetaFile::AddLibraryPath(const std::string& path) {
     if (path.empty()) return;
 
-    // Evitar duplicados
+    // Avoid duplicates
     for (const auto& existingPath : libraryPaths) {
         if (existingPath == path) return;
     }
 
     libraryPaths.push_back(path);
 
-    // Actualizar libraryPath principal con el primer path
+    // Update main libraryPath with first entry
     if (libraryPath.empty() && !libraryPaths.empty()) {
         libraryPath = libraryPaths[0];
     }
@@ -68,11 +68,11 @@ bool MetaFile::Save(const std::string& metaFilePath) const {
         return false;
     }
 
-    // Convertir rutas absolutas a relativas antes de guardar
+    // Convert absolute paths to relative before saving
     std::string relativeOriginalPath = MakeRelativeToProject(originalPath);
     std::string relativeLibraryPath = MakeRelativeToProject(libraryPath);
 
-    // ESCRIBIR LOS DATOS
+    // Write data
     file << "guid: " << guid << "\n";
     file << "uid: " << uid << "\n";
     file << "type: " << static_cast<int>(type) << "\n";
@@ -135,7 +135,7 @@ MetaFile MetaFile::Load(const std::string& metaFilePath) {
             meta.libraryPaths.reserve(libraryPathCount);
         }
         else if (key.find("libraryPath") == 0 && key.length() > 11) {
-            // Este es un libraryPath0, libraryPath1, etc.
+            // libraryPath0, libraryPath1, etc.
             std::string path = MakeAbsoluteFromProject(value);
             if (!path.empty()) {
                 meta.libraryPaths.push_back(path);
@@ -166,7 +166,7 @@ MetaFile MetaFile::Load(const std::string& metaFilePath) {
 
     file.close();
 
-    // Si libraryPaths está vacío pero libraryPath no, agregar libraryPath a la lista
+    // If libraryPaths is empty but libraryPath isn't, add it to the list
     if (meta.libraryPaths.empty() && !meta.libraryPath.empty()) {
         meta.libraryPaths.push_back(meta.libraryPath);
     }
@@ -182,8 +182,8 @@ bool MetaFile::NeedsReimport(const std::string& assetPath) const {
     long long currentTimestamp = std::filesystem::last_write_time(assetPath)
         .time_since_epoch().count();
 
-    // Tolerancia de algunos segundos 
-    const long long tolerance = 20000000000; // unidades de 100 nanosegundos
+    // Tolerance of a few seconds 
+    const long long tolerance = 20000000000; // 100 nanosecond units
 
     long long diff = std::abs(currentTimestamp - lastModified);
 
@@ -200,12 +200,12 @@ std::string MetaFile::MakeRelativeToProject(const std::string& absolutePath) {
         std::filesystem::path projectRoot = LibraryManager::GetAssetsRoot();
         projectRoot = projectRoot.parent_path(); // Assets/ -> Project root
 
-        // Si ya es relativa o no se puede hacer relativa, devolver como esta
+        // If already relative or can't make relative, return as is
         if (absPath.is_relative()) {
             return absolutePath;
         }
 
-        // Hacer relativa respecto al project root
+        // Make relative to project root
         std::filesystem::path relativePath = std::filesystem::relative(absPath, projectRoot);
 
         std::string result = relativePath.string();
@@ -226,16 +226,16 @@ std::string MetaFile::MakeAbsoluteFromProject(const std::string& relativePath) {
     try {
         std::filesystem::path relPath(relativePath);
 
-        // Si ya es absoluta, devolver como esta
+        // If already absolute, return as is
         if (relPath.is_absolute()) {
             return relativePath;
         }
 
-        // Obtener project root
+        // Get project root
         std::filesystem::path projectRoot = LibraryManager::GetAssetsRoot();
         projectRoot = projectRoot.parent_path();
 
-        // Combinar project root + relative path
+        // Combine project root + relative path
         std::filesystem::path absolutePath = projectRoot / relPath;
 
         return absolutePath.string();
@@ -264,31 +264,31 @@ void MetaFileManager::ScanAssets() {
 
     LOG_DEBUG("[MetaFileManager] Scanning Assets folder: %s", assetsPath.c_str());
 
-    // Iterar recursivamente por Assets/
+    // Recursively iterate through Assets/
     for (const auto& entry : std::filesystem::recursive_directory_iterator(assetsPath)) {
         if (!entry.is_regular_file()) continue;
 
         std::string assetPath = entry.path().string();
         std::string extension = entry.path().extension().string();
 
-        // Ignorar archivos .meta
+        // Skip .meta files
         if (extension == ".meta") continue;
 
         AssetType type = MetaFile::GetAssetType(extension);
-        if (type == AssetType::UNKNOWN) continue; // Tipo no soportado
+        if (type == AssetType::UNKNOWN) continue; // Unsupported type
 
         std::string metaPath = GetMetaPath(assetPath);
 
-        // SOLO crear .meta si NO existe
+        // Only create .meta if it doesn't exist
         if (!std::filesystem::exists(metaPath)) {
-            // Crear nuevo .meta
+            // Create new .meta
             MetaFile meta;
             meta.uid = MetaFile::GenerateUID();
             meta.guid = MetaFile::GenerateGUID();
             meta.type = type;
             meta.originalPath = assetPath;
             meta.lastModified = GetFileTimestamp(assetPath);
-            meta.libraryPath = ""; // Se asignará durante importación
+            meta.libraryPath = ""; // Will be set during import
 
             if (meta.Save(metaPath)) {
                 metasCreated++;
@@ -296,7 +296,7 @@ void MetaFileManager::ScanAssets() {
             }
         }
         else {
-            // Meta YA existe, NO tocar, solo contar
+            // Meta already exists, don't touch it, just count
             metasExisting++;
             LOG_DEBUG("[MetaFileManager] Existing meta found: %s", metaPath.c_str());
         }
@@ -309,11 +309,11 @@ void MetaFileManager::ScanAssets() {
 MetaFile MetaFileManager::GetOrCreateMeta(const std::string& assetPath) {
     std::string metaPath = GetMetaPath(assetPath);
 
-    // Intentar cargar .meta existente
+    // Try loading existing .meta
     if (std::filesystem::exists(metaPath)) {
         MetaFile meta = MetaFile::Load(metaPath);
 
-        // Si no tiene UID, asignarlo ahora
+        // If no UID, assign one now
         if (meta.uid == 0) {
             meta.uid = MetaFile::GenerateUID();
             meta.Save(metaPath);
@@ -323,7 +323,7 @@ MetaFile MetaFileManager::GetOrCreateMeta(const std::string& assetPath) {
         return meta;
     }
 
-    // Crear nuevo .meta
+    // Create new .meta
     MetaFile meta;
     meta.uid = MetaFile::GenerateUID();
     meta.guid = MetaFile::GenerateGUID();
@@ -340,7 +340,7 @@ bool MetaFileManager::NeedsReimport(const std::string& assetPath) {
     std::string metaPath = GetMetaPath(assetPath);
 
     if (!std::filesystem::exists(metaPath)) {
-        return true; // No hay .meta, necesita importación
+        return true; // No .meta, needs import
     }
 
     MetaFile meta = MetaFile::Load(metaPath);
@@ -358,13 +358,13 @@ MetaFile MetaFileManager::LoadMeta(const std::string& assetPath) {
         return MetaFile::Load(metaPath);
     }
 
-    return MetaFile();  // Retorna meta vacío si no existe
+    return MetaFile();  // Return empty meta if doesn't exist
 }
 
 UID MetaFileManager::GetUIDFromAsset(const std::string& assetPath) {
     MetaFile meta = LoadMeta(assetPath);
 
-    // Si no tiene UID, generar uno y guardarlo
+    // If no UID, generate one and save
     if (meta.uid == 0 && std::filesystem::exists(assetPath)) {
         meta.uid = MetaFile::GenerateUID();
         std::string metaPath = GetMetaPath(assetPath);
@@ -384,14 +384,14 @@ std::string MetaFileManager::GetAssetFromUID(UID uid) {
         return "";
     }
 
-    // Buscar en todos los .meta files
+    // Search all .meta files
     for (const auto& entry : std::filesystem::recursive_directory_iterator(assetsPath)) {
         if (!entry.is_regular_file()) continue;
 
         std::string path = entry.path().string();
         std::string extension = entry.path().extension().string();
 
-        // Solo archivos .meta
+        // Only .meta files
         if (extension != ".meta") continue;
 
         MetaFile meta = MetaFile::Load(path);
@@ -400,7 +400,7 @@ std::string MetaFileManager::GetAssetFromUID(UID uid) {
         }
     }
 
-    return "";  // No encontrado
+    return "";  // Not found
 }
 
 long long MetaFileManager::GetFileTimestamp(const std::string& filePath) {

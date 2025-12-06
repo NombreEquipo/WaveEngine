@@ -8,11 +8,10 @@ public:
     ResourceMesh(UID uid);
     virtual ~ResourceMesh();
 
-    // Implementación de métodos virtuales
     bool LoadInMemory() override;
     void UnloadFromMemory() override;
 
-    // Getters específicos de mesh
+    // getters
     const Mesh& GetMesh() const { return mesh; }
     unsigned int GetNumVertices() const { return mesh.vertices.size(); }
     unsigned int GetNumIndices() const { return mesh.indices.size(); }

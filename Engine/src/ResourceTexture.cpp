@@ -24,14 +24,14 @@ bool ResourceTexture::LoadInMemory() {
 
     LOG_DEBUG("[ResourceTexture] Loading texture from: %s", libraryFile.c_str());
 
-    // Extraer solo el nombre del archivo (sin ruta completa)
+    // Extract just the filename (no full path)
     std::string filename = libraryFile;
     size_t lastSlash = filename.find_last_of("/\\");
     if (lastSlash != std::string::npos) {
         filename = filename.substr(lastSlash + 1);
     }
 
-    // Cargar usando TextureImporter
+    // Load via TextureImporter
     TextureData textureData = TextureImporter::LoadFromCustomFormat(filename);
 
     if (!textureData.IsValid()) {
@@ -39,17 +39,17 @@ bool ResourceTexture::LoadInMemory() {
         return false;
     }
 
-    // Crear textura en OpenGL
+    // Create OpenGL texture
     glGenTextures(1, &gpu_id);
     glBindTexture(GL_TEXTURE_2D, gpu_id);
 
-    // Configurar parámetros de textura
+    // Setup texture params
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    // Subir a GPU
+    // Upload to GPU
     GLenum format = (textureData.channels == 4) ? GL_RGBA : GL_RGB;
     glTexImage2D(GL_TEXTURE_2D, 0, format,
         textureData.width, textureData.height,
@@ -59,7 +59,7 @@ bool ResourceTexture::LoadInMemory() {
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    // Guardar información
+    // Store info
     width = textureData.width;
     height = textureData.height;
     depth = textureData.channels;

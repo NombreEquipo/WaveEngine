@@ -24,14 +24,14 @@ bool ResourceMesh::LoadInMemory() {
 
     LOG_DEBUG("[ResourceMesh] Loading mesh from: %s", libraryFile.c_str());
 
-    // Extraer solo el nombre del archivo
+    // only extract the name of the file
     std::string filename = libraryFile;
     size_t lastSlash = filename.find_last_of("/\\");
     if (lastSlash != std::string::npos) {
         filename = filename.substr(lastSlash + 1);
     }
 
-    // Cargar usando MeshImporter
+    // load using meshimporter
     mesh = MeshImporter::LoadFromCustomFormat(filename);
 
     if (mesh.vertices.empty() || mesh.indices.empty()) {
@@ -39,7 +39,6 @@ bool ResourceMesh::LoadInMemory() {
         return false;
     }
 
-    // Crear buffers de OpenGL
     glGenVertexArrays(1, &mesh.VAO);
     glGenBuffers(1, &mesh.VBO);
     glGenBuffers(1, &mesh.EBO);
@@ -94,7 +93,6 @@ void ResourceMesh::UnloadFromMemory() {
 
     LOG_DEBUG("[ResourceMesh] Unloading mesh VAO: %u", mesh.VAO);
 
-    // Eliminar buffers de OpenGL
     if (mesh.VAO != 0) {
         glDeleteVertexArrays(1, &mesh.VAO);
         mesh.VAO = 0;
@@ -110,7 +108,6 @@ void ResourceMesh::UnloadFromMemory() {
         mesh.EBO = 0;
     }
 
-    // Limpiar datos de CPU
     mesh.vertices.clear();
     mesh.indices.clear();
     mesh.textures.clear();
