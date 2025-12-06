@@ -255,7 +255,8 @@ void LibraryManager::RegenerateFromAssets() {
 
             case AssetType::TEXTURE_PNG:
             case AssetType::TEXTURE_JPG:
-            case AssetType::TEXTURE_DDS: {
+            case AssetType::TEXTURE_DDS:
+            case AssetType::TEXTURE_TGA: {  
                 // Generate filename in Library
                 std::string filename = TextureImporter::GenerateTextureFilename(assetPath.string());
                 std::string fullPath = GetTexturePath(filename);

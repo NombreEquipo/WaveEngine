@@ -1,10 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "Component.h"
+#include "ModuleResources.h"  
 #include <string>
-#include <memory>
-
-class Texture;
 
 class ComponentMaterial : public Component {
 public:
@@ -14,23 +12,37 @@ public:
     void Update() override;
     void OnEditor() override;
 
+    bool LoadTextureByUID(UID uid);
+
     bool LoadTexture(const std::string& path);
+
     void CreateCheckerboardTexture();
-	void RestoreOriginalTexture(); // for module editor
+    void RestoreOriginalTexture();
+
     void Use();
     void Unbind();
-    bool HasTexture() const { return texture != nullptr; }
-	bool HasOriginalTexture() const { return hasOriginalTexture; } // for module editor
 
+    bool HasTexture() const { return textureUID != 0; }
+    bool HasOriginalTexture() const { return originalTextureUID != 0; }
+
+    UID GetTextureUID() const { return textureUID; }
+    UID GetOriginalTextureUID() const { return originalTextureUID; }
+
+    //  por compatibilidad (deprecated)
     const std::string& GetTexturePath() const { return texturePath; }
-	const std::string& GetOriginalTexturePath() const { return originalTexturePath; } // for module editor
+    const std::string& GetOriginalTexturePath() const { return originalTexturePath; }
+
     int GetTextureWidth() const;
     int GetTextureHeight() const;
 
 private:
-    std::unique_ptr<Texture> texture;
-    std::string texturePath;
+    void ReleaseCurrentTexture();
 
-    std::string originalTexturePath; 
-    bool hasOriginalTexture = false;
+private:
+    UID textureUID;
+    UID originalTextureUID;
+
+    //  paths por compatibilidad (deprecated)
+    std::string texturePath;
+    std::string originalTexturePath;
 };

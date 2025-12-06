@@ -540,3 +540,31 @@ void ModuleResources::RemoveResource(UID uid) {
 
     LOG_CONSOLE("[ModuleResources] Resource %llu removed from system", uid);
 }
+
+bool ModuleResources::IsResourceLoaded(UID uid) const {
+    auto it = resources.find(uid);
+    if (it == resources.end()) {
+        return false;
+    }
+
+    return it->second->IsLoadedToMemory();
+}
+
+unsigned int ModuleResources::GetResourceReferenceCount(UID uid) const {
+    auto it = resources.find(uid);
+    if (it == resources.end()) {
+        return 0;
+    }
+
+    return it->second->GetReferenceCount();
+}
+
+const Resource* ModuleResources::GetResource(UID uid) const {
+    auto it = resources.find(uid);
+    if (it == resources.end()) {
+        return nullptr;
+    }
+
+    return it->second;
+}
+

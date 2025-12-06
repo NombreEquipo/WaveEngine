@@ -35,11 +35,11 @@ public:
 
     // Unload from memory
     virtual void UnloadFromMemory() = 0;
-
+    std::string libraryFile;
 protected:
     UID uid = 0;
     std::string assetsFile;      // Path in Assets/
-    std::string libraryFile;     // Path in Library/
+     // Path in Library/
     Type type = UNKNOWN;
     unsigned int referenceCount = 0;
     bool loadedInMemory = false;
@@ -74,13 +74,76 @@ public:
     // Release resource (decrement ref count)
     void ReleaseResource(UID uid);
 
-    void ModuleResources::LoadResourcesFromMetaFiles();
-    Resource* ModuleResources::CreateNewResourceWithUID(const char* assetsFile, Resource::Type type, UID uid);
-    bool ModuleResources::GetResourceInfo(UID uid, std::string& outAssetPath, std::string& outLibraryPath);
+    // Get resource without incrementing reference count
+    const Resource* GetResourceDirect(UID uid) const {
+        auto it = resources.find(uid);
+        return (it != resources.end()) ? it->second : nullptr;
+    }
+
+    Resource* GetResourceDirect(UID uid) {
+        auto it = resources.find(uid);
+        return (it != resources.end()) ? it->second : nullptr;
+    }
+
+    // Load resources from meta files
+    void LoadResourcesFromMetaFiles();
+
+    // Create resource with specific UID
+    Resource* CreateNewResourceWithUID(const char* assetsFile, Resource::Type type, UID uid);
+
+    // Get resource info
+    bool GetResourceInfo(UID uid, std::string& outAssetPath, std::string& outLibraryPath);
 
     // Get resource type from file extension
     Resource::Type GetResourceTypeFromExtension(const std::string& extension) const;
+
+    // Remove resource from system
     void RemoveResource(UID uid);
+
+    // EDITOR / DEBUG METHODS - For inspecting resources
+
+    // Get all resources (for editor)
+    const std::map<UID, Resource*>& GetAllResources() const { return resources; }
+
+    // Get resource statistics
+    void GetResourceStats(int& outTexturesLoaded, int& outMeshesLoaded, int& outTotalRefs) const {
+        outTexturesLoaded = 0;
+        outMeshesLoaded = 0;
+        outTotalRefs = 0;
+
+        for (const auto& pair : resources) {
+            if (pair.second->IsLoadedToMemory()) {
+                if (pair.second->GetType() == Resource::TEXTURE) outTexturesLoaded++;
+                if (pair.second->GetType() == Resource::MESH) outMeshesLoaded++;
+            }
+            outTotalRefs += pair.second->GetReferenceCount();
+        }
+    }
+
+    // Check if a resource is loaded in memory
+    bool IsResourceLoaded(UID uid) const;
+
+    // Get reference count for a resource
+    unsigned int GetResourceReferenceCount(UID uid) const;
+
+    // Get resource without incrementing reference count (read-only access)
+    const Resource* GetResource(UID uid) const;
+
+    void RegisterResource(UID uid, Resource* resource) {
+        if (resources.find(uid) != resources.end()) {
+            LOG_DEBUG("[ModuleResources] WARNING: Resource %llu already exists, replacing", uid);
+            // Cleanup old resource
+            Resource* old = resources[uid];
+            if (old->IsLoadedToMemory()) {
+                old->UnloadFromMemory();
+            }
+            delete old;
+        }
+
+        resources[uid] = resource;
+        LOG_DEBUG("[ModuleResources] Registered resource: UID=%llu, Type=%d",
+            uid, resource->GetType());
+    }
 
 private:
     // Create new resource by type

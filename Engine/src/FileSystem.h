@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <glm/glm.hpp>
+#include "ModuleResources.h"  
 
 class GameObject;
 struct aiNode;
@@ -64,7 +65,7 @@ private:
     GameObject* ProcessNode(aiNode* node, const aiScene* scene, const std::string& directory);
 
     // Convert Assimp mesh to engine mesh format
-    Mesh ProcessMesh(aiMesh* aiMesh, const aiScene* scene);
+    UID ProcessMesh(aiMesh* aiMesh, const aiScene* scene);
 
     // Scale model to fit target size
     void NormalizeModelScale(GameObject* rootObject, float targetSize);

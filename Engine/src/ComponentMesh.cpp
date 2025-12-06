@@ -1,126 +1,331 @@
-#include "ComponentMesh.h"
+﻿#include "ComponentMesh.h"
 #include "GameObject.h"
 #include "Application.h"
+#include "ModuleResources.h"
+#include "ResourceMesh.h"
 #include "Transform.h"
-#include "Frustum.h"
-#include <limits>
-#include <algorithm>  
-#include <glm/glm.hpp>
+#include "Log.h"
+#include <glad/glad.h>
 
 ComponentMesh::ComponentMesh(GameObject* owner)
     : Component(owner, ComponentType::MESH),
-    aabbMin(0.0f), aabbMax(0.0f)
+    meshUID(0),
+    hasDirectMesh(false)
 {
+    LOG_CONSOLE("[ComponentMesh] Created for GameObject: %s", owner ? owner->GetName().c_str() : "NULL");
 }
 
 ComponentMesh::~ComponentMesh()
 {
-    if (HasMesh())
-    {
-        Application::GetInstance().renderer->UnloadMesh(mesh);
+    LOG_CONSOLE("[ComponentMesh] Destroying component for GameObject: %s",
+        owner ? owner->GetName().c_str() : "NULL");
+
+    if (meshUID != 0) {
+        LOG_CONSOLE("[ComponentMesh] Will release mesh UID: %llu", meshUID);
+    }
+
+    ReleaseCurrentMesh();
+
+    // Clean up direct mesh GPU resources if present
+    if (hasDirectMesh && directMesh.VAO != 0) {
+        glDeleteVertexArrays(1, &directMesh.VAO);
+        glDeleteBuffers(1, &directMesh.VBO);
+        glDeleteBuffers(1, &directMesh.EBO);
+        LOG_CONSOLE("[ComponentMesh] Cleaned up direct mesh GPU resources");
     }
 }
 
 void ComponentMesh::Update()
 {
-    // Reserved for future mesh updates
 }
 
 void ComponentMesh::OnEditor()
 {
-    // Reserved for ImGui editor interface
 }
 
-void ComponentMesh::SetMesh(const Mesh& meshData)
+void ComponentMesh::ReleaseCurrentMesh()
 {
-    // Unload previous mesh if exists
-    if (HasMesh())
-    {
-        Application::GetInstance().renderer->UnloadMesh(mesh);
+    if (meshUID != 0) {
+        LOG_CONSOLE("[ComponentMesh] ReleaseCurrentMesh() - Releasing UID %llu (GameObject: %s)",
+            meshUID, owner ? owner->GetName().c_str() : "NULL");
+
+        Application::GetInstance().resources->ReleaseResource(meshUID);
+        meshUID = 0;
     }
 
-    // Copy mesh data
-    mesh.vertices = meshData.vertices;
-    mesh.indices = meshData.indices;
-    mesh.textures = meshData.textures;
-
-    // Reset OpenGL handles (will be set by renderer)
-    mesh.VAO = 0;
-    mesh.VBO = 0;
-    mesh.EBO = 0;
-
-    // Calculate AABB
-    CalculateAABB();
-
-    // Upload to GPU
-    Application::GetInstance().renderer->LoadMesh(mesh);
+    hasDirectMesh = false;
 }
 
-void ComponentMesh::CalculateAABB()
+bool ComponentMesh::LoadMeshByUID(UID meshUID)
 {
-    // If the mesh has no vertices, set the AABB to zero
-    if (mesh.vertices.empty())
+    if (meshUID == 0)
     {
-        aabbMin = glm::vec3(0.0f);
-        aabbMax = glm::vec3(0.0f);
-        return;
+        LOG_CONSOLE("ERROR: Invalid mesh UID (0)");
+        return false;
     }
 
-    // Initialize min and max with the first vertex position
-    aabbMin = mesh.vertices[0].position;
-    aabbMax = mesh.vertices[0].position;
-
-    // Iterate through all vertices to find the minimum and maximum coordinates
-    for (const auto& vertex : mesh.vertices)
+    ModuleResources* resources = Application::GetInstance().resources.get();
+    if (!resources)
     {
-        aabbMin.x = std::min(aabbMin.x, vertex.position.x);
-        aabbMin.y = std::min(aabbMin.y, vertex.position.y);
-        aabbMin.z = std::min(aabbMin.z, vertex.position.z);
-
-        aabbMax.x = std::max(aabbMax.x, vertex.position.x);
-        aabbMax.y = std::max(aabbMax.y, vertex.position.y);
-        aabbMax.z = std::max(aabbMax.z, vertex.position.z);
+        LOG_CONSOLE("ERROR: ModuleResources not available");
+        return false;
     }
+
+    Resource* resource = resources->RequestResource(meshUID);
+
+    if (!resource)
+    {
+        LOG_CONSOLE("ERROR: Failed to load mesh resource with UID: %llu", meshUID);
+        return false;
+    }
+
+    if (resource->GetType() != Resource::MESH)
+    {
+        LOG_CONSOLE("ERROR: Resource UID %llu is not a mesh", meshUID);
+        return false;
+    }
+
+    ResourceMesh* meshResource = static_cast<ResourceMesh*>(resource);
+
+    const Mesh& loadedMesh = meshResource->GetMesh();
+
+    if (loadedMesh.vertices.empty() || loadedMesh.indices.empty())
+    {
+        LOG_CONSOLE("ERROR: Loaded mesh is empty (UID: %llu)", meshUID);
+        return false;
+    }
+
+    // Assign mesh to component
+    SetMesh(loadedMesh);
+
+    // Store UID for reference
+    this->meshUID = meshUID;
+
+    LOG_CONSOLE("✅ Mesh loaded successfully (UID: %llu, %d vertices, %d tris)",
+        meshUID, loadedMesh.vertices.size(), loadedMesh.indices.size() / 3);
+
+    return true;
+}
+
+void ComponentMesh::SetMesh(const Mesh& mesh)
+{
+    LOG_CONSOLE("[ComponentMesh] SetMesh() called for GameObject: %s",
+        owner ? owner->GetName().c_str() : "NULL");
+
+    // Release resource system mesh if any
+    ReleaseCurrentMesh();
+
+    // Copy mesh data for direct storage
+    directMesh = mesh;
+    hasDirectMesh = true;
+
+    // Upload mesh to GPU if data is available
+    if (!directMesh.vertices.empty() && !directMesh.indices.empty())
+    {
+        // Generate OpenGL buffers
+        glGenVertexArrays(1, &directMesh.VAO);
+        glGenBuffers(1, &directMesh.VBO);
+        glGenBuffers(1, &directMesh.EBO);
+
+        glBindVertexArray(directMesh.VAO);
+
+        // Upload vertex data
+        glBindBuffer(GL_ARRAY_BUFFER, directMesh.VBO);
+        glBufferData(GL_ARRAY_BUFFER,
+            directMesh.vertices.size() * sizeof(Vertex),
+            directMesh.vertices.data(),
+            GL_STATIC_DRAW);
+
+        // Upload index data
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, directMesh.EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+            directMesh.indices.size() * sizeof(unsigned int),
+            directMesh.indices.data(),
+            GL_STATIC_DRAW);
+
+        // Configure vertex attributes
+        // Position
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+
+        // Normal
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+            (void*)offsetof(Vertex, normal));
+
+        // TexCoords
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+            (void*)offsetof(Vertex, texCoords));
+
+        glBindVertexArray(0);
+
+        LOG_CONSOLE("[ComponentMesh] ✓ Direct mesh uploaded to GPU");
+        LOG_CONSOLE("  ✓ VAO: %u", directMesh.VAO);
+        LOG_CONSOLE("  ✓ Vertices: %zu", directMesh.vertices.size());
+        LOG_CONSOLE("  ✓ Indices: %zu", directMesh.indices.size());
+    }
+    else
+    {
+        LOG_CONSOLE("[ComponentMesh] WARNING: Direct mesh is empty!");
+    }
+}
+
+const Mesh& ComponentMesh::GetMesh() const
+{
+    // Return resource mesh if loaded
+    if (meshUID != 0) {
+        // Retrieve resource without incrementing reference count
+        const Resource* resource = Application::GetInstance().resources->GetResource(meshUID);
+
+        if (resource && resource->IsLoadedToMemory()) {
+            const ResourceMesh* meshResource = dynamic_cast<const ResourceMesh*>(resource);
+            if (meshResource) {
+                return meshResource->GetMesh();
+            }
+        }
+
+        // Log warning if resource exists but is not loaded
+        if (resource) {
+            LOG_DEBUG("[ComponentMesh] WARNING: Resource UID %llu exists but not loaded in memory", meshUID);
+        }
+    }
+
+    // Return direct mesh as fallback
+    return directMesh;
+}
+
+Mesh& ComponentMesh::GetMesh()
+{
+    // Invoke const version and remove const qualifier from result
+    return const_cast<Mesh&>(static_cast<const ComponentMesh*>(this)->GetMesh());
+}
+
+bool ComponentMesh::HasMesh() const
+{
+    // Verify resource mesh availability
+    if (meshUID != 0) {
+        const Resource* resource = Application::GetInstance().resources->GetResource(meshUID);
+
+        if (resource && resource->IsLoadedToMemory()) {
+            const ResourceMesh* meshResource = dynamic_cast<const ResourceMesh*>(resource);
+            if (meshResource) {
+                const Mesh& mesh = meshResource->GetMesh();
+                return !mesh.vertices.empty() && !mesh.indices.empty();
+            }
+        }
+    }
+
+    // Verify direct mesh availability
+    if (hasDirectMesh) {
+        return !directMesh.vertices.empty() && !directMesh.indices.empty();
+    }
+
+    return false;
+}
+
+void ComponentMesh::Draw()
+{
+    if (!IsActive()) return;
+
+    const Mesh* meshToDraw = nullptr;
+
+    // Prioritize resource mesh
+    if (meshUID != 0) {
+        const Resource* resource = Application::GetInstance().resources->GetResource(meshUID);
+
+        if (resource && resource->IsLoadedToMemory()) {
+            const ResourceMesh* meshResource = dynamic_cast<const ResourceMesh*>(resource);
+            if (meshResource) {
+                meshToDraw = &meshResource->GetMesh();
+            }
+        }
+    }
+
+    // Use direct mesh as fallback
+    if (!meshToDraw && hasDirectMesh) {
+        meshToDraw = &directMesh;
+    }
+
+    // Render mesh if valid
+    if (meshToDraw && meshToDraw->VAO != 0 && !meshToDraw->indices.empty()) {
+        glBindVertexArray(meshToDraw->VAO);
+        glDrawElements(GL_TRIANGLES, meshToDraw->indices.size(), GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+    }
+}
+
+glm::vec3 ComponentMesh::GetAABBMin() const
+{
+    const Mesh& mesh = GetMesh();
+
+    if (mesh.vertices.empty()) {
+        return glm::vec3(0.0f);
+    }
+
+    glm::vec3 minBounds(std::numeric_limits<float>::max());
+
+    for (const auto& vertex : mesh.vertices) {
+        minBounds.x = std::min(minBounds.x, vertex.position.x);
+        minBounds.y = std::min(minBounds.y, vertex.position.y);
+        minBounds.z = std::min(minBounds.z, vertex.position.z);
+    }
+
+    return minBounds;
+}
+
+glm::vec3 ComponentMesh::GetAABBMax() const
+{
+    const Mesh& mesh = GetMesh();
+
+    if (mesh.vertices.empty()) {
+        return glm::vec3(0.0f);
+    }
+
+    glm::vec3 maxBounds(std::numeric_limits<float>::lowest());
+
+    for (const auto& vertex : mesh.vertices) {
+        maxBounds.x = std::max(maxBounds.x, vertex.position.x);
+        maxBounds.y = std::max(maxBounds.y, vertex.position.y);
+        maxBounds.z = std::max(maxBounds.z, vertex.position.z);
+    }
+
+    return maxBounds;
 }
 
 void ComponentMesh::GetWorldAABB(glm::vec3& outMin, glm::vec3& outMax) const
 {
-    // Get the transform component to access the global transformation matrix
-    Transform* transform = static_cast<Transform*>(
-        owner->GetComponent(ComponentType::TRANSFORM));
+    glm::vec3 localMin = GetAABBMin();
+    glm::vec3 localMax = GetAABBMax();
 
-    if (!transform)
-    {
-        // If no transform, return local AABB
-        outMin = aabbMin;
-        outMax = aabbMax;
+    Transform* transform = static_cast<Transform*>(owner->GetComponent(ComponentType::TRANSFORM));
+
+    if (!transform) {
+        outMin = localMin;
+        outMax = localMax;
         return;
     }
 
-    // Get the global transformation matrix
-    const glm::mat4& globalMatrix = transform->GetGlobalMatrix();
+    // Transform all eight corners to world space
+    glm::mat4 globalMatrix = transform->GetGlobalMatrix();
 
-    // Transform all 8 corners of the local AABB to world space
-    glm::vec3 corners[8];
-    Frustum::GetAABBVertices(aabbMin, aabbMax, corners);
+    glm::vec3 corners[8] = {
+        glm::vec3(globalMatrix * glm::vec4(localMin.x, localMin.y, localMin.z, 1.0f)),
+        glm::vec3(globalMatrix * glm::vec4(localMax.x, localMin.y, localMin.z, 1.0f)),
+        glm::vec3(globalMatrix * glm::vec4(localMin.x, localMax.y, localMin.z, 1.0f)),
+        glm::vec3(globalMatrix * glm::vec4(localMax.x, localMax.y, localMin.z, 1.0f)),
+        glm::vec3(globalMatrix * glm::vec4(localMin.x, localMin.y, localMax.z, 1.0f)),
+        glm::vec3(globalMatrix * glm::vec4(localMax.x, localMin.y, localMax.z, 1.0f)),
+        glm::vec3(globalMatrix * glm::vec4(localMin.x, localMax.y, localMax.z, 1.0f)),
+        glm::vec3(globalMatrix * glm::vec4(localMax.x, localMax.y, localMax.z, 1.0f))
+    };
 
-    // Transform the first corner and initialize world min/max
-    glm::vec4 worldCorner = globalMatrix * glm::vec4(corners[0], 1.0f);
-    outMin = glm::vec3(worldCorner);
-    outMax = glm::vec3(worldCorner);
+    // Compute world-space AABB from transformed corners
+    outMin = corners[0];
+    outMax = corners[0];
 
-    // Transform remaining corners and expand the world AABB
-    for (int i = 1; i < 8; i++)
-    {
-        worldCorner = globalMatrix * glm::vec4(corners[i], 1.0f);
-        glm::vec3 corner3D = glm::vec3(worldCorner);
-
-        outMin.x = std::min(outMin.x, corner3D.x);
-        outMin.y = std::min(outMin.y, corner3D.y);
-        outMin.z = std::min(outMin.z, corner3D.z);
-
-        outMax.x = std::max(outMax.x, corner3D.x);
-        outMax.y = std::max(outMax.y, corner3D.y);
-        outMax.z = std::max(outMax.z, corner3D.z);
+    for (int i = 1; i < 8; ++i) {
+        outMin = glm::min(outMin, corners[i]);
+        outMax = glm::max(outMax, corners[i]);
     }
 }

@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Component.h"
-#include "FileSystem.h" 
+#include "FileSystem.h"  
+#include "ModuleResources.h"  
 #include <glm/glm.hpp>
 
 class ComponentMesh : public Component {
@@ -14,36 +15,66 @@ public:
     void Update() override;
     void OnEditor() override;
 
-    // Set mesh data and upload it to GPU
+    // Load mesh from resource system by UID
+    bool LoadMeshByUID(UID uid);
+
+    // Set mesh data directly (for primitives that don't use resource system)
     void SetMesh(const Mesh& meshData);
 
     // Accessors for mesh
-    const Mesh& GetMesh() const { return mesh; }
-    Mesh& GetMesh() { return mesh; }
+    const Mesh& GetMesh() const;
+    Mesh& GetMesh();
 
     // Validation
-    bool HasMesh() const { return mesh.IsValid(); }
+    bool HasMesh() const;
+
+    // Draw the mesh
+    void Draw();
+
+    // Get mesh UID (0 if using direct mesh)
+    UID GetMeshUID() const { return meshUID; }
+
+    // Check if using resource system or direct mesh
+    bool IsUsingResourceMesh() const { return meshUID != 0; }
+    bool IsUsingDirectMesh() const { return hasDirectMesh && meshUID == 0; }
 
     // Mesh statistics
-    unsigned int GetNumVertices() const { return static_cast<unsigned int>(mesh.vertices.size()); }
-    unsigned int GetNumIndices() const { return static_cast<unsigned int>(mesh.indices.size()); }
-    unsigned int GetNumTriangles() const { return GetNumIndices() / 3; }
-    unsigned int GetNumTextures() const { return static_cast<unsigned int>(mesh.textures.size()); }
+    unsigned int GetNumVertices() const {
+        const Mesh& m = GetMesh();
+        return static_cast<unsigned int>(m.vertices.size());
+    }
 
-    // Local space Axis-Aligned Bounding Box (AABB) accessors
-    glm::vec3 GetAABBMin() const { return aabbMin; }
-    glm::vec3 GetAABBMax() const { return aabbMax; }
+    unsigned int GetNumIndices() const {
+        const Mesh& m = GetMesh();
+        return static_cast<unsigned int>(m.indices.size());
+    }
+
+    unsigned int GetNumTriangles() const {
+        return GetNumIndices() / 3;
+    }
+
+    unsigned int GetNumTextures() const {
+        const Mesh& m = GetMesh();
+        return static_cast<unsigned int>(m.textures.size());
+    }
+
+
+    // AABB methods
+    glm::vec3 GetAABBMin() const;
+    glm::vec3 GetAABBMax() const;
 
     // World space AABB (transformed by GameObject's global matrix)
     void GetWorldAABB(glm::vec3& outMin, glm::vec3& outMax) const;
 
 private:
-    Mesh mesh;                 // Mesh data
 
-    // Local space bounding box
-    glm::vec3 aabbMin;
-    glm::vec3 aabbMax;
+    UID meshUID = 0;
+    // Release current mesh resource
+    void ReleaseCurrentMesh();
 
-    // Calculate the AABB from mesh vertices
-    void CalculateAABB();
+private:
+
+    // Direct mesh (for primitives)
+    Mesh directMesh;                        // Direct mesh data (for primitives)
+    bool hasDirectMesh;                     // True if using direct mesh instead of resource
 };

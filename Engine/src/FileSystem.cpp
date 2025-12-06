@@ -16,7 +16,9 @@
 #include "ComponentMaterial.h"
 #include "MetaFile.h"
 #include "Log.h"
-#include "TextureImporter.h" 
+#include "TextureImporter.h"
+#include "ResourceMesh.h"     
+#include "ResourceTexture.h"   
 
 FileSystem::FileSystem() : Module() {}
 FileSystem::~FileSystem() {}
@@ -28,7 +30,6 @@ bool FileSystem::Awake()
 
 bool FileSystem::Start()
 {
-
     // Get executable directory
     char buffer[MAX_PATH];
     GetModuleFileNameA(NULL, buffer, MAX_PATH);
@@ -135,6 +136,7 @@ bool FileSystem::Update()
 
     return true;
 }
+
 bool FileSystem::CleanUp()
 {
     aiDetachAllLogStreams();
@@ -182,7 +184,6 @@ GameObject* FileSystem::LoadFBXAsGameObject(const std::string& file_path)
         meta = MetaFile::Load(metaPath);
     }
     else {
-        // Create if missing for some reason
         meta = MetaFileManager::GetOrCreateMeta(file_path);
     }
 
@@ -197,10 +198,8 @@ GameObject* FileSystem::LoadFBXAsGameObject(const std::string& file_path)
 
     bool metaChanged = false;
 
-    // Check if file was modified since last import
     long long currentTimestamp = MetaFileManager::GetFileTimestamp(file_path);
     if (meta.lastModified != currentTimestamp) {
-        // File changed, update metadata
         std::string modelFilename = MeshImporter::GenerateMeshFilename(
             std::filesystem::path(file_path).stem().string()
         );
@@ -209,7 +208,6 @@ GameObject* FileSystem::LoadFBXAsGameObject(const std::string& file_path)
         metaChanged = true;
     }
 
-    // Only save if something changed
     if (metaChanged) {
         meta.Save(metaPath);
         LOG_DEBUG("Meta updated: %s", meta.libraryPath.c_str());
@@ -253,10 +251,26 @@ GameObject* FileSystem::ProcessNode(aiNode* node, const aiScene* scene, const st
         unsigned int meshIndex = node->mMeshes[i];
         aiMesh* aiMesh = scene->mMeshes[meshIndex];
 
-        Mesh mesh = ProcessMesh(aiMesh, scene);
+        // Obtener el UID del mesh
+        UID meshUID = ProcessMesh(aiMesh, scene);
 
-        ComponentMesh* meshComponent = static_cast<ComponentMesh*>(gameObject->CreateComponent(ComponentType::MESH));
-        meshComponent->SetMesh(mesh);
+        if (meshUID != 0)
+        {
+            ComponentMesh* meshComponent = static_cast<ComponentMesh*>(
+                gameObject->CreateComponent(ComponentType::MESH));
+
+            if (meshComponent)
+            {
+                if (meshComponent->LoadMeshByUID(meshUID))
+                {
+                    LOG_CONSOLE("ComponentMesh loaded with UID: %llu", meshUID);
+                }
+                else
+                {
+                    LOG_CONSOLE(" ERROR: Failed to load mesh with UID: %llu", meshUID);
+                }
+            }
+        }
 
         // Load diffuse textures if available
         if (aiMesh->mMaterialIndex >= 0)
@@ -268,11 +282,13 @@ GameObject* FileSystem::ProcessNode(aiNode* node, const aiScene* scene, const st
                 aiString texturePath;
                 material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath);
 
-                ComponentMaterial* matComponent = static_cast<ComponentMaterial*>(gameObject->GetComponent(ComponentType::MATERIAL));
+                ComponentMaterial* matComponent = static_cast<ComponentMaterial*>(
+                    gameObject->GetComponent(ComponentType::MATERIAL));
 
                 if (matComponent == nullptr)
                 {
-                    matComponent = static_cast<ComponentMaterial*>(gameObject->CreateComponent(ComponentType::MATERIAL));
+                    matComponent = static_cast<ComponentMaterial*>(
+                        gameObject->CreateComponent(ComponentType::MATERIAL));
                 }
 
                 std::string textureFile = texturePath.C_Str();
@@ -287,23 +303,26 @@ GameObject* FileSystem::ProcessNode(aiNode* node, const aiScene* scene, const st
                 std::vector<std::string> searchPaths = {
                     directory + "\\" + fileName,
                     directory + "\\Textures\\" + fileName,
-                    textureFile
                 };
 
                 bool loaded = false;
                 for (const auto& path : searchPaths)
                 {
-                    if (matComponent->LoadTexture(path))
+                    if (std::filesystem::exists(path))
                     {
-                        LOG_DEBUG("Texture loaded: %s", path.c_str());
-                        loaded = true;
-                        break;
+                        if (matComponent->LoadTexture(path))
+                        {
+                            LOG_DEBUG("Texture loaded: %s", path.c_str());
+                            loaded = true;
+                            break;
+                        }
                     }
                 }
 
                 if (!loaded)
                 {
                     LOG_DEBUG("Texture not found: %s (using checkerboard)", fileName.c_str());
+                    matComponent->CreateCheckerboardTexture();
                 }
             }
         }
@@ -321,49 +340,76 @@ GameObject* FileSystem::ProcessNode(aiNode* node, const aiScene* scene, const st
 
     return gameObject;
 }
-Mesh FileSystem::ProcessMesh(aiMesh* aiMesh, const aiScene* scene)
+
+UID FileSystem::ProcessMesh(aiMesh* aiMesh, const aiScene* scene)
 {
+    // Generate mesh filename and construct full path within Library directory
     std::string meshFilename = MeshImporter::GenerateMeshFilename(aiMesh->mName.C_Str());
     std::string fullPath = LibraryManager::GetMeshPath(meshFilename);
 
-    // Try loading from Library first
-    if (LibraryManager::FileExists(fullPath))
-    {
-        Mesh loadedMesh = MeshImporter::LoadFromCustomFormat(meshFilename);
+    // Retrieve ModuleResources instance
+    ModuleResources* resources = Application::GetInstance().resources.get();
+    if (!resources) {
+        LOG_CONSOLE("ERROR: ModuleResources not available");
+        return 0;
+    }
 
-        if (loadedMesh.vertices.size() > 0 && loadedMesh.indices.size() > 0)
-        {
+    // Check whether mesh is already registered in ModuleResources
+    const auto& allResources = resources->GetAllResources();
+    for (const auto& pair : allResources) {
+        if (pair.second->GetLibraryFile() == fullPath) {
+            LOG_CONSOLE("✅ Found existing mesh UID: %llu", pair.first);
+            return pair.first;
+        }
+    }
+
+    // Mesh not found in registry; proceed with creation
+    Mesh mesh;
+    bool needsImport = true;
+
+    // Attempt to load mesh from Library if file exists
+    if (LibraryManager::FileExists(fullPath)) {
+        mesh = MeshImporter::LoadFromCustomFormat(meshFilename);
+        if (!mesh.vertices.empty() && !mesh.indices.empty()) {
             LOG_CONSOLE("Loaded from Library: %d vertices, %d triangles",
-                loadedMesh.vertices.size(), loadedMesh.indices.size() / 3);
-            LOG_DEBUG("Using cached mesh: %s", meshFilename.c_str());
-            return loadedMesh;
-        }
-        else
-        {
-            LOG_CONSOLE("WARNING: Corrupted mesh in Library, regenerating...");
-            LOG_DEBUG("Corrupted file: %s", fullPath.c_str());
+                mesh.vertices.size(), mesh.indices.size() / 3);
+            needsImport = false;
         }
     }
 
-    // Process from FBX
-    LOG_CONSOLE("Processing mesh from FBX: %d vertices, %d triangles",
-        aiMesh->mNumVertices, aiMesh->mNumFaces);
-    LOG_DEBUG("New mesh: %s", aiMesh->mName.C_Str());
-
-    Mesh mesh = MeshImporter::ImportFromAssimp(aiMesh);
-
-    bool saveSuccess = MeshImporter::SaveToCustomFormat(mesh, meshFilename);
-
-    if (saveSuccess) {
-        LOG_CONSOLE("Mesh saved to Library");
-        LOG_DEBUG("Saved to: %s", fullPath.c_str());
-    }
-    else {
-        LOG_CONSOLE("WARNING: Failed to cache mesh");
-        LOG_DEBUG("Save failed: %s", fullPath.c_str());
+    // Import mesh from FBX if not available or invalid
+    if (needsImport) {
+        LOG_CONSOLE("Processing mesh from FBX: %d vertices, %d triangles",
+            aiMesh->mNumVertices, aiMesh->mNumFaces);
+        mesh = MeshImporter::ImportFromAssimp(aiMesh);
+        if (!mesh.vertices.empty() && !mesh.indices.empty()) {
+            MeshImporter::SaveToCustomFormat(mesh, meshFilename);
+            LOG_CONSOLE("Mesh saved to Library");
+        }
+        else {
+            LOG_CONSOLE("ERROR: Failed to import mesh");
+            return 0;
+        }
     }
 
-    return mesh;
+    // Register mesh in ModuleResources
+    UID meshUID = resources->GenerateNewUID();
+    Resource* newResource = resources->CreateNewResourceWithUID(
+        fullPath.c_str(),
+        Resource::MESH,
+        meshUID
+    );
+    if (!newResource) {
+        LOG_CONSOLE("ERROR: Failed to create resource");
+        return 0;
+    }
+
+    // Assign library path to resource
+    newResource->libraryFile = fullPath;
+    LOG_CONSOLE("✅ Mesh registered in ModuleResources (UID: %llu, Library: %s)",
+        meshUID, fullPath.c_str());
+
+    return meshUID;
 }
 
 void FileSystem::NormalizeModelScale(GameObject* rootObject, float targetSize)
@@ -391,7 +437,6 @@ void FileSystem::NormalizeModelScale(GameObject* rootObject, float targetSize)
         LOG_DEBUG("Normalized: %.2f -> scale=%.4f", maxDimension, scale);
     }
 }
-
 
 void FileSystem::CalculateBoundingBox(GameObject* obj, glm::vec3& minBounds, glm::vec3& maxBounds, const glm::mat4& parentTransform)
 {

@@ -861,7 +861,6 @@ void Renderer::DrawGameObjectRecursive(GameObject* gameObject,
     {
         if (ShouldCullGameObject(gameObject, cullingCamera->GetFrustum()))
         {
-            // Skip this GameObject AND its children
             return;
         }
     }
@@ -890,6 +889,11 @@ void Renderer::DrawGameObjectRecursive(GameObject* gameObject,
     glUniformMatrix4fv(glGetUniformLocation(currentShader->GetProgramID(), "model"),
         1, GL_FALSE, glm::value_ptr(modelMatrix));
 
+    ComponentMaterial* material = static_cast<ComponentMaterial*>(
+        gameObject->GetComponent(ComponentType::MATERIAL));
+
+    bool materialBound = false;
+
     if (showZBuffer)
     {
         depthShader->SetFloat("nearPlane", renderCamera->GetNearPlane());
@@ -898,23 +902,19 @@ void Renderer::DrawGameObjectRecursive(GameObject* gameObject,
     else
     {
         defaultShader->SetVec3("tintColor", glm::vec3(1.0f));
-    }
 
-    ComponentMaterial* material = static_cast<ComponentMaterial*>(
-        gameObject->GetComponent(ComponentType::MATERIAL));
-
-    bool materialBound = false;
-    if (!showZBuffer)
-    {
         if (material && material->IsActive())
         {
-            material->Use();
+            material->Use();  // This binds the texture to GL_TEXTURE0
             materialBound = true;
         }
         else
         {
-            defaultTexture->Bind();
+            defaultTexture->Bind();  // Bind checkerboard
         }
+
+        // ✅ NOW set the texture sampler uniform (AFTER binding)
+        glUniform1i(defaultUniforms.texture1, 0);  // Tell shader to use texture unit 0
     }
 
     const std::vector<Component*>& meshComponents =
@@ -991,7 +991,6 @@ void Renderer::DrawGameObjectRecursive(GameObject* gameObject,
             renderCamera, cullingCamera);
     }
 }
-
 void Renderer::DrawVertexNormals(const Mesh& mesh, const glm::mat4& modelMatrix)
 {
     if (!mesh.IsValid() || mesh.vertices.empty())
