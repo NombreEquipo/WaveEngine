@@ -58,6 +58,7 @@ void LibraryManager::Initialize() {
     EnsureDirectoryExists(libraryRoot / "Textures");
     EnsureDirectoryExists(libraryRoot / "Models");
     EnsureDirectoryExists(libraryRoot / "Animations");
+    EnsureDirectoryExists(libraryRoot / "Scene");
 
     s_initialized = true;
     LOG_CONSOLE("[LibraryManager] Library initialized successfully");

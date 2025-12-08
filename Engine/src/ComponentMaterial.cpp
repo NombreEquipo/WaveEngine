@@ -5,6 +5,7 @@
 #include "ResourceTexture.h"
 #include "Log.h"
 #include <glad/glad.h>
+#include <rapidjson/document.h>
 
 ComponentMaterial::ComponentMaterial(GameObject* owner)
     : Component(owner, ComponentType::MATERIAL),
@@ -191,5 +192,32 @@ void ComponentMaterial::RestoreOriginalTexture()
     else {
         LOG_CONSOLE("[ComponentMaterial] No original texture to restore");
         CreateCheckerboardTexture();
+    }
+}
+
+void ComponentMaterial::Serialize(rapidjson::Value& componentObj, rapidjson::Value::AllocatorType& allocator) const
+{
+    // Serialize texture UIDs
+    if (textureUID != 0) {
+        componentObj.AddMember("textureUID", textureUID, allocator);
+    }
+    if (originalTextureUID != 0) {
+        componentObj.AddMember("originalTextureUID", originalTextureUID, allocator);
+    }
+}
+
+void ComponentMaterial::Deserialize(const rapidjson::Value& componentObj)
+{
+    // Oiginal texture UID first
+    if (componentObj.HasMember("originalTextureUID")) {
+        originalTextureUID = componentObj["originalTextureUID"].GetUint64();
+    }
+
+    // Then
+    if (componentObj.HasMember("textureUID")) {
+        UID uid = componentObj["textureUID"].GetUint64();
+        if (uid != 0) {
+            LoadTextureByUID(uid);
+        }
     }
 }

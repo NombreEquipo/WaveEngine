@@ -15,6 +15,10 @@ public:
     void Update() override;
     void OnEditor() override;
 
+    // Serialization
+    void Serialize(rapidjson::Value& componentObj, rapidjson::Value::AllocatorType& allocator) const override;
+    void Deserialize(const rapidjson::Value& componentObj) override;
+
     // Load mesh from resource system by UID
     bool LoadMeshByUID(UID uid);
 
@@ -37,6 +41,10 @@ public:
     // Check if using resource system or direct mesh
     bool IsUsingResourceMesh() const { return meshUID != 0; }
     bool IsUsingDirectMesh() const { return hasDirectMesh && meshUID == 0; }
+
+    // Primitive Type (for serialization)
+    void SetPrimitiveType(const std::string& type) { primitiveType = type; }
+    const std::string& GetPrimitiveType() const { return primitiveType; }
 
     // Mesh statistics
     unsigned int GetNumVertices() const {
@@ -77,4 +85,5 @@ private:
     // Direct mesh (for primitives)
     Mesh directMesh;                        // Direct mesh data (for primitives)
     bool hasDirectMesh;                     // True if using direct mesh instead of resource
+    std::string primitiveType;              // Type of primitive for serialization
 };

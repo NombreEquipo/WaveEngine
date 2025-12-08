@@ -4,6 +4,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <iostream>
 #include "Log.h"
+#include <rapidjson/document.h>
 
 using namespace std;
 
@@ -378,4 +379,34 @@ void ComponentCamera::GetFrustumCorners(glm::vec3 corners[8]) const
     corners[5] = farCenter + right * (farWidth / 2.0f) - up * (farHeight / 2.0f); // Bottom-right
     corners[6] = farCenter + right * (farWidth / 2.0f) + up * (farHeight / 2.0f); // Top-right
     corners[7] = farCenter - right * (farWidth / 2.0f) + up * (farHeight / 2.0f); // Top-left
+}
+
+void ComponentCamera::Serialize(rapidjson::Value& componentObj, rapidjson::Value::AllocatorType& allocator) const
+{
+    // Camera Components
+    componentObj.AddMember("fov", fov, allocator);
+    componentObj.AddMember("aspectRatio", aspectRatio, allocator);
+    componentObj.AddMember("nearPlane", nearPlane, allocator);
+    componentObj.AddMember("farPlane", farPlane, allocator);
+    componentObj.AddMember("frustumCullingEnabled", frustumCullingEnabled, allocator);
+}
+
+void ComponentCamera::Deserialize(const rapidjson::Value& componentObj)
+{
+    // Camera Parameters
+    if (componentObj.HasMember("fov")) {
+        SetFov(componentObj["fov"].GetFloat());
+    }
+    if (componentObj.HasMember("aspectRatio")) {
+        SetAspectRatio(componentObj["aspectRatio"].GetFloat());
+    }
+    if (componentObj.HasMember("nearPlane")) {
+        SetNearPlane(componentObj["nearPlane"].GetFloat());
+    }
+    if (componentObj.HasMember("farPlane")) {
+        SetFarPlane(componentObj["farPlane"].GetFloat());
+    }
+    if (componentObj.HasMember("frustumCullingEnabled")) {
+        SetFrustumCulling(componentObj["frustumCullingEnabled"].GetBool());
+    }
 }

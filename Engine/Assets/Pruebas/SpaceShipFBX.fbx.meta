@@ -1,5 +1,5 @@
-guid: 94c8646250c1e8541b4e021004905bcb
-uid: 443137799285165246
+guid: f69a2f38163460c69a7fce60b2c5409b
+uid: 3196526856203452050
 type: 1
 originalPath: Assets/Pruebas/SpaceShipFBX.fbx
 libraryPath: Library/Meshes/pylon_low_98c6050b4cb9ec16.mesh
@@ -48,7 +48,7 @@ libraryPath40: Library/Meshes/sidepodhinge_low_65892db53af3e801.mesh
 libraryPath41: Library/Meshes/sidepodteethring_low_dc565d44c6d6232e.mesh
 libraryPath42: Library/Meshes/rearringteeth_low_af79a21cb1293ed0.mesh
 libraryPath43: Library/Meshes/sphereengine_low_76409f3fb37a377f.mesh
-lastModified: 134090049247399458
+lastModified: 134090930123526719
 importScale: 1
 generateNormals: 1
 flipUVs: 1

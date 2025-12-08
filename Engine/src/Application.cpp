@@ -161,6 +161,12 @@ bool Application::PostUpdate()
 
 void Application::Play()
 {
+    // Save
+    if (playState == PlayState::EDITING) {
+        LOG_CONSOLE("Saving initial scene state...");
+        scene->SaveScene("../Library/Scene/__temp_scene_state__.json");
+    }
+
     playState = PlayState::PLAYING;
     time->Resume();
 }
@@ -173,6 +179,12 @@ void Application::Pause()
 
 void Application::Stop()
 {
+    // Restore
+    if (playState != PlayState::EDITING) {
+        LOG_CONSOLE("Restoring initial scene state...");
+        scene->LoadScene("../Library/Scene/__temp_scene_state__.json");
+    }
+
     playState = PlayState::EDITING;
     time->Reset();
     time->Pause();

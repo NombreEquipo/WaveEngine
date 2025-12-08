@@ -6,6 +6,7 @@
 #include "Transform.h"
 #include "Log.h"
 #include <glad/glad.h>
+#include <rapidjson/document.h>
 
 ComponentMesh::ComponentMesh(GameObject* owner)
     : Component(owner, ComponentType::MESH),
@@ -327,5 +328,53 @@ void ComponentMesh::GetWorldAABB(glm::vec3& outMin, glm::vec3& outMax) const
     for (int i = 1; i < 8; ++i) {
         outMin = glm::min(outMin, corners[i]);
         outMax = glm::max(outMax, corners[i]);
+    }
+}
+
+void ComponentMesh::Serialize(rapidjson::Value& componentObj, rapidjson::Value::AllocatorType& allocator) const
+{
+    // UID
+    if (meshUID != 0) {
+        componentObj.AddMember("meshUID", meshUID, allocator);
+    }
+
+    // Direct mesh
+    if (hasDirectMesh && !primitiveType.empty()) {
+        rapidjson::Value primitiveTypeValue;
+        primitiveTypeValue.SetString(primitiveType.c_str(), static_cast<rapidjson::SizeType>(primitiveType.length()), allocator);
+        componentObj.AddMember("primitiveType", primitiveTypeValue, allocator);
+    }
+}
+
+void ComponentMesh::Deserialize(const rapidjson::Value& componentObj)
+{
+    // UID
+    if (componentObj.HasMember("meshUID")) {
+        UID uid = componentObj["meshUID"].GetUint64();
+        if (uid != 0) {
+            LoadMeshByUID(uid);
+            return; 
+        }
+    }
+
+	// Primitive Type
+    if (componentObj.HasMember("primitiveType")) {
+        std::string primType = componentObj["primitiveType"].GetString();
+        primitiveType = primType;
+
+        Mesh recreatedMesh;
+        if (primType == "Cube") {
+            recreatedMesh = Primitives::CreateCube();
+        } else if (primType == "Pyramid") {
+            recreatedMesh = Primitives::CreatePyramid();
+        } else if (primType == "Plane") {
+            recreatedMesh = Primitives::CreatePlane();
+        } else if (primType == "Sphere") {
+            recreatedMesh = Primitives::CreateSphere();
+        } else if (primType == "Cylinder") {
+            recreatedMesh = Primitives::CreateCylinder();
+        }
+
+        SetMesh(recreatedMesh);
     }
 }
