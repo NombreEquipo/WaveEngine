@@ -843,6 +843,7 @@ void Renderer::DrawGameObjectWithStencil(GameObject* gameObject)
         defaultTexture->Unbind();
 }
 
+
 void Renderer::DrawGameObjectRecursive(GameObject* gameObject,
     bool renderTransparentOnly,
     ComponentCamera* renderCamera,
@@ -903,18 +904,19 @@ void Renderer::DrawGameObjectRecursive(GameObject* gameObject,
     {
         defaultShader->SetVec3("tintColor", glm::vec3(1.0f));
 
-        if (material && material->IsActive())
+        if (material && material->IsActive() && material->HasTexture())
         {
-            material->Use();  // This binds the texture to GL_TEXTURE0
+            material->Use();  // Bind the material's texture
             materialBound = true;
         }
         else
         {
-            defaultTexture->Bind();  // Bind checkerboard
+            // No material, or material has no texture (checkerboard case)
+            defaultTexture->Bind();  // Use default checkerboard
         }
 
-        // ✅ NOW set the texture sampler uniform (AFTER binding)
-        glUniform1i(defaultUniforms.texture1, 0);  // Tell shader to use texture unit 0
+        // Set the texture sampler uniform AFTER binding
+        glUniform1i(defaultUniforms.texture1, 0);
     }
 
     const std::vector<Component*>& meshComponents =
@@ -991,6 +993,7 @@ void Renderer::DrawGameObjectRecursive(GameObject* gameObject,
             renderCamera, cullingCamera);
     }
 }
+
 void Renderer::DrawVertexNormals(const Mesh& mesh, const glm::mat4& modelMatrix)
 {
     if (!mesh.IsValid() || mesh.vertices.empty())
