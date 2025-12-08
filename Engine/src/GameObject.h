@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <rapidjson/document.h>
 
 class Component;
 enum class ComponentType;
@@ -35,6 +36,10 @@ public:
 
     void MarkForDeletion() { markedForDeletion = true; }
     bool IsMarkedForDeletion() const { return markedForDeletion; }
+
+    // Serialization
+    void Serialize(rapidjson::Value& gameObjectArray, rapidjson::Value::AllocatorType& allocator) const;
+    static GameObject* Deserialize(const rapidjson::Value& gameObjectObj, GameObject* parent = nullptr);
 
 public:
     std::string name;

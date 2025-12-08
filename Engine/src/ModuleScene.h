@@ -5,6 +5,7 @@
 class GameObject;
 class FileSystem;
 class Renderer;
+class ComponentCamera;
 
 class ModuleScene : public Module
 {
@@ -28,6 +29,11 @@ public:
     void RebuildOctree();
     void UpdateObjectInOctree(GameObject* obj);
 
+    // Scene serialization
+    bool SaveScene(const std::string& filepath);
+    bool LoadScene(const std::string& filepath);
+    void ClearScene();
+
     // for raycast visualization
     glm::vec3 lastRayOrigin = glm::vec3(0.0f);
     glm::vec3 lastRayDirection = glm::vec3(0.0f);
@@ -40,4 +46,6 @@ private:
 
     Renderer* renderer = nullptr;
     FileSystem* filesystem = nullptr;
+
+    ComponentCamera* FindCameraInHierarchy(GameObject* obj);
 };

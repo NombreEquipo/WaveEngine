@@ -207,6 +207,22 @@ void ModuleEditor::ShowMenuBar()
     {
         if (ImGui::BeginMenu("File"))
         {
+            if (ImGui::MenuItem("Save Scene"))
+            {
+                Application& app = Application::GetInstance();
+                app.scene->SaveScene("../Scene/scene.json");
+                LOG_CONSOLE("Scene saved to ../Scene/scene.json");
+            }
+
+            if (ImGui::MenuItem("Load Scene"))
+            {
+                Application& app = Application::GetInstance();
+                app.scene->LoadScene("../Scene/scene.json");
+                LOG_CONSOLE("Scene loaded from ../Scene/scene.json");
+            }
+
+            ImGui::Separator();
+
             if (ImGui::MenuItem("Exit"))
             {
                 Application::GetInstance().RequestExit();
@@ -536,6 +552,7 @@ void ModuleEditor::CreatePrimitiveGameObject(const std::string& name, Mesh mesh)
         selectedMesh = mesh;
 
     meshComp->SetMesh(selectedMesh);
+    meshComp->SetPrimitiveType(name); 
 
     ComponentMaterial* materialComp = static_cast<ComponentMaterial*>(
         Object->CreateComponent(ComponentType::MATERIAL)

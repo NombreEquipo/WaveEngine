@@ -6,6 +6,12 @@
 #include <float.h>
 #include <functional>
 #include "ComponentMesh.h"
+#include "ComponentCamera.h"
+#include <rapidjson/document.h>
+#include <rapidjson/writer.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/prettywriter.h>
+#include <fstream>
 
 ModuleScene::ModuleScene() : Module()
 {
@@ -153,7 +159,6 @@ bool ModuleScene::Update()
     if (root)
     {
         root->Update();
-        CleanupMarkedObjects(root);
     }
 
     if (needsOctreeRebuild)
@@ -165,6 +170,11 @@ bool ModuleScene::Update()
 
 bool ModuleScene::PostUpdate()
 {
+    if (root)
+    {
+        CleanupMarkedObjects(root);
+    }
+
     return true;
 }
 
@@ -209,6 +219,13 @@ void ModuleScene::CleanupMarkedObjects(GameObject* parent)
     {
         if (child->IsMarkedForDeletion())
         {
+            // Scene Camera
+            ComponentCamera* cam = static_cast<ComponentCamera*>(child->GetComponent(ComponentType::CAMERA));
+            if (cam && cam == Application::GetInstance().camera->GetSceneCamera())
+            {
+                Application::GetInstance().camera->SetSceneCamera(nullptr);
+            }
+
             parent->RemoveChild(child);
             delete child;
         }
@@ -217,4 +234,141 @@ void ModuleScene::CleanupMarkedObjects(GameObject* parent)
             CleanupMarkedObjects(child);
         }
     }
+}
+
+bool ModuleScene::SaveScene(const std::string& filepath)
+{
+    LOG_CONSOLE("Saving scene to: %s", filepath.c_str());
+
+    rapidjson::Document document;
+    document.SetObject();
+    rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
+
+    document.AddMember("version", 1, allocator);
+
+    // Serialize gameobjects
+    rapidjson::Value gameObjectsArray(rapidjson::kArrayType);
+
+    if (root) {
+        for (GameObject* child : root->GetChildren()) {
+            child->Serialize(gameObjectsArray, allocator);
+        }
+    }
+
+    document.AddMember("gameObjects", gameObjectsArray, allocator);
+
+    // Convert to JSON string
+    rapidjson::StringBuffer buffer;
+    rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
+    document.Accept(writer);
+
+    // Write to file
+    std::ofstream file(filepath);
+    if (!file.is_open()) {
+        LOG_CONSOLE("ERROR: Failed to open file for writing: %s", filepath.c_str());
+        return false;
+    }
+
+    file << buffer.GetString();
+    file.close();
+
+    LOG_CONSOLE("Scene saved successfully");
+    return true;
+}
+
+bool ModuleScene::LoadScene(const std::string& filepath)
+{
+    LOG_CONSOLE("Loading scene from: %s", filepath.c_str());
+
+    // Read file
+    std::ifstream file(filepath);
+    if (!file.is_open()) {
+        LOG_CONSOLE("ERROR: Failed to open file for reading: %s", filepath.c_str());
+        return false;
+    }
+
+    std::string jsonContent((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    file.close();
+
+    // Parse JSON
+    rapidjson::Document document;
+    document.Parse(jsonContent.c_str());
+
+    if (document.HasParseError()) {
+        LOG_CONSOLE("ERROR: Failed to parse JSON file");
+        return false;
+    }
+
+    // Clear selection to avoid bugs
+    Application::GetInstance().selectionManager->ClearSelection();
+
+    // Clear current scene
+    ClearScene();
+
+    // Deserialize GameObjects
+    if (document.HasMember("gameObjects") && document["gameObjects"].IsArray()) {
+        const rapidjson::Value& gameObjectsArray = document["gameObjects"];
+
+        for (rapidjson::SizeType i = 0; i < gameObjectsArray.Size(); ++i) {
+            GameObject* obj = GameObject::Deserialize(gameObjectsArray[i], root);
+            if (!obj) {
+                LOG_CONSOLE("WARNING: Failed to deserialize GameObject at index %d", i);
+            }
+        }
+    }
+
+    // Relink Scene Camera
+    if (root) {
+        ComponentCamera* foundCamera = FindCameraInHierarchy(root);
+        if (foundCamera) {
+            Application::GetInstance().camera->SetSceneCamera(foundCamera);
+        }
+    }
+
+    needsOctreeRebuild = true;
+
+    LOG_CONSOLE("Scene loaded successfully");
+    return true;
+}
+
+void ModuleScene::ClearScene()
+{
+    LOG_CONSOLE("Clearing scene...");
+
+    if (!root) return;
+
+	// Selection
+    Application::GetInstance().selectionManager->ClearSelection();
+
+	// Scene Camera
+    Application::GetInstance().camera->SetSceneCamera(nullptr);
+
+    // Childrens
+    std::vector<GameObject*> children = root->GetChildren();
+    for (GameObject* child : children) {
+        root->RemoveChild(child);
+        delete child;
+    }
+
+    // Octree
+    if (octree) {
+        octree->Clear();
+    }
+
+    LOG_CONSOLE("Scene cleared");
+}
+
+ComponentCamera* ModuleScene::FindCameraInHierarchy(GameObject* obj)
+{
+    if (!obj) return nullptr;
+
+    ComponentCamera* cam = static_cast<ComponentCamera*>(obj->GetComponent(ComponentType::CAMERA));
+    if (cam) return cam;
+
+    for (GameObject* child : obj->GetChildren()) {
+        ComponentCamera* foundCam = FindCameraInHierarchy(child);
+        if (foundCam) return foundCam;
+    }
+
+    return nullptr;
 }

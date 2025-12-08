@@ -6,6 +6,7 @@
 #include "Application.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <rapidjson/document.h>
 
 Transform::Transform(GameObject* owner)
     : Component(owner, ComponentType::TRANSFORM),
@@ -175,5 +176,68 @@ void Transform::UpdateOctree()
     if (app.scene && owner)
     {
         app.scene->UpdateObjectInOctree(owner);
+    }
+}
+
+void Transform::Serialize(rapidjson::Value& componentObj, rapidjson::Value::AllocatorType& allocator) const
+{
+    // Position
+    rapidjson::Value posArray(rapidjson::kArrayType);
+    posArray.PushBack(position.x, allocator);
+    posArray.PushBack(position.y, allocator);
+    posArray.PushBack(position.z, allocator);
+    componentObj.AddMember("position", posArray, allocator);
+
+    // Rotation
+    rapidjson::Value rotArray(rapidjson::kArrayType);
+    rotArray.PushBack(rotation.x, allocator);
+    rotArray.PushBack(rotation.y, allocator);
+    rotArray.PushBack(rotation.z, allocator);
+    componentObj.AddMember("rotation", rotArray, allocator);
+
+    // Scale
+    rapidjson::Value scaleArray(rapidjson::kArrayType);
+    scaleArray.PushBack(scale.x, allocator);
+    scaleArray.PushBack(scale.y, allocator);
+    scaleArray.PushBack(scale.z, allocator);
+    componentObj.AddMember("scale", scaleArray, allocator);
+}
+
+void Transform::Deserialize(const rapidjson::Value& componentObj)
+{
+    // Position
+    if (componentObj.HasMember("position") && componentObj["position"].IsArray()) {
+        const rapidjson::Value& posArray = componentObj["position"];
+        if (posArray.Size() >= 3) {
+            SetPosition(glm::vec3(
+                posArray[0].GetFloat(),
+                posArray[1].GetFloat(),
+                posArray[2].GetFloat()
+            ));
+        }
+    }
+
+    // Rotation
+    if (componentObj.HasMember("rotation") && componentObj["rotation"].IsArray()) {
+        const rapidjson::Value& rotArray = componentObj["rotation"];
+        if (rotArray.Size() >= 3) {
+            SetRotation(glm::vec3(
+                rotArray[0].GetFloat(),
+                rotArray[1].GetFloat(),
+                rotArray[2].GetFloat()
+            ));
+        }
+    }
+
+    // Scale
+    if (componentObj.HasMember("scale") && componentObj["scale"].IsArray()) {
+        const rapidjson::Value& scaleArray = componentObj["scale"];
+        if (scaleArray.Size() >= 3) {
+            SetScale(glm::vec3(
+                scaleArray[0].GetFloat(),
+                scaleArray[1].GetFloat(),
+                scaleArray[2].GetFloat()
+            ));
+        }
     }
 }

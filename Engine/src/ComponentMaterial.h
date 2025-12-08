@@ -12,6 +12,10 @@ public:
     void Update() override;
     void OnEditor() override;
 
+    // Serialization
+    void Serialize(rapidjson::Value& componentObj, rapidjson::Value::AllocatorType& allocator) const override;
+    void Deserialize(const rapidjson::Value& componentObj) override;
+
     bool LoadTextureByUID(UID uid);
 
     bool LoadTexture(const std::string& path);

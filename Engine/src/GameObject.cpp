@@ -5,6 +5,7 @@
 #include "ComponentMaterial.h"
 #include "ComponentCamera.h"
 #include "ComponentRotate.h"
+#include <rapidjson/document.h>
 
 GameObject::GameObject(const std::string& name) : name(name), active(true), parent(nullptr) {
     CreateComponent(ComponentType::TRANSFORM);
@@ -151,4 +152,92 @@ void GameObject::Update() {
     for (auto* child : children) {
         child->Update();
     }
+}
+
+void GameObject::Serialize(rapidjson::Value& gameObjectArray, rapidjson::Value::AllocatorType& allocator) const {
+
+	// Create a JSON object 
+	rapidjson::Value gameObjectObj(rapidjson::kObjectType); // kObjectType = type JSON
+	// Crate and set the name
+    rapidjson::Value nameValue;
+    nameValue.SetString(name.c_str(), static_cast<rapidjson::SizeType>(name.length()), allocator);
+    gameObjectObj.AddMember("name", nameValue, allocator);
+    gameObjectObj.AddMember("active", active, allocator);
+
+    // Components
+    rapidjson::Value componentsArray(rapidjson::kArrayType);
+
+    for (const auto* component : components) {
+        rapidjson::Value componentObj(rapidjson::kObjectType);
+        componentObj.AddMember("type", static_cast<int>(component->GetType()), allocator);
+        componentObj.AddMember("active", component->IsActive(), allocator);
+        component->Serialize(componentObj, allocator);
+        componentsArray.PushBack(componentObj, allocator);
+    }
+
+    gameObjectObj.AddMember("components", componentsArray, allocator);
+
+    // Childrens
+    rapidjson::Value childrenArray(rapidjson::kArrayType);
+    for (const auto* child : children) {
+        child->Serialize(childrenArray, allocator);
+    }
+    gameObjectObj.AddMember("children", childrenArray, allocator);
+
+    gameObjectArray.PushBack(gameObjectObj, allocator);
+}
+
+GameObject* GameObject::Deserialize(const rapidjson::Value& gameObjectObj, GameObject* parent) {
+    if (!gameObjectObj.IsObject()) {
+        return nullptr;
+    }
+
+    // Create gameobject
+    std::string objName = gameObjectObj.HasMember("name") ? gameObjectObj["name"].GetString() : "GameObject";
+    GameObject* newObject = new GameObject(objName);
+
+    if (gameObjectObj.HasMember("active")) {
+        newObject->SetActive(gameObjectObj["active"].GetBool()); 
+    }
+
+    if (parent) {
+        parent->AddChild(newObject);
+    }
+
+    // Components
+    if (gameObjectObj.HasMember("components")) {
+        const rapidjson::Value& componentsArray = gameObjectObj["components"];
+
+        for (rapidjson::SizeType i = 0; i < componentsArray.Size(); ++i) {
+            const rapidjson::Value& componentObj = componentsArray[i];
+
+            if (!componentObj.HasMember("type")) continue;
+
+            ComponentType type = static_cast<ComponentType>(componentObj["type"].GetInt());
+
+            Component* component = nullptr;
+            if (type == ComponentType::TRANSFORM) {
+                component = newObject->GetComponent(ComponentType::TRANSFORM);
+            } else {
+                component = newObject->CreateComponent(type);
+            }
+
+            if (component) {
+                if (componentObj.HasMember("active")) {
+                    component->SetActive(componentObj["active"].GetBool());
+                }
+                component->Deserialize(componentObj);
+            }
+        }
+    }
+
+    // Childrens
+    if (gameObjectObj.HasMember("children")) {
+        const rapidjson::Value& childrenArray = gameObjectObj["children"];
+        for (rapidjson::SizeType i = 0; i < childrenArray.Size(); ++i) {
+            Deserialize(childrenArray[i], newObject);
+        }
+    }
+
+    return newObject;
 }

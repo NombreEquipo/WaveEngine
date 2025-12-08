@@ -14,6 +14,10 @@ public:
     void Update() override;
     void OnEditor() override;
 
+    // Serialization
+    void Serialize(rapidjson::Value& componentObj, rapidjson::Value::AllocatorType& allocator) const override;
+    void Deserialize(const rapidjson::Value& componentObj) override;
+
     const glm::vec3& GetPosition() const { return position; }
     const glm::vec3& GetRotation() const { return rotation; }
     const glm::vec3& GetScale() const { return scale; }
