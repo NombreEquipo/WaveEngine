@@ -1,4 +1,4 @@
-#include "ModuleEditor.h"
+﻿#include "ModuleEditor.h"
 #include <imgui.h>
 #include <imgui_impl_sdl3.h>
 #include <imgui_impl_opengl3.h>
@@ -557,6 +557,7 @@ void ModuleEditor::CreatePrimitiveGameObject(const std::string& name, Mesh mesh)
     ComponentMaterial* materialComp = static_cast<ComponentMaterial*>(
         Object->CreateComponent(ComponentType::MATERIAL)
         );
+    materialComp->CreateCheckerboardTexture(); 
 
     GameObject* root = Application::GetInstance().scene->GetRoot();
     root->AddChild(Object);
