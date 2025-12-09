@@ -55,6 +55,7 @@ private:
 
     std::string assetsRootPath;
     std::string currentPath;
+    std::string sceneRootPath;
     std::vector<AssetEntry> currentAssets;
 
     AssetEntry* selectedAsset;

@@ -16,6 +16,8 @@ AssetsWindow::AssetsWindow()
 
     assetsRootPath = LibraryManager::GetAssetsRoot();
     currentPath = assetsRootPath;
+
+    sceneRootPath = fs::path(assetsRootPath).parent_path().string() + "/Scene";
 }
 
 AssetsWindow::~AssetsWindow()
@@ -228,23 +230,40 @@ void AssetsWindow::Draw()
         ImGui::Text("Path: ");
         ImGui::SameLine();
 
-        fs::path relativePath = fs::relative(currentPath, assetsRootPath);
+        fs::path activeRoot;
+        std::string rootName;
+
+        // Detectar en qué rama estamos
+        bool isInScene = (currentPath.find(sceneRootPath) != std::string::npos);
+
+        if (isInScene) {
+            activeRoot = sceneRootPath;
+            rootName = "Scene";
+        }
+        else {
+            activeRoot = assetsRootPath;
+            rootName = "Assets";
+        }
+
+        fs::path relativePath = fs::relative(currentPath, activeRoot);
+
         if (relativePath == ".")
         {
-            ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f), "Assets");
+            ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f), rootName.c_str());
         }
         else
         {
-            if (ImGui::SmallButton("Assets##BreadcrumbRoot"))
+            // Botón para volver a la raíz activa (Assets o Scene)
+            if (ImGui::SmallButton((rootName + "##BreadcrumbRoot").c_str()))
             {
-                currentPath = assetsRootPath;
+                currentPath = activeRoot.string();
                 RefreshAssets();
             }
 
             std::string pathStr = relativePath.string();
             size_t pos = 0;
             std::string token;
-            fs::path accumulatedPath = assetsRootPath;
+            fs::path accumulatedPath = activeRoot; // Usar activeRoot para la acumulación
 
             while ((pos = pathStr.find("\\")) != std::string::npos || (pos = pathStr.find("/")) != std::string::npos)
             {
@@ -278,7 +297,9 @@ void AssetsWindow::Draw()
         ImGui::Separator();
 
         ImGui::BeginChild("FolderTree", ImVec2(200, 0), true);
+
         DrawFolderTree(assetsRootPath, "Assets");
+        DrawFolderTree(sceneRootPath, "Scene");
         ImGui::EndChild();
 
         ImGui::SameLine();
@@ -289,7 +310,6 @@ void AssetsWindow::Draw()
     }
     ImGui::End();
 }
-
 void AssetsWindow::DrawFolderTree(const fs::path& path, const std::string& label)
 {
     if (!fs::exists(path) || !fs::is_directory(path))
@@ -351,7 +371,7 @@ void AssetsWindow::DrawFolderTree(const fs::path& path, const std::string& label
 
 void AssetsWindow::DrawAssetsList()
 {
-    if (currentPath != assetsRootPath)
+    if (currentPath != assetsRootPath && currentPath != sceneRootPath)
     {
         if (ImGui::Button("<- Back"))
         {
@@ -398,6 +418,7 @@ void AssetsWindow::DrawAssetsList()
         RefreshAssets();
     }
 }
+
 void AssetsWindow::DrawExpandableAssetItem(AssetEntry& asset, std::string& pathPendingToLoad)
 {
     ImGui::PushID(asset.path.c_str());
@@ -1128,5 +1149,6 @@ bool AssetsWindow::IsAssetFile(const std::string& extension) const
         extension == ".mesh" ||
         extension == ".texture" ||
         extension == ".wav" ||
-        extension == ".ogg";
+        extension == ".ogg" ||
+        extension == ".json";
 }
