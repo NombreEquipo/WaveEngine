@@ -18,6 +18,8 @@ void TextureImporter::InitDevIL() {
     if (!s_devilInitialized) {
         ilInit();
         iluInit();
+        ilEnable(IL_ORIGIN_SET);
+		ilOriginFunc(IL_ORIGIN_UPPER_LEFT); // Used to set origin to upper left
         s_devilInitialized = true;
     }
 }
