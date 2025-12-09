@@ -3,7 +3,8 @@ uid: 7948454657915770640
 type: 5
 originalPath: Assets/Street/building03_c.tga
 libraryPath: Library/Textures/building03_c_ada90548ce02ccce.texture
-libraryPathCount: 0
+libraryPathCount: 1
+libraryPath0: Library/Textures/building03_c_ada90548ce02ccce.texture
 lastModified: 134092582209411406
 importScale: 1
 generateNormals: 1

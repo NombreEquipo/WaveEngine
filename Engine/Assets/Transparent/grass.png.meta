@@ -3,7 +3,8 @@ uid: 13037685169596763775
 type: 2
 originalPath: Assets/Transparent/grass.png
 libraryPath: Library/Textures/grass_680023b85d50425.texture
-libraryPathCount: 0
+libraryPathCount: 1
+libraryPath0: Library/Textures/grass_680023b85d50425.texture
 lastModified: 134090049249589182
 importScale: 1
 generateNormals: 1

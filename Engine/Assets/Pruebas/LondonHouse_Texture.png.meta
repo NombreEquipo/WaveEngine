@@ -3,7 +3,8 @@ uid: 14475679032115667181
 type: 2
 originalPath: Assets/Pruebas/LondonHouse_Texture.png
 libraryPath: Library/Textures/londonhouse_texture_7b65c70c940971d.texture
-libraryPathCount: 0
+libraryPathCount: 1
+libraryPath0: Library/Textures/londonhouse_texture_7b65c70c940971d.texture
 lastModified: 134090049246875488
 importScale: 1
 generateNormals: 1

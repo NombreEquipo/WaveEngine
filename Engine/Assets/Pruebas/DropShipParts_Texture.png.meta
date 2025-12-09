@@ -3,7 +3,8 @@ uid: 8334940473539846172
 type: 2
 originalPath: Assets/Pruebas/DropShipParts_Texture.png
 libraryPath: Library/Textures/dropshipparts_texture_dcec58b6dec5244.texture
-libraryPathCount: 0
+libraryPathCount: 1
+libraryPath0: Library/Textures/dropshipparts_texture_dcec58b6dec5244.texture
 lastModified: 134090049246807067
 importScale: 1
 generateNormals: 1

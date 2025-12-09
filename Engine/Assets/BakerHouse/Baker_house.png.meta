@@ -3,7 +3,8 @@ uid: 11318185941847478390
 type: 2
 originalPath: Assets/BakerHouse/Baker_house.png
 libraryPath: Library/Textures/baker_house_ac6e807796a54516.texture
-libraryPathCount: 0
+libraryPathCount: 1
+libraryPath0: Library/Textures/baker_house_ac6e807796a54516.texture
 lastModified: 134057679635580745
 importScale: 1
 generateNormals: 1
