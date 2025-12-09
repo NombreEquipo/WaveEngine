@@ -4,6 +4,7 @@
 #include <imgui_impl_opengl3.h>
 #include <SDL3/SDL.h>
 #include <IL/il.h>
+#include <filesystem>
 
 #include "Application.h"
 #include "Log.h"
@@ -42,6 +43,11 @@ bool ModuleEditor::Start()
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+    // Setup layout file path
+    std::string layoutPath = layoutDirectory + currentLayoutFile;
+    static std::string layoutPathStatic = layoutPath; 
+    io.IniFilename = autoSaveLayout ? layoutPathStatic.c_str() : nullptr;
 
     ImGui_ImplSDL3_InitForOpenGL(
         Application::GetInstance().window->GetWindow(),
@@ -192,6 +198,13 @@ bool ModuleEditor::CleanUp()
 {
     LOG_DEBUG("Cleaning up Editor");
 
+    // Save if auto save is enabled
+    if (autoSaveLayout && ImGui::GetIO().IniFilename != nullptr)
+    {
+        ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
+        LOG_DEBUG("Layout auto-saved to %s", ImGui::GetIO().IniFilename);
+    }
+
     // Windows will be automatically destroyed by unique_ptr
 
     ImGui_ImplOpenGL3_Shutdown();
@@ -260,6 +273,59 @@ void ModuleEditor::ShowMenuBar()
             if (ImGui::MenuItem("Assets", NULL, &assetsOpen))
             {
                 assetsWindow->SetOpen(assetsOpen);
+            }
+
+            ImGui::Separator();
+
+            if (ImGui::BeginMenu("Layout"))
+            {
+                if (ImGui::MenuItem("Save Layout As..."))
+                {
+                    showSaveLayoutPopup = true;
+                }
+
+                ImGui::Separator();
+
+                // Load saved layouts
+                std::vector<std::string> savedLayouts = GetSavedLayouts();
+                if (!savedLayouts.empty())
+                {
+                    ImGui::Text("Saved Layouts:");
+                    for (const auto& layout : savedLayouts)
+                    {
+                        bool isCurrentLayout = (layout == currentLayoutFile);
+                        if (ImGui::MenuItem(layout.c_str(), nullptr, isCurrentLayout))
+                        {
+                            LoadLayout(layout);
+                        }
+                    }
+                }
+                else
+                {
+                    ImGui::TextDisabled("No saved layouts");
+                }
+
+                ImGui::Separator();
+
+                // Auto save 
+                if (ImGui::MenuItem("Auto save Layout", nullptr, &autoSaveLayout))
+                {
+                    ImGuiIO& io = ImGui::GetIO();
+                    if (autoSaveLayout)
+                    {
+                        std::string layoutPath = layoutDirectory + currentLayoutFile;
+                        static std::string layoutPathStatic = layoutPath;
+                        io.IniFilename = layoutPathStatic.c_str();
+                        LOG_CONSOLE("Auto save enabled");
+                    }
+                    else
+                    {
+                        io.IniFilename = nullptr;
+                        LOG_CONSOLE("Auto save disabled");
+                    }
+                }
+
+                ImGui::EndMenu();
             }
 
             ImGui::EndMenu();
@@ -357,6 +423,40 @@ void ModuleEditor::ShowMenuBar()
         }
 
         ImGui::EndMenuBar();
+    }
+
+    // Save Layout Popup 
+    if (showSaveLayoutPopup)
+    {
+        ImGui::OpenPopup("Save Layout");
+        showSaveLayoutPopup = false;
+    }
+
+    if (ImGui::BeginPopupModal("Save Layout", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("Enter layout name:");
+        ImGui::SetNextItemWidth(300.0f);
+        ImGui::InputText("##layoutname", layoutNameBuffer, sizeof(layoutNameBuffer));
+
+        ImGui::Spacing();
+
+        if (ImGui::Button("Save", ImVec2(145, 0)))
+        {
+            std::string filename = layoutNameBuffer;
+			if (filename.find(".ini") == std::string::npos) // npos means not found
+            {
+                filename += ".ini";
+            }
+            SaveLayoutAs(filename);
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(145, 0)))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
     }
 }
 
@@ -702,4 +802,53 @@ const char* ModuleEditor::EditorWindowTypeToString(EditorWindowType type)
     case EditorWindowType::ABOUT:          return "ABOUT";
     default:                               return "UNKNOWN";
     }
+}
+
+void ModuleEditor::SaveLayoutAs(const std::string& filename)
+{
+    std::string fullPath = layoutDirectory + filename;
+
+    std::filesystem::create_directories(layoutDirectory);
+
+    ImGui::SaveIniSettingsToDisk(fullPath.c_str());
+    currentLayoutFile = filename;
+    LOG_CONSOLE("Layout saved to %s", fullPath.c_str());
+}
+
+void ModuleEditor::LoadLayout(const std::string& filename)
+{
+    std::string fullPath = layoutDirectory + filename;
+
+    if (std::filesystem::exists(fullPath))
+    {
+        ImGui::LoadIniSettingsFromDisk(fullPath.c_str());
+        currentLayoutFile = filename;
+        LOG_CONSOLE("Layout loaded from %s", fullPath.c_str());
+    }
+    else
+    {
+        LOG_CONSOLE("Layout file not found: %s", fullPath.c_str());
+    }
+}
+
+std::vector<std::string> ModuleEditor::GetSavedLayouts()
+{
+    std::vector<std::string> layouts;
+
+    if (!std::filesystem::exists(layoutDirectory))
+    {
+        return layouts;
+    }
+
+    for (const auto& entry : std::filesystem::directory_iterator(layoutDirectory))
+    { 
+        // is_regular_file: check if is a file 
+        // extension: check for example my_layout.ini has .ini extension
+		if (entry.is_regular_file() && entry.path().extension() == ".ini") 
+        {
+            layouts.push_back(entry.path().filename().string());
+        }
+    }
+
+    return layouts;
 }

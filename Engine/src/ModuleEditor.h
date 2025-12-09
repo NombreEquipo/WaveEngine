@@ -4,6 +4,7 @@
 #include <imgui.h>
 #include <memory>
 #include <string>
+#include <vector>
 
 // Forward declarations
 class ConfigurationWindow;
@@ -75,6 +76,11 @@ private:
     void UpdateCurrentWindow();
     const char* EditorWindowTypeToString(EditorWindowType type); // For debug // Delete before release
 
+    // Layout management
+    void SaveLayoutAs(const std::string& filename);
+    void LoadLayout(const std::string& filename);
+    std::vector<std::string> GetSavedLayouts();
+
     // Editor windows (owned by ModuleEditor)
     std::unique_ptr<ConfigurationWindow> configWindow;
     std::unique_ptr<HierarchyWindow> hierarchyWindow;
@@ -91,5 +97,12 @@ private:
     EditorWindowType currentWindow = EditorWindowType::NONE;
     bool isMouseOverSceneViewport = false;
     EditorWindowType lastHoveredWindow = EditorWindowType::NONE;
+
+    // Layout management state
+    bool autoSaveLayout = true;
+    std::string layoutDirectory = "../Scene/Editor Layout/";
+    std::string currentLayoutFile = "editor_layout.ini";
+    bool showSaveLayoutPopup = false;
+    char layoutNameBuffer[128] = "my_layout";
 
 };
