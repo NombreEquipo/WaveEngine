@@ -76,14 +76,14 @@ bool MetaFile::Save(const std::string& metaFilePath) const {
     file << "guid: " << guid << "\n";
     file << "uid: " << uid << "\n";
     file << "type: " << static_cast<int>(type) << "\n";
-    file << "originalPath: " << relativeOriginalPath << "\n";
-    file << "libraryPath: " << relativeLibraryPath << "\n";
+    //file << "originalPath: " << relativeOriginalPath << "\n";
+    //file << "libraryPath: " << relativeLibraryPath << "\n";
 
-    file << "libraryPathCount: " << libraryPaths.size() << "\n";
-    for (size_t i = 0; i < libraryPaths.size(); ++i) {
-        std::string relativePath = MakeRelativeToProject(libraryPaths[i]);
-        file << "libraryPath" << i << ": " << relativePath << "\n";
-    }
+    //file << "libraryPathCount: " << libraryPaths.size() << "\n";
+    //for (size_t i = 0; i < libraryPaths.size(); ++i) {
+      //  std::string relativePath = MakeRelativeToProject(libraryPaths[i]);
+        //file << "libraryPath" << i << ": " << relativePath << "\n";
+    //}
 
     file << "lastModified: " << lastModified << "\n";
     file << "importScale: " << importSettings.importScale << "\n";
