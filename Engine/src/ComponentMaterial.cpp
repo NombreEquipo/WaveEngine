@@ -197,6 +197,19 @@ void ComponentMaterial::Serialize(nlohmann::json& componentObj) const
         componentObj["originalTextureUID"] = originalTextureUID;
     }
     componentObj["useCheckerboard"] = useCheckerboard;
+
+    componentObj["hasMaterialProperties"] = hasMaterialProperties;
+
+    if (hasMaterialProperties) {
+        componentObj["diffuseColor"] = { diffuseColor.r, diffuseColor.g, diffuseColor.b, diffuseColor.a };
+        componentObj["specularColor"] = { specularColor.r, specularColor.g, specularColor.b, specularColor.a };
+        componentObj["ambientColor"] = { ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a };
+        componentObj["emissiveColor"] = { emissiveColor.r, emissiveColor.g, emissiveColor.b, emissiveColor.a };
+        componentObj["shininess"] = shininess;
+        componentObj["opacity"] = opacity;
+        componentObj["metallic"] = metallic;
+        componentObj["roughness"] = roughness;
+    }
 }
 
 void ComponentMaterial::Deserialize(const nlohmann::json& componentObj)
@@ -217,5 +230,40 @@ void ComponentMaterial::Deserialize(const nlohmann::json& componentObj)
     }
     else if (useCheckerboard) {
         CreateCheckerboardTexture();
+    }
+
+    if (componentObj.contains("hasMaterialProperties")) {
+        hasMaterialProperties = componentObj["hasMaterialProperties"].get<bool>();
+
+        if (hasMaterialProperties) {
+            if (componentObj.contains("diffuseColor")) {
+                auto color = componentObj["diffuseColor"];
+                diffuseColor = glm::vec4(color[0], color[1], color[2], color[3]);
+            }
+            if (componentObj.contains("specularColor")) {
+                auto color = componentObj["specularColor"];
+                specularColor = glm::vec4(color[0], color[1], color[2], color[3]);
+            }
+            if (componentObj.contains("ambientColor")) {
+                auto color = componentObj["ambientColor"];
+                ambientColor = glm::vec4(color[0], color[1], color[2], color[3]);
+            }
+            if (componentObj.contains("emissiveColor")) {
+                auto color = componentObj["emissiveColor"];
+                emissiveColor = glm::vec4(color[0], color[1], color[2], color[3]);
+            }
+            if (componentObj.contains("shininess")) {
+                shininess = componentObj["shininess"].get<float>();
+            }
+            if (componentObj.contains("opacity")) {
+                opacity = componentObj["opacity"].get<float>();
+            }
+            if (componentObj.contains("metallic")) {
+                metallic = componentObj["metallic"].get<float>();
+            }
+            if (componentObj.contains("roughness")) {
+                roughness = componentObj["roughness"].get<float>();
+            }
+        }
     }
 }
