@@ -109,4 +109,8 @@ private:
     bool showSaveLayoutPopup = false;
     char layoutNameBuffer[128] = "my_layout";
 
+    // Meta file monitoring
+    float metaFileCheckTimer = 0.0f;
+    const float metaFileCheckInterval = 2.0f;
+
 };

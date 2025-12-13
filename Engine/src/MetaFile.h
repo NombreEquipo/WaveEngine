@@ -55,6 +55,8 @@ class MetaFileManager {
 public:
     static void Initialize();
     static void ScanAssets();
+    static void CleanOrphanedMetaFiles();
+    static void CheckForChanges(); 
     static MetaFile GetOrCreateMeta(const std::string& assetPath);
     static bool NeedsReimport(const std::string& assetPath);
     static void RegenerateLibrary();

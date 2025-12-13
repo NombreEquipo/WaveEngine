@@ -181,10 +181,8 @@ std::string MetaFile::MakeAbsoluteFromProject(const std::string& relativePath) {
     }
 }
 
-// METAFILE MANAGER IMPLEMENTATION
-///////////////////////////////////////////
-
 void MetaFileManager::Initialize() {
+    CleanOrphanedMetaFiles();
     ScanAssets();
 }
 
@@ -234,6 +232,119 @@ void MetaFileManager::ScanAssets() {
 
     LOG_CONSOLE("[MetaFileManager] Scan complete: %d created, %d existing",
         metasCreated, metasExisting);
+}
+
+void MetaFileManager::CleanOrphanedMetaFiles() {
+    std::string assetsPath = LibraryManager::GetAssetsRoot();
+
+    if (!std::filesystem::exists(assetsPath)) {
+        LOG_DEBUG("[MetaFileManager] Assets folder not found: %s", assetsPath.c_str());
+        return;
+    }
+
+    int metasDeleted = 0;
+
+    // Find all .meta files
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(assetsPath)) {
+        if (!entry.is_regular_file()) continue;
+
+        std::string filePath = entry.path().string();
+        std::string extension = entry.path().extension().string();
+
+		// Meta files only
+        if (extension != ".meta") continue;
+
+        // Remove .meta extension
+        std::string assetPath = filePath.substr(0, filePath.length() - 5);
+
+        if (!std::filesystem::exists(assetPath)) {
+			// Deleteing orphaned .meta file
+            try {
+                std::filesystem::remove(filePath);
+                LOG_CONSOLE("[MetaFileManager] Deleted orphaned .meta: %s", filePath.c_str());
+                metasDeleted++;
+            }
+            catch (const std::exception& e) {
+                LOG_CONSOLE("[MetaFileManager] ERROR deleting .meta: %s - %s", filePath.c_str(), e.what());
+            }
+        }
+    }
+
+    if (metasDeleted > 0) {
+        LOG_CONSOLE("[MetaFileManager] Cleanup complete: %d orphaned .meta files deleted", metasDeleted);
+    }
+}
+
+void MetaFileManager::CheckForChanges() {
+    std::string assetsPath = LibraryManager::GetAssetsRoot();
+
+    if (!std::filesystem::exists(assetsPath)) {
+        return;
+    }
+
+    int metasCreated = 0;
+    int metasDeleted = 0;
+
+    try {
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(assetsPath)) {
+            if (!entry.is_regular_file()) continue;
+
+            std::string filePath = entry.path().string();
+            std::string extension = entry.path().extension().string();
+
+            if (extension != ".meta") continue;
+
+            std::string assetPath = filePath.substr(0, filePath.length() - 5);
+
+            if (!std::filesystem::exists(assetPath)) {
+                try {
+                    std::filesystem::remove(filePath);
+                    LOG_CONSOLE("[MetaFileManager] Deleted orphaned .meta: %s", filePath.c_str());
+                    metasDeleted++;
+                }
+                catch (const std::exception& e) {
+                    LOG_CONSOLE("[MetaFileManager] ERROR deleting .meta: %s - %s", filePath.c_str(), e.what());
+                }
+            }
+        }
+
+        // Create missing .meta files for new assets
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(assetsPath)) {
+            if (!entry.is_regular_file()) continue;
+
+            std::string assetPath = entry.path().string();
+            std::string extension = entry.path().extension().string();
+
+            // Skip .meta files
+            if (extension == ".meta") continue;
+
+            AssetType type = MetaFile::GetAssetType(extension);
+            if (type == AssetType::UNKNOWN) continue; 
+
+            std::string metaPath = GetMetaPath(assetPath);
+
+            // Create .meta if it doesnt exist
+            if (!std::filesystem::exists(metaPath)) {
+                MetaFile meta;
+                meta.uid = MetaFile::GenerateUID();
+                meta.type = type;
+                meta.originalPath = assetPath;
+                meta.lastModified = GetFileTimestamp(assetPath);
+
+                if (meta.Save(metaPath)) {
+                    LOG_CONSOLE("[MetaFileManager] Created .meta for new asset: %s", assetPath.c_str());
+                    metasCreated++;
+                }
+            }
+        }
+
+        if (metasCreated > 0 || metasDeleted > 0) {
+            LOG_CONSOLE("[MetaFileManager] Changes detected: %d created, %d deleted", metasCreated, metasDeleted);
+        }
+    }
+    catch (const std::exception& e) {
+        LOG_CONSOLE("[MetaFileManager] ERROR during change detection: %s", e.what());
+    }
 }
 
 bool MetaFileManager::UpdateMetaIfModified(const std::string& assetPath) {

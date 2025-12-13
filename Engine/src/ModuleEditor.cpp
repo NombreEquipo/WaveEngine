@@ -26,6 +26,7 @@
 #include "SceneWindow.h"
 #include "GameWindow.h"
 #include "AssetsWindow.h"
+#include "MetaFile.h"
 
 ModuleEditor::ModuleEditor() : Module()
 {
@@ -181,6 +182,13 @@ bool ModuleEditor::Update()
     }
 
     UpdateCurrentWindow();
+
+    // Check for meta file changes
+    metaFileCheckTimer += ImGui::GetIO().DeltaTime;
+    if (metaFileCheckTimer >= metaFileCheckInterval) {
+        MetaFileManager::CheckForChanges();
+        metaFileCheckTimer = 0.0f;
+    }
 
     // For debug // Delete before release
     //LOG_CONSOLE("%d", isMouseOverSceneViewport);
