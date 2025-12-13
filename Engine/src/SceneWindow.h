@@ -33,5 +33,7 @@ private:
     ImVec2 sceneViewportPos;
     ImVec2 sceneViewportSize;
 
+    GameObject* GetGameObjectUnderMouse();
+
     bool isGizmoActive = false;
 };

@@ -141,7 +141,6 @@ void SceneWindow::HandleAssetDropTarget()
 
                     if (matComp)
                     {
-                        // Intentar cargar la textura original del FBX
                         unsigned long long textureUID = FindTextureForDroppedMesh(dropData->assetUID);
 
                         if (textureUID != 0)
@@ -179,46 +178,75 @@ void SceneWindow::HandleAssetDropTarget()
             case DragDropAssetType::TEXTURE:
             {
                 LOG_CONSOLE("Applying texture...");
-                std::vector<GameObject*> selectedObjects =
-                    Application::GetInstance().selectionManager->GetSelectedObjects();
 
-                if (selectedObjects.empty())
+                GameObject* targetObject = GetGameObjectUnderMouse();
+
+                if (targetObject)
                 {
-                    LOG_CONSOLE("No objects selected to apply texture");
-                    break;
-                }
-
-                int successCount = 0;
-                for (GameObject* obj : selectedObjects)
-                {
-                    if (!obj || !obj->IsActive())
-                        continue;
-
+                    // Aplicar textura al objeto específico bajo el mouse
                     ComponentMaterial* material = static_cast<ComponentMaterial*>(
-                        obj->GetComponent(ComponentType::MATERIAL)
+                        targetObject->GetComponent(ComponentType::MATERIAL)
                         );
 
-                    // Crear material si no existe
                     if (!material)
                     {
                         material = static_cast<ComponentMaterial*>(
-                            obj->CreateComponent(ComponentType::MATERIAL)
+                            targetObject->CreateComponent(ComponentType::MATERIAL)
                             );
                     }
 
                     if (material && material->LoadTextureByUID(dropData->assetUID))
                     {
-                        successCount++;
+                        LOG_CONSOLE("Texture applied to: %s", targetObject->GetName().c_str());
                     }
-                }
-
-                if (successCount > 0)
-                {
-                    LOG_CONSOLE("Texture applied to %d object(s)", successCount);
+                    else
+                    {
+                        LOG_CONSOLE("ERROR: Failed to apply texture to: %s", targetObject->GetName().c_str());
+                    }
                 }
                 else
                 {
-                    LOG_CONSOLE("ERROR: Failed to apply texture");
+                    // Fallback: aplicar a objetos seleccionados 
+                    std::vector<GameObject*> selectedObjects =
+                        Application::GetInstance().selectionManager->GetSelectedObjects();
+
+                    if (selectedObjects.empty())
+                    {
+                        LOG_CONSOLE("No object under mouse and no selection");
+                        break;
+                    }
+
+                    int successCount = 0;
+                    for (GameObject* obj : selectedObjects)
+                    {
+                        if (!obj || !obj->IsActive())
+                            continue;
+
+                        ComponentMaterial* material = static_cast<ComponentMaterial*>(
+                            obj->GetComponent(ComponentType::MATERIAL)
+                            );
+
+                        if (!material)
+                        {
+                            material = static_cast<ComponentMaterial*>(
+                                obj->CreateComponent(ComponentType::MATERIAL)
+                                );
+                        }
+
+                        if (material && material->LoadTextureByUID(dropData->assetUID))
+                        {
+                            successCount++;
+                        }
+                    }
+
+                    if (successCount > 0)
+                    {
+                        LOG_CONSOLE("Texture applied to %d selected object(s)", successCount);
+                    }
+                    else
+                    {
+                        LOG_CONSOLE("ERROR: Failed to apply texture");
+                    }
                 }
                 break;
             }
@@ -231,7 +259,6 @@ void SceneWindow::HandleAssetDropTarget()
         ImGui::EndDragDropTarget();
     }
 }
-
 void SceneWindow::HandleGizmoInput()
 {
     Input* input = Application::GetInstance().input.get();
@@ -576,4 +603,43 @@ void SceneWindow::ApplyMeshTransformFromFBX(GameObject* meshObject, unsigned lon
             break;
         }
     }
+}
+
+GameObject* SceneWindow::GetGameObjectUnderMouse()
+{
+    // Obtener posición del mouse relativa al viewport de scene
+    ImVec2 mousePos = ImGui::GetMousePos();
+
+    float relativeX = mousePos.x - sceneViewportPos.x;
+    float relativeY = mousePos.y - sceneViewportPos.y;
+
+    // Verificar que el mouse está dentro del viewport
+    if (relativeX < 0 || relativeX > sceneViewportSize.x ||
+        relativeY < 0 || relativeY > sceneViewportSize.y)
+    {
+        return nullptr;
+    }
+
+    // Obtener la cámara activa
+    ComponentCamera* camera = Application::GetInstance().camera->GetActiveCamera();
+    if (!camera)
+    {
+        return nullptr;
+    }
+
+    // Generar rayo desde la cámara
+    glm::vec3 rayOrigin = camera->GetPosition();
+    glm::vec3 rayDir = camera->ScreenToWorldRay(
+        static_cast<int>(relativeX),
+        static_cast<int>(relativeY),
+        static_cast<int>(sceneViewportSize.x),
+        static_cast<int>(sceneViewportSize.y)
+    );
+
+    // Hacer ray picking
+    GameObject* root = Application::GetInstance().scene->GetRoot();
+    float minDist = std::numeric_limits<float>::max();
+    GameObject* hitObject = FindClosestObjectToRayOptimized(root, rayOrigin, rayDir, minDist);
+
+    return hitObject;
 }
