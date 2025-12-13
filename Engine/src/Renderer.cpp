@@ -290,9 +290,9 @@ bool Renderer::Update()
             Octree* octree = Application::GetInstance().scene->GetOctree();
             if (octree)
             {
-                LOG_DEBUG(" Drawing octree with %d nodes, %d objects",
-                    octree->GetTotalNodeCount(),
-                    octree->GetTotalObjectCount());
+                //LOG_DEBUG(" Drawing octree with %d nodes, %d objects",
+                //    octree->GetTotalNodeCount(),
+                //    octree->GetTotalObjectCount());
                 octree->DebugDraw();
             }
             else
