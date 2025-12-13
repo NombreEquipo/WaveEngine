@@ -24,9 +24,56 @@ struct ImportSettings {
     bool flipUVs = true;
     bool optimizeMeshes = true;
 
+    // Axis configuration
+    int upAxis = 0;        // 0=Y-Up, 1=Z-Up
+    int frontAxis = 0;     // 0=Z-Forward, 1=Y-Forward, 2=X-Forward
+
     // Texture settings
     bool generateMipmaps = true;
-    int wrapMode = 0;  // 0=Repeat, 1=Clamp
+    int wrapMode = 0;      // 0=Repeat, 1=Clamp, 2=Mirrored, 3=Border
+    int filterMode = 2;    // 0=Point, 1=Bilinear, 2=Trilinear
+    bool flipHorizontal = false;
+    int compressionFormat = 0;  // 0=None, 1=DXT1, 2=DXT5, 3=BC7
+    int maxTextureSize = 6;     // Index: 0=32, 1=64, 2=128, 3=256, 4=512, 5=1024, 6=2048, 7=4096, 8=8192
+
+    // Helper para obtener el modo OpenGL de wrap
+    unsigned int GetGLWrapMode() const {
+        switch (wrapMode) {
+        case 1: return 0x812F;  // GL_CLAMP_TO_EDGE
+        case 2: return 0x8370;  // GL_MIRRORED_REPEAT
+        case 3: return 0x812D;  // GL_CLAMP_TO_BORDER
+        default: return 0x2901; // GL_REPEAT
+        }
+    }
+
+    // Helper para obtener el modo OpenGL de filtrado
+    unsigned int GetGLFilterMode(bool mipmap = false) const {
+        if (!mipmap) {
+            switch (filterMode) {
+            case 0: return 0x2600;  // GL_NEAREST
+            case 1: return 0x2601;  // GL_LINEAR
+            case 2: return 0x2601;  // GL_LINEAR
+            default: return 0x2601; // GL_LINEAR
+            }
+        }
+        else {
+            switch (filterMode) {
+            case 0: return 0x2700;  // GL_NEAREST_MIPMAP_NEAREST
+            case 1: return 0x2701;  // GL_LINEAR_MIPMAP_NEAREST
+            case 2: return 0x2703;  // GL_LINEAR_MIPMAP_LINEAR
+            default: return 0x2703; // GL_LINEAR_MIPMAP_LINEAR
+            }
+        }
+    }
+
+    // Helper para obtener el tamaño máximo de textura
+    int GetMaxTextureSizeValue() const {
+        const int sizes[] = { 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192 };
+        if (maxTextureSize >= 0 && maxTextureSize < 9) {
+            return sizes[maxTextureSize];
+        }
+        return 2048; // Default
+    }
 };
 
 struct MetaFile {
@@ -56,7 +103,7 @@ public:
     static void Initialize();
     static void ScanAssets();
     static void CleanOrphanedMetaFiles();
-    static void CheckForChanges(); 
+    static void CheckForChanges();
     static MetaFile GetOrCreateMeta(const std::string& assetPath);
     static bool NeedsReimport(const std::string& assetPath);
     static void RegenerateLibrary();

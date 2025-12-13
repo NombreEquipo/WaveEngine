@@ -11,6 +11,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include "ImportSettingsWindow.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -27,6 +28,7 @@ AssetsWindow::AssetsWindow()
     currentPath = assetsRootPath;
 
     sceneRootPath = fs::path(assetsRootPath).parent_path().string() + "/Scene";
+    importSettingsWindow = new ImportSettingsWindow();
 }
 
 AssetsWindow::~AssetsWindow()
@@ -36,6 +38,7 @@ AssetsWindow::~AssetsWindow()
     {
         UnloadPreviewForAsset(asset);
     }
+    delete importSettingsWindow;
 }
 
 std::string AssetsWindow::TruncateFileName(const std::string& name, float maxWidth) const
@@ -341,6 +344,12 @@ void AssetsWindow::Draw()
         DrawAssetsList();
         ImGui::EndChild();
     }
+
+    if (importSettingsWindow)
+    {
+        importSettingsWindow->Draw();
+    }
+
     ImGui::End();
 }
 void AssetsWindow::DrawFolderTree(const fs::path& path, const std::string& label)
@@ -536,6 +545,16 @@ void AssetsWindow::DrawExpandableAssetItem(AssetEntry& asset, std::string& pathP
         ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "%s", asset.name.c_str());
         ImGui::Separator();
 
+        // Import Settings
+        if (ImGui::MenuItem("Import Settings..."))
+        {
+            if (importSettingsWindow)
+            {
+                importSettingsWindow->OpenForAsset(asset.path);
+            }
+        }
+        ImGui::Separator();
+
         if (ImGui::MenuItem("Delete"))
         {
             assetToDelete = asset;
@@ -554,6 +573,17 @@ void AssetsWindow::DrawExpandableAssetItem(AssetEntry& asset, std::string& pathP
         }
 
         ImGui::EndPopup();
+    }
+
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::BeginTooltip();
+        ImGui::Text("%s", asset.name.c_str());
+        if (asset.uid != 0) {
+            ImGui::Text("UID: %llu", asset.uid);
+        }
+        ImGui::Text("Contains %zu meshes", asset.subMeshes.size());
+        ImGui::EndTooltip();
     }
 
     if (ImGui::IsItemHovered())
@@ -830,6 +860,22 @@ void AssetsWindow::DrawAssetItem(const AssetEntry& asset, std::string& pathPendi
     {
         ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "%s", asset.name.c_str());
         ImGui::Separator();
+
+        if (!asset.isDirectory &&
+            (asset.extension == ".fbx" ||
+                asset.extension == ".png" || asset.extension == ".jpg" ||
+                asset.extension == ".jpeg" || asset.extension == ".dds" ||
+                asset.extension == ".tga"))
+        {
+            if (ImGui::MenuItem("Import Settings..."))
+            {
+                if (importSettingsWindow)
+                {
+                    importSettingsWindow->OpenForAsset(asset.path);
+                }
+            }
+            ImGui::Separator();
+        }
 
         if (ImGui::MenuItem("Delete"))
         {
