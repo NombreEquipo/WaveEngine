@@ -8,6 +8,7 @@
 
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
+#include <stack>
 
 #include "tracy/Tracy.hpp"
 
@@ -653,7 +654,7 @@ void Renderer::DrawScene(ComponentCamera* renderCamera, ComponentCamera* culling
     glClear(GL_STENCIL_BUFFER_BIT);
 
     // Draw all opaque objects, marking selected ones in stencil
-    DrawGameObjectRecursive(root, false, renderCamera, cullingCamera);
+    DrawGameObjectIterative(root, false, renderCamera, cullingCamera);
 
     // Only process selection highlighting if editor features are enabled
     if (drawEditorFeatures)
@@ -715,7 +716,7 @@ void Renderer::DrawScene(ComponentCamera* renderCamera, ComponentCamera* culling
 
     for (const auto& transparentObj : transparentObjects)
     {
-        DrawGameObjectRecursive(transparentObj.gameObject, true, renderCamera, cullingCamera);
+        DrawGameObjectIterative(transparentObj.gameObject, true, renderCamera, cullingCamera);
     }
     // ===== THIRD PASS: Draw outlines for selected objects =====
     if (drawEditorFeatures)
@@ -848,173 +849,184 @@ void Renderer::DrawGameObjectWithStencil(GameObject* gameObject)
 }
 
 
-void Renderer::DrawGameObjectRecursive(GameObject* gameObject,
+void Renderer::DrawGameObjectIterative(GameObject* gameObject,
     bool renderTransparentOnly,
     ComponentCamera* renderCamera,
     ComponentCamera* cullingCamera)
 {
-    if (!gameObject->IsActive())
-        return;
+    std::stack<GameObject*> gameObjectStack;
+    gameObjectStack.push(gameObject);
 
-    Transform* transform = static_cast<Transform*>(
-        gameObject->GetComponent(ComponentType::TRANSFORM));
-    if (transform == nullptr) return;
-
-    if (cullingCamera &&
-        cullingCamera->IsActive() &&
-        cullingCamera->IsFrustumCullingEnabled())
+    while (!gameObjectStack.empty())
     {
-        if (ShouldCullGameObject(gameObject, cullingCamera->GetFrustum()))
+        GameObject* currentObj = gameObjectStack.top();
+        gameObjectStack.pop();
+
+        if (!currentObj->IsActive())
+            continue;
+
+        Transform* transform = static_cast<Transform*>(
+            currentObj->GetComponent(ComponentType::TRANSFORM));
+        if (transform == nullptr) continue;
+
+        if (cullingCamera &&
+            cullingCamera->IsActive() &&
+            cullingCamera->IsFrustumCullingEnabled())
         {
-            return;
+            if (ShouldCullGameObject(currentObj, cullingCamera->GetFrustum()))
+            {
+                continue;
+            }
         }
-    }
 
-    bool isTransparent = HasTransparency(gameObject);
+        bool isTransparent = HasTransparency(currentObj);
 
-    if (renderTransparentOnly != isTransparent)
-    {
-        for (GameObject* child : gameObject->GetChildren())
+        if (renderTransparentOnly != isTransparent)
         {
-            DrawGameObjectRecursive(child, renderTransparentOnly,
-                renderCamera, cullingCamera);
+            // LIFO (Last In, First Out) to process children
+            const auto& children = currentObj->GetChildren();
+            for (auto it = children.rbegin(); it != children.rend(); ++it)
+            {
+                gameObjectStack.push(*it);
+            }
+            continue;
         }
-        return;
-    }
 
-    const glm::mat4& modelMatrix = transform->GetGlobalMatrix();
+        const glm::mat4& modelMatrix = transform->GetGlobalMatrix();
 
-    Shader* currentShader = showZBuffer ? depthShader.get() : defaultShader.get();
-    currentShader->Use();
+        Shader* currentShader = showZBuffer ? depthShader.get() : defaultShader.get();
+        currentShader->Use();
 
-    glUniformMatrix4fv(glGetUniformLocation(currentShader->GetProgramID(), "projection"),
-        1, GL_FALSE, glm::value_ptr(renderCamera->GetProjectionMatrix()));
-    glUniformMatrix4fv(glGetUniformLocation(currentShader->GetProgramID(), "view"),
-        1, GL_FALSE, glm::value_ptr(renderCamera->GetViewMatrix()));
-    glUniformMatrix4fv(glGetUniformLocation(currentShader->GetProgramID(), "model"),
-        1, GL_FALSE, glm::value_ptr(modelMatrix));
+        glUniformMatrix4fv(glGetUniformLocation(currentShader->GetProgramID(), "projection"),
+            1, GL_FALSE, glm::value_ptr(renderCamera->GetProjectionMatrix()));
+        glUniformMatrix4fv(glGetUniformLocation(currentShader->GetProgramID(), "view"),
+            1, GL_FALSE, glm::value_ptr(renderCamera->GetViewMatrix()));
+        glUniformMatrix4fv(glGetUniformLocation(currentShader->GetProgramID(), "model"),
+            1, GL_FALSE, glm::value_ptr(modelMatrix));
 
-    ComponentMaterial* material = static_cast<ComponentMaterial*>(
-        gameObject->GetComponent(ComponentType::MATERIAL));
+        ComponentMaterial* material = static_cast<ComponentMaterial*>(
+            currentObj->GetComponent(ComponentType::MATERIAL));
 
-    bool materialBound = false;
+        bool materialBound = false;
 
-    if (showZBuffer)
-    {
-        depthShader->SetFloat("nearPlane", renderCamera->GetNearPlane());
-        depthShader->SetFloat("farPlane", renderCamera->GetFarPlane());
-    }
-    else
-    {
-        defaultShader->SetVec3("tintColor", glm::vec3(1.0f));
-
-        bool hasTexture = (material && material->IsActive() && material->HasTexture());
-
-        // Configurar uniform hasTexture
-        defaultShader->SetInt("hasTexture", hasTexture ? 1 : 0);
-
-        // Configurar dirección de luz
-        defaultShader->SetVec3("lightDir", glm::vec3(1.0f, -1.0f, -1.0f));
-
-        if (hasTexture)
+        if (showZBuffer)
         {
-            material->Use();  // Bind the material's texture
-            materialBound = true;
-            // Con textura, usar blanco para no alterar el color de la textura
-            defaultShader->SetVec3("materialDiffuse", glm::vec3(1.0f));
+            depthShader->SetFloat("nearPlane", renderCamera->GetNearPlane());
+            depthShader->SetFloat("farPlane", renderCamera->GetFarPlane());
         }
         else
         {
-            glBindTexture(GL_TEXTURE_2D, 0); // No texture
+            defaultShader->SetVec3("tintColor", glm::vec3(1.0f));
 
-            // Enviar color difuso del material al shader
-            if (material && material->HasMaterialProperties())
+            bool hasTexture = (material && material->IsActive() && material->HasTexture());
+
+            // Configurar uniform hasTexture
+            defaultShader->SetInt("hasTexture", hasTexture ? 1 : 0);
+
+            // Configurar dirección de luz
+            defaultShader->SetVec3("lightDir", glm::vec3(1.0f, -1.0f, -1.0f));
+
+            if (hasTexture)
             {
-                glm::vec4 diffuse = material->GetDiffuseColor();
-                defaultShader->SetVec3("materialDiffuse", glm::vec3(diffuse.r, diffuse.g, diffuse.b));
+                material->Use();  // Bind the material's texture
+                materialBound = true;
+                // Con textura, usar blanco para no alterar el color de la textura
+                defaultShader->SetVec3("materialDiffuse", glm::vec3(1.0f));
             }
             else
             {
-                // Color gris por defecto si no hay material
-                defaultShader->SetVec3("materialDiffuse", glm::vec3(0.6f, 0.6f, 0.6f));
+                glBindTexture(GL_TEXTURE_2D, 0); // No texture
+
+                // Enviar color difuso del material al shader
+                if (material && material->HasMaterialProperties())
+                {
+                    glm::vec4 diffuse = material->GetDiffuseColor();
+                    defaultShader->SetVec3("materialDiffuse", glm::vec3(diffuse.r, diffuse.g, diffuse.b));
+                }
+                else
+                {
+                    // Color gris por defecto si no hay material
+                    defaultShader->SetVec3("materialDiffuse", glm::vec3(0.6f, 0.6f, 0.6f));
+                }
             }
+
+            // Set the texture sampler uniform
+            glUniform1i(defaultUniforms.texture1, 0);
         }
 
-        // Set the texture sampler uniform
-        glUniform1i(defaultUniforms.texture1, 0);
-    }
+        const std::vector<Component*>& meshComponents =
+            currentObj->GetComponentsOfType(ComponentType::MESH);
 
-    const std::vector<Component*>& meshComponents =
-        gameObject->GetComponentsOfType(ComponentType::MESH);
+        ModuleEditor* editor = Application::GetInstance().editor.get();
+        SelectionManager* selectionMgr = Application::GetInstance().selectionManager;
 
-    ModuleEditor* editor = Application::GetInstance().editor.get();
-    SelectionManager* selectionMgr = Application::GetInstance().selectionManager;
-
-    bool shouldDrawNormals = false;
-    if (editor && selectionMgr->IsSelected(gameObject))
-    {
-        shouldDrawNormals = true;
-    }
-    else if (editor)
-    {
-        GameObject* parent = gameObject->GetParent();
-        while (parent)
+        bool shouldDrawNormals = false;
+        if (editor && selectionMgr->IsSelected(currentObj))
         {
-            if (selectionMgr->IsSelected(parent))
+            shouldDrawNormals = true;
+        }
+        else if (editor)
+        {
+            GameObject* parent = currentObj->GetParent();
+            while (parent)
             {
-                shouldDrawNormals = true;
-                break;
+                if (selectionMgr->IsSelected(parent))
+                {
+                    shouldDrawNormals = true;
+                    break;
+                }
+                parent = parent->GetParent();
             }
-            parent = parent->GetParent();
         }
-    }
 
-    bool showVertex = editor && editor->ShouldShowVertexNormals();
-    bool showFace = editor && editor->ShouldShowFaceNormals();
+        bool showVertex = editor && editor->ShouldShowVertexNormals();
+        bool showFace = editor && editor->ShouldShowFaceNormals();
 
-    for (Component* comp : meshComponents)
-    {
-        ComponentMesh* meshComp = static_cast<ComponentMesh*>(comp);
-
-        if (meshComp->IsActive() && meshComp->HasMesh())
+        for (Component* comp : meshComponents)
         {
-            const Mesh& mesh = meshComp->GetMesh();
-            DrawMesh(mesh);
+            ComponentMesh* meshComp = static_cast<ComponentMesh*>(comp);
 
-            if (shouldDrawNormals)
+            if (meshComp->IsActive() && meshComp->HasMesh())
             {
-                if (showVertex) DrawVertexNormals(mesh, modelMatrix);
-                if (showFace) DrawFaceNormals(mesh, modelMatrix);
+                const Mesh& mesh = meshComp->GetMesh();
+                DrawMesh(mesh);
+
+                if (shouldDrawNormals)
+                {
+                    if (showVertex) DrawVertexNormals(mesh, modelMatrix);
+                    if (showFace) DrawFaceNormals(mesh, modelMatrix);
+                }
             }
         }
-    }
 
-    if (!renderTransparentOnly)
-    {
-        ComponentCamera* cam = static_cast<ComponentCamera*>(
-            gameObject->GetComponent(ComponentType::CAMERA));
-
-        if (cam && cam->IsActive() && cam->ShouldDrawFrustum())
+        if (!renderTransparentOnly)
         {
-            glm::vec3 color = (cam == cullingCamera) ?
-                glm::vec3(0.0f, 1.0f, 0.0f) :
-                glm::vec3(1.0f, 1.0f, 0.0f);
+            ComponentCamera* cam = static_cast<ComponentCamera*>(
+                currentObj->GetComponent(ComponentType::CAMERA));
 
-            DrawCameraFrustum(cam, color);
+            if (cam && cam->IsActive() && cam->ShouldDrawFrustum())
+            {
+                glm::vec3 color = (cam == cullingCamera) ?
+                    glm::vec3(0.0f, 1.0f, 0.0f) :
+                    glm::vec3(1.0f, 1.0f, 0.0f);
+
+                DrawCameraFrustum(cam, color);
+            }
         }
-    }
 
-    if (!showZBuffer)
-    {
-        if (materialBound)
-            material->Unbind();
-        // Ya no unbindeamos defaultTexture
-    }
+        if (!showZBuffer)
+        {
+            if (materialBound)
+                material->Unbind();
+            // Ya no unbindeamos defaultTexture
+        }
 
-    for (GameObject* child : gameObject->GetChildren())
-    {
-        DrawGameObjectRecursive(child, renderTransparentOnly,
-            renderCamera, cullingCamera);
+		// LIFO((Last In, First Out) to process children
+        const auto& children = currentObj->GetChildren();
+        for (auto it = children.rbegin(); it != children.rend(); ++it)
+        {
+            gameObjectStack.push(*it);
+        }
     }
 }
 

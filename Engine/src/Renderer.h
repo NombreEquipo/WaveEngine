@@ -100,7 +100,7 @@ public:
 
 private:
     // Internal rendering methods
-    void DrawGameObjectRecursive(GameObject* gameObject,
+    void DrawGameObjectIterative(GameObject* gameObject,
         bool renderTransparentOnly,
         ComponentCamera* renderCamera,
         ComponentCamera* cullingCamera);
