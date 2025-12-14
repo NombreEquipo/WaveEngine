@@ -19,6 +19,7 @@
 #include "TextureImporter.h"
 #include "ResourceMesh.h"     
 #include "ResourceTexture.h"   
+#include "AssetsWindow.h"
 
 FileSystem::FileSystem() : Module() {}
 FileSystem::~FileSystem() {}
@@ -117,45 +118,71 @@ bool FileSystem::Update()
 {
     if (Application::GetInstance().input->HasDroppedFile())
     {
-        std::string filePath = Application::GetInstance().input->GetDroppedFilePath();
-        DroppedFileType fileType = Application::GetInstance().input->GetDroppedFileType();
-        Application::GetInstance().input->ClearDroppedFile();
+        // Check if Assets Window is open and hovered
+        ModuleEditor* editor = Application::GetInstance().editor.get();
+        AssetsWindow* assetsWindow = editor ? editor->GetAssetsWindow() : nullptr;
 
-        if (fileType == DROPPED_FBX)
+        bool assetsWindowWillHandle = false;
+
+        if (assetsWindow && assetsWindow->IsOpen())
         {
-            GameObject* loadedModel = LoadFBXAsGameObject(filePath);
-            if (loadedModel != nullptr)
+            // Check if Assets window is hovered - if so, let it handle the file
+            if (assetsWindow->IsHovered())
             {
-                GameObject* root = Application::GetInstance().scene->GetRoot();
-                root->AddChild(loadedModel);
-                Application::GetInstance().scene->RebuildOctree();
+                assetsWindowWillHandle = true;
+                LOG_CONSOLE("[FileSystem] Assets Window will handle the dropped file");
             }
         }
-        else if (fileType == DROPPED_TEXTURE)
-        {
-            std::vector<GameObject*> selectedObjects =
-                Application::GetInstance().selectionManager->GetSelectedObjects();
 
-            if (!selectedObjects.empty())
+        // Only process here if Assets Window won't handle it
+        if (!assetsWindowWillHandle)
+        {
+            std::string filePath = Application::GetInstance().input->GetDroppedFilePath();
+            DroppedFileType fileType = Application::GetInstance().input->GetDroppedFileType();
+            Application::GetInstance().input->ClearDroppedFile();
+
+            LOG_CONSOLE("[FileSystem] Handling dropped file: %s", filePath.c_str());
+
+            if (fileType == DROPPED_FBX)
             {
-                int successCount = 0;
-                for (GameObject* obj : selectedObjects)
+                GameObject* loadedModel = LoadFBXAsGameObject(filePath);
+                if (loadedModel != nullptr)
                 {
-                    if (ApplyTextureToGameObject(obj, filePath))
-                    {
-                        successCount++;
-                    }
+                    GameObject* root = Application::GetInstance().scene->GetRoot();
+                    root->AddChild(loadedModel);
+                    Application::GetInstance().scene->RebuildOctree();
+                    LOG_CONSOLE("[FileSystem] FBX added to scene: %s", filePath.c_str());
                 }
             }
-            else
+            else if (fileType == DROPPED_TEXTURE)
             {
-                Application::GetInstance().renderer->LoadTexture(filePath);
+                std::vector<GameObject*> selectedObjects =
+                    Application::GetInstance().selectionManager->GetSelectedObjects();
+
+                if (!selectedObjects.empty())
+                {
+                    int successCount = 0;
+                    for (GameObject* obj : selectedObjects)
+                    {
+                        if (ApplyTextureToGameObject(obj, filePath))
+                        {
+                            successCount++;
+                        }
+                    }
+                    LOG_CONSOLE("[FileSystem] Texture applied to %d objects", successCount);
+                }
+                else
+                {
+                    Application::GetInstance().renderer->LoadTexture(filePath);
+                    LOG_CONSOLE("[FileSystem] Texture loaded: %s", filePath.c_str());
+                }
             }
         }
     }
 
     return true;
 }
+
 
 bool FileSystem::CleanUp()
 {

@@ -12,6 +12,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "ImportSettingsWindow.h"
+#include "TextureImporter.h" 
+#include "FileSystem.h"       
+#include "GameObject.h"        
+#include "Input.h"           
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -200,12 +204,29 @@ void AssetsWindow::Draw()
     if (!isOpen) return;
 
     static bool firstDraw = true;
-    static bool previousShow3DPreviews = true; // Static variable to detect changes
+    static bool previousShow3DPreviews = true;
 
     if (firstDraw) {
+
+        std::string libRoot = LibraryManager::GetLibraryRoot();
+
+        std::string texDir = libRoot + "/Textures";
+
+        if (!fs::exists(texDir)) {
+            LOG_CONSOLE("CREATING Textures directory...");
+            fs::create_directories(texDir);
+        }
+
+        std::string meshDir = libRoot + "/Meshes";
+
+        if (!fs::exists(meshDir)) {
+            LOG_CONSOLE("CREATING Meshes directory...");
+            fs::create_directories(meshDir);
+        }
+
         RefreshAssets();
         firstDraw = false;
-        previousShow3DPreviews = show3DPreviews; // Synchronize after first refresh
+        previousShow3DPreviews = show3DPreviews;
     }
 
     if (showDeleteConfirmation) {
@@ -248,6 +269,15 @@ void AssetsWindow::Draw()
     {
         isHovered = ImGui::IsWindowHovered();
 
+        // CRÍTICO: Llamar a HandleExternalDragDrop AQUÍ
+        HandleExternalDragDrop();
+
+        // Test manual con Ctrl+T
+        if (ImGui::IsKeyPressed(ImGuiKey_T) && ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
+        {
+            TestImportSystem();
+        }
+
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
 
         if (ImGui::Button("Refresh"))
@@ -259,7 +289,6 @@ void AssetsWindow::Draw()
         ImGui::Checkbox("In Memory Only", &showInMemoryOnly);
 
         ImGui::SameLine();
-        // previousShow3DPreviews is already declared above as static
         ImGui::Checkbox("3D Previews", &show3DPreviews);
         if (ImGui::IsItemHovered())
         {
@@ -268,28 +297,23 @@ void AssetsWindow::Draw()
             ImGui::EndTooltip();
         }
 
-        // If the checkbox state changed, reload or unload the previews
         if (previousShow3DPreviews != show3DPreviews)
         {
             for (auto& asset : currentAssets)
             {
-                // Only affects FBX and MESH
                 if (asset.extension == ".fbx" || asset.extension == ".mesh")
                 {
                     if (show3DPreviews)
                     {
-                        // Enabled: mark for reload
                         asset.previewLoaded = false;
                         asset.previewTextureID = 0;
                     }
                     else
                     {
-                        // Disabled: unload 3D preview
                         UnloadPreviewForAsset(asset);
                     }
                 }
 
-                // Process FBX submeshes
                 if (asset.isFBX)
                 {
                     for (auto& subMesh : asset.subMeshes)
@@ -307,7 +331,6 @@ void AssetsWindow::Draw()
                 }
             }
 
-            // Update the previous value after processing the change
             previousShow3DPreviews = show3DPreviews;
         }
 
@@ -324,7 +347,6 @@ void AssetsWindow::Draw()
         fs::path activeRoot;
         std::string rootName;
 
-        // Detect which branch we are on
         bool isInScene = (currentPath.find(sceneRootPath) != std::string::npos);
 
         if (isInScene) {
@@ -344,7 +366,6 @@ void AssetsWindow::Draw()
         }
         else
         {
-            // Button to return to the active root (Assets or Scene)
             if (ImGui::SmallButton((rootName + "##BreadcrumbRoot").c_str()))
             {
                 currentPath = activeRoot.string();
@@ -388,7 +409,6 @@ void AssetsWindow::Draw()
         ImGui::Separator();
 
         ImGui::BeginChild("FolderTree", ImVec2(200, 0), true);
-
         DrawFolderTree(assetsRootPath, "Assets");
         DrawFolderTree(sceneRootPath, "Scene");
         ImGui::EndChild();
@@ -675,9 +695,6 @@ void AssetsWindow::DrawExpandableAssetItem(AssetEntry& asset, std::string& pathP
         // Obtain the available width considering the indentation
         float windowContentWidth = ImGui::GetContentRegionAvail().x;
         float currentX = startX;
-
-        LOG_DEBUG("[DrawExpandableAsset] startX: %.2f, windowContentWidth: %.2f, itemWidth: %.2f",
-            startX, windowContentWidth, itemWidth);
 
         // Draw each submesh
         for (size_t i = 0; i < asset.subMeshes.size(); ++i)
@@ -1902,4 +1919,455 @@ unsigned int AssetsWindow::RenderMultipleMeshesToTexture(const std::vector<const
     glDeleteRenderbuffers(1, &depthRBO);
 
     return colorTexture;
+}
+void AssetsWindow::HandleExternalDragDrop()
+{
+    if (Application::GetInstance().input->HasDroppedFile())
+    {
+        ImVec2 mousePos = ImGui::GetMousePos();
+        ImVec2 windowPos = ImGui::GetWindowPos();
+        ImVec2 windowSize = ImGui::GetWindowSize();
+
+        bool isMouseOverWindow = (mousePos.x >= windowPos.x &&
+            mousePos.x <= windowPos.x + windowSize.x &&
+            mousePos.y >= windowPos.y &&
+            mousePos.y <= windowPos.y + windowSize.y);
+
+        bool windowActive = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) ||
+            ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
+
+        if (isMouseOverWindow || windowActive)
+        {
+            std::string droppedPath = Application::GetInstance().input->GetDroppedFilePath();
+
+            Application::GetInstance().input->ClearDroppedFile();
+
+            LOG_CONSOLE("[AssetsWindow] File dropped on Assets window: %s", droppedPath.c_str());
+
+            if (ProcessDroppedFile(droppedPath))
+            {
+                RefreshAssets();
+            }
+            else
+            {
+                LOG_CONSOLE("[AssetsWindow] Failed to import: %s", droppedPath.c_str());
+            }
+        }
+    }
+}
+
+bool AssetsWindow::ProcessDroppedFile(const std::string& sourceFilePath)
+{
+    LOG_CONSOLE("[AssetsWindow] Processing dropped file: %s", sourceFilePath.c_str());
+
+    if (!fs::exists(sourceFilePath))
+    {
+        LOG_CONSOLE("[AssetsWindow] ERROR: Source file does not exist");
+        return false;
+    }
+
+    fs::path sourcePath(sourceFilePath);
+    std::string extension = sourcePath.extension().string();
+    std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+
+    LOG_CONSOLE("[AssetsWindow] File extension: %s", extension.c_str());
+
+    AssetType assetType = MetaFile::GetAssetType(extension);
+    if (assetType == AssetType::UNKNOWN)
+    {
+        LOG_CONSOLE("[AssetsWindow] ERROR: Unsupported file type: %s", extension.c_str());
+        return false;
+    }
+
+    std::string destPath;
+    if (!CopyFileToAssets(sourceFilePath, destPath))
+    {
+        LOG_CONSOLE("[AssetsWindow] ERROR: Failed to copy file to Assets");
+        return false;
+    }
+
+    LOG_CONSOLE("[AssetsWindow] File copied to: %s", destPath.c_str());
+
+    if (!ImportAssetToLibrary(destPath))
+    {
+        LOG_CONSOLE("[AssetsWindow] ERROR: Failed to import asset to Library");
+        return false;
+    }
+
+    return true;
+}
+
+bool AssetsWindow::CopyFileToAssets(const std::string& sourceFilePath, std::string& outDestPath)
+{
+    try
+    {
+        fs::path sourcePath(sourceFilePath);
+        std::string filename = sourcePath.filename().string();
+
+        LOG_CONSOLE("[AssetsWindow] Copying file: %s", filename.c_str());
+
+        fs::path destDir(currentPath);
+
+        LOG_CONSOLE("[AssetsWindow] Destination directory: %s", destDir.string().c_str());
+
+        if (!fs::exists(destDir))
+        {
+            LOG_CONSOLE("[AssetsWindow] Creating directory: %s", destDir.string().c_str());
+            fs::create_directories(destDir);
+        }
+
+        fs::path destPath = destDir / filename;
+
+        if (fs::exists(destPath))
+        {
+            LOG_CONSOLE("[AssetsWindow] File already exists, generating unique name...");
+
+            std::string baseName = sourcePath.stem().string();
+            std::string extension = sourcePath.extension().string();
+            int counter = 1;
+
+            do
+            {
+                std::string newFilename = baseName + "_" + std::to_string(counter) + extension;
+                destPath = destDir / newFilename;
+                counter++;
+            } while (fs::exists(destPath));
+
+            LOG_CONSOLE("[AssetsWindow] Renamed to: %s", destPath.filename().string().c_str());
+        }
+
+        LOG_CONSOLE("[AssetsWindow] Copying from: %s", sourcePath.string().c_str());
+        LOG_CONSOLE("[AssetsWindow] Copying to: %s", destPath.string().c_str());
+
+        fs::copy_file(sourcePath, destPath, fs::copy_options::overwrite_existing);
+
+        outDestPath = destPath.string();
+
+        return true;
+    }
+    catch (const fs::filesystem_error& e)
+    {
+        LOG_CONSOLE("[AssetsWindow] ERROR copying file: %s", e.what());
+        return false;
+    }
+}
+
+bool AssetsWindow::ImportAssetToLibrary(const std::string& assetPath)
+{
+
+    if (!fs::exists(assetPath))
+    {
+        LOG_CONSOLE("[AssetsWindow] ERROR: Asset file does not exist!");
+        return false;
+    }
+
+    fs::path path(assetPath);
+    std::string extension = path.extension().string();
+    std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+
+    LOG_CONSOLE("[AssetsWindow] File extension: %s", extension.c_str());
+
+    LOG_CONSOLE("[AssetsWindow] Step 1: Processing .meta file...");
+    std::string metaPath = assetPath + ".meta";
+    MetaFile meta;
+
+    if (fs::exists(metaPath))
+    {
+        LOG_CONSOLE("[AssetsWindow] Loading existing .meta file");
+        meta = MetaFile::Load(metaPath);
+        LOG_CONSOLE("[AssetsWindow] Loaded .meta with UID: %llu", meta.uid);
+    }
+    else
+    {
+        LOG_CONSOLE("[AssetsWindow] Creating new .meta file");
+        meta.uid = MetaFile::GenerateUID();
+        meta.type = MetaFile::GetAssetType(extension);
+        meta.originalPath = assetPath;
+        meta.lastModified = MetaFileManager::GetFileTimestamp(assetPath);
+
+        if (meta.type == AssetType::MODEL_FBX)
+        {
+            meta.importSettings.generateNormals = true;
+            meta.importSettings.flipUVs = true;
+            meta.importSettings.optimizeMeshes = true;
+            meta.importSettings.importScale = 1.0f;
+        }
+        else if (meta.type == AssetType::TEXTURE_PNG ||
+            meta.type == AssetType::TEXTURE_JPG ||
+            meta.type == AssetType::TEXTURE_DDS ||
+            meta.type == AssetType::TEXTURE_TGA)
+        {
+            meta.importSettings.generateMipmaps = true;
+            meta.importSettings.filterMode = 2;
+            meta.importSettings.flipHorizontal = false;
+            meta.importSettings.maxTextureSize = 6;
+        }
+
+        if (!meta.Save(metaPath))
+        {
+            LOG_CONSOLE("[AssetsWindow] ERROR: Failed to save .meta file");
+            return false;
+        }
+
+        LOG_CONSOLE("[AssetsWindow] Created .meta with UID: %llu", meta.uid);
+    }
+
+    if (meta.uid == 0)
+    {
+        LOG_CONSOLE("[AssetsWindow] ERROR: Invalid UID (0)");
+        return false;
+    }
+
+    bool success = false;
+
+    if (extension == ".fbx")
+    {
+        success = ImportFBXToLibrary(assetPath, meta);
+    }
+    else if (extension == ".png" || extension == ".jpg" ||
+        extension == ".jpeg" || extension == ".tga" || extension == ".dds")
+    {
+        success = ImportTextureToLibrary(assetPath, meta);
+    }
+    else
+    {
+        LOG_CONSOLE("[AssetsWindow] ERROR: Unsupported file type: %s", extension.c_str());
+        return false;
+    }
+
+    if (success)
+    {
+        meta.lastModified = MetaFileManager::GetFileTimestamp(assetPath);
+        meta.Save(metaPath);
+    }
+
+    return success;
+}
+
+bool AssetsWindow::ImportTextureToLibrary(const std::string& assetPath, const MetaFile& meta)
+{
+
+    TextureData texture = TextureImporter::ImportFromFile(assetPath, meta.importSettings);
+
+    if (!texture.IsValid())
+    {
+        return false;
+    }
+
+    std::string libraryFilename = std::to_string(meta.uid) + ".texture";
+    std::string expectedLibraryPath = LibraryManager::GetTexturePathFromUID(meta.uid);
+
+    if (!TextureImporter::SaveToCustomFormat(texture, libraryFilename))
+    {
+        return false;
+    }
+
+    if (!fs::exists(expectedLibraryPath))
+    {
+        return false;
+    }
+
+    uintmax_t fileSize = fs::file_size(expectedLibraryPath);
+
+    if (fileSize == 0)
+    {
+        LOG_CONSOLE("[AssetsWindow] ERROR: Library file is empty!");
+        return false;
+    }
+
+
+    ModuleResources* resources = Application::GetInstance().resources.get();
+    if (!resources)
+    {
+        LOG_CONSOLE("[AssetsWindow] ERROR: ModuleResources not available");
+        return false;
+    }
+
+    const Resource* existingRes = resources->GetResource(meta.uid);
+    if (existingRes)
+    {
+        LOG_CONSOLE("[AssetsWindow] Resource already registered (UID: %llu)", meta.uid);
+        return true;
+    }
+
+    Resource* newResource = resources->CreateNewResourceWithUID(
+        assetPath.c_str(),
+        Resource::TEXTURE,
+        meta.uid
+    );
+
+    if (!newResource)
+    {
+        LOG_CONSOLE("[AssetsWindow] ERROR: Failed to create resource entry");
+        return false;
+    }
+
+    newResource->SetLibraryFile(expectedLibraryPath);
+
+    return true;
+}
+
+bool AssetsWindow::ImportFBXToLibrary(const std::string& assetPath, const MetaFile& meta)
+{
+
+    GameObject* tempModel = Application::GetInstance().filesystem->LoadFBXAsGameObject(assetPath);
+
+    if (!tempModel)
+    {
+        LOG_CONSOLE("[AssetsWindow] ERROR: LoadFBXAsGameObject failed");
+        return false;
+    }
+
+
+    int meshCount = 0;
+    for (int i = 0; i < 100; i++)
+    {
+        UID meshUID = meta.uid + i;
+        std::string meshPath = LibraryManager::GetMeshPathFromUID(meshUID);
+
+        if (!fs::exists(meshPath))
+        {
+            break;
+        }
+
+        meshCount++;
+        LOG_CONSOLE("[AssetsWindow] Found mesh %d (UID: %llu): %s",
+            i, meshUID, meshPath.c_str());
+    }
+
+    if (meshCount == 0)
+    {
+        LOG_CONSOLE("[AssetsWindow] ERROR: No meshes found in Library!");
+        tempModel->MarkForDeletion();
+        return false;
+    }
+
+
+    tempModel->MarkForDeletion();
+
+    return true;
+}
+
+bool AssetsWindow::TestImportSystem()
+{
+    std::string libRoot = LibraryManager::GetLibraryRoot();
+
+    if (!fs::exists(libRoot))
+    {
+        fs::create_directories(libRoot);
+    }
+    else
+    {
+        //LOG_CONSOLE(" Library root exists");
+    }
+
+    std::string texDir = libRoot + "/Textures";
+
+    if (!fs::exists(texDir))
+    {
+        fs::create_directories(texDir);
+    }
+    else
+    {
+        LOG_CONSOLE(" Textures directory exists");
+    }
+
+    LOG_CONSOLE("\n--- TEST 2: Write Permissions ---");
+    std::string testFile = texDir + "/write_test.tmp";
+    std::ofstream test(testFile, std::ios::binary);
+
+    if (!test.is_open())
+    {
+        LOG_CONSOLE("ERROR: Cannot open file for writing!");
+        return false;
+    }
+
+    test << "test data 12345";
+    test.close();
+
+    if (!fs::exists(testFile))
+    {
+        LOG_CONSOLE("ERROR: File not created!");
+        return false;
+    }
+
+    uintmax_t size = fs::file_size(testFile);
+    LOG_CONSOLE("✓ File created: %llu bytes", size);
+
+    std::ifstream testRead(testFile, std::ios::binary);
+    if (!testRead.is_open())
+    {
+        LOG_CONSOLE("ERROR: Cannot read file!");
+        return false;
+    }
+
+    std::string content;
+    std::getline(testRead, content);
+    testRead.close();
+
+
+    fs::remove(testFile);
+
+    UID testUID = 12345678901234567890ULL;
+    std::string texPath = LibraryManager::GetTexturePathFromUID(testUID);
+
+    if (texPath.find("Library") != std::string::npos &&
+        texPath.find("Textures") != std::string::npos)
+    {
+        LOG_CONSOLE("Path format correct");
+    }
+    else
+    {
+        LOG_CONSOLE("ERROR: Path format incorrect!");
+        return false;
+    }
+
+    TextureData testTexture;
+    testTexture.width = 4;
+    testTexture.height = 4;
+    testTexture.channels = 4;
+    testTexture.pixels = new unsigned char[4 * 4 * 4];
+
+    for (int i = 0; i < 4 * 4 * 4; i++)
+    {
+        testTexture.pixels[i] = (i % 256);
+    }
+
+    LOG_CONSOLE("Created test texture: %dx%d", testTexture.width, testTexture.height);
+
+    std::string testTexFilename = std::to_string(testUID) + ".texture";
+    LOG_CONSOLE("Saving as: %s", testTexFilename.c_str());
+
+    if (TextureImporter::SaveToCustomFormat(testTexture, testTexFilename))
+    {
+
+        std::string savedPath = LibraryManager::GetTexturePathFromUID(testUID);
+        if (fs::exists(savedPath))
+        {
+            uintmax_t savedSize = fs::file_size(savedPath);
+
+            TextureData loaded = TextureImporter::LoadFromCustomFormat(testTexFilename);
+            if (loaded.IsValid())
+            {
+                LOG_CONSOLE("  Loaded: %dx%d, %d channels",
+                    loaded.width, loaded.height, loaded.channels);
+            }
+            else
+            {
+                LOG_CONSOLE("ERROR: Failed to load back texture!");
+            }
+
+            fs::remove(savedPath);
+        }
+        else
+        {
+            LOG_CONSOLE("ERROR: Saved file not found at: %s", savedPath.c_str());
+        }
+    }
+    else
+    {
+        return false;
+    }
+
+    return true;
 }

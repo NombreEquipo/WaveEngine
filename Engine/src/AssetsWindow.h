@@ -6,7 +6,9 @@
 #include <filesystem>
 #include <unordered_set>
 #include <imgui.h>
+#include "MetaFile.h"
 
+class MetaFile;
 namespace fs = std::filesystem;
 
 // Forward declarations
@@ -83,6 +85,19 @@ private:
     void UnloadPreviewForAsset(AssetEntry& asset);
     unsigned int RenderMeshToTexture(const Mesh& mesh, int width, int height);
     unsigned int RenderMultipleMeshesToTexture(const std::vector<const Mesh*>& meshes, int width, int height);
+
+    // Drag & Drop from external files
+    void HandleExternalDragDrop();
+    bool ProcessDroppedFile(const std::string& sourceFilePath);
+    bool CopyFileToAssets(const std::string& sourceFilePath, std::string& outDestPath);
+    bool ImportAssetToLibrary(const std::string& assetPath);
+
+    // Import helpers
+    bool ImportTextureToLibrary(const std::string& assetPath, const MetaFile& meta);
+    bool ImportFBXToLibrary(const std::string& assetPath, const MetaFile& meta);
+
+    // Test function (temporal)
+    bool TestImportSystem();
 
     std::string assetsRootPath;
     std::string currentPath;
