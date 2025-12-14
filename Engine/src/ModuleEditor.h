@@ -103,7 +103,7 @@ private:
 
     // Layout management state
     bool autoSaveLayout = true;
-    std::string layoutDirectory = "../Scene/Editor Layout/";
+    std::string layoutDirectory = "Scene/Editor Layout/";
     std::string currentLayoutFile = "editor_layout.ini";
     bool showSaveLayoutPopup = false;
     char layoutNameBuffer[128] = "my_layout";
