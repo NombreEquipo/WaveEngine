@@ -9,11 +9,52 @@
 #include <assimp/postprocess.h> 
 #include <assimp/cimport.h>
 #include "MeshImporter.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace fs = std::filesystem;
 
 bool LibraryManager::s_initialized = false;
 fs::path LibraryManager::s_projectRoot;
+
+// Función para rotar vertices según configuración de ejes
+void ApplyAxisConversion(Mesh& mesh, int upAxis, int frontAxis) {
+    // upAxis: 0=Y-Up, 1=Z-Up
+    // frontAxis: 0=Z-Forward, 1=Y-Forward, 2=X-Forward
+
+    glm::mat4 transform = glm::mat4(1.0f);
+
+    // Conversiones de Up Axis
+    if (upAxis == 1) {  // Z-Up (rotar de Y-Up a Z-Up)
+        // Rotar -90° alrededor del eje X
+        transform = glm::rotate(transform, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        LOG_DEBUG("[AxisConversion] Applying Z-Up conversion (rotate -90° on X)");
+    }
+
+    // Conversiones de Front Axis
+    if (frontAxis == 1) {  // Y-Forward (desde Z-Forward)
+        // Rotar 90° alrededor del eje X
+        transform = glm::rotate(transform, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        LOG_DEBUG("[AxisConversion] Applying Y-Forward conversion (rotate 90° on X)");
+    }
+    else if (frontAxis == 2) {  // X-Forward (desde Z-Forward)
+        // Rotar -90° alrededor del eje Y
+        transform = glm::rotate(transform, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        LOG_DEBUG("[AxisConversion] Applying X-Forward conversion (rotate -90° on Y)");
+    }
+
+    // Aplicar transformación a todos los vértices
+    for (auto& vertex : mesh.vertices) {
+        glm::vec4 pos = glm::vec4(vertex.position, 1.0f);
+        glm::vec4 norm = glm::vec4(vertex.normal, 0.0f);
+
+        pos = transform * pos;
+        norm = transform * norm;
+
+        vertex.position = glm::vec3(pos);
+        vertex.normal = glm::vec3(norm);
+    }
+}
 
 void LibraryManager::Initialize() {
     if (s_initialized) {
@@ -147,8 +188,174 @@ void LibraryManager::ClearLibrary() {
     }
 }
 
+bool LibraryManager::ReimportAsset(const std::string& assetPath) {
+    LOG_CONSOLE("[LibraryManager] Force reimporting: %s", assetPath.c_str());
+
+    if (!fs::exists(assetPath)) {
+        LOG_CONSOLE("[LibraryManager] ERROR: Asset not found: %s", assetPath.c_str());
+        return false;
+    }
+
+    std::string metaPath = assetPath + ".meta";
+    if (!fs::exists(metaPath)) {
+        LOG_CONSOLE("[LibraryManager] ERROR: No .meta file found");
+        return false;
+    }
+
+    MetaFile meta = MetaFile::Load(metaPath);
+    if (meta.uid == 0) {
+        LOG_CONSOLE("[LibraryManager] ERROR: Invalid UID in .meta");
+        return false;
+    }
+
+    AssetType type = meta.type;
+    bool success = false;
+
+    switch (type) {
+    case AssetType::TEXTURE_PNG:
+    case AssetType::TEXTURE_JPG:
+    case AssetType::TEXTURE_DDS:
+    case AssetType::TEXTURE_TGA: {
+        LOG_CONSOLE("[LibraryManager] Reimporting texture...");
+
+        std::string libraryPath = GetTexturePathFromUID(meta.uid);
+        if (fs::exists(libraryPath)) {
+            try {
+                fs::remove(libraryPath);
+                LOG_DEBUG("[LibraryManager] Deleted old library file: %s", libraryPath.c_str());
+            }
+            catch (const std::exception& e) {
+                LOG_CONSOLE("[LibraryManager] ERROR deleting old file: %s", e.what());
+            }
+        }
+
+        TextureData texture = TextureImporter::ImportFromFile(assetPath, meta.importSettings);
+
+        if (texture.IsValid()) {
+            std::string filename = std::to_string(meta.uid) + ".texture";
+            if (TextureImporter::SaveToCustomFormat(texture, filename)) {
+                meta.lastModified = std::filesystem::last_write_time(assetPath)
+                    .time_since_epoch().count();
+                meta.Save(metaPath);
+
+                LOG_CONSOLE("[LibraryManager] Texture reimported successfully");
+                success = true;
+            }
+            else {
+                LOG_CONSOLE("[LibraryManager] ERROR: Failed to save texture");
+            }
+        }
+        else {
+            LOG_CONSOLE("[LibraryManager] ERROR: Failed to import texture");
+        }
+        break;
+    }
+
+    case AssetType::MODEL_FBX: {
+        LOG_CONSOLE("[LibraryManager] Reimporting FBX model...");
+
+        // Delete old mesh files
+        int deletedCount = 0;
+        for (int i = 0; i < 100; i++) {
+            unsigned long long meshUID = meta.uid + i;
+            std::string meshPath = GetMeshPathFromUID(meshUID);
+
+            if (fs::exists(meshPath)) {
+                try {
+                    fs::remove(meshPath);
+                    deletedCount++;
+                }
+                catch (const std::exception& e) {
+                    LOG_CONSOLE("[LibraryManager] ERROR deleting mesh %d: %s", i, e.what());
+                }
+            }
+            else {
+                break;
+            }
+        }
+
+        LOG_CONSOLE("[LibraryManager] Deleted %d old mesh files", deletedCount);
+
+        // Build import flags from .meta settings
+        unsigned int importFlags = aiProcess_Triangulate |
+            aiProcess_JoinIdenticalVertices |
+            aiProcess_ValidateDataStructure;
+
+        if (meta.importSettings.generateNormals) {
+            importFlags |= aiProcess_GenNormals;
+            LOG_DEBUG("[LibraryManager] Applying: Generate Normals");
+        }
+
+        if (meta.importSettings.flipUVs) {
+            importFlags |= aiProcess_FlipUVs;
+            LOG_DEBUG("[LibraryManager] Applying: Flip UVs");
+        }
+
+        if (meta.importSettings.optimizeMeshes) {
+            importFlags |= aiProcess_OptimizeMeshes;
+            LOG_DEBUG("[LibraryManager] Applying: Optimize Meshes");
+        }
+
+        LOG_CONSOLE("[LibraryManager] Import flags: 0x%X", importFlags);
+
+        const aiScene* scene = aiImportFile(assetPath.c_str(), importFlags);
+
+        if (scene && scene->HasMeshes()) {
+            LOG_CONSOLE("[LibraryManager] Processing %d meshes with settings:", scene->mNumMeshes);
+            LOG_CONSOLE("  - Import Scale: %.3f", meta.importSettings.importScale);
+            LOG_CONSOLE("  - Generate Normals: %s", meta.importSettings.generateNormals ? "YES" : "NO");
+            LOG_CONSOLE("  - Flip UVs: %s", meta.importSettings.flipUVs ? "YES" : "NO");
+            LOG_CONSOLE("  - Optimize Meshes: %s", meta.importSettings.optimizeMeshes ? "YES" : "NO");
+
+            for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
+                aiMesh* aiMesh = scene->mMeshes[i];
+                Mesh mesh = MeshImporter::ImportFromAssimp(aiMesh);
+
+                if (meta.importSettings.importScale != 1.0f) {
+                    LOG_DEBUG("[LibraryManager] Applying scale %.3f to mesh %d",
+                        meta.importSettings.importScale, i);
+                    for (auto& vertex : mesh.vertices) {
+                        vertex.position *= meta.importSettings.importScale;
+                    }
+                }
+
+                unsigned long long meshUID = meta.uid + i;
+                std::string meshFilename = std::to_string(meshUID) + ".mesh";
+
+                if (MeshImporter::SaveToCustomFormat(mesh, meshFilename)) {
+                    LOG_DEBUG("[LibraryManager] Saved mesh %d (UID: %llu) - Vertices: %zu",
+                        i, meshUID, mesh.vertices.size());
+                }
+                else {
+                    LOG_CONSOLE("[LibraryManager] ERROR: Failed to save mesh %d", i);
+                }
+            }
+
+            meta.lastModified = std::filesystem::last_write_time(assetPath)
+                .time_since_epoch().count();
+            meta.Save(metaPath);
+
+            aiReleaseImport(scene);
+
+            LOG_CONSOLE("[LibraryManager] FBX reimported successfully: %d meshes", scene->mNumMeshes);
+            success = true;
+        }
+        else {
+            LOG_CONSOLE("[LibraryManager] ERROR: Failed to load FBX - %s",
+                aiGetErrorString());
+        }
+        break;
+    }
+
+    default:
+        LOG_CONSOLE("[LibraryManager] ERROR: Unsupported asset type");
+        break;
+    }
+
+    return success;
+}
 void LibraryManager::RegenerateFromAssets() {
-    LOG_CONSOLE("[LibraryManager] Scanning Assets and checking for changes (Timestamp check)...");
+    LOG_CONSOLE("[LibraryManager] Scanning Assets and checking for changes...");
 
     fs::path assetsPath = GetAssetsRoot();
     int processed = 0;
@@ -220,11 +427,14 @@ void LibraryManager::RegenerateFromAssets() {
                 const aiScene* scene = aiImportFile(assetPath.string().c_str(), importFlags);
 
                 if (scene && scene->HasMeshes()) {
-                    LOG_DEBUG("Re-Importing FBX: %s", assetPath.filename().string().c_str());
+                    LOG_DEBUG("Importing FBX: %s with %d meshes",
+                        assetPath.filename().string().c_str(), scene->mNumMeshes);
 
                     for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
                         aiMesh* aiMesh = scene->mMeshes[i];
                         Mesh mesh = MeshImporter::ImportFromAssimp(aiMesh);
+
+                        ApplyAxisConversion(mesh, meta.importSettings.upAxis, meta.importSettings.frontAxis);
 
                         if (meta.importSettings.importScale != 1.0f) {
                             for (auto& vertex : mesh.vertices) {
@@ -233,7 +443,6 @@ void LibraryManager::RegenerateFromAssets() {
                         }
 
                         unsigned long long meshUID = meta.uid + i;
-
                         std::string meshFilename = std::to_string(meshUID) + ".mesh";
                         MeshImporter::SaveToCustomFormat(mesh, meshFilename);
                     }
@@ -262,11 +471,9 @@ void LibraryManager::RegenerateFromAssets() {
 
                 if (assetModified) {
                     needsImport = true;
-                    LOG_CONSOLE("[LibraryManager] Asset modified: %s", assetPath.filename().string().c_str());
                 }
                 else if (!FileExists(fullPath)) {
                     needsImport = true;
-                    LOG_CONSOLE("[LibraryManager] Missing library file for UID: %llu", meta.uid);
                 }
 
                 if (!needsImport) {
@@ -274,11 +481,9 @@ void LibraryManager::RegenerateFromAssets() {
                     break;
                 }
 
-                LOG_DEBUG("Importing texture: %s", assetPath.filename().string().c_str());
-
                 TextureData texture = TextureImporter::ImportFromFile(
                     assetPath.string(),
-                    meta.importSettings  
+                    meta.importSettings
                 );
 
                 if (texture.IsValid()) {
@@ -289,14 +494,10 @@ void LibraryManager::RegenerateFromAssets() {
                         processed++;
                     }
                     else {
-                        LOG_CONSOLE("[LibraryManager] ERROR: Failed to save texture: %s",
-                            assetPath.filename().string().c_str());
                         errors++;
                     }
                 }
                 else {
-                    LOG_CONSOLE("[LibraryManager] ERROR: Failed to import texture: %s",
-                        assetPath.filename().string().c_str());
                     errors++;
                 }
                 break;
@@ -315,154 +516,3 @@ void LibraryManager::RegenerateFromAssets() {
         processed, skipped, errors);
 }
 
-bool LibraryManager::ReimportAsset(const std::string& assetPath) {
-    LOG_CONSOLE("[LibraryManager] Force reimporting: %s", assetPath.c_str());
-
-    if (!fs::exists(assetPath)) {
-        LOG_CONSOLE("[LibraryManager] ERROR: Asset not found: %s", assetPath.c_str());
-        return false;
-    }
-
-    // Cargar .meta
-    std::string metaPath = assetPath + ".meta";
-    if (!fs::exists(metaPath)) {
-        LOG_CONSOLE("[LibraryManager] ERROR: No .meta file found");
-        return false;
-    }
-
-    MetaFile meta = MetaFile::Load(metaPath);
-    if (meta.uid == 0) {
-        LOG_CONSOLE("[LibraryManager] ERROR: Invalid UID in .meta");
-        return false;
-    }
-
-    AssetType type = meta.type;
-    bool success = false;
-
-    switch (type) {
-    case AssetType::TEXTURE_PNG:
-    case AssetType::TEXTURE_JPG:
-    case AssetType::TEXTURE_DDS:
-    case AssetType::TEXTURE_TGA: {
-        LOG_CONSOLE("[LibraryManager] Reimporting texture...");
-
-        // Borrar archivo viejo en Library
-        std::string libraryPath = GetTexturePathFromUID(meta.uid);
-        if (fs::exists(libraryPath)) {
-            try {
-                fs::remove(libraryPath);
-                LOG_DEBUG("[LibraryManager] Deleted old library file: %s", libraryPath.c_str());
-            }
-            catch (const std::exception& e) {
-                LOG_CONSOLE("[LibraryManager] ERROR deleting old file: %s", e.what());
-            }
-        }
-
-        // Reimportar con settings del .meta
-        TextureData texture = TextureImporter::ImportFromFile(assetPath, meta.importSettings);
-
-        if (texture.IsValid()) {
-            std::string filename = std::to_string(meta.uid) + ".texture";
-            if (TextureImporter::SaveToCustomFormat(texture, filename)) {
-                // Actualizar timestamp
-                meta.lastModified = std::filesystem::last_write_time(assetPath)
-                    .time_since_epoch().count();
-                meta.Save(metaPath);
-
-                LOG_CONSOLE("[LibraryManager] Texture reimported successfully");
-                success = true;
-            }
-            else {
-                LOG_CONSOLE("[LibraryManager] ERROR: Failed to save texture");
-            }
-        }
-        else {
-            LOG_CONSOLE("[LibraryManager] ERROR: Failed to import texture");
-        }
-        break;
-    }
-
-    case AssetType::MODEL_FBX: {
-        LOG_CONSOLE("[LibraryManager] Reimporting FBX model...");
-
-        // Borrar todas las meshes viejas
-        int deletedCount = 0;
-        for (int i = 0; i < 100; i++) {
-            unsigned long long meshUID = meta.uid + i;
-            std::string meshPath = GetMeshPathFromUID(meshUID);
-
-            if (fs::exists(meshPath)) {
-                try {
-                    fs::remove(meshPath);
-                    deletedCount++;
-                }
-                catch (const std::exception& e) {
-                    LOG_CONSOLE("[LibraryManager] ERROR deleting mesh %d: %s", i, e.what());
-                }
-            }
-            else {
-                break; // No más meshes
-            }
-        }
-
-        LOG_CONSOLE("[LibraryManager] Deleted %d old mesh files", deletedCount);
-
-        // Reimportar FBX con settings del .meta
-        unsigned int importFlags = aiProcess_Triangulate |
-            aiProcess_JoinIdenticalVertices |
-            aiProcess_ValidateDataStructure;
-
-        if (meta.importSettings.generateNormals) importFlags |= aiProcess_GenNormals;
-        if (meta.importSettings.flipUVs) importFlags |= aiProcess_FlipUVs;
-        if (meta.importSettings.optimizeMeshes) importFlags |= aiProcess_OptimizeMeshes;
-
-        const aiScene* scene = aiImportFile(assetPath.c_str(), importFlags);
-
-        if (scene && scene->HasMeshes()) {
-            LOG_CONSOLE("[LibraryManager] Processing %d meshes...", scene->mNumMeshes);
-
-            for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
-                aiMesh* aiMesh = scene->mMeshes[i];
-                Mesh mesh = MeshImporter::ImportFromAssimp(aiMesh);
-
-                // Aplicar escala
-                if (meta.importSettings.importScale != 1.0f) {
-                    for (auto& vertex : mesh.vertices) {
-                        vertex.position *= meta.importSettings.importScale;
-                    }
-                }
-
-                unsigned long long meshUID = meta.uid + i;
-                std::string meshFilename = std::to_string(meshUID) + ".mesh";
-
-                if (MeshImporter::SaveToCustomFormat(mesh, meshFilename)) {
-                    LOG_DEBUG("[LibraryManager] Saved mesh %d (UID: %llu)", i, meshUID);
-                }
-                else {
-                    LOG_CONSOLE("[LibraryManager] ERROR: Failed to save mesh %d", i);
-                }
-            }
-
-            // Actualizar timestamp
-            meta.lastModified = std::filesystem::last_write_time(assetPath)
-                .time_since_epoch().count();
-            meta.Save(metaPath);
-
-            aiReleaseImport(scene);
-
-            LOG_CONSOLE("[LibraryManager] FBX reimported successfully: %d meshes", scene->mNumMeshes);
-            success = true;
-        }
-        else {
-            LOG_CONSOLE("[LibraryManager] ERROR: Failed to load FBX");
-        }
-        break;
-    }
-
-    default:
-        LOG_CONSOLE("[LibraryManager] ERROR: Unsupported asset type");
-        break;
-    }
-
-    return success;
-}

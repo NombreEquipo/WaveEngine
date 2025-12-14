@@ -173,13 +173,11 @@ GameObject* FileSystem::LoadFBXAsGameObject(const std::string& file_path)
     if (std::filesystem::exists(metaPath)) {
         meta = MetaFile::Load(metaPath);
 
-        // Check if file was modified
         if (meta.NeedsReimport(file_path)) {
             LOG_CONSOLE("[FileSystem] File modified, reimporting: %s", file_path.c_str());
         }
     }
     else {
-        // Create meta ONLY for this file
         meta = MetaFileManager::GetOrCreateMeta(file_path);
         LOG_CONSOLE("[FileSystem] Created new .meta for: %s", file_path.c_str());
     }
@@ -231,22 +229,56 @@ GameObject* FileSystem::LoadFBXAsGameObject(const std::string& file_path)
 
     NormalizeModelScale(rootObj, 5.0f);
 
-    // 4. Apply import scale
-    if (meta.uid != 0 && meta.importSettings.importScale != 1.0f) {
-        Transform* rootTransform = static_cast<Transform*>(
-            rootObj->GetComponent(ComponentType::TRANSFORM));
+    Transform* rootTransform = static_cast<Transform*>(
+        rootObj->GetComponent(ComponentType::TRANSFORM));
 
-        if (rootTransform) {
+    if (rootTransform && meta.uid != 0) {
+        // 4. Apply import scale
+        if (meta.importSettings.importScale != 1.0f) {
             glm::vec3 currentScale = rootTransform->GetScale();
             glm::vec3 newScale = currentScale * meta.importSettings.importScale;
             rootTransform->SetScale(newScale);
+            LOG_DEBUG("[FileSystem] Applied import scale: %.3f", meta.importSettings.importScale);
         }
+
+        glm::quat axisRotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f); // Identity quaternion
+
+        // Apply Up Axis conversion
+        // upAxis: 0=Y-Up (default), 1=Z-Up
+        if (meta.importSettings.upAxis == 1) {
+            // Convert Y-Up to Z-Up: Rotate -90° around X axis
+            glm::quat upRotation = glm::angleAxis(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+            axisRotation = upRotation * axisRotation;
+            LOG_DEBUG("[FileSystem] Applying Z-Up conversion (rotate -90° on X)");
+        }
+
+        // Apply Front Axis conversion
+        // frontAxis: 0=Z-Forward (default), 1=Y-Forward, 2=X-Forward
+        if (meta.importSettings.frontAxis == 1) {
+            // Convert Z-Forward to Y-Forward: Rotate 90° around X axis
+            glm::quat frontRotation = glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+            axisRotation = frontRotation * axisRotation;
+            LOG_DEBUG("[FileSystem] Applying Y-Forward conversion (rotate 90° on X)");
+        }
+        else if (meta.importSettings.frontAxis == 2) {
+            // Convert Z-Forward to X-Forward: Rotate -90° around Y axis
+            glm::quat frontRotation = glm::angleAxis(glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            axisRotation = frontRotation * axisRotation;
+            LOG_DEBUG("[FileSystem] Applying X-Forward conversion (rotate -90° on Y)");
+        }
+
+        // Combine with current rotation
+        glm::quat currentRotation = rootTransform->GetRotationQuat();
+        glm::quat newRotation = axisRotation * currentRotation;
+        rootTransform->SetRotationQuat(newRotation);
+
+        LOG_CONSOLE("[FileSystem] Applied axis conversion - UpAxis: %d, FrontAxis: %d",
+            meta.importSettings.upAxis, meta.importSettings.frontAxis);
     }
 
-    // 5. Update .meta ONLY if something changed
+    // 6. Update .meta ONLY if something changed
     bool metaChanged = false;
 
-    // Update timestamp if file was modified
     long long currentTimestamp = MetaFileManager::GetFileTimestamp(file_path);
     if (meta.lastModified != currentTimestamp) {
         meta.lastModified = currentTimestamp;
@@ -254,7 +286,6 @@ GameObject* FileSystem::LoadFBXAsGameObject(const std::string& file_path)
         LOG_CONSOLE("[FileSystem] Updated timestamp for: %s", file_path.c_str());
     }
 
-    // Save ONLY if changed
     if (metaChanged) {
         meta.Save(metaPath);
         LOG_CONSOLE("[FileSystem] Saved .meta for: %s", file_path.c_str());
