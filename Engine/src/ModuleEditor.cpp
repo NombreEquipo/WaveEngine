@@ -48,7 +48,7 @@ bool ModuleEditor::Start()
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     std::filesystem::create_directories(layoutDirectory);
-    std::filesystem::create_directories("Scene");
+    std::filesystem::create_directories("../Scene");
 
     // Setup layout file path
     std::string layoutPath = layoutDirectory + currentLayoutFile;
@@ -231,7 +231,7 @@ void ModuleEditor::ShowMenuBar()
         {
             if (ImGui::MenuItem("Save Scene"))
             {
-                std::string filepath = OpenSaveFile("Scene/scene.json");
+                std::string filepath = OpenSaveFile("../Scene/scene.json");
                 if (!filepath.empty())
                 {
                     Application& app = Application::GetInstance();
@@ -242,7 +242,7 @@ void ModuleEditor::ShowMenuBar()
 
             if (ImGui::MenuItem("Load Scene"))
             {
-                std::string filepath = OpenLoadFile("Scene/scene.json");
+                std::string filepath = OpenLoadFile("../Scene/scene.json");
                 if (!filepath.empty())
                 {
                     Application& app = Application::GetInstance();
@@ -883,7 +883,7 @@ std::string ModuleEditor::OpenSaveFile(const std::string& defaultPath)
     char szFile[260] = { 0 };
 
     // Get the default scene folder
-    std::filesystem::path scenePath = std::filesystem::current_path() / "Scene";
+    std::filesystem::path scenePath = std::filesystem::current_path().parent_path().parent_path() / "Scene";
     std::string sceneDir = scenePath.string();
 
     ZeroMemory(&ofn, sizeof(ofn));
@@ -913,7 +913,7 @@ std::string ModuleEditor::OpenLoadFile(const std::string& defaultPath)
     char szFile[260] = { 0 };
 
     // Get the default scene folder
-    std::filesystem::path scenePath = std::filesystem::current_path() / "Scene";
+    std::filesystem::path scenePath = std::filesystem::current_path().parent_path().parent_path() / "Scene";
     std::string sceneDir = scenePath.string();
 
     ZeroMemory(&ofn, sizeof(ofn));
