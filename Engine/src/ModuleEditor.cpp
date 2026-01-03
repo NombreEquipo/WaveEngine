@@ -413,6 +413,73 @@ void ModuleEditor::ShowMenuBar()
                 }
             }
 
+            if (ImGui::MenuItem("Add Particle System"))
+            {
+                GameObject* selected = Application::GetInstance().selectionManager->GetSelectedObject();
+                if (selected != nullptr)
+                {
+                    ComponentParticleSystem* particleSystem = static_cast<ComponentParticleSystem*>(
+                        selected->CreateComponent(ComponentType::PARTICLE_SYSTEM));
+
+                    if (particleSystem) {
+                        // Cargar preset por defecto (smoke)
+                        particleSystem->LoadSmokePreset();
+                        LOG_CONSOLE("Particle System component added to %s", selected->GetName().c_str());
+                    }
+                }
+                else
+                {
+                    LOG_CONSOLE("Please select a GameObject first");
+                }
+            }
+
+            // Particle System
+            if (ImGui::BeginMenu("Create Particle System"))
+            {
+                if (ImGui::MenuItem("Smoke Effect"))
+                {
+                    GameObject* particleGO = Application::GetInstance().scene->CreateGameObject("Smoke Particles");
+                    ComponentParticleSystem* ps = static_cast<ComponentParticleSystem*>(
+                        particleGO->CreateComponent(ComponentType::PARTICLE_SYSTEM));
+                    ps->LoadSmokePreset();
+                    ps->Play();
+                    LOG_CONSOLE("Smoke particle system created");
+                }
+
+                if (ImGui::MenuItem("Fire Effect"))
+                {
+                    GameObject* particleGO = Application::GetInstance().scene->CreateGameObject("Fire Particles");
+                    ComponentParticleSystem* ps = static_cast<ComponentParticleSystem*>(
+                        particleGO->CreateComponent(ComponentType::PARTICLE_SYSTEM));
+                    ps->LoadFirePreset();
+                    ps->Play();
+                    LOG_CONSOLE("Fire particle system created");
+                }
+
+                if (ImGui::MenuItem("Explosion Effect"))
+                {
+                    GameObject* particleGO = Application::GetInstance().scene->CreateGameObject("Explosion Particles");
+                    ComponentParticleSystem* ps = static_cast<ComponentParticleSystem*>(
+                        particleGO->CreateComponent(ComponentType::PARTICLE_SYSTEM));
+                    ps->LoadExplosionPreset();
+                    ps->Play();
+                    LOG_CONSOLE("Explosion particle system created");
+                }
+
+                if (ImGui::MenuItem("Sparkles Effect"))
+                {
+                    GameObject* particleGO = Application::GetInstance().scene->CreateGameObject("Sparkles Particles");
+                    ComponentParticleSystem* ps = static_cast<ComponentParticleSystem*>(
+                        particleGO->CreateComponent(ComponentType::PARTICLE_SYSTEM));
+                    ps->LoadSparklesPreset();
+                    ps->Play();
+                    LOG_CONSOLE("Sparkles particle system created");
+                }
+
+                ImGui::EndMenu();
+            }
+
+
             ImGui::EndMenu();
         }
 

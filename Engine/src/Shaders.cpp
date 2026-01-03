@@ -618,62 +618,92 @@ void Shader::SetBool(const std::string& name, bool value) const
 bool Shader::CreateParticle()
 {
     const char* vertexShaderSource = R"(
-        #version 330 core
-        layout (location = 0) in vec3 aPos;
-        layout (location = 1) in vec2 aTexCoord;
-        
-        out vec2 TexCoord;
-        
-        uniform mat4 model;
-        uniform mat4 view;
-        uniform mat4 projection;
-        
-        void main()
-        {
-            gl_Position = projection * view * model * vec4(aPos, 1.0);
-            TexCoord = aTexCoord;
-        }
-    )";
+#version 330 core
+layout(location = 0) in vec3 aPos;
+layout(location = 1) in vec2 aTexCoord;
+
+out vec2 TexCoord;
+out vec4 ParticleColor;
+
+uniform mat4 projection;
+uniform mat4 view;
+uniform vec3 particlePosition;
+uniform float particleSize;
+uniform float particleRotation;
+uniform vec4 particleColor;
+uniform vec3 cameraRight;
+uniform vec3 cameraUp;
+
+void main()
+{
+    // Rotar el vértice
+    float cosR = cos(particleRotation);
+    float sinR = sin(particleRotation);
+    vec3 rotatedPos;
+    rotatedPos.x = aPos.x * cosR - aPos.y * sinR;
+    rotatedPos.y = aPos.x * sinR + aPos.y * cosR;
+    rotatedPos.z = 0.0;
+
+    // Billboard: orientar hacia la cámara
+    vec3 worldPos = particlePosition 
+        + cameraRight * rotatedPos.x * particleSize
+        + cameraUp * rotatedPos.y * particleSize;
+
+    gl_Position = projection * view * vec4(worldPos, 1.0);
+    TexCoord = aTexCoord;
+    ParticleColor = particleColor;
+}
+)";
 
     const char* fragmentShaderSource = R"(
-        #version 330 core
-        out vec4 FragColor;
-        
-        in vec2 TexCoord;
-        
-        uniform sampler2D particleTexture;
-        uniform vec4 particleColor;
-        
-        void main()
-        {
-            vec4 texColor = texture(particleTexture, TexCoord);
-            FragColor = texColor * particleColor;
-            
-            // Descartar píxeles completamente transparentes
-            if (FragColor.a < 0.01)
-                discard;
-        }
-    )";
+#version 330 core
+in vec2 TexCoord;
+in vec4 ParticleColor;
 
-    return Compile(vertexShaderSource, fragmentShaderSource);
-}
+out vec4 FragColor;
 
-bool Shader::Compile(const char* vertexShaderSource, const char* fragmentShaderSource)
+uniform sampler2D particleTexture;
+uniform int hasTexture;
+
+void main()
 {
+    if (hasTexture == 1)
+    {
+        vec4 texColor = texture(particleTexture, TexCoord);
+        FragColor = texColor * ParticleColor;
+    }
+    else
+    {
+        // Sin textura, usar un círculo suave
+        vec2 coord = TexCoord * 2.0 - 1.0;
+        float dist = length(coord);
+        float alpha = 1.0 - smoothstep(0.8, 1.0, dist);
+        FragColor = vec4(ParticleColor.rgb, ParticleColor.a * alpha);
+    }
+    
+    // Descartar fragmentos completamente transparentes
+    if (FragColor.a < 0.01)
+        discard;
+}
+)";
+
+    // Compilar vertex shader
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
     glCompileShader(vertexShader);
 
+    // Check compilation errors
     int success;
     char infoLog[512];
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
     if (!success)
     {
         glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cerr << "ERROR: Vertex Shader Compilation Failed\n" << infoLog << std::endl;
+        LOG_DEBUG("ERROR: Particle vertex shader compilation failed: %s", infoLog);
         return false;
     }
 
+    // Compilar fragment shader
     unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
     glCompileShader(fragmentShader);
@@ -682,11 +712,12 @@ bool Shader::Compile(const char* vertexShaderSource, const char* fragmentShaderS
     if (!success)
     {
         glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        std::cerr << "ERROR: Fragment Shader Compilation Failed\n" << infoLog << std::endl;
+        LOG_DEBUG("ERROR: Particle fragment shader compilation failed: %s", infoLog);
         glDeleteShader(vertexShader);
         return false;
     }
 
+    // Link program
     shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
@@ -696,14 +727,16 @@ bool Shader::Compile(const char* vertexShaderSource, const char* fragmentShaderS
     if (!success)
     {
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cerr << "ERROR: Shader Program Linking Failed\n" << infoLog << std::endl;
+        LOG_DEBUG("ERROR: Particle shader program linking failed: %s", infoLog);
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
         return false;
     }
 
+    // Limpiar shaders (ya están linkeados al programa)
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
+    LOG_DEBUG("Particle shader created successfully - Program ID: %d", shaderProgram);
     return true;
 }

@@ -1576,12 +1576,16 @@ void Renderer::BindGameFramebuffer()
 void Renderer::InitializeParticleBuffers()
 {
     // Crear un quad para cada partícula (billboard)
+    // Usamos 2 triángulos (6 vértices) en lugar de 4 vértices
     float quadVertices[] = {
         // positions        // texcoords
-        -0.5f, -0.5f, 0.0f,  0.0f, 0.0f,
-         0.5f, -0.5f, 0.0f,  1.0f, 0.0f,
-         0.5f,  0.5f, 0.0f,  1.0f, 1.0f,
-        -0.5f,  0.5f, 0.0f,  0.0f, 1.0f
+        -0.5f, -0.5f, 0.0f,  0.0f, 0.0f,  // Bottom-left
+         0.5f, -0.5f, 0.0f,  1.0f, 0.0f,  // Bottom-right
+         0.5f,  0.5f, 0.0f,  1.0f, 1.0f,  // Top-right
+
+        -0.5f, -0.5f, 0.0f,  0.0f, 0.0f,  // Bottom-left
+         0.5f,  0.5f, 0.0f,  1.0f, 1.0f,  // Top-right
+        -0.5f,  0.5f, 0.0f,  0.0f, 1.0f   // Top-left
     };
 
     glGenVertexArrays(1, &particleVAO);
@@ -1591,11 +1595,11 @@ void Renderer::InitializeParticleBuffers()
     glBindBuffer(GL_ARRAY_BUFFER, particleVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
 
-    // Position
+    // Position attribute
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 
-    // TexCoord
+    // TexCoord attribute
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 
@@ -1604,35 +1608,106 @@ void Renderer::InitializeParticleBuffers()
     LOG_DEBUG("Particle buffers initialized");
 }
 
-void Renderer::DrawParticleSystem(ComponentParticleSystem* particleSystem)
+void Renderer::DrawParticleSystem(ComponentParticleSystem* ps)
 {
-    if (!particleSystem || !particleSystem->IsActive()) return;
+    if (!ps || ps->GetActiveParticleCount() == 0)
+        return;
 
-    ComponentCamera* camera = GetCamera();
-    if (!camera) return;
+    ComponentCamera* camera = Application::GetInstance().camera->GetActiveCamera();
+    if (!camera)
+        return;
 
-    const auto& particles = particleSystem->GetParticles();
-    const auto& config = particleSystem->GetConfig();
+    // Usar shader de partículas
+    particleShader->Use();
 
-    // Get texture
-    unsigned int textureID = 0;
-    if (config.textureUID != 0) {
-        const Resource* resource = Application::GetInstance().resources->GetResource(config.textureUID);
-        if (resource && resource->IsLoadedToMemory()) {
-            const ResourceTexture* texResource = dynamic_cast<const ResourceTexture*>(resource);
-            if (texResource) {
-                textureID = texResource->GetGPU_ID();
+    // Vincular VAO PRIMERO
+    glBindVertexArray(particleVAO);
+
+    // Habilitar blending
+    glEnable(GL_BLEND);
+    glDepthMask(GL_FALSE);
+
+    // Configurar modo de blending
+    switch (ps->GetMainConfig().blendMode)
+    {
+    case ParticleSystemConfig::BlendMode::ALPHA_BLEND:
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        break;
+    case ParticleSystemConfig::BlendMode::ADDITIVE:
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+        break;
+    case ParticleSystemConfig::BlendMode::MULTIPLY:
+        glBlendFunc(GL_DST_COLOR, GL_ZERO);
+        break;
+    default:
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        break;
+    }
+
+    // Vincular textura si existe
+    bool hasTexture = false;
+    if (ps->GetMainConfig().textureUID != 0)
+    {
+        Resource* resource = Application::GetInstance().resources->GetResourceDirect(ps->GetMainConfig().textureUID);
+
+        if (resource && resource->GetType() == Resource::TEXTURE)
+        {
+            ResourceTexture* texResource = static_cast<ResourceTexture*>(resource);
+            if (texResource && texResource->IsLoadedToMemory())
+            {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, texResource->gpu_id);
+                particleShader->SetInt("particleTexture", 0);
+                hasTexture = true;
             }
         }
     }
 
-    // Si no hay textura, usar la textura por defecto
-    if (textureID == 0 && defaultTexture) {
-        textureID = defaultTexture->GetID();
+    if (!hasTexture)
+    {
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    DrawParticles(particles, textureID, config.useAdditiveBlending,
-        camera->GetViewMatrix(), camera->GetProjectionMatrix());
+    particleShader->SetInt("hasTexture", hasTexture ? 1 : 0);
+
+    // Configurar matrices UNA VEZ (no por partícula)
+    particleShader->SetMat4("view", camera->GetViewMatrix());
+    particleShader->SetMat4("projection", camera->GetProjectionMatrix());
+
+    // Extraer vectores right y up UNA VEZ (no por partícula)
+    glm::mat4 view = camera->GetViewMatrix();
+    glm::vec3 camRight = glm::vec3(view[0][0], view[1][0], view[2][0]);
+    glm::vec3 camUp = glm::vec3(view[0][1], view[1][1], view[2][1]);
+
+    particleShader->SetVec3("cameraRight", camRight);
+    particleShader->SetVec3("cameraUp", camUp);
+
+    // Obtener las partículas
+    const std::vector<Particle>& particles = ps->GetParticles();
+
+    // Renderizar cada partícula activa
+    for (const Particle& p : particles)
+    {
+        if (!p.active)
+            continue;
+
+        // Configurar uniforms específicos de esta partícula
+        particleShader->SetVec3("particlePosition", p.position);
+        particleShader->SetFloat("particleSize", p.size);
+        particleShader->SetFloat("particleRotation", glm::radians(p.rotation));
+        particleShader->SetVec4("particleColor", p.color);
+
+        // Renderizar el quad (6 vértices = 2 triángulos)
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+    }
+
+    // Limpiar estado
+    glBindVertexArray(0);
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
+
+    // Volver al shader por defecto
+    defaultShader->Use();
 }
 
 void Renderer::DrawParticles(const std::vector<Particle>& particles,

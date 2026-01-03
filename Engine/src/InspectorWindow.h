@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EditorWindow.h"
+#include "ComponentParticleSystem.h"
 #include <imgui.h>  
 #include <ImGuizmo.h>
 #include <vector>
@@ -24,6 +25,8 @@ public:
 
     bool ShouldShowVertexNormals() const { return showVertexNormals; }
     bool ShouldShowFaceNormals() const { return showFaceNormals; }
+
+    void DrawParticleSystemComponent(GameObject* selectedObject);
 
 private:
     bool DrawGameObjectSection(GameObject* selectedObject);
