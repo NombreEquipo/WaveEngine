@@ -25,6 +25,8 @@ set(CORE_SRC
     src/Module.h 
     src/Window.cpp 
     src/Window.h
+    src/ModuleAudio.h
+    src/ModuleAudio.cpp
 )
 
 set(RENDERING_SRC 
@@ -56,6 +58,9 @@ set(UTILS_SRC
     src/SelectionManager.cpp
     src/Octree.h
     src/Octree.cpp
+    src/AudioUtility.h
+    src/AudioCore.h
+    src/AudioCore.cpp
 )
 
 set(GAMEOBJECTS_SRC 
@@ -149,3 +154,12 @@ target_link_libraries(Engine PRIVATE imgui::imgui)
 target_link_libraries(Engine PRIVATE imguizmo::imguizmo)
 target_link_libraries(Engine PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(Engine PRIVATE Tracy::TracyClient)
+
+
+
+set(WWISE_SDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/External/Wwise/SDK")
+
+
+set(WWISE_LIB_DIR_DEBUG "${WWISE_SDK_DIR}/Debug/lib")
+set(WWISE_LIB_DIR_RELEASE "${WWISE_SDK_DIR}/Release/lib")
+

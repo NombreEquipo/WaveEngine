@@ -1,3 +1,6 @@
 Engine/build/
 Engine/Library/
 Engine/CMakeUserPresets.json
+
+
+Engine/External/Wwise/SDK/samples/
