@@ -27,6 +27,11 @@ set(CORE_SRC
     src/Window.h
 )
 
+set(PARTICLE_SYSTEM_SRC
+    src/ParticleSystem.h
+    src/ParticleSystem.cpp
+)
+
 set(RENDERING_SRC 
     src/Camera.h 
     src/Camera.cpp
@@ -78,6 +83,8 @@ set(COMPONENTS_SRC
     src/ComponentCamera.h
     src/ComponentRotate.cpp
     src/ComponentRotate.h
+    src/ComponentParticleSystem.h
+    src/ComponentParticleSystem.cpp
 )
 
 set(LOADERS_SRC 
@@ -127,6 +134,7 @@ set(IMPORTERS_SRC
 )
 
 source_group("Source\\Core" FILES ${CORE_SRC})
+source_group("Source\\Core\\Particles" FILES ${PARTICLE_SYSTEM_SRC})
 source_group("Source\\Rendering" FILES ${RENDERING_SRC})
 source_group("Source\\Utils" FILES ${UTILS_SRC})
 source_group("Source\\Utils\\Editor" FILES ${EDITOR_SRC})
@@ -135,7 +143,7 @@ source_group("Source\\Game Objects\\Components" FILES ${COMPONENTS_SRC})
 source_group("Source\\Loaders" FILES ${LOADERS_SRC})
 source_group("Source\\Loaders\\Importers" FILES ${IMPORTERS_SRC})
 
-set(SRCS ${CORE_SRC} ${RENDERING_SRC} ${UTILS_SRC} ${EDITOR_SRC} ${GAMEOBJECTS_SRC} ${COMPONENTS_SRC} ${LOADERS_SRC} ${IMPORTERS_SRC})
+set(SRCS ${CORE_SRC} ${RENDERING_SRC} ${UTILS_SRC} ${EDITOR_SRC} ${GAMEOBJECTS_SRC} ${COMPONENTS_SRC} ${LOADERS_SRC} ${IMPORTERS_SRC} ${PARTICLE_SYSTEM_SRC})
 
 add_executable(Engine ${SRCS})
 

@@ -33,7 +33,7 @@ private:
     void DrawMeshComponent(GameObject* selectedObject);
     void DrawMaterialComponent(GameObject* selectedObject);
     void DrawRotateComponent(GameObject* selectedObject);
-
+    void DrawParticleComponent(GameObject* selectedObject);
     // Helper methods
     void GetAllGameObjects(GameObject* root, std::vector<GameObject*>& outObjects);
     bool IsDescendantOf(GameObject* potentialDescendant, GameObject* potentialAncestor);

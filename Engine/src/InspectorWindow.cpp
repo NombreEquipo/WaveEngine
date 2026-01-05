@@ -9,6 +9,7 @@
 #include "ComponentCamera.h"
 #include "ComponentRotate.h"
 #include "ResourceTexture.h"
+#include "ComponentParticleSystem.h"
 #include "Log.h"
 
 InspectorWindow::InspectorWindow()
@@ -80,6 +81,33 @@ void InspectorWindow::Draw()
     DrawMeshComponent(selectedObject);
     DrawMaterialComponent(selectedObject);
     DrawRotateComponent(selectedObject);
+
+    DrawParticleComponent(selectedObject);
+
+    ImGui::Separator();
+    ImGui::Spacing();
+
+    if (ImGui::Button("Add Component", ImVec2(ImGui::GetContentRegionAvail().x, 0.0f)))
+    {
+        ImGui::OpenPopup("AddComponentPopup");
+    }
+
+    if (ImGui::BeginPopup("AddComponentPopup"))
+    {
+        if (ImGui::MenuItem("Particle System"))
+        {
+            if (selectedObject->GetComponent(ComponentType::PARTICLE) == nullptr)
+            {
+                selectedObject->CreateComponent(ComponentType::PARTICLE);
+            }
+            else
+            {
+                LOG_CONSOLE("GameObject already has a Particle System");
+            }
+        }
+
+        ImGui::EndPopup();
+    }
 
     ImGui::End();
 }
@@ -786,6 +814,17 @@ void InspectorWindow::DrawRotateComponent(GameObject* selectedObject)
         }
 
         rotateComp->OnEditor();
+    }
+}
+
+void InspectorWindow::DrawParticleComponent(GameObject* selectedObject)
+{
+    ComponentParticleSystem* particleComp = static_cast<ComponentParticleSystem*>(selectedObject->GetComponent(ComponentType::PARTICLE));
+
+    if (particleComp != nullptr)
+    {
+        // Delegate the ui to the component
+        particleComp->OnEditor();
     }
 }
 

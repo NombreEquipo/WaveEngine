@@ -5,6 +5,7 @@
 #include "ComponentMesh.h"
 #include "ComponentMaterial.h"
 #include "ModuleEditor.h"
+#include "ComponentParticleSystem.h"
 
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
@@ -524,6 +525,10 @@ bool Renderer::HasTransparency(GameObject* gameObject)
         return true;
     }
 
+    if (gameObject->GetComponent(ComponentType::PARTICLE)) {
+        return true;
+    }
+
     return false;
 }
 
@@ -991,6 +996,19 @@ void Renderer::DrawGameObjectIterative(GameObject* gameObject,
                     if (showVertex) DrawVertexNormals(mesh, modelMatrix);
                     if (showFace) DrawFaceNormals(mesh, modelMatrix);
                 }
+            }
+        }
+
+        if (renderTransparentOnly)
+        {
+            ComponentParticleSystem* particleSys = static_cast<ComponentParticleSystem*>(
+                currentObj->GetComponent(ComponentType::PARTICLE));
+
+            if (particleSys && particleSys->IsActive()) {
+                // Draw particles with OpenGL glBegin and glEnd
+                particleSys->Draw(renderCamera);
+                // Restore the Shader Program for the next object in the loop
+                currentShader->Use();
             }
         }
 
