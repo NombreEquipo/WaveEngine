@@ -1317,7 +1317,7 @@ void AssetsWindow::ScanDirectory(const fs::path& directory, std::vector<AssetEnt
                                             totalRefs += resources->GetResourceReferenceCount(subMeta.uid);
                                         }
                                     }
-                                    else if (subExt == ".lua")//TODO INIT SCRIPT 
+                                    else if (subExt == ".lua")
                                     {
                                         if (resources->IsResourceLoaded(subMeta.uid))
                                         {
@@ -1398,7 +1398,7 @@ void AssetsWindow::ScanDirectory(const fs::path& directory, std::vector<AssetEnt
                         asset.inMemory = resources->IsResourceLoaded(asset.uid);
                         asset.references = resources->GetResourceReferenceCount(asset.uid);
                     }
-                    else if (extension == ".lua")//TODO INIT SCRIPT 
+                    else if (extension == ".lua")
                     {
                         asset.inMemory = resources->IsResourceLoaded(asset.uid);
                         asset.references = resources->GetResourceReferenceCount(asset.uid);
