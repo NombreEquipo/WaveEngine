@@ -28,6 +28,7 @@ public:
     std::string filePath;
     std::string name;
 
+    lua_State* GetLuaState() { return L; }
 private:
     lua_State* L;
     bool init = true;

@@ -11,6 +11,9 @@
 #include "ResourceTexture.h"
 #include "Log.h"
 
+#include "ModuleScripting.h"
+#include <lua.hpp>
+
 InspectorWindow::InspectorWindow()
     : EditorWindow("Inspector")
 {
@@ -81,8 +84,11 @@ void InspectorWindow::Draw()
     DrawMaterialComponent(selectedObject);
     DrawRotateComponent(selectedObject);
 
-    if (ImGui::CollapsingHeader("Scripts", ImGuiTreeNodeFlags_DefaultOpen))
+   /* if (ImGui::CollapsingHeader("Scripts", ImGuiTreeNodeFlags_DefaultOpen))
     {
+        for (int i = 0; i < selectedObject->scripts.size(); ++i)
+        {
+            
         for (auto* script : selectedObject->scripts)
         {
             ImGui::Text("%s", script->name.c_str());
@@ -96,11 +102,82 @@ void InspectorWindow::Draw()
                     selectedObject->scripts.erase(it);
                 }
             }
+           
             ImGui::PopID();
         }
 
-    }
+    }*/
 
+    if (ImGui::CollapsingHeader("Scripts", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        if (ImGui::Button("Add New Script (test.lua)"))
+        {
+            ModuleScripting* newScript = new ModuleScripting();
+            newScript->owner = selectedObject; 
+            newScript->Start();
+
+            if (newScript->LoadScript("../Assets/Scripts/test.lua"))
+            {
+                selectedObject->scripts.push_back(newScript);
+            }
+            else
+            {
+                delete newScript; 
+            }
+        }
+
+
+        ImGui::Separator();
+
+        if (selectedObject->scripts.empty())
+        {
+            ImGui::TextDisabled("No scripts attached to this object.");
+        }
+
+        for (int i = 0; i < selectedObject->scripts.size(); ++i)
+        {
+            ModuleScripting* script = selectedObject->scripts[i];
+            ImGui::PushID(i);
+
+            if (ImGui::TreeNodeEx(script->name.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                lua_State* L = script->GetLuaState();
+                if (L)
+                {
+                    lua_pushglobaltable(L);
+                    lua_pushnil(L);
+                    while (lua_next(L, -2) != 0)
+                    {
+                        if (lua_isstring(L, -2))
+                        {
+                            const char* varName = lua_tostring(L, -2);
+                            if (lua_isnumber(L, -1) && varName[0] != '_')
+                            {
+                                float val = (float)lua_tonumber(L, -1);
+                                if (ImGui::DragFloat(varName, &val, 0.1f))
+                                {
+                                    lua_pushnumber(L, val);
+                                    lua_setglobal(L, varName);
+                                }
+                            }
+                        }
+                        lua_pop(L, 1);
+                    }
+                    lua_pop(L, 1);
+                }
+
+                if (ImGui::Button("Remove Script"))
+                {
+                    selectedObject->scripts.erase(selectedObject->scripts.begin() + i);
+                    ImGui::TreePop();
+                    ImGui::PopID();
+                    break;
+                }
+                ImGui::TreePop();
+            }
+            ImGui::PopID();
+        }
+    }
     ImGui::End();
 }
 

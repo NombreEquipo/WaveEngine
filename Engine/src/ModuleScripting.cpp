@@ -93,38 +93,61 @@ int Lua_FindGameObject(lua_State* L)
     std::string ObjName = luaL_checkstring(L, 1);
     GameObject* go = NULL;
 
-    if (ObjName != "this")
+    //if (ObjName != "this")
+    //{
+    //    std::vector<GameObject*> objects;
+    //    GetAllGameObjects(Application::GetInstance().scene.get()->GetRoot(), objects);
+
+    //    for (auto& obj : objects)
+    //        if (obj->GetName() == ObjName) go = obj;
+
+    //    if (!go)
+    //    {
+    //        LOG_CONSOLE("[Script] %s error: GameObject %s not found",ScriptName.c_str(), ObjName.c_str());
+
+    //        lua_pushnil(L);
+    //        return 1;
+    //    }
+    //}
+    //else go = own;
+
+    if (ObjName == "this")
+    {
+        lua_getglobal(L, "this_object");
+        go = (GameObject*)lua_touserdata(L, -1);
+        lua_pop(L, 1);
+    }
+    else
     {
         std::vector<GameObject*> objects;
         GetAllGameObjects(Application::GetInstance().scene.get()->GetRoot(), objects);
-
-        for (auto& obj : objects)
+        for (auto& obj : objects) {
             if (obj->GetName() == ObjName) go = obj;
-
-        if (!go)
-        {
-            LOG_CONSOLE("[Script] %s error: GameObject %s not found",ScriptName.c_str(), ObjName.c_str());
-
-            lua_pushnil(L);
-            return 1;
         }
     }
-    else go = own;
 
-    lua_pushlightuserdata(L, go);
+    if (go) lua_pushlightuserdata(L, go);
+    else lua_pushnil(L);
+
     return 1;
 }
 
 bool ModuleScripting::Start()
 {
     LOG_DEBUG("Initializing ModuleScripting");
-    own = owner;
+    //own = owner;
     L = luaL_newstate();
     luaL_openlibs(L);
     lua_register(L, "SetPosition", Lua_SetPosition);
     lua_register(L, "SetRotation", Lua_SetRotation);
     lua_register(L, "SetScale", Lua_SetScale);
     lua_register(L, "FindGameObject", Lua_FindGameObject);
+    
+    if (owner != nullptr)
+    {
+        lua_pushlightuserdata(L, owner);
+        lua_setglobal(L, "this_object");
+    }
 
     LOG_CONSOLE("ModuleScripting ready");
 
