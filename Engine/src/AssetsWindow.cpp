@@ -582,7 +582,10 @@ void AssetsWindow::DrawExpandableAssetItem(AssetEntry& asset, std::string& pathP
     if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
     {
         static DragDropPayload payload;
-        payload.assetPath = asset.path;
+        memset(payload.assetPath, 0, MAX_PATH_LENGTH);
+        strncpy_s(payload.assetPath, asset.path.c_str(), MAX_PATH_LENGTH - 1);
+
+        //payload.assetPath = asset.path;
         payload.assetUID = asset.uid;
         payload.assetType = DragDropAssetType::FBX_MODEL;
 
@@ -759,7 +762,10 @@ void AssetsWindow::DrawExpandableAssetItem(AssetEntry& asset, std::string& pathP
             if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
             {
                 static DragDropPayload payload;
-                payload.assetPath = subMesh.path;
+                memset(payload.assetPath, 0, MAX_PATH_LENGTH);
+                strncpy_s(payload.assetPath, asset.path.c_str(), MAX_PATH_LENGTH - 1);
+
+                //payload.assetPath = subMesh.path;
                 payload.assetUID = subMesh.uid;
                 payload.assetType = DragDropAssetType::MESH;
 
@@ -854,9 +860,12 @@ void AssetsWindow::DrawAssetItem(const AssetEntry& asset, std::string& pathPendi
     if (!asset.isDirectory && ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
     {
         static DragDropPayload payload;
-        payload.assetPath = asset.path;
-        payload.assetUID = asset.uid;
+        memset(payload.assetPath, 0, MAX_PATH_LENGTH);
+        strncpy_s(payload.assetPath, asset.path.c_str(), MAX_PATH_LENGTH - 1);
 
+        //payload.assetPath = asset.path;
+        payload.assetUID = asset.uid;
+        
         // Determine the type of asset
         if (asset.extension == ".png" || asset.extension == ".jpg" ||
             asset.extension == ".jpeg" || asset.extension == ".dds" || asset.extension == ".tga")
@@ -873,6 +882,7 @@ void AssetsWindow::DrawAssetItem(const AssetEntry& asset, std::string& pathPendi
         {
             payload.assetType = DragDropAssetType::SCRIPT;
             ImGui::Text("Script: %s", asset.name.c_str());
+
         }
         else
         {

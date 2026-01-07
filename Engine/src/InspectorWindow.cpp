@@ -110,7 +110,7 @@ void InspectorWindow::Draw()
 
     if (ImGui::CollapsingHeader("Scripts", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        if (ImGui::Button("Add New Script (test.lua)"))
+        /*if (ImGui::Button("Add New Script (test.lua)"))
         {
             ModuleScripting* newScript = new ModuleScripting();
             newScript->owner = selectedObject; 
@@ -124,9 +124,29 @@ void InspectorWindow::Draw()
             {
                 delete newScript; 
             }
+        }*/
+
+        if (ImGui::BeginDragDropTarget())
+        {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_ITEM"))
+            {
+                const char* droppedPath = (const char*)payload->Data;
+
+                ModuleScripting* newScript = new ModuleScripting();
+                newScript->owner = selectedObject;
+                newScript->Start();
+
+                if (newScript->LoadScript(droppedPath))
+                {
+                    selectedObject->scripts.push_back(newScript);
+                }
+                else
+                {
+                    delete newScript;
+                }
+            }
+            ImGui::EndDragDropTarget();
         }
-
-
         ImGui::Separator();
 
         if (selectedObject->scripts.empty())

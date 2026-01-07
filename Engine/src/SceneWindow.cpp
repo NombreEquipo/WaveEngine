@@ -93,8 +93,15 @@ void SceneWindow::HandleAssetDropTarget()
         {
             DragDropPayload* dropData = (DragDropPayload*)payload->Data;
 
+            if (dropData->assetType == DragDropAssetType::SCRIPT)
+            {
+                ImGui::EndDragDropTarget();
+                return;
+            }
+
             LOG_CONSOLE("[DROP RECEIVED] Asset: %s, Type: %d, UID: %llu",
-                dropData->assetPath.c_str(),
+
+                dropData->assetPath,
                 (int)dropData->assetType,
                 dropData->assetUID);
 
@@ -261,7 +268,7 @@ void SceneWindow::HandleAssetDropTarget()
                         newScript->owner = obj;
                         
                         newScript->Start();
-                        newScript->LoadScript(dropData->assetPath.c_str());
+                        newScript->LoadScript(dropData->assetPath);
 
                         obj->scripts.push_back(newScript);
                         successCount++;

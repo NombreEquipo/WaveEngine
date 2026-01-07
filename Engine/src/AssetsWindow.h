@@ -7,6 +7,7 @@
 #include <unordered_set>
 #include <imgui.h>
 #include "MetaFile.h"
+#define MAX_PATH_LENGTH 260
 
 class MetaFile;
 namespace fs = std::filesystem;
@@ -48,7 +49,8 @@ enum class DragDropAssetType
 // Payload para drag & drop interno
 struct DragDropPayload
 {
-    std::string assetPath;
+    char assetPath[MAX_PATH_LENGTH];
+    //std::string assetPath;
     unsigned long long assetUID;
     DragDropAssetType assetType;
 };
