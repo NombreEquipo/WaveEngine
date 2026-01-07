@@ -109,6 +109,8 @@ struct EmitterInstance {
     float emissionRate = 20.0f;
     bool active = true;
 
+    bool lopp = false;
+
     // Rendering Options
     bool additiveBlending = false; // Used for Fire or glowing items
 

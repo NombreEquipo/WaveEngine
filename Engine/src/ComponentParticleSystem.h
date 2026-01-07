@@ -28,8 +28,9 @@ public:
     void SaveParticleFile(const std::string& path);
     void LoadParticleFile(const std::string& path);
 
-private:
     EmitterInstance* emitter = nullptr;
+
+private:
 
     // Resource Reference Counting
     unsigned long long textureResourceUID = 0;
