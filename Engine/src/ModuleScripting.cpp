@@ -70,10 +70,19 @@ int Lua_GetPosition(lua_State* L)
     if (go == NULL)return 0;
 
     Transform* transform = static_cast<Transform*>(go->GetComponent(ComponentType::TRANSFORM));
-
-    lua_pushlightuserdata(L,transform);
+    glm::vec3 pos = transform->GetPosition();
+    lua_newtable(L);
     
-    return 0;
+    lua_pushnumber(L,pos.x);
+    lua_setfield(L, -2, "x");
+
+    lua_pushnumber(L, pos.y);
+    lua_setfield(L, -2, "y");
+
+    lua_pushnumber(L, pos.z);
+    lua_setfield(L, -2, "z");
+
+    return 1;
 }
 void GetAllGameObjects(GameObject* root, std::vector<GameObject*>& outObjects)
 {
@@ -93,61 +102,39 @@ int Lua_FindGameObject(lua_State* L)
     std::string ObjName = luaL_checkstring(L, 1);
     GameObject* go = NULL;
 
-    //if (ObjName != "this")
-    //{
-    //    std::vector<GameObject*> objects;
-    //    GetAllGameObjects(Application::GetInstance().scene.get()->GetRoot(), objects);
-
-    //    for (auto& obj : objects)
-    //        if (obj->GetName() == ObjName) go = obj;
-
-    //    if (!go)
-    //    {
-    //        LOG_CONSOLE("[Script] %s error: GameObject %s not found",ScriptName.c_str(), ObjName.c_str());
-
-    //        lua_pushnil(L);
-    //        return 1;
-    //    }
-    //}
-    //else go = own;
-
-    if (ObjName == "this")
-    {
-        lua_getglobal(L, "this_object");
-        go = (GameObject*)lua_touserdata(L, -1);
-        lua_pop(L, 1);
-    }
-    else
+    if (ObjName != "this")
     {
         std::vector<GameObject*> objects;
         GetAllGameObjects(Application::GetInstance().scene.get()->GetRoot(), objects);
-        for (auto& obj : objects) {
+
+        for (auto& obj : objects)
             if (obj->GetName() == ObjName) go = obj;
+
+        if (!go)
+        {
+            LOG_CONSOLE("[Script] %s error: GameObject %s not found",ScriptName.c_str(), ObjName.c_str());
+
+            lua_pushnil(L);
+            return 1;
         }
     }
+    else go = own;
 
-    if (go) lua_pushlightuserdata(L, go);
-    else lua_pushnil(L);
-
+    lua_pushlightuserdata(L, go);
     return 1;
 }
 
 bool ModuleScripting::Start()
 {
     LOG_DEBUG("Initializing ModuleScripting");
-    //own = owner;
+    own = owner;
     L = luaL_newstate();
     luaL_openlibs(L);
     lua_register(L, "SetPosition", Lua_SetPosition);
     lua_register(L, "SetRotation", Lua_SetRotation);
+    lua_register(L, "GetPosition", Lua_GetPosition);
     lua_register(L, "SetScale", Lua_SetScale);
     lua_register(L, "FindGameObject", Lua_FindGameObject);
-    
-    if (owner != nullptr)
-    {
-        lua_pushlightuserdata(L, owner);
-        lua_setglobal(L, "this_object");
-    }
 
     LOG_CONSOLE("ModuleScripting ready");
 
@@ -170,14 +157,14 @@ bool ModuleScripting::Update()
 
     PushInput();
 
+
     return true;
 }
 void ModuleScripting::PushInput()
 {
     lua_newtable(L);
-    int id = -1;
+    
     bool tr = false;
-    Application::GetInstance().input.get()->GetKey(id);
 
     lua_pushboolean(L, Application::GetInstance().input.get()->GetKey(SDL_SCANCODE_W) == KEY_REPEAT);
     lua_setfield(L, -2, "W");
@@ -196,11 +183,14 @@ void ModuleScripting::PushInput()
     
     lua_pushboolean(L, Application::GetInstance().input.get()->GetMouseButtonDown(SDL_BUTTON_LEFT) == KEY_DOWN);
     lua_setfield(L, -2, "MouseLeft");
+    int with, heigh;
 
-    lua_pushinteger(L, Application::GetInstance().input.get()->GetMouseX());
+    Application::GetInstance().window.get()->GetWindowSize(with, heigh);
+
+    lua_pushinteger(L, Application::GetInstance().input.get()->GetMouseX() - with / 2);
     lua_setfield(L, -2, "MouseX");
-
-    lua_pushinteger(L, Application::GetInstance().input.get()->GetMouseY());
+            
+    lua_pushinteger(L, Application::GetInstance().input.get()->GetMouseY() - heigh / 2);
     lua_setfield(L, -2, "MouseY");
     
 
