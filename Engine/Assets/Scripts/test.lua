@@ -2,6 +2,7 @@
 x = 0.0;
 y = 0.0;
 rot = 0.0;
+bullets = {}
 
 function Start()
     obj = FindGameObject("this")
@@ -11,7 +12,7 @@ function Start()
         print("Objeto encontrado correctamente")
     end	
 
-    print("Hello from Lua Start")
+    print("Hello from Lua Start")   
 end
 
 function Update()
@@ -32,22 +33,21 @@ function Update()
         SetPosition(obj,x, 0, y)
         y = y - 0.1
     end
-    if Input.A then
+    if Input.A then 
         SetPosition(obj,x, 0, y)
         y = y + 0.1
     end
 
-    if Input.MouseLeft then
-        print(Input.MouseX)
-        print(Input.MouseY) 
-
-    end
-    if Input.MouseRight then    
-        print(angleDeg)
-        print(GetPosition(obj))
 
 
+    if Input.MouseRight  and not lastMouseLeft  then    
+        bullet = CreatePrimitive("Cube", "bullet")
+        table.insert(bullets, bullet)
+        SetPosition(bullets[#bullets],Input.MouseX/100,0,Input.MouseY/100)  
     end   
+
+    lastMouseLeft = Input.MouseRight        
+
     pos = GetPosition(obj) 
     dx = Input.MouseX - (pos.x * 100)
     dy = Input.MouseY - (pos.y * 100)

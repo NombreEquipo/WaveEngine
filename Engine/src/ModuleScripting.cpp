@@ -9,6 +9,7 @@
 #include <float.h>
 #include <functional>
 #include "ComponentMesh.h"
+#include "ComponentMaterial.h"
 #include "ComponentCamera.h"
 #include <nlohmann/json.hpp>
 #include <fstream>
@@ -36,7 +37,7 @@ int  Lua_SetPosition(lua_State* L)
     Transform* transform = static_cast<Transform*>(go->GetComponent(ComponentType::TRANSFORM));
     transform->SetPosition({ x, y, z });
 
-    return 0;
+    return 1;
 }
 int  Lua_SetRotation(lua_State* L)
 {
@@ -49,7 +50,7 @@ int  Lua_SetRotation(lua_State* L)
     Transform* transform = static_cast<Transform*>(go->GetComponent(ComponentType::TRANSFORM));
     transform->SetRotation({ x, y, z });
 
-    return 0;
+    return 1;
 }
 int  Lua_SetScale(lua_State* L)
 {
@@ -62,7 +63,7 @@ int  Lua_SetScale(lua_State* L)
     Transform* transform = static_cast<Transform*>(go->GetComponent(ComponentType::TRANSFORM));
     transform->SetScale({ x, y, z });
 
-    return 0;
+    return 1;
 }
 int Lua_GetPosition(lua_State* L)
 {
@@ -115,7 +116,7 @@ int Lua_FindGameObject(lua_State* L)
             LOG_CONSOLE("[Script] %s error: GameObject %s not found",ScriptName.c_str(), ObjName.c_str());
 
             lua_pushnil(L);
-            return 1;
+            return 0;
         }
     }
     else go = own;
@@ -123,7 +124,48 @@ int Lua_FindGameObject(lua_State* L)
     lua_pushlightuserdata(L, go);
     return 1;
 }
+int Lua_CreatePrimitiveGameObject(lua_State* L)
+{
+    std::string name = luaL_checkstring(L, 1);
+    std::string Objname = luaL_checkstring(L, 2);
 
+
+    GameObject* Object = new GameObject(name);
+    ComponentMesh* meshComp = static_cast<ComponentMesh*>(
+        Object->CreateComponent(ComponentType::MESH)
+        );
+
+    Mesh selectedMesh;
+
+    if (name == "Cube")
+        selectedMesh = Primitives::CreateCube();
+    else if (name == "Pyramid")
+        selectedMesh = Primitives::CreatePyramid();
+    else if (name == "Plane")
+        selectedMesh = Primitives::CreatePlane();
+    else if (name == "Sphere")
+        selectedMesh = Primitives::CreateSphere();
+    else if (name == "Cylinder")
+        selectedMesh = Primitives::CreateCylinder();
+    else return 0;
+
+    meshComp->SetMesh(selectedMesh);
+    meshComp->SetPrimitiveType(name);
+
+    ComponentMaterial* materialComp = static_cast<ComponentMaterial*>(
+        Object->CreateComponent(ComponentType::MATERIAL)
+        );
+    materialComp->CreateCheckerboardTexture();
+    Object->name = Objname;
+    //GameObject* root = Application::GetInstance().scene->GetRoot();
+    //root->AddChild(Object);
+    own->AddChild(Object);
+   
+    Application::GetInstance().scene->RebuildOctree();
+
+    lua_pushlightuserdata(L, Object);
+    return 1;
+}
 bool ModuleScripting::Start()
 {
     LOG_DEBUG("Initializing ModuleScripting");
@@ -135,6 +177,7 @@ bool ModuleScripting::Start()
     lua_register(L, "GetPosition", Lua_GetPosition);
     lua_register(L, "SetScale", Lua_SetScale);
     lua_register(L, "FindGameObject", Lua_FindGameObject);
+    lua_register(L, "CreatePrimitive", Lua_CreatePrimitiveGameObject);
 
     LOG_CONSOLE("ModuleScripting ready");
 
@@ -151,12 +194,11 @@ bool ModuleScripting::Update()
         init = false;
     }
 
+    PushInput();
+
     lua_getglobal(L, "Update");
     if (lua_isfunction(L, -1))
         lua_pcall(L, 0, 0, 0);
-
-    PushInput();
-
 
     return true;
 }
@@ -187,12 +229,11 @@ void ModuleScripting::PushInput()
 
     Application::GetInstance().window.get()->GetWindowSize(with, heigh);
 
-    lua_pushinteger(L, Application::GetInstance().input.get()->GetMouseX() - with / 2);
+    lua_pushnumber(L, Application::GetInstance().input.get()->GetMouseX() - with / 2);
     lua_setfield(L, -2, "MouseX");
             
-    lua_pushinteger(L, Application::GetInstance().input.get()->GetMouseY() - heigh / 2);
+    lua_pushnumber(L, Application::GetInstance().input.get()->GetMouseY() - heigh / 2);
     lua_setfield(L, -2, "MouseY");
-    
 
     lua_setglobal(L, "Input");
 }

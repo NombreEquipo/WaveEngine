@@ -66,11 +66,12 @@ public:
     bool IsSceneWindowActive() const { return currentWindow == EditorWindowType::SCENE;  }
     bool IsMouseOverScene() const;
 
+    void CreatePrimitiveGameObject(const std::string& name, Mesh mesh);
+
 private:
     void ShowMenuBar();
     void ShowPlayToolbar();
     void DrawAboutWindow();
-    void CreatePrimitiveGameObject(const std::string& name, Mesh mesh);
     void HandleDeleteKey();
     void UpdateCurrentWindow();
     const char* EditorWindowTypeToString(EditorWindowType type); // For debug // Delete before release
