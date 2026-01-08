@@ -91,12 +91,6 @@ bool Input::PreUpdate()
 
 		switch (event.type)
 		{
-		case SDL_EVENT_TEXT_INPUT:
-		{
-			ImGui::GetIO().AddInputCharactersUTF8(event.text.text);
-			break;
-		}
-
 		case SDL_EVENT_QUIT:
 			windowEvents[WE_QUIT] = true;
 			break;
@@ -115,15 +109,8 @@ bool Input::PreUpdate()
 		{
 			mouseButtons[event.button.button - 1] = KEY_DOWN;
 
-			if (ImGui::GetIO().WantCaptureKeyboard)
-			{
-				break;
-			}
-
 			ComponentCamera* camera = Application::GetInstance().camera->GetEditorCamera();
 			if (!camera) break;
-
-			if (ImGui::GetIO().WantCaptureKeyboard) return true;
 
 			bool overSceneWindow = IsMouseOverSceneWindow();
 			if (!overSceneWindow)

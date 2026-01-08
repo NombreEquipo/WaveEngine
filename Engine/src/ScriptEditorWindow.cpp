@@ -11,7 +11,7 @@ ScriptEditorWindow::ScriptEditorWindow() : EditorWindow("Script Editor") {
     auto lang = TextEditor::LanguageDefinition::Lua();
     editor.SetLanguageDefinition(lang);
     editor.SetPalette(TextEditor::GetDarkPalette());
-
+    editor.SetShowWhitespaces(false); //Quita los puntos
     editor.SetReadOnly(false);
 
     isOpen = false;
