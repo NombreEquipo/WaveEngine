@@ -2,7 +2,7 @@
 x = 0.0;
 y = 0.0;
 rot = 0.0;
-speed = 0.001;
+speed = 0.005;
 bullets = {}
 
 function Start()
@@ -21,13 +21,11 @@ end
 function Update()
 
     if Input.W then
-        SetPosition(obj,0, 0, y)
-        y = y - speed
+        MoveForward(obj, x, speed)
     end
 
     if Input.S then
-        SetPosition(obj,0, 0, y)
-        y = y + speed
+        MoveBackward(obj, x, speed)
     end
 
     if Input.D then
@@ -38,21 +36,28 @@ function Update()
         SetRotation(obj,0, x, 0)
         x = x - 1
     end
+    if Input.MouseLeft  then    
+        print(Input.MouseX)
+    end   
 
     if Input.MouseRight  and not lastMouseLeft  then    
         bullet = CreatePrimitive("Cube", "bullet")
         table.insert(bullets, bullet)
-        SetPosition(bullets[#bullets],Input.MouseX/100,0,Input.MouseY/100)  
     end   
 
     lastMouseLeft = Input.MouseRight        
 
-    pos = GetPosition(turret) 
-    dx = Input.MouseX - (pos.x * 100)
-    dy = Input.MouseY - (pos.y * 100)
-    angle  = atan2(dy,dx) * -1
+    local pos = GetPosition(turret) 
+    local dx = (Input.MouseX * 10) + pos.x
+    local dy = (Input.MouseY * 10) + pos.z
+    local angle  = atan2(dy,dx)
     angleDeg = math.deg(angle)
     SetRotation(turret,0,angleDeg,0)
+
+    for _, bullet in ipairs(bullets) do
+    shoot(bullet, angleDeg)
+    end
+
 
 end
 
@@ -73,3 +78,32 @@ function atan2(y, x)
         return 0
     end
 end
+
+function shoot(bullet, ang)
+    local rad = math.rad(ang)
+    local dirX = math.cos(rad)
+    local dirZ = math.sin(rad)
+    local pos = GetPosition(bullet)
+    local speed = 0.05
+
+    SetPosition(bullet, pos.x + dirX * speed, pos.y, pos.z + dirZ * speed)
+end
+
+function MoveForward(object, angl, speed)
+    local rad = math.rad(angl)
+    local dirX = math.sin(rad)
+    local dirZ = math.cos(rad)
+    local pos = GetPosition(object)
+
+    SetPosition(object, pos.x + dirX * speed, pos.y, pos.z + dirZ * speed)
+end
+
+function MoveBackward(object, angl, speed)
+    local rad = math.rad(angl)
+    local dirX = math.sin(rad)
+    local dirZ = math.cos(rad)
+    local pos = GetPosition(obj)
+
+    SetPosition(object, pos.x - dirX * speed, pos.y, pos.z - dirZ * speed)
+end
+

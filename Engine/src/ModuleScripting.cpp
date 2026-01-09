@@ -228,14 +228,40 @@ void ModuleScripting::PushInput()
     int with, heigh;
 
     Application::GetInstance().window.get()->GetWindowSize(with, heigh);
+    
+    glm::vec3 rayDir = MouseWorldPos();
 
-    lua_pushnumber(L, Application::GetInstance().input.get()->GetMouseX() - with / 2);
+    lua_pushnumber(L, rayDir.x );
     lua_setfield(L, -2, "MouseX");
             
-    lua_pushnumber(L, Application::GetInstance().input.get()->GetMouseY() - heigh / 2);
+    lua_pushnumber(L,rayDir.y);
     lua_setfield(L, -2, "MouseY");
 
     lua_setglobal(L, "Input");
+}
+glm::vec3 ModuleScripting::MouseWorldPos()
+{
+    float mouseXf, mouseYf;
+    ComponentCamera* camera = Application::GetInstance().camera->GetEditorCamera();
+
+    SDL_GetMouseState(&mouseXf, &mouseYf);
+    int scale = Application::GetInstance().window.get()->GetScale();
+    mouseXf /= scale;
+    mouseYf /= scale;
+
+    ImVec2 scenePos = Application::GetInstance().editor->sceneViewportPos;
+    ImVec2 sceneSize = Application::GetInstance().editor->sceneViewportSize;
+
+    float relativeX = mouseXf - scenePos.x;
+    float relativeY = mouseYf - scenePos.y;
+
+    glm::vec3 rayOrigin = camera->GetPosition();
+    return camera->ScreenToWorldRay(
+        static_cast<int>(relativeX),
+        static_cast<int>(relativeY),
+        static_cast<int>(sceneSize.x),
+        static_cast<int>(sceneSize.y)
+    );
 }
 bool ModuleScripting::LoadScript(const char* path)
 {
