@@ -14,10 +14,6 @@
 #include <nlohmann/json.hpp>
 #include <fstream>
 
-GameObject* own = NULL;
-std::string ScriptName="";
-
-
 ModuleScripting::ModuleScripting()
 {
 }
@@ -100,6 +96,8 @@ void GetAllGameObjects(GameObject* root, std::vector<GameObject*>& outObjects)
 }
 int Lua_FindGameObject(lua_State* L)
 {
+    ModuleScripting* self = (ModuleScripting*)lua_touserdata(L, lua_upvalueindex(1));
+
     std::string ObjName = luaL_checkstring(L, 1);
     GameObject* go = NULL;
 
@@ -113,22 +111,23 @@ int Lua_FindGameObject(lua_State* L)
 
         if (!go)
         {
-            LOG_CONSOLE("[Script] %s error: GameObject %s not found",ScriptName.c_str(), ObjName.c_str());
+            LOG_CONSOLE("[Script] %s error: GameObject %s not found",self->name.c_str(), ObjName.c_str());
 
             lua_pushnil(L);
             return 0;
         }
     }
-    else go = own;
+    else go = self->owner;
 
     lua_pushlightuserdata(L, go);
     return 1;
 }
 int Lua_CreatePrimitiveGameObject(lua_State* L)
 {
+    ModuleScripting* self = (ModuleScripting*)lua_touserdata(L, lua_upvalueindex(1));
+
     std::string name = luaL_checkstring(L, 1);
     std::string Objname = luaL_checkstring(L, 2);
-
 
     GameObject* Object = new GameObject(name);
     ComponentMesh* meshComp = static_cast<ComponentMesh*>(
@@ -159,7 +158,7 @@ int Lua_CreatePrimitiveGameObject(lua_State* L)
     Object->name = Objname;
     //GameObject* root = Application::GetInstance().scene->GetRoot();
     //root->AddChild(Object);
-    own->AddChild(Object);
+    self->owner->AddChild(Object);
    
     Application::GetInstance().scene->RebuildOctree();
 
@@ -169,15 +168,40 @@ int Lua_CreatePrimitiveGameObject(lua_State* L)
 bool ModuleScripting::Start()
 {
     LOG_DEBUG("Initializing ModuleScripting");
-    own = owner;
     L = luaL_newstate();
     luaL_openlibs(L);
-    lua_register(L, "SetPosition", Lua_SetPosition);
-    lua_register(L, "SetRotation", Lua_SetRotation);
-    lua_register(L, "GetPosition", Lua_GetPosition);
-    lua_register(L, "SetScale", Lua_SetScale);
-    lua_register(L, "FindGameObject", Lua_FindGameObject);
-    lua_register(L, "CreatePrimitive", Lua_CreatePrimitiveGameObject);
+
+    // SetPosition
+    lua_pushlightuserdata(L, this);
+    lua_pushcclosure(L, Lua_SetPosition, 1);
+    lua_setglobal(L, "SetPosition");
+
+    // SetRotation
+    lua_pushlightuserdata(L, this);
+    lua_pushcclosure(L, Lua_SetRotation, 1);
+    lua_setglobal(L, "SetRotation");
+
+    // GetPosition
+    lua_pushlightuserdata(L, this);
+    lua_pushcclosure(L, Lua_GetPosition, 1);
+    lua_setglobal(L, "GetPosition");
+
+    // SetScale
+    lua_pushlightuserdata(L, this);
+    lua_pushcclosure(L, Lua_SetScale, 1);
+    lua_setglobal(L, "SetScale");
+
+    // FindGameObject
+    lua_pushlightuserdata(L, this);
+    lua_pushcclosure(L, Lua_FindGameObject, 1);
+    lua_setglobal(L, "FindGameObject");
+
+    // CreatePrimitive
+    lua_pushlightuserdata(L, this);
+    lua_pushcclosure(L, Lua_CreatePrimitiveGameObject, 1);
+    lua_setglobal(L, "CreatePrimitive");
+
+    return true;
 
     LOG_CONSOLE("ModuleScripting ready");
 
@@ -193,7 +217,6 @@ bool ModuleScripting::Update()
 
         init = false;
     }
-
     PushInput();
 
     lua_getglobal(L, "Update");
@@ -280,7 +303,6 @@ bool ModuleScripting::LoadScript(const char* path)
     }
     filePath = path;
     name = filePath.substr( filePath.find_last_of("/\\")+1);
-    ScriptName = name;
 
     return true;
 }

@@ -26,6 +26,7 @@ public:
     //int Lua_SetPosition(lua_State* L);
 
     GameObject* owner = NULL;
+
     std::string filePath;
     std::string name;
 
