@@ -253,6 +253,8 @@ void SceneWindow::HandleAssetDropTarget()
 
                 std::vector<GameObject*> selectedObjects =
                     Application::GetInstance().selectionManager->GetSelectedObjects();
+               
+
                 if (!selectedObjects.empty())
                 {
                     int successCount = 0;
@@ -262,10 +264,20 @@ void SceneWindow::HandleAssetDropTarget()
                         newScript->owner = obj;
                         
                         newScript->Start();
-                        newScript->LoadScript(dropData->assetPath);
+                        if (newScript->LoadScript(dropData->assetPath))
+                        {
+                            obj->scripts.push_back(newScript);
+                            successCount++;
+                        }
+                        else
+                        {
+                            delete newScript;
+                        }
+                   /*     newScript->LoadScript(dropData->assetPath);
 
                         obj->scripts.push_back(newScript);
-                        successCount++;
+                        successCount++;*/
+                        
                     }
                 }
                 break;

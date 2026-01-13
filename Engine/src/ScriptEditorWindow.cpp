@@ -1,11 +1,20 @@
 #include "ScriptEditorWindow.h"
 #include "Application.h"
 #include "FileSystem.h" 
+
+#include "ModuleScene.h"
+#include "GameObject.h"
+#include "ModuleScripting.h"
+
 #include <imgui.h>
 #include "Log.h"
 #include <fstream> 
 #include <filesystem>
 
+#define WIN32_LEAN_AND_MEAN // Evita conflictos de "byte" y acelera la compilación
+#define NOMINMAX
+#include <windows.h> 
+#include <shellapi.h>
 
 ScriptEditorWindow::ScriptEditorWindow() : EditorWindow("Script Editor") {
     auto lang = TextEditor::LanguageDefinition::Lua();
@@ -35,25 +44,64 @@ void ScriptEditorWindow::LoadScript(const std::string& path, ModuleScripting* ta
     
 
 }
+
 void ScriptEditorWindow::SaveScript() {
     if (currentPath.empty()) return;
 
     std::string textToSave = editor.GetText();
 
     if (Application::GetInstance().filesystem->SaveStringToFile(currentPath.c_str(), textToSave)) {
-        LOG_CONSOLE("[Editor] Script saved: %s", currentName.c_str());
+        LOG_CONSOLE("[Editor] Script saved to disk: %s", currentName.c_str());
 
-        if (scripting) {
-            if (!scripting->ReloadScript(currentPath)) {
-                errorMessage = scripting->GetLastError();
-                showErrorPopup = true;
-                LOG_CONSOLE("ERROR [Script Hot-Reload] %s", errorMessage.c_str());
-            }
-            else {
-                showErrorPopup = false; 
-            }
+        bool errorFound = false;
+        std::string lastErrorMsg = "";
+
+        GameObject* root = Application::GetInstance().scene->GetRoot();
+
+        ReloadScriptInScene(root, currentPath, errorFound, lastErrorMsg);
+
+        //Errors
+        if (errorFound) {
+            errorMessage = lastErrorMsg;
+            showErrorPopup = true;
+            LOG_CONSOLE("ERROR [Script Hot-Reload] Falló la compilación en al menos un objeto.");
+        }
+        else {
+            showErrorPopup = false;
+            errorMessage.clear();
         }
 
+    }
+    else {
+        LOG_CONSOLE("ERROR: Could not save script file to %s", currentPath.c_str());
+    }
+}
+void ScriptEditorWindow::ReloadScriptInScene(GameObject* root, const std::string& filePath, bool& errorFound, std::string& errorMsg)
+{
+    if (!root) return;
+
+    for (ModuleScripting* script : root->scripts)
+    {
+      
+        if (script->GetFilePath() == filePath)
+        {
+            if (!script->ReloadScript(filePath))
+            {
+                errorFound = true;
+                errorMsg = script->GetLastError();
+                LOG_CONSOLE("ERROR [Hot-Reload] en objeto '%s': %s", root->GetName().c_str(), errorMsg.c_str());
+            }
+            else
+            {
+                LOG_CONSOLE("[Hot-Reload] Script actualizado en: %s", root->GetName().c_str());
+            }
+        }
+    }
+
+    // Recursividad para los hijos
+    for (GameObject* child : root->GetChildren())
+    {
+        ReloadScriptInScene(child, filePath, errorFound, errorMsg);
     }
 }
 
@@ -77,6 +125,12 @@ void ScriptEditorWindow::Draw() {
                 if (ImGui::MenuItem("Close")) isOpen = false;
                 ImGui::EndMenu();
             }
+
+            if (ImGui::MenuItem("Open in External Editor")) {
+                
+                ShellExecute(0, 0, currentPath.c_str(), 0, 0, SW_SHOW);
+            }
+
             ImGui::EndMenuBar();
         }
         if(showErrorPopup) {

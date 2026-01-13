@@ -183,6 +183,7 @@ int Lua_CreatePrimitiveGameObject(lua_State* L)
     lua_pushlightuserdata(L, Object);
     return 1;
 }
+
 bool ModuleScripting::Start()
 {
     LOG_DEBUG("Initializing ModuleScripting");
@@ -206,8 +207,8 @@ bool ModuleScripting::Start()
 
     // GetRotation
     lua_pushlightuserdata(L, this);
-    lua_pushcclosure(L, Lua_GetPosition, 1);
-    lua_setglobal(L, "GetPosition");
+    lua_pushcclosure(L, Lua_GetRotation, 1);
+    lua_setglobal(L, "GetRotation");
 
     // SetScale
     lua_pushlightuserdata(L, this);
@@ -223,6 +224,7 @@ bool ModuleScripting::Start()
     lua_pushlightuserdata(L, this);
     lua_pushcclosure(L, Lua_CreatePrimitiveGameObject, 1);
     lua_setglobal(L, "CreatePrimitive");
+
 
     return true;
 
@@ -319,8 +321,11 @@ bool ModuleScripting::LoadScript(const char* path)
     if (luaL_loadfile(L, path) != LUA_OK)
     {
         lastError = lua_tostring(L, -1);
+        scriptError = true;
+
         LOG_CONSOLE("ERROR [Lua Load] %s", lastError.c_str());
         //LOG_CONSOLE("Lua load error: %s", lua_tostring(L, -1));
+
         lua_pop(L, 1);
         return false;
     }
@@ -329,6 +334,7 @@ bool ModuleScripting::LoadScript(const char* path)
     {
         //LOG_CONSOLE("Lua runtime error: %s", lua_tostring(L, -1));
         LOG_CONSOLE("ERROR [Lua Runtime] %s", lua_tostring(L, -1));
+        scriptError = true;
         lua_pop(L, 1);
         return false;
     }
