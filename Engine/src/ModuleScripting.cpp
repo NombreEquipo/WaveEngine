@@ -413,33 +413,6 @@ bool ModuleScripting::CreateScript(const std::string& name)
     }
 }
 
-std::string ModuleScripting::CheckSyntax(const std::string& path)
-{
-    if (this == nullptr) return "CRITICAL ERROR: ModuleScripting is null";
-    if (L == nullptr) return "CRITICAL ERROR: Lua State (L) is null. Did you call Start()?";
-
-    std::string cleanPath = path;
-    for (char& c : cleanPath) {
-        if (c == '\\') c = '/';
-    }
-
-    if (luaL_loadfile(L, cleanPath.c_str()) != LUA_OK)
-    {
-        const char* error = lua_tostring(L, -1);
-        std::string errString = error ? error : "Unknown Lua Error";
-
-        lua_pop(L, 1);
-
-        LOG_CONSOLE("SYNTAX ERROR: %s", errString.c_str());
-        return errString;
-    }
-    else
-    {
-        lua_pop(L, 1);
-        return "";
-    }
-}
-
 bool ModuleScripting::CleanUp()
 {
     lua_close(L);

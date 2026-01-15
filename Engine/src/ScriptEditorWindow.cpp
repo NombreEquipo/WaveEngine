@@ -49,23 +49,27 @@ void ScriptEditorWindow::SaveScript() {
     if (currentPath.empty()) return;
 
     std::string textToSave = editor.GetText();
+
+    lua_State* tempL = luaL_newstate();
+    if (luaL_loadfile(tempL, currentPath.c_str()) != LUA_OK)
+    {
+        // Error
+        const char* err = lua_tostring(tempL, -1);
+        errorMessage = err ? err : "Error desconocido de sintaxis";
+        showErrorPopup = true;
+
+        LOG_CONSOLE("ERROR DE SINTAXIS LUA: %s", errorMessage.c_str());
+
+        lua_close(tempL);
+        return;
+    }
+
+    lua_close(tempL);
+    //Clean errors
+    showErrorPopup = false;
+    errorMessage.clear();
     if (Application::GetInstance().filesystem->SaveStringToFile(currentPath.c_str(), textToSave)) {
         LOG_CONSOLE("[Editor] Script saved to disk: %s", currentName.c_str());
-
-        std::string syntaxError = scripting->CheckSyntax(currentPath);
-
-        if (!syntaxError.empty())
-        {
-            errorMessage = syntaxError;
-            showErrorPopup = true;
-            return; 
-        }
-        else
-        {
-            showErrorPopup = false;
-            errorMessage.clear();
-        }
-
 
         bool errorFound = false;
         std::string lastErrorMsg = "";

@@ -13,3 +13,5 @@ function Update()
     posTank = GetPosition(tank)
     SetPosition(camera,posTank.x,10,posTank.z)
 end
+
+

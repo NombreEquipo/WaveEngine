@@ -9,7 +9,7 @@ angles = {}
 function Start()
     obj = FindGameObject("this")
     turret = FindGameObject("TankTurret")
-fff
+
     if obj == nil then
         print("ERROR: No se ha encontrado el objeto!")
     else
@@ -116,6 +116,21 @@ function MoveBackward(object, angl, speed)
 
     SetPosition(object, pos.x - dirX * speed, pos.y, pos.z - dirZ * speed)
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
