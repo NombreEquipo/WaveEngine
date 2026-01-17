@@ -16,6 +16,8 @@
 #include "FileSystem.h"       
 #include "GameObject.h"        
 #include "Input.h"           
+#include "ScriptEditorWindow.h"
+#include "EditorPreferences.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -33,6 +35,7 @@ AssetsWindow::AssetsWindow()
 
     sceneRootPath = fs::path(assetsRootPath).parent_path().string() + "/Scene";
     importSettingsWindow = new ImportSettingsWindow();
+    scriptEditorWindow = new ScriptEditorWindow();  
 }
 
 AssetsWindow::~AssetsWindow()
@@ -42,6 +45,7 @@ AssetsWindow::~AssetsWindow()
         UnloadPreviewForAsset(asset);
     }
     delete importSettingsWindow;
+    delete scriptEditorWindow;  
 }
 
 std::string AssetsWindow::TruncateFileName(const std::string& name, float maxWidth) const
@@ -71,7 +75,6 @@ void AssetsWindow::DrawIconShape(const AssetEntry& asset, const ImVec2& pos, con
 {
     ImDrawList* drawList = ImGui::GetWindowDrawList();
 
-    // If there's a preview texture AND show3DPreviews is enabled, display it
     if (show3DPreviews && asset.previewTextureID != 0)
     {
         ImVec2 topLeft = pos;
@@ -80,7 +83,6 @@ void AssetsWindow::DrawIconShape(const AssetEntry& asset, const ImVec2& pos, con
         ImTextureID texID = (ImTextureID)(uintptr_t)asset.previewTextureID;
         drawList->AddImage(texID, topLeft, bottomRight, ImVec2(0, 1), ImVec2(1, 0));
 
-        // Border around the preview
         ImU32 borderColor = asset.inMemory ?
             ImGui::ColorConvertFloat4ToU32(ImVec4(0.3f, 0.8f, 0.3f, 1.0f)) :
             ImGui::ColorConvertFloat4ToU32(ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
@@ -89,7 +91,6 @@ void AssetsWindow::DrawIconShape(const AssetEntry& asset, const ImVec2& pos, con
         return;
     }
 
-    // If there's no preview or show3DPreviews is disabled, use the original drawn icons
     ImVec4 buttonColor;
 
     if (asset.isDirectory) {
@@ -156,7 +157,6 @@ void AssetsWindow::DrawIconShape(const AssetEntry& asset, const ImVec2& pos, con
     }
     else if (asset.extension == ".mesh")
     {
-        // Individual mesh icon (simple triangle)
         float meshSize = (size.x - padding * 2) * 0.5f;
         ImVec2 p1(center.x, center.y - meshSize * 0.6f);
         ImVec2 p2(center.x - meshSize * 0.5f, center.y + meshSize * 0.4f);
@@ -180,6 +180,31 @@ void AssetsWindow::DrawIconShape(const AssetEntry& asset, const ImVec2& pos, con
             ImVec2 p2(start.x + i * barWidth * 2 + barWidth, center.y + barHeight * 0.5f);
             drawList->AddRectFilled(p1, p2, color, 2.0f);
         }
+    }
+    else if (asset.extension == ".lua")
+    {
+        float w = size.x - padding * 2;
+        float h = size.y - padding * 2;
+        ImVec2 topLeft(pos.x + padding, pos.y + padding);
+        ImVec2 bottomRight(pos.x + size.x - padding, pos.y + size.y - padding);
+
+        // Fondo del documento
+        drawList->AddRectFilled(topLeft, bottomRight, color, 3.0f);
+        drawList->AddRect(topLeft, bottomRight, outlineColor, 3.0f, 0, 2.0f);
+
+        // Esquina doblada
+        ImVec2 cornerSize(w * 0.2f, h * 0.2f);
+
+        drawList->AddTriangleFilled(
+            ImVec2(bottomRight.x - cornerSize.x, topLeft.y),
+            ImVec2(bottomRight.x, topLeft.y),
+            ImVec2(bottomRight.x, topLeft.y + cornerSize.y),
+            ImGui::ColorConvertFloat4ToU32(ImVec4(buttonColor.x * 0.6f, buttonColor.y * 0.6f, buttonColor.z * 0.6f, 1.0f))
+        );
+
+        // Texto "Lua"
+        ImVec2 textPos(center.x - w * 0.15f, center.y - h * 0.1f);
+        drawList->AddText(textPos, ImGui::ColorConvertFloat4ToU32(ImVec4(0.2f, 0.2f, 0.8f, 1.0f)), "Lua");
     }
     else
     {
@@ -280,9 +305,25 @@ void AssetsWindow::Draw()
 
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
 
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
+
         if (ImGui::Button("Refresh"))
         {
             RefreshAssets();
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("New Folder"))
+        {
+            ImGui::OpenPopup("CreateFolder");
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("New Script"))
+        {
+            ImGui::OpenPopup("CreateScript");
         }
 
         ImGui::SameLine();
@@ -290,6 +331,86 @@ void AssetsWindow::Draw()
 
         ImGui::SameLine();
         ImGui::Checkbox("3D Previews", &show3DPreviews);
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Show 3D preview for FBX models");
+            ImGui::EndTooltip();
+        }
+
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(100.0f);
+        ImGui::SliderFloat("Icon Size", &iconSize, 32.0f, 128.0f, "%.0f");
+
+        ImGui::PopStyleVar();
+        ImGui::Separator();
+
+        if (ImGui::BeginPopup("CreateFolder"))
+        {
+            static char folderName[256] = "NewFolder";
+
+            ImGui::Text("Create New Folder");
+            ImGui::Separator();
+
+            ImGui::InputText("Name", folderName, sizeof(folderName));
+
+            if (ImGui::Button("Create", ImVec2(120, 0)))
+            {
+                fs::path newFolderPath = fs::path(currentPath) / folderName;
+
+                if (!fs::exists(newFolderPath))
+                {
+                    fs::create_directory(newFolderPath);
+                    LOG_CONSOLE("[AssetsWindow] Created folder: %s", newFolderPath.string().c_str());
+                    RefreshAssets();
+                }
+                else
+                {
+                    LOG_CONSOLE("[AssetsWindow] ERROR: Folder already exists");
+                }
+
+                ImGui::CloseCurrentPopup();
+                strcpy(folderName, "NewFolder");
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Cancel", ImVec2(120, 0)))
+            {
+                ImGui::CloseCurrentPopup();
+                strcpy(folderName, "NewFolder");
+            }
+
+            ImGui::EndPopup();
+        }
+
+        if (ImGui::BeginPopup("CreateScript"))
+        {
+            static char scriptName[256] = "NewScript";
+
+            ImGui::Text("Create New Lua Script");
+            ImGui::Separator();
+
+            ImGui::InputText("Name", scriptName, sizeof(scriptName));
+            ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Extension .lua will be added automatically");
+
+            if (ImGui::Button("Create", ImVec2(120, 0)))
+            {
+                CreateNewScript(scriptName);
+                ImGui::CloseCurrentPopup();
+                strcpy(scriptName, "NewScript");
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Cancel", ImVec2(120, 0)))
+            {
+                ImGui::CloseCurrentPopup();
+                strcpy(scriptName, "NewScript");
+            }
+
+            ImGui::EndPopup();
+        }
         if (ImGui::IsItemHovered())
         {
             ImGui::BeginTooltip();
@@ -424,7 +545,10 @@ void AssetsWindow::Draw()
     {
         importSettingsWindow->Draw();
     }
-
+    if (scriptEditorWindow)
+    {
+        scriptEditorWindow->Draw();
+    }
     ImGui::End();
 }
 
@@ -857,7 +981,6 @@ void AssetsWindow::DrawAssetItem(const AssetEntry& asset, std::string& pathPendi
         payload.assetPath = asset.path;
         payload.assetUID = asset.uid;
 
-        // Determine the type of asset
         if (asset.extension == ".png" || asset.extension == ".jpg" ||
             asset.extension == ".jpeg" || asset.extension == ".dds" || asset.extension == ".tga")
         {
@@ -868,6 +991,11 @@ void AssetsWindow::DrawAssetItem(const AssetEntry& asset, std::string& pathPendi
         {
             payload.assetType = DragDropAssetType::MESH;
             ImGui::Text("Mesh: %s", asset.name.c_str());
+        }
+        else if (asset.extension == ".lua")  
+        {
+            payload.assetType = DragDropAssetType::SCRIPT;
+            ImGui::Text("Script: %s", asset.name.c_str());
         }
         else
         {
@@ -896,6 +1024,22 @@ void AssetsWindow::DrawAssetItem(const AssetEntry& asset, std::string& pathPendi
         if (asset.isDirectory)
         {
             pathPendingToLoad = asset.path;
+        }
+        else if (asset.extension == ".lua")  
+        {
+            if (EditorPreferences::GetPreferredEditor() == ExternalEditor::INTERNAL)
+            {
+                // Abrir con editor interno
+                if (scriptEditorWindow)
+                {
+                    scriptEditorWindow->OpenScript(asset.path);
+                }
+            }
+            else
+            {
+                // Abrir con editor externo
+                EditorPreferences::OpenFileWithPreferredEditor(asset.path);
+            }
         }
     }
 
@@ -927,6 +1071,58 @@ void AssetsWindow::DrawAssetItem(const AssetEntry& asset, std::string& pathPendi
         ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "%s", asset.name.c_str());
         ImGui::Separator();
 
+        if (!asset.isDirectory && asset.extension == ".lua")
+        {
+            ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Open With:");
+
+            if (ImGui::MenuItem("Internal Editor"))
+            {
+                if (scriptEditorWindow)
+                {
+                    scriptEditorWindow->OpenScript(asset.path);
+                }
+            }
+
+            if (ImGui::MenuItem("Visual Studio 2022"))
+            {
+                EditorPreferences::SetPreferredEditor(ExternalEditor::VISUAL_STUDIO_2022);
+                if (!EditorPreferences::OpenFileWithPreferredEditor(asset.path))
+                {
+                    LOG_CONSOLE("[AssetsWindow] Failed to open with VS2022. Is it installed?");
+                }
+            }
+
+            if (ImGui::MenuItem("VS Code"))
+            {
+                EditorPreferences::SetPreferredEditor(ExternalEditor::VSCODE);
+                if (!EditorPreferences::OpenFileWithPreferredEditor(asset.path))
+                {
+                    LOG_CONSOLE("[AssetsWindow] Failed to open with VS Code. Is it installed?");
+                }
+            }
+
+            if (ImGui::MenuItem("Custom Editor..."))
+            {
+                ImGui::OpenPopup("SelectCustomEditor");
+            }
+
+            ImGui::Separator();
+
+            ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Default Editor:");
+
+            ExternalEditor currentEditor = EditorPreferences::GetPreferredEditor();
+            const char* editorNames[] = { "Internal", "VS 2022", "VS Code", "Custom" };
+            int currentIdx = static_cast<int>(currentEditor);
+
+            if (ImGui::Combo("##defaulteditor", &currentIdx, editorNames, 4))
+            {
+                EditorPreferences::SetPreferredEditor(static_cast<ExternalEditor>(currentIdx));
+            }
+
+            ImGui::Separator();
+        }
+
+        // Import Settings para FBX y texturas
         if (!asset.isDirectory &&
             (asset.extension == ".fbx" ||
                 asset.extension == ".png" || asset.extension == ".jpg" ||
@@ -965,6 +1161,40 @@ void AssetsWindow::DrawAssetItem(const AssetEntry& asset, std::string& pathPendi
             ImGui::Separator();
             ImGui::TextColored(ImVec4(0.3f, 1.0f, 0.3f, 1.0f), "Contains loaded assets");
             ImGui::Text("Total refs: %d", asset.references);
+        }
+
+        ImGui::EndPopup();
+    }
+
+    if (ImGui::BeginPopup("SelectCustomEditor"))
+    {
+        static char editorPath[512] = "";
+
+        ImGui::Text("Select Custom Editor");
+        ImGui::Separator();
+
+        ImGui::InputText("Path", editorPath, sizeof(editorPath));
+        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Example: C:\\MyEditor\\editor.exe");
+
+        if (ImGui::Button("Browse..."))
+        {
+            LOG_CONSOLE("[AssetsWindow] File browser not implemented yet");
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("OK", ImVec2(120, 0)))
+        {
+            EditorPreferences::SetCustomEditorPath(editorPath);
+            EditorPreferences::SetPreferredEditor(ExternalEditor::CUSTOM);
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Cancel", ImVec2(120, 0)))
+        {
+            ImGui::CloseCurrentPopup();
         }
 
         ImGui::EndPopup();
@@ -1413,6 +1643,7 @@ const char* AssetsWindow::GetAssetIcon(const std::string& extension) const
     if (extension == ".mesh") return "[MSH]";
     if (extension == ".texture") return "[TEX]";
     if (extension == ".wav" || extension == ".ogg" || extension == ".mp3") return "[SND]";
+    if (extension == ".lua") return "[LUA]";  
     return "[FILE]";
 }
 
@@ -1429,7 +1660,8 @@ bool AssetsWindow::IsAssetFile(const std::string& extension) const
         extension == ".texture" ||
         extension == ".wav" ||
         extension == ".ogg" ||
-        extension == ".json";
+        extension == ".json" ||
+        extension == ".lua";  
 }
 
 void AssetsWindow::LoadPreviewForAsset(AssetEntry& asset)
@@ -2370,4 +2602,131 @@ bool AssetsWindow::TestImportSystem()
     }
 
     return true;
+}
+
+// scripts
+void AssetsWindow::CreateNewScript(const std::string& scriptName)
+{
+    std::string filename = scriptName;
+
+    // Añadir extensión .lua si no está presente
+    if (filename.find(".lua") == std::string::npos)
+    {
+        filename += ".lua";
+    }
+
+    fs::path scriptPath = fs::path(currentPath) / filename;
+
+    // Verificar si el archivo ya existe
+    if (fs::exists(scriptPath))
+    {
+        LOG_CONSOLE("[AssetsWindow] ERROR: Script already exists: %s", filename.c_str());
+
+        // Generar nombre único
+        int counter = 1;
+        std::string baseName = scriptName;
+
+        do
+        {
+            filename = baseName + "_" + std::to_string(counter) + ".lua";
+            scriptPath = fs::path(currentPath) / filename;
+            counter++;
+        } while (fs::exists(scriptPath));
+
+        LOG_CONSOLE("[AssetsWindow] Using unique name: %s", filename.c_str());
+    }
+
+    // Crear archivo de script con template
+    std::ofstream scriptFile(scriptPath);
+
+    if (!scriptFile.is_open())
+    {
+        LOG_CONSOLE("[AssetsWindow] ERROR: Cannot create script file");
+        return;
+    }
+
+    scriptFile << GetDefaultScriptTemplate();
+    scriptFile.close();
+
+    LOG_CONSOLE("[AssetsWindow] Created script: %s", scriptPath.string().c_str());
+
+    // Crear archivo .meta
+    MetaFile meta;
+    meta.uid = MetaFile::GenerateUID();
+    meta.type = AssetType::SCRIPT_LUA;
+    meta.originalPath = scriptPath.string();
+    meta.lastModified = MetaFileManager::GetFileTimestamp(scriptPath.string());
+
+    std::string metaPath = scriptPath.string() + ".meta";
+    meta.Save(metaPath);
+
+    // Importar al sistema de recursos
+    ModuleResources* resources = Application::GetInstance().resources.get();
+    if (resources)
+    {
+        Resource* scriptResource = resources->CreateNewResourceWithUID(
+            scriptPath.string().c_str(),
+            Resource::SCRIPT,
+            meta.uid
+        );
+
+        if (scriptResource)
+        {
+            scriptResource->SetAssetFile(scriptPath.string());
+            scriptResource->SetLibraryFile(scriptPath.string());
+            LOG_CONSOLE("[AssetsWindow] Script registered with UID: %llu", meta.uid);
+        }
+    }
+
+    RefreshAssets();
+
+    // Abrir en el editor interno por defecto
+    if (scriptEditorWindow)
+    {
+        scriptEditorWindow->OpenScript(scriptPath.string());
+    }
+}
+
+std::string AssetsWindow::GetDefaultScriptTemplate()
+{
+    return R"(-- Script Template
+-- This script is attached to a GameObject
+-- Access the GameObject through: self.gameObject
+-- Access the Transform through: self.transform
+
+function Start()
+    -- Called once when the script is initialized
+    Engine.Log("Script Started!")
+    
+    -- Example: Get initial position
+    local pos = self.transform.position
+    Engine.Log("Initial Position: " .. pos.x .. ", " .. pos.y .. ", " .. pos.z)
+end
+
+function Update(deltaTime)
+    -- Called every frame
+    -- deltaTime = time since last frame in seconds
+    
+    -- Example: Rotate object
+    -- local rot = self.transform.rotation
+    -- self.transform:SetRotation(rot.x, rot.y + 90 * deltaTime, rot.z)
+    
+    -- Example: Move with WASD
+    -- local pos = self.transform.position
+    -- local speed = 5.0
+    -- 
+    -- if Input.GetKey("W") then
+    --     self.transform:SetPosition(pos.x, pos.y, pos.z - speed * deltaTime)
+    -- end
+    -- if Input.GetKey("S") then
+    --     self.transform:SetPosition(pos.x, pos.y, pos.z + speed * deltaTime)
+    -- end
+    -- if Input.GetKey("A") then
+    --     self.transform:SetPosition(pos.x - speed * deltaTime, pos.y, pos.z)
+    -- end
+    -- if Input.GetKey("D") then
+    --     self.transform:SetPosition(pos.x + speed * deltaTime, pos.y, pos.z)
+    -- end
+end
+)";
 }

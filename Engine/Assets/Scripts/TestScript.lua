@@ -1,4 +1,4 @@
-﻿-- TestScript.lua - Mover GameObject con WASD
+-- TestScript.lua - Mover GameObject con WASD
 
 local speed = 5.0
 
@@ -34,10 +34,11 @@ function Update(self, dt)
     if Input.GetKey("D") then
         newX = newX + speed * dt
         moved = true
+		print("Hola mundo")
     end
     
     -- Aplicar nueva posición si se movió
     if moved then
-        self.transform:SetPosition(newX, newY, newZ)
+        selftransform:SetPosition(newX, newY, newZ)
     end
 end

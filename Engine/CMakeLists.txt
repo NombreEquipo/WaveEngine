@@ -134,6 +134,10 @@ set(SCRIPTING_SRC
     src/ResourceScript.cpp
     src/ComponentScript.h
     src/ComponentScript.cpp
+    src/ScriptEditorWindow.h
+    src/ScriptEditorWindow.cpp
+    src/EditorPreferences.h
+    src/EditorPreferences.cpp
 )
 
 source_group("Source\\Core" FILES ${CORE_SRC})
