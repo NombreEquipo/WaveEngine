@@ -143,6 +143,15 @@ int Lua_FindGameObject(lua_State* L)
     lua_pushlightuserdata(L, go);
     return 1;
 }
+int Lua_DeleteGameObject(lua_State* L)
+{
+    GameObject* go = (GameObject*)lua_touserdata(L, 1);
+    if (go == NULL)return 0;
+
+    go->MarkForDeletion();
+
+    return 1;
+}
 int Lua_CreatePrimitiveGameObject(lua_State* L)
 {
     ModuleScripting* self = (ModuleScripting*)lua_touserdata(L, lua_upvalueindex(1));
@@ -225,6 +234,9 @@ bool ModuleScripting::Start()
     lua_pushcclosure(L, Lua_CreatePrimitiveGameObject, 1);
     lua_setglobal(L, "CreatePrimitive");
 
+    lua_pushlightuserdata(L, this);
+    lua_pushcclosure(L, Lua_DeleteGameObject, 1);
+    lua_setglobal(L, "DeleteGameObject");
 
     return true;
 

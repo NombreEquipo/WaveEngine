@@ -5,6 +5,7 @@ rot = 0.0;
 speed = 0.005;
 bullets = {}
 angles = {}
+DeleteTime = {}
 
 function Start()
     obj = FindGameObject("this")
@@ -14,7 +15,6 @@ function Start()
     else
         print("Objeto encontrado correctamente")
     end
-    ddd
     print("Hello from Lua Start")   
 end
 
@@ -46,11 +46,14 @@ function Update()
     if Input.MouseRight  and not lastMouseLeft  then    
         bullet = CreatePrimitive("Cube", "bullet")
         table.insert(bullets, bullet)
+
         TempPos = GetPosition(obj)
         SetPosition(bullet,TempPos.x,0,TempPos.z)
+
         local tempA = GetRotation(turret)
         table.insert(angles, tempA.y)
-        print(angles[#angles])
+
+        table.insert(DeleteTime, 1000)
     end   
 
     lastMouseLeft = Input.MouseRight            
@@ -63,7 +66,7 @@ function Update()
 
     cnt = 1
     for _, bullet in ipairs(bullets) do
-    shoot(bullet, angles[cnt])
+    shoot(bullet, angles[cnt],cnt)
     cnt = cnt +1
     end
 
@@ -88,14 +91,20 @@ function atan2(y, x)
     end
 end
 
-function shoot(bullet, ang)
-    local rad = math.rad(ang)
-    local dirX = math.cos(rad)
-    local dirZ = math.sin(rad)
-    local pos = GetPosition(bullet)
-    local speed = 0.05
+function shoot(bullet, ang, counter)
 
-    SetPosition(bullet, pos.x + dirX * speed, pos.y, pos.z + dirZ * speed)
+    if DeleteTime[counter] <= 0 then
+        DeleteGameObject(bullet)
+    else
+        local rad = math.rad(ang)
+        local dirX = math.cos(rad)
+        local dirZ = math.sin(rad)
+        local pos = GetPosition(bullet)
+        local speed = 0.05
+
+        SetPosition(bullet, pos.x + dirX * speed, pos.y, pos.z + dirZ * speed)
+        DeleteTime[counter] = DeleteTime[counter]-1
+    end
 end
 
 function MoveForward(object, angl, speed)
