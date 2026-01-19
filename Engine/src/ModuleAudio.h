@@ -19,16 +19,17 @@
 
 
 #include "Module.h"
+#include "AudioSystem.h"
+#include <memory>
 
 class ModuleAudio : public Module {
 public:
+    ModuleAudio();
+    ~ModuleAudio();
 
-	ModuleAudio();
-	~ModuleAudio();
+    bool Start() override;
+    bool Update() override;
+    bool CleanUp() override;
 
-	bool Start() override;
-
-	bool Update() override;
-
-	bool CleanUp() override;
+    std::unique_ptr<AudioSystem> audioSystem;
 };

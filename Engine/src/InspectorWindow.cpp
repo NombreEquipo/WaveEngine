@@ -9,6 +9,9 @@
 #include "ComponentCamera.h"
 #include "ComponentRotate.h"
 #include "ResourceTexture.h"
+#include "AudioComponent.h"
+#include "AudioSource.h"
+#include "AudioListener.h"
 #include "Log.h"
 
 InspectorWindow::InspectorWindow()
@@ -71,6 +74,24 @@ void InspectorWindow::Draw()
         return;
     }
 
+    ImGui::Spacing();
+    if (ImGui::Button("Add Component", ImVec2(-1, 0))) {
+        ImGui::OpenPopup("AddComponentPopup");
+    }
+
+    if (ImGui::BeginPopup("AddComponentPopup")) {
+        if (ImGui::MenuItem("Audio Source")) {
+            selectedObject->CreateComponent(ComponentType::AUDIOSOURCE);
+            LOG_CONSOLE("Added AudioSource to %s", selectedObject->GetName().c_str());
+        }
+        if (ImGui::MenuItem("Audio Listener")) {
+            selectedObject->CreateComponent(ComponentType::LISTENER);
+            LOG_CONSOLE("Added AudioListener to %s", selectedObject->GetName().c_str());
+        }
+        ImGui::EndPopup();
+    }
+    ImGui::Spacing();
+
     ImGui::Separator();
     DrawGizmoSettings();
     ImGui::Separator();
@@ -80,6 +101,8 @@ void InspectorWindow::Draw()
     DrawMeshComponent(selectedObject);
     DrawMaterialComponent(selectedObject);
     DrawRotateComponent(selectedObject);
+    DrawAudioSourceComponent(selectedObject);
+    DrawAudioListenerComponent(selectedObject);
 
     ImGui::End();
 }
@@ -864,6 +887,39 @@ bool InspectorWindow::DrawGameObjectSection(GameObject* selectedObject)
     }
 
     return objectDeleted;
+}
+
+void InspectorWindow::DrawAudioSourceComponent(GameObject* selectedObject) {
+    AudioSource* source = static_cast<AudioSource*>(selectedObject->GetComponent(ComponentType::AUDIOSOURCE));
+    if (!source) return;
+
+    if (ImGui::CollapsingHeader("Audio Source", ImGuiTreeNodeFlags_DefaultOpen)) {
+        char buf[128];
+        strcpy(buf, source->eventName.c_str());
+        if (ImGui::InputText("Event Name", buf, IM_ARRAYSIZE(buf))) {
+            source->eventName = buf;
+        }
+
+        if (ImGui::Button("Play")) {
+            source->PlayEvent(source->eventName.c_str());
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Stop")) {
+            source->StopEvent(source->eventName.c_str());
+        }
+    }
+}
+
+void InspectorWindow::DrawAudioListenerComponent(GameObject* selectedObject) {
+    AudioListener* listener = static_cast<AudioListener*>(selectedObject->GetComponent(ComponentType::LISTENER));
+    if (!listener) return;
+
+    if (ImGui::CollapsingHeader("Audio Listener", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Text("This object is acting as the 3D ears of the scene.");
+        if (ImGui::Button("Set as Default Listener")) {
+            listener->SetAsDefaultListener();
+        }
+    }
 }
 
 void InspectorWindow::GetAllGameObjects(GameObject* root, std::vector<GameObject*>& outObjects)

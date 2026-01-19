@@ -34,6 +34,9 @@ public:
     void UpdateLocalMatrix();
     void UpdateGlobalMatrix();
 
+    glm::vec3 GetForward() const { return rotationQuat * glm::vec3(0.0f, 0.0f, 1.0f); }
+    glm::vec3 GetUp() const { return rotationQuat * glm::vec3(0.0f, 1.0f, 0.0f); }
+
 private:
     // Transforms
     glm::vec3 position;

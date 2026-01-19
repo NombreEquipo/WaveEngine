@@ -1,4 +1,8 @@
 #pragma once
+#include <ctime>
+#include <iostream>
+#include <vector>
+#include <string>
 #include "Log.h"
 
 // Standard C++ used by Wwise logic
@@ -10,7 +14,7 @@
 // Wwise Memory and Module Management
 #include <AK/SoundEngine/Common/AkMemoryMgr.h>
 #include <AK/SoundEngine/Common/AkMemoryMgrModule.h>
-#include <Common/AkFilePackageLowLevelIODeferred.h>		// Low-level I/O implementation from samples folder
+//#include <Common/AkFilePackageLowLevelIODeferred.h>		// Low-level I/O implementation from samples folder
 
 // Wwise Streaming and Tools
 #include <AK/SoundEngine/Common/IAkStreamMgr.h>

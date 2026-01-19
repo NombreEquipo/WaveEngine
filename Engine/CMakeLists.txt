@@ -63,7 +63,6 @@ set(UTILS_SRC
     src/AudioSystem.h
     src/AudioSystem.cpp
     src/AudioUtility.h
-    src/AudioUtility.cpp
 )
 
 set(GAMEOBJECTS_SRC 
@@ -86,6 +85,11 @@ set(COMPONENTS_SRC
     src/ComponentCamera.h
     src/ComponentRotate.cpp
     src/ComponentRotate.h
+    src/AudioComponent.h
+    src/AudioSource.h
+    src/AudioSource.cpp
+    src/AudioListener.h
+    src/AudioListener.cpp
 )
 
 set(LOADERS_SRC 
@@ -161,16 +165,48 @@ target_link_libraries(Engine PRIVATE Tracy::TracyClient)
 
 
 set(WWISE_SDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/External/Wwise/SDK")
+set(WWISE_SAMPLE_DIR "${WWISE_SDK_DIR}/samples/SoundEngine")
+set(WWISE_LIB_DIR "${WWISE_SDK_DIR}/x64_vc170/Debug/lib")
 
-target_include_directories(Engine PRIVATE "${WWISE_SDK_DIR}/include")
-#set(WWISE_LIB_DIR_RELEASE "${WWISE_SDK_DIR}/Release(StaticCRT)/lib")
+target_compile_definitions(Engine PRIVATE 
+    AK_WIN 
+    WIN32 
+    $<$<CONFIG:Debug>:_DEBUG>
+)
+
+target_include_directories(Engine PRIVATE BEFORE
+    "${WWISE_SDK_DIR}/include"
+    "${WWISE_SAMPLE_DIR}"
+    "${WWISE_SAMPLE_DIR}/Common"
+    "${WWISE_SAMPLE_DIR}/Win32"
+)
+
+set(WWISE_IO_SOURCES
+    "${WWISE_SAMPLE_DIR}/Common/AkFileLocationBase.cpp"
+    "${WWISE_SAMPLE_DIR}/Common/AkFilePackage.cpp"
+    "${WWISE_SAMPLE_DIR}/Common/AkFilePackageLUT.cpp"
+    "${WWISE_SAMPLE_DIR}/Common/AkMultipleFileLocation.cpp"
+    "${WWISE_SAMPLE_DIR}/Win32/AkDefaultIOHookDeferred.cpp"
+)
+
+set_source_files_properties(${WWISE_IO_SOURCES} PROPERTIES 
+    COMPILE_DEFINITIONS "UNICODE;_UNICODE"
+)
+
+target_sources(Engine PRIVATE ${WWISE_IO_SOURCES})
 
 
 target_link_libraries(Engine PRIVATE 
-    "${WWISE_LIB_DIR_RELEASE}/AkSoundEngine.lib"
-    "${WWISE_LIB_DIR_RELEASE}/AkMemoryMgr.lib"
-    "${WWISE_LIB_DIR_RELEASE}/AkStreamMgr.lib"
-    "${WWISE_LIB_DIR_RELEASE}/AkSpatialAudio.lib"
+    "${WWISE_LIB_DIR}/AkSoundEngine.lib"
+    "${WWISE_LIB_DIR}/AkMemoryMgr.lib"
+    "${WWISE_LIB_DIR}/AkStreamMgr.lib"
+    "${WWISE_LIB_DIR}/AkSpatialAudio.lib"
+    "${WWISE_LIB_DIR}/CommunicationCentral.lib"
+    ws2_32.lib 
+    mswsock.lib 
+    dinput8.lib 
+    dsound.lib 
+    dxguid.lib
 )
 
 

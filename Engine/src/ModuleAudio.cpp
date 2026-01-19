@@ -1,27 +1,23 @@
+#include "Application.h"
 #include "ModuleAudio.h"
+#include "Application.h"
 
-ModuleAudio::ModuleAudio() : Module(){
-
+ModuleAudio::ModuleAudio() : Module() {
+    name = "Audio";
+    audioSystem = std::make_unique<AudioSystem>();
 }
 
-ModuleAudio::~ModuleAudio() {
-
-}
+ModuleAudio::~ModuleAudio() {}
 
 bool ModuleAudio::Start() {
-
-
-	return true;
+    return audioSystem->Awake(); // Initializes Wwise
 }
 
 bool ModuleAudio::Update() {
-
-
-	return true;
+    audioSystem->Update();
+    return true;
 }
 
 bool ModuleAudio::CleanUp() {
-
-
-	return true;
+    return audioSystem->CleanUp();
 }
