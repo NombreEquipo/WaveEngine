@@ -4253,7 +4253,7 @@
             ],
             "name": "Camera",
             "script": [
-                "C:\\Users\\joelv\\Documents\\GitHub\\Motor2025\\Engine\\Assets\\Scripts\\Turret.lua"
+                "C:\\Users\\joelv\\Documents\\GitHub\\Motor2025\\Engine\\Assets\\Scripts\\CamController.lua"
             ]
         },
         {
@@ -5162,7 +5162,7 @@
             ],
             "name": "tank",
             "script": [
-                "C:\\Users\\joelv\\Documents\\GitHub\\Motor2025\\Engine\\Assets\\Scripts\\test.lua"
+                "C:\\Users\\joelv\\Documents\\GitHub\\Motor2025\\Engine\\Assets\\Scripts\\TankController.lua"
             ]
         }
     ],
