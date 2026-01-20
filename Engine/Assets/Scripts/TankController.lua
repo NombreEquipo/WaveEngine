@@ -10,8 +10,10 @@ DeleteTime = {}
 function Start()
     obj = FindGameObject("this")
     turret = FindGameObject("TankTurret")
+
     temp = GetRotation(obj)
     x = temp.y
+
     if obj == nil then
         print("ERROR: No se ha encontrado el objeto!")
     else
@@ -43,17 +45,18 @@ function Update()
    
 
     if Input.MouseRight  and not lastMouseLeft  then    
-        bullet = CreatePrimitive("Sphere", "bullet")
+        bullet = CreateGameObject("..//Assets//Bullet//CompleteShell.fbx","new")
         table.insert(bullets, bullet)
 
         TempPos = GetPosition(obj)
-		SetScale(bullet,0.5,0.5,0.5)
+		SetScale(bullet,0.1,0.1,0.1)
         SetPosition(bullet,TempPos.x,0,TempPos.z)
 
         local dx = Input.MouseX  
         local dy = Input.MouseY * -1
         local angle  = atan2(dy,dx)
         local angleDeg = math.deg(angle)
+
         table.insert(angles, angleDeg)
 
         table.insert(DeleteTime, 1000)
@@ -129,6 +132,13 @@ function MoveBackward(object, angl, speed)
 
     SetPosition(object, pos.x - dirX * speed, pos.y, pos.z - dirZ * speed)
 end
+
+
+
+
+
+
+
 
 
 

@@ -193,6 +193,23 @@ int Lua_CreatePrimitiveGameObject(lua_State* L)
     return 1;
 }
 
+int Lua_CreateNewGameObject(lua_State* L)
+{
+    ModuleScripting* self = (ModuleScripting*)lua_touserdata(L, lua_upvalueindex(1));
+
+    std::string fbxPath = luaL_checkstring(L, 1);
+    std::string Objname = luaL_checkstring(L, 2);
+    
+    GameObject* Object = Application::GetInstance().filesystem.get()->LoadFBXAsGameObject(fbxPath);
+
+    Object->name = Objname;
+
+    Application::GetInstance().scene.get()->newObject.push_back(Object);
+
+    lua_pushlightuserdata(L, Object);
+    return 1;
+}
+
 bool ModuleScripting::Start()
 {
     LOG_DEBUG("Initializing ModuleScripting");
@@ -238,6 +255,10 @@ bool ModuleScripting::Start()
     lua_pushlightuserdata(L, this);
     lua_pushcclosure(L, Lua_CreatePrimitiveGameObject, 1);
     lua_setglobal(L, "CreatePrimitive");
+
+    lua_pushlightuserdata(L, this);
+    lua_pushcclosure(L, Lua_CreateNewGameObject, 1);
+    lua_setglobal(L, "CreateGameObject");
 
     lua_pushlightuserdata(L, this);
     lua_pushcclosure(L, Lua_DeleteGameObject, 1);

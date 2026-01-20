@@ -61,12 +61,12 @@ void HierarchyWindow::DrawGameObjectNode(GameObject* gameObject, int childIndex)
 {
     if (gameObject == nullptr)
         return;
-
-    //Temporal solution for delete objects
-    if (Application::GetInstance().GetPlayState() == Application::PlayState::PLAYING) return;
+    if (gameObject->IsMarkedForDeletion())
+        return;
 
     const std::vector<GameObject*>& children = gameObject->GetChildren();
     bool hasChildren = !children.empty();
+
 
     ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow;
 
@@ -76,7 +76,7 @@ void HierarchyWindow::DrawGameObjectNode(GameObject* gameObject, int childIndex)
         nodeFlags |= ImGuiTreeNodeFlags_Selected;
     }
 
-    if (!hasChildren)
+    if (!hasChildren)   
     {
         nodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
     }
@@ -116,7 +116,15 @@ void HierarchyWindow::DrawGameObjectNode(GameObject* gameObject, int childIndex)
         ImGui::SameLine();
 
         // Display the node
+        bool isPlaying = Application::GetInstance().GetPlayState() == Application::PlayState::PLAYING;
+
+        if (isPlaying)
+            ImGui::BeginDisabled();  // Block node interaction
+
         bool nodeOpen = ImGui::TreeNodeEx(gameObject, nodeFlags, "%s", gameObject->GetName().c_str());
+
+        if (isPlaying)
+            ImGui::EndDisabled();
 
         // Handle selection
         if (ImGui::IsItemClicked())
