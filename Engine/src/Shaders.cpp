@@ -600,6 +600,290 @@ bool Shader::CreateNoTexture()
 
     return true;
 }
+
+bool Shader::CreateWater()
+{
+    // 1. Vertex Shader: Passthrough (Geometry shader will handle displacement)
+    const char* vertexShaderSource = "#version 330 core\n"
+        "layout (location = 0) in vec3 aPos;\n"
+        "layout (location = 1) in vec3 aNormal;\n"
+        "layout (location = 2) in vec2 aTexCoord;\n"
+        "\n"
+        "out VS_OUT {\n"
+        "    vec3 pos;\n"
+        "    vec3 normal;\n"
+        "    vec2 texCoord;\n"
+        "} vs_out;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "    vs_out.pos = aPos;\n"
+        "    vs_out.normal = aNormal;\n"
+        "    vs_out.texCoord = aTexCoord;\n"
+        "}\0";
+
+    // 2. Geometry Shader: Dynamic Tessellation & Wave Calculation
+    const char* geometryShaderSource = "#version 330 core\n"
+        "layout (triangles) in;\n"
+        "layout (triangle_strip, max_vertices = 12) out;\n"
+        "\n"
+        "in VS_OUT {\n"
+        "    vec3 pos;\n"
+        "    vec3 normal;\n"
+        "    vec2 texCoord;\n"
+        "} gs_in[];\n"
+        "\n"
+        "out vec3 FragPos;\n"
+        "out vec3 Normal;\n"
+        "out vec2 TexCoord;\n"
+        "out float v_Height;\n"
+        "\n"
+        "uniform mat4 model;\n"
+        "uniform mat4 view;\n"
+        "uniform mat4 projection;\n"
+        "uniform float u_Time;\n"
+        "\n"
+        "uniform float waveSpeed;\n"
+        "uniform float waveAmplitude;\n"
+        "uniform float waveFrequency;\n"
+        "\n"
+        "struct Wave {\n"
+        "    vec2 direction;\n"
+        "    float steepness;\n"
+        "    float wavelength;\n"
+        "};\n"
+        "\n"
+        "vec3 GerstnerWave(vec3 p, Wave w, float time, inout vec3 tangent, inout vec3 binormal)\n"
+        "{\n"
+        "    float k = 2.0 * 3.14159 / w.wavelength;\n"
+        "    float c = sqrt(9.8 / k);\n"
+        "    vec2 d = normalize(w.direction);\n"
+        "    float f = k * (dot(d, p.xz) - c * time * waveSpeed);\n"
+        "    float a = (w.steepness / k) * waveAmplitude;\n"
+        "    \n"
+        "    float cosf = cos(f);\n"
+        "    float sinf = sin(f);\n"
+        "    \n"
+        "    vec3 disp = vec3(\n"
+        "        d.x * (a * cosf),\n"
+        "        a * sinf,\n"
+        "        d.y * (a * cosf)\n"
+        "    );\n"
+        "    \n"
+        "    float wa = k * a;\n"
+        "    tangent += vec3(\n"
+        "        -d.x * d.x * (wa * sinf),\n"
+        "        d.x * (wa * cosf),\n"
+        "        -d.x * d.y * (wa * sinf)\n"
+        "    );\n"
+        "    \n"
+        "    binormal += vec3(\n"
+        "        -d.x * d.y * (wa * sinf),\n"
+        "        d.y * (wa * cosf),\n"
+        "        -d.y * d.y * (wa * sinf)\n"
+        "    );\n"
+        "    \n"
+        "    return disp;\n"
+        "}\n"
+        "\n"
+        "vec3 ApplyWaves(vec3 gridPoint, out vec3 normal, out float height)\n"
+        "{\n"
+        "    vec3 finalPos = gridPoint;\n"
+        "    vec3 tangent = vec3(1.0, 0.0, 0.0);\n"
+        "    vec3 binormal = vec3(0.0, 0.0, 1.0);\n"
+        "    \n"
+        "    // Reduced default steepness for smoother look\n"
+        "    Wave w1 = Wave(vec2(1.0, 0.5), 0.15, 6.0 / waveFrequency);\n"
+        "    Wave w2 = Wave(vec2(0.6, 1.0), 0.10, 3.5 / waveFrequency);\n"
+        "    Wave w3 = Wave(vec2(-0.4, 0.8), 0.10, 2.0 / waveFrequency);\n"
+        "    \n"
+        "    finalPos += GerstnerWave(gridPoint, w1, u_Time, tangent, binormal);\n"
+        "    finalPos += GerstnerWave(gridPoint, w2, u_Time, tangent, binormal);\n"
+        "    finalPos += GerstnerWave(gridPoint, w3, u_Time, tangent, binormal);\n"
+        "    \n"
+        "    normal = normalize(cross(binormal, tangent));\n"
+        "    height = finalPos.y;\n"
+        "    \n"
+        "    return finalPos;\n"
+        "}\n"
+        "\n"
+        "void EmitVertexWithWave(vec3 pos, vec2 tex)\n"
+        "{\n"
+        "    vec3 finalNormal;\n"
+        "    float h;\n"
+        "    vec3 wavePos = ApplyWaves(pos, finalNormal, h);\n"
+        "    \n"
+        "    v_Height = h;\n"
+        "    FragPos = vec3(model * vec4(wavePos, 1.0));\n"
+        "    Normal = normalize(mat3(transpose(inverse(model))) * finalNormal);\n"
+        "    TexCoord = tex;\n"
+        "    gl_Position = projection * view * vec4(FragPos, 1.0);\n"
+        "    EmitVertex();\n"
+        "}\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "    // Simple subdivision: 1 triangle -> 4 triangles\n"
+        "    //      v2\n"
+        "    //      /\\\n"
+        "    //  m3 /__\\ m2\n"
+        "    //    /\\  /\\\n"
+        "    // v0/__\\/__\\v1\n"
+        "    //      m1\n"
+        "\n"
+        "    vec3 v0 = gs_in[0].pos;\n"
+        "    vec3 v1 = gs_in[1].pos;\n"
+        "    vec3 v2 = gs_in[2].pos;\n"
+        "\n"
+        "    vec3 m1 = (v0 + v1) / 2.0;\n"
+        "    vec3 m2 = (v1 + v2) / 2.0;\n"
+        "    vec3 m3 = (v2 + v0) / 2.0;\n"
+        "\n"
+        "    vec2 t0 = gs_in[0].texCoord;\n"
+        "    vec2 t1 = gs_in[1].texCoord;\n"
+        "    vec2 t2 = gs_in[2].texCoord;\n"
+        "\n"
+        "    vec2 tm1 = (t0 + t1) / 2.0;\n"
+        "    vec2 tm2 = (t1 + t2) / 2.0;\n"
+        "    vec2 tm3 = (t2 + t0) / 2.0;\n"
+        "\n"
+        "    // Triangle 1 (Bottom Left)\n"
+        "    EmitVertexWithWave(v0, t0);\n"
+        "    EmitVertexWithWave(m1, tm1);\n"
+        "    EmitVertexWithWave(m3, tm3);\n"
+        "    EndPrimitive();\n"
+        "\n"
+        "    // Triangle 2 (Top)\n"
+        "    EmitVertexWithWave(m3, tm3);\n"
+        "    EmitVertexWithWave(m2, tm2);\n"
+        "    EmitVertexWithWave(v2, t2);\n"
+        "    EndPrimitive();\n"
+        "\n"
+        "    // Triangle 3 (Bottom Right)\n"
+        "    EmitVertexWithWave(m1, tm1);\n"
+        "    EmitVertexWithWave(v1, t1);\n"
+        "    EmitVertexWithWave(m2, tm2);\n"
+        "    EndPrimitive();\n"
+        "\n"
+        "    // Triangle 4 (Center)\n"
+        "    EmitVertexWithWave(m1, tm1);\n"
+        "    EmitVertexWithWave(m2, tm2);\n"
+        "    EmitVertexWithWave(m3, tm3);\n"
+        "    EndPrimitive();\n"
+        "}\0";
+
+    const char* fragmentShaderSource = "#version 330 core\n"
+        "out vec4 FragColor;\n"
+        "\n"
+        "in vec3 FragPos;\n"
+        "in vec3 Normal;\n"
+        "in vec2 TexCoord;\n"
+        "in float v_Height;\n"
+        "\n"
+        "uniform vec3 lightDir;\n"
+        "uniform vec3 viewPos;\n"
+        "uniform float waveAmplitude;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "    vec3 viewDir = normalize(viewPos - FragPos);\n"
+        "    vec3 norm = normalize(Normal);\n"
+        "    vec3 light = normalize(-lightDir);\n"
+        "    vec3 halfwayDir = normalize(light + viewDir);\n"
+        "    \n"
+        "    vec3 deepColor = vec3(0.0, 0.1, 0.4);\n"
+        "    vec3 shallowColor = vec3(0.0, 0.4, 0.6);\n"
+        "    vec3 foamColor = vec3(1.0, 1.0, 1.0);\n"
+        "    \n"
+        "    // Adjust height factor based on amplitude\n"
+        "    float heightFactor = smoothstep(-0.5 * waveAmplitude, 0.8 * waveAmplitude, v_Height);\n"
+        "    vec3 albedo = mix(deepColor, shallowColor, heightFactor);\n"
+        "    \n"
+        "    float foamFactor = smoothstep(0.4 * waveAmplitude, 0.6 * waveAmplitude, v_Height);\n"
+        "    albedo = mix(albedo, foamColor, foamFactor);\n"
+        "    \n"
+        "    vec3 ambient = vec3(0.1) * albedo;\n"
+        "    float diff = max(dot(norm, light), 0.0);\n"
+        "    vec3 diffuse = diff * albedo;\n"
+        "    \n"
+        "    float spec = pow(max(dot(norm, halfwayDir), 0.0), 128.0);\n"
+        "    vec3 specular = vec3(0.8) * spec;\n"
+        "    \n"
+        "    float F0 = 0.02;\n"
+        "    float fresnel = F0 + (1.0 - F0) * pow(1.0 - max(dot(norm, viewDir), 0.0), 5.0);\n"
+        "    \n"
+        "    vec3 result = ambient + diffuse + specular;\n"
+        "    float alpha = mix(0.7, 0.95, fresnel);\n"
+        "    \n"
+        "    FragColor = vec4(result, alpha);\n"
+        "}\0";
+
+    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    glCompileShader(vertexShader);
+
+    int success;
+    char infoLog[512];
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+        std::cerr << "ERROR: Water Vertex Shader Compilation Failed\n" << infoLog << std::endl;
+        return false;
+    }
+
+    // Geometry Shader compilation
+    unsigned int geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+    glShaderSource(geometryShader, 1, &geometryShaderSource, NULL);
+    glCompileShader(geometryShader);
+
+    glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(geometryShader, 512, NULL, infoLog);
+        std::cerr << "ERROR: Water Geometry Shader Compilation Failed\n" << infoLog << std::endl;
+        glDeleteShader(vertexShader);
+        return false;
+    }
+
+    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    glCompileShader(fragmentShader);
+
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+        std::cerr << "ERROR: Water Fragment Shader Compilation Failed\n" << infoLog << std::endl;
+        glDeleteShader(vertexShader);
+        glDeleteShader(geometryShader);
+        return false;
+    }
+
+    shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, geometryShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        std::cerr << "ERROR: Water Shader Program Linking Failed\n" << infoLog << std::endl;
+        glDeleteShader(vertexShader);
+        glDeleteShader(geometryShader);
+        glDeleteShader(fragmentShader);
+        return false;
+    }
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(geometryShader);
+    glDeleteShader(fragmentShader);
+
+    return true;
+}
+
 void Shader::SetInt(const std::string& name, int value) const
 {
     glUniform1i(glGetUniformLocation(shaderProgram, name.c_str()), value);

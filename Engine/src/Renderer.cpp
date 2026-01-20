@@ -1,4 +1,4 @@
-﻿#include "Renderer.h"
+﻿﻿#include "Renderer.h"
 #include "Application.h"
 #include "GameObject.h"
 #include "Transform.h"
@@ -77,6 +77,20 @@ bool Renderer::Start()
     {
         LOG_DEBUG("Outline shader created successfully - Program ID: %d", outlineShader->GetProgramID());
         LOG_CONSOLE("Outline shader compiled successfully");
+    }
+
+    // Initialize water shader
+    waterShader = make_unique<Shader>();
+    if (!waterShader->CreateWater())
+    {
+        LOG_DEBUG("ERROR: Failed to create water shader");
+        LOG_CONSOLE("ERROR: Failed to compile water shader");
+        return false;
+    }
+    else
+    {
+        LOG_DEBUG("Water shader created successfully - Program ID: %d", waterShader->GetProgramID());
+        LOG_CONSOLE("Water shader compiled successfully");
     }
 
     depthShader = make_unique<Shader>();
@@ -389,6 +403,11 @@ bool Renderer::CleanUp()
     if (depthShader)
     {
         depthShader->Delete();
+    }
+
+    if (waterShader)
+    {
+        waterShader->Delete();
     }
 
     if (normalLinesVAO != 0)
@@ -890,7 +909,20 @@ void Renderer::DrawGameObjectIterative(GameObject* gameObject,
 
         const glm::mat4& modelMatrix = transform->GetGlobalMatrix();
 
-        Shader* currentShader = showZBuffer ? depthShader.get() : defaultShader.get();
+        Shader* currentShader = nullptr;
+        
+        if (showZBuffer) {
+             currentShader = depthShader.get();
+        } 
+        else {
+             ComponentMaterial* material = static_cast<ComponentMaterial*>(currentObj->GetComponent(ComponentType::MATERIAL));
+             if (material && material->GetMaterialType() == MaterialType::WATER && waterShader) {
+                 currentShader = waterShader.get();
+             } else {
+                 currentShader = defaultShader.get();
+             }
+        }
+
         currentShader->Use();
 
         glUniformMatrix4fv(glGetUniformLocation(currentShader->GetProgramID(), "projection"),
@@ -909,6 +941,28 @@ void Renderer::DrawGameObjectIterative(GameObject* gameObject,
         {
             depthShader->SetFloat("nearPlane", renderCamera->GetNearPlane());
             depthShader->SetFloat("farPlane", renderCamera->GetFarPlane());
+        }
+        else if (currentShader == waterShader.get())
+        {
+            // Update time uniform for water animation (only when PLAYING)
+            float time = 0.0f;
+            if (Application::GetInstance().GetPlayState() == Application::PlayState::PLAYING) {
+                time = SDL_GetTicks() / 1000.0f;
+            }
+            
+            waterShader->SetFloat("u_Time", time);
+            waterShader->SetVec3("lightDir", glm::vec3(1.0f, -1.0f, -1.0f));
+            waterShader->SetVec3("viewPos", renderCamera->GetPosition());
+
+            if (material) {
+                float speed = material->GetWaveSpeed();
+                float amp = material->GetWaveAmplitude();
+                float freq = material->GetWaveFrequency();
+
+                waterShader->SetFloat("waveSpeed", speed);
+                waterShader->SetFloat("waveAmplitude", amp);
+                waterShader->SetFloat("waveFrequency", freq);
+            }
         }
         else
         {

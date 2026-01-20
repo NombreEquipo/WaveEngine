@@ -1,9 +1,14 @@
-﻿#pragma once
+﻿﻿#pragma once
 
 #include "Component.h"
 #include "ModuleResources.h"  
 #include <string>
 #include <glm/glm.hpp> 
+
+enum class MaterialType {
+    STANDARD,
+    WATER
+};
 
 class ComponentMaterial : public Component {
 public:
@@ -59,6 +64,18 @@ public:
     float GetMetallic() const { return metallic; }
     float GetRoughness() const { return roughness; }
 
+    // Water parameters (Speed, Amplitude, Frequency)
+    void SetWaveSpeed(float speed) { waveSpeed = speed; }
+    void SetWaveAmplitude(float amplitude) { waveAmplitude = amplitude; }
+    void SetWaveFrequency(float frequency) { waveFrequency = frequency; }
+    
+    float GetWaveSpeed() const { return waveSpeed; }
+    float GetWaveAmplitude() const { return waveAmplitude; }
+    float GetWaveFrequency() const { return waveFrequency; }
+
+    MaterialType GetMaterialType() const { return materialType; }
+    void SetMaterialType(MaterialType type) { materialType = type; }
+
     bool HasMaterialProperties() const { return hasMaterialProperties; }
 
     void ReloadTexture();
@@ -84,6 +101,13 @@ private:
     float opacity = 1.0f;
     float metallic = 0.0f;
     float roughness = 0.5f;
+
+    // Water specific properties
+    float waveSpeed = 1.0f;
+    float waveAmplitude = 1.0f;
+    float waveFrequency = 1.0f;
+
+    MaterialType materialType = MaterialType::STANDARD;
 
     bool hasMaterialProperties = false;
 };

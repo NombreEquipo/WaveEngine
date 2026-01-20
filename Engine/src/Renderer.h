@@ -58,6 +58,7 @@ public:
 
     // Shader access
     Shader* GetDefaultShader() const { return defaultShader.get(); }
+    Shader* GetWaterShader() const { return waterShader.get(); }
     Shader* GetOutlineShader() const { return outlineShader.get(); }
     Shader* GetLineShader() const { return lineShader.get(); }
 
@@ -112,6 +113,7 @@ private:
 
     // Shaders
     std::unique_ptr<Shader> defaultShader;
+    std::unique_ptr<Shader> waterShader;
     std::unique_ptr<Shader> lineShader;
     std::unique_ptr<Shader> outlineShader;
     std::unique_ptr<Shader> depthShader;
