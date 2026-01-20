@@ -78,6 +78,9 @@ public:
     const std::vector<ScriptVariable>& GetPublicVariables() const { return publicVariables; }
     void UpdatePublicVariable(size_t index, const ScriptVariable& var);
 
+    void MarkGameObjectForDestroy() { pendingDestroy = true; }
+    bool IsPendingDestroy() const { return pendingDestroy; }
+
 private:
     void CreateLuaTable();
     void DestroyLuaTable();
@@ -97,4 +100,6 @@ private:
     bool startCalled = false;
 
     std::vector<ScriptVariable> publicVariables;
+
+    bool pendingDestroy = false;
 };

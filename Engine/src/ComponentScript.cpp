@@ -33,13 +33,24 @@ void ComponentScript::Enable()
 
 void ComponentScript::Update()
 {
-    if (!active || !HasScript()) return;
+
+    if (!active) {
+        LOG_CONSOLE("[ComponentScript]  Update END (not active) - Owner: %s", owner->GetName().c_str());
+        return;
+    }
+
+    if (!HasScript()) {
+        LOG_CONSOLE("[ComponentScript]  Update END (no script) - Owner: %s", owner->GetName().c_str());
+        return;
+    }
 
     // Solo actualizar en modo PLAYING
     auto& app = Application::GetInstance();
     if (app.GetPlayState() != Application::PlayState::PLAYING) {
+        LOG_CONSOLE("[ComponentScript]  Update END (not playing) - Owner: %s", owner->GetName().c_str());
         return;
     }
+
 
     // Verificar si el script necesita recargarse (hot reload)
     ModuleResources* resources = app.resources.get();
@@ -53,10 +64,21 @@ void ComponentScript::Update()
         }
     }
 
+
     // Llamar Update del script
     float deltaTime = app.time->GetDeltaTime();
+
+
     CallUpdate(deltaTime);
+
+    // Ejecutar destrucción diferida DESPUÉS de Update
+    if (pendingDestroy) {
+        owner->MarkForDeletion();
+        pendingDestroy = false;
+    }
+
 }
+
 
 void ComponentScript::Disable()
 {
@@ -98,7 +120,7 @@ void ComponentScript::OnEditor()
 
             ImGui::SameLine();
 
-            // Botón para recargar manualmente (no haría falta pero lo dejamos por si deja de funcionar en algun punto) (lo quitamos antes de la release)
+            // Botón para recargar manualmente (no haría falta pero lo dejamos por si deja de funcionar en algun punto) (lo quitamos antes de la release)!!!!!!!!!!!
             if (ImGui::Button("Reload")) {
                 ReloadScript();
                 LOG_CONSOLE("[ComponentScript] Manual reload triggered");
@@ -292,17 +314,51 @@ void ComponentScript::CallStart()
 
 void ComponentScript::CallUpdate(float deltaTime)
 {
-    if (!HasScript()) return;
+    // Validaciones previas
+    if (!active) {
+        return;
+    }
 
-    ScriptManager* scriptManager = Application::GetInstance().scripts.get();
+    if (!HasScript()) {
+        return;
+    }
+
+    if (!owner || owner->IsMarkedForDeletion()) {
+        return;
+    }
+
+    // Verificar que estamos en modo PLAYING
+    auto& app = Application::GetInstance();
+    if (app.GetPlayState() != Application::PlayState::PLAYING) {
+        return;
+    }
+
+    ScriptManager* scriptManager = app.scripts.get();
     lua_State* L = scriptManager->GetState();
 
-    if (!L) return;
+    if (!L) {
+        LOG_CONSOLE("[ComponentScript] ERROR: Lua state is null");
+        return;
+    }
+
+    // Hot reload check
+    ModuleResources* resources = app.resources.get();
+    const Resource* res = resources->GetResourceDirect(scriptUID);
+
+    if (res && res->GetType() == Resource::SCRIPT) {
+        const ResourceScript* scriptRes = static_cast<const ResourceScript*>(res);
+        if (scriptRes->NeedsReload()) {
+            LOG_CONSOLE("[ComponentScript] Hot reloading script for: %s", owner->GetName().c_str());
+            ReloadScript();
+        }
+    }
 
     // Obtener la tabla del script
     lua_getglobal(L, luaTableName.c_str());
 
     if (!lua_istable(L, -1)) {
+        LOG_CONSOLE("[ComponentScript] ERROR: Script table not found: %s (Owner: %s)",
+            luaTableName.c_str(), owner->GetName().c_str());
         lua_pop(L, 1);
         return;
     }
@@ -310,21 +366,38 @@ void ComponentScript::CallUpdate(float deltaTime)
     // Obtener la función Update
     lua_getfield(L, -1, "Update");
 
-    if (lua_isfunction(L, -1)) {
-        lua_pushvalue(L, -2);  // Push table as self
-        lua_pushnumber(L, deltaTime);
-
-        if (lua_pcall(L, 2, 0, 0) != LUA_OK) {
-            const char* error = lua_tostring(L, -1);
-            LOG_CONSOLE("[ComponentScript] ERROR in Update(): %s", error);
-            lua_pop(L, 1);
-        }
+    if (!lua_isfunction(L, -1)) {
+        lua_pop(L, 2);  // Pop function + table
+        return;
     }
-    else {
+
+    // Push self (la tabla del script)
+    lua_pushvalue(L, -2);
+
+    // Push deltaTime
+    lua_pushnumber(L, deltaTime);
+
+    // Ejecutar Update(self, deltaTime)
+    if (lua_pcall(L, 2, 0, 0) != LUA_OK) {
+        const char* error = lua_tostring(L, -1);
+
+        LOG_CONSOLE("[ComponentScript] ========================================");
+        LOG_CONSOLE("[ComponentScript] LUA ERROR in Update():");
+        LOG_CONSOLE("[ComponentScript] Owner: %s", owner->GetName().c_str());
+        LOG_CONSOLE("[ComponentScript] Script Table: %s", luaTableName.c_str());
+        LOG_CONSOLE("[ComponentScript] Error: %s", error ? error : "Unknown error");
+        LOG_CONSOLE("[ComponentScript] ========================================");
+
         lua_pop(L, 1);
     }
 
     lua_pop(L, 1);  // Pop table
+
+    // Ejecutar destrucción diferida DESPUÉS de Update
+    if (pendingDestroy) {
+        owner->MarkForDeletion();
+        pendingDestroy = false;
+    }
 }
 
 void ComponentScript::CreateLuaTable()
@@ -336,14 +409,14 @@ void ComponentScript::CreateLuaTable()
 
     // Generar nombre único para la tabla: "Script_GameObjectName_UID"
     std::stringstream ss;
-    ss << "Script_" << owner->GetName() << "_" << scriptUID;
+    ss << "Script_" << owner->GetName() << "_" << scriptUID << "_" << (uintptr_t)this;
     luaTableName = ss.str();
 
     // Crear nueva tabla en Lua
     lua_newtable(L);
     lua_setglobal(L, luaTableName.c_str());
 
-    LOG_DEBUG("[ComponentScript] Created Lua table: %s", luaTableName.c_str());
+    LOG_CONSOLE("[ComponentScript] Created Lua table: %s", luaTableName.c_str());
 }
 
 void ComponentScript::DestroyLuaTable()
@@ -368,7 +441,6 @@ void ComponentScript::SetupLuaEnvironment()
     // Aquí podríamos configurar el entorno Lua del script
     // Por ejemplo, establecer variables específicas del GameObject
 }
-
 bool ComponentScript::CompileAndExecuteScript(const std::string& scriptContent)
 {
     ScriptManager* scriptManager = Application::GetInstance().scripts.get();
@@ -447,20 +519,54 @@ void ComponentScript::SetupScriptEnvironment(lua_State* L)
 {
     // La tabla del script ya está en el stack (-1)
 
-    // Crear tabla gameObject
-    lua_newtable(L);
-    lua_pushstring(L, owner->GetName().c_str());
-    lua_setfield(L, -2, "name");
-    lua_setfield(L, -2, "gameObject");  // script.gameObject = {...}
+    LOG_CONSOLE("[ComponentScript] SetupScriptEnvironment - Owner: %s, This: %p", owner->GetName().c_str(), (void*)this);
+
+    // Crear userdata para el GameObject real
+    GameObject** goUserdata = (GameObject**)lua_newuserdata(L, sizeof(GameObject*));
+    *goUserdata = owner;
+
+    // Asignar metatable GameObject
+    luaL_getmetatable(L, "GameObject");
+    lua_setmetatable(L, -2);
+
+    lua_setfield(L, -2, "gameObject");  // script.gameObject = userdata
+
+    LOG_CONSOLE("[ComponentScript] Injected GameObject userdata");
+
+    // Guardar puntero al ComponentScript para destrucción diferida
+    ComponentScript** scriptUserdata = (ComponentScript**)lua_newuserdata(L, sizeof(ComponentScript*));
+    *scriptUserdata = this;
+    lua_setfield(L, -2, "__componentScript");
+
+    // Función helper Destroy() que MARCA para destruir
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        lua_getfield(L, 1, "__componentScript");
+
+        if (!lua_isuserdata(L, -1)) {
+            LOG_CONSOLE("[Lua] ERROR: __componentScript is not valid");
+            return 0;
+        }
+
+        ComponentScript* script = *(ComponentScript**)lua_touserdata(L, -1);
+        script->MarkGameObjectForDestroy();
+
+        LOG_CONSOLE("[Lua] GameObject marked for deferred destroy: %s", script->owner->GetName().c_str());
+
+        return 0;
+        });
+    lua_setfield(L, -2, "Destroy");
+
+    LOG_CONSOLE("[ComponentScript] Added Destroy() helper with deferred execution");
 
     // Inyectar transform
     Transform* transform = static_cast<Transform*>(owner->GetComponent(ComponentType::TRANSFORM));
     if (transform) {
         CreateTransformUserdata(L, transform);
-        lua_setfield(L, -2, "transform");  // script.transform = userdata
+        lua_setfield(L, -2, "transform");
+        LOG_CONSOLE("[ComponentScript] Injected Transform userdata");
     }
 
-    LOG_DEBUG("[ComponentScript] Injected gameObject and transform into script table");
+    LOG_CONSOLE("[ComponentScript] SetupScriptEnvironment complete");
 }
 
 void ComponentScript::CreateTransformUserdata(lua_State* L, Transform* transform)

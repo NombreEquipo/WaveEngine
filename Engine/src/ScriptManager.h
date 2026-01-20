@@ -11,6 +11,8 @@ extern "C" {
 
 #include <string>
 #include <unordered_map>
+#include <vector>
+#include <functional>
 
 class GameObject;
 class Transform;
@@ -19,6 +21,7 @@ class ScriptManager : public Module {
 private:
     lua_State* L;
     std::unordered_map<std::string, bool> loadedScripts;
+    std::vector<std::function<void()>> pendingOperations;
 
 public:
     ScriptManager();
@@ -27,6 +30,7 @@ public:
     bool Awake() override;
     bool Start() override;
     bool Update() override;
+    bool PostUpdate() override;
     bool CleanUp() override;
 
     bool LoadScript(const std::string& filepath);
@@ -40,8 +44,11 @@ public:
     void RegisterEngineFunctions();
     bool HasGlobalFunction(const std::string& functionName);
 
+    // Deferred operation queue
+    void EnqueueOperation(std::function<void()> operation);
+
     // APIs de Lua
     void RegisterGameObjectAPI();
     void RegisterComponentAPI();
-    void RegisterPrefabAPI();  
+    void RegisterPrefabAPI();
 };

@@ -5,15 +5,21 @@
 #include "Log.h"
 #include "Transform.h"
 #include "GameObject.h"
+#include "Component.h"
 #include "ModuleScene.h"
 #include "ComponentMesh.h"
 #include "ComponentMaterial.h"
 #include "ComponentScript.h"
 #include "ModuleResources.h"
-#include "PrefabManager.h"  
+#include "PrefabManager.h"
+#include "ResourcePrefab.h"
+#include "ComponentCamera.h" 
+#include "Window.h"        
+#include "ModuleCamera.h"   
 #include <SDL3/SDL_scancode.h>
-#include <filesystem>
 
+#include <filesystem>
+#include <cmath>            
 ScriptManager::ScriptManager() : Module(), L(nullptr) {
     name = "ScriptManager";
 }
@@ -40,7 +46,7 @@ bool ScriptManager::Start() {
     RegisterEngineFunctions();
     RegisterGameObjectAPI();
     RegisterComponentAPI();
-    RegisterPrefabAPI();  
+    RegisterPrefabAPI();
 
     LOG_CONSOLE("[ScriptManager] Started successfully");
     return true;
@@ -51,6 +57,22 @@ bool ScriptManager::Update() {
     return true;
 }
 
+// Execute all deferred operations
+bool ScriptManager::PostUpdate() {
+    if (!pendingOperations.empty()) {
+        LOG_DEBUG("[ScriptManager] Executing %zu pending operations", pendingOperations.size());
+
+        // Execute all pending operations
+        for (auto& operation : pendingOperations) {
+            operation();
+        }
+
+        pendingOperations.clear();
+    }
+
+    return true;
+}
+
 bool ScriptManager::CleanUp() {
     if (L) {
         lua_close(L);
@@ -58,8 +80,14 @@ bool ScriptManager::CleanUp() {
     }
 
     loadedScripts.clear();
+    pendingOperations.clear();
     LOG_CONSOLE("[ScriptManager] Cleaned up");
     return true;
+}
+
+// Method to enqueue operations
+void ScriptManager::EnqueueOperation(std::function<void()> operation) {
+    pendingOperations.push_back(std::move(operation));
 }
 
 bool ScriptManager::LoadScript(const std::string& filepath) {
@@ -175,8 +203,8 @@ static int Lua_Input_GetMousePosition(lua_State* L) {
     int x, y;
     Input::GetMousePosition(x, y);
 
-    lua_pushnumber(L, x);
-    lua_pushnumber(L, y);
+    lua_pushnumber(L, static_cast<lua_Number>(x));
+    lua_pushnumber(L, static_cast<lua_Number>(y));
     return 2;
 }
 
@@ -184,6 +212,57 @@ static int Lua_Time_GetDeltaTime(lua_State* L) {
     lua_pushnumber(L, Time::GetDeltaTimeStatic());
     return 1;
 }
+
+static int Lua_Camera_GetScreenToWorldPlane(lua_State* L) {
+    int mouseX = static_cast<int>(luaL_checknumber(L, 1));
+    int mouseY = static_cast<int>(luaL_checknumber(L, 2));
+    float planeY = static_cast<float>(luaL_optnumber(L, 3, 0.0));
+
+    auto& app = Application::GetInstance();
+
+    // Obtener dimensiones de la ventana
+    int screenWidth, screenHeight;
+    app.window->GetWindowSize(screenWidth, screenHeight);
+
+    // Obtener la cámara del editor
+    ComponentCamera* camera = app.camera->GetEditorCamera();
+
+    if (!camera) {
+        LOG_CONSOLE("[Lua] ERROR: No camera available");
+        lua_pushnil(L);
+        lua_pushnil(L);
+        return 2;
+    }
+
+    glm::vec3 rayDir = camera->ScreenToWorldRay(mouseX, mouseY, screenWidth, screenHeight);
+    glm::vec3 rayOrigin = camera->GetPosition();
+
+    // Calcular intersección con el plano Y = planeY
+    if (std::abs(rayDir.y) < 0.0001f) {
+        // El rayo es casi paralelo al plano
+        lua_pushnil(L);
+        lua_pushnil(L);
+        return 2;
+    }
+
+    float t = (planeY - rayOrigin.y) / rayDir.y;
+
+    if (t < 0) {
+        // Intersección detrás de la cámara
+        lua_pushnil(L);
+        lua_pushnil(L);
+        return 2;
+    }
+
+    // Calcular punto de intersección
+    glm::vec3 intersection = rayOrigin + t * rayDir;
+
+    // Retornar coordenadas X y Z (horizontales)
+    lua_pushnumber(L, intersection.x);
+    lua_pushnumber(L, intersection.z);
+    return 2;
+}
+
 
 void ScriptManager::RegisterEngineFunctions() {
     if (!L) {
@@ -215,56 +294,70 @@ void ScriptManager::RegisterEngineFunctions() {
     lua_setfield(L, -2, "GetDeltaTime");
     lua_setglobal(L, "Time");
 
-    LOG_CONSOLE("[ScriptManager] Engine functions registered: Engine, Input, Time");
+    // Camera
+    lua_newtable(L);
+    lua_pushcfunction(L, Lua_Camera_GetScreenToWorldPlane);
+    lua_setfield(L, -2, "GetScreenToWorldPlane");
+    lua_setglobal(L, "Camera");
+
+    LOG_CONSOLE("[ScriptManager] Engine functions registered: Engine, Input, Time, Camera");
 }
+// GAMEOBJECT API
 
 
-// API DE GAMEOBJECT
-
-
-// GameObject.Create(name)
+// GameObject.Create(name) - Deferred operation
 static int Lua_GameObject_Create(lua_State* L) {
     const char* name = luaL_checkstring(L, 1);
 
-    GameObject* obj = Application::GetInstance().scene->CreateGameObject(name);
+    // Create userdata that will be filled in PostUpdate
+    GameObject** udata = static_cast<GameObject**>(lua_newuserdata(L, sizeof(GameObject*)));
+    *udata = nullptr;  // Temporarily null
 
-    if (!obj) {
-        lua_pushnil(L);
-        return 1;
-    }
-
-    GameObject* root = Application::GetInstance().scene->GetRoot();
-    if (root && obj->GetParent() == nullptr) {
-        root->AddChild(obj);
-        LOG_DEBUG("[Lua] GameObject added to scene root: %s", name);
-    }
-
-    // Crear userdata para el GameObject
-    GameObject** udata = (GameObject**)lua_newuserdata(L, sizeof(GameObject*));
-    *udata = obj;
-
-    // Asignar metatable
+    // Assign metatable
     luaL_getmetatable(L, "GameObject");
     lua_setmetatable(L, -2);
 
-    LOG_DEBUG("[Lua] Created GameObject: %s", name);
+    // Enqueue the real creation for PostUpdate
+    auto& app = Application::GetInstance();
+    app.scripts->EnqueueOperation([name, udata]() {
+        GameObject* obj = Application::GetInstance().scene->CreateGameObject(name);
+
+        if (obj) {
+            GameObject* root = Application::GetInstance().scene->GetRoot();
+            if (root && obj->GetParent() == nullptr) {
+                root->AddChild(obj);
+                LOG_DEBUG("[Lua] GameObject added to scene root: %s", name);
+            }
+
+            *udata = obj;  // Assign the created GameObject
+            LOG_DEBUG("[Lua] Created GameObject in PostUpdate: %s", name);
+        }
+        });
 
     return 1;
 }
 
-// GameObject.Destroy(gameObject)
+// GameObject.Destroy(obj) - Deferred operation
 static int Lua_GameObject_Destroy(lua_State* L) {
-    GameObject* obj = *(GameObject**)luaL_checkudata(L, 1, "GameObject");
+    GameObject** udata = static_cast<GameObject**>(luaL_checkudata(L, 1, "GameObject"));
 
-    if (obj) {
-        obj->MarkForDeletion();
-        LOG_DEBUG("[Lua] Marked GameObject '%s' for deletion", obj->GetName().c_str());
+    if (!udata || !*udata) {
+        LOG_CONSOLE("[Lua] ERROR: Invalid GameObject in Destroy()");
+        return 0;
     }
+
+    GameObject* obj = *udata;
+
+    // Enqueue destruction for PostUpdate
+    auto& app = Application::GetInstance();
+    app.scripts->EnqueueOperation([obj]() {
+        obj->MarkForDeletion();
+        LOG_DEBUG("[Lua] GameObject marked for deletion in PostUpdate: %s", obj->GetName().c_str());
+        });
 
     return 0;
 }
 
-// GameObject.Find(name)
 static int Lua_GameObject_Find(lua_State* L) {
     const char* name = luaL_checkstring(L, 1);
 
@@ -274,29 +367,28 @@ static int Lua_GameObject_Find(lua_State* L) {
         return 1;
     }
 
-    // Buscar recursivamente
-    std::function<GameObject* (GameObject*)> findRecursive = [&](GameObject* parent) -> GameObject* {
-        if (parent->GetName() == name) {
-            return parent;
+    std::function<GameObject* (GameObject*, const std::string&)> findByName;
+    findByName = [&](GameObject* node, const std::string& targetName) -> GameObject* {
+        if (node->GetName() == targetName) {
+            return node;
         }
 
-        for (GameObject* child : parent->GetChildren()) {
-            GameObject* found = findRecursive(child);
-            if (found) return found;
+        for (GameObject* child : node->GetChildren()) {
+            GameObject* result = findByName(child, targetName);
+            if (result) return result;
         }
 
         return nullptr;
         };
 
-    GameObject* found = findRecursive(root);
+    GameObject* found = findByName(root, name);
 
     if (!found) {
         lua_pushnil(L);
         return 1;
     }
 
-    // Devolver userdata
-    GameObject** udata = (GameObject**)lua_newuserdata(L, sizeof(GameObject*));
+    GameObject** udata = static_cast<GameObject**>(lua_newuserdata(L, sizeof(GameObject*)));
     *udata = found;
 
     luaL_getmetatable(L, "GameObject");
@@ -305,9 +397,259 @@ static int Lua_GameObject_Find(lua_State* L) {
     return 1;
 }
 
-// gameObject.__index
+// Helper functions for GameObject methods
+static int Lua_GameObject_SetActive(lua_State* L) {
+    GameObject** objPtr = static_cast<GameObject**>(luaL_checkudata(L, 1, "GameObject"));
+
+    if (!objPtr || !*objPtr || (*objPtr)->IsMarkedForDeletion()) {
+        LOG_CONSOLE("[Lua] ERROR: Cannot SetActive on invalid/deleted GameObject");
+        return 0;
+    }
+
+    GameObject* obj = *objPtr;
+    bool active = lua_toboolean(L, 2) != 0;
+
+    // Enqueue state change for PostUpdate
+    auto& app = Application::GetInstance();
+    app.scripts->EnqueueOperation([obj, active]() {
+        if (!obj->IsMarkedForDeletion()) {
+            obj->SetActive(active);
+        }
+        });
+
+    return 0;
+}
+
+static int Lua_GameObject_IsActive(lua_State* L) {
+    GameObject** objPtr = static_cast<GameObject**>(luaL_checkudata(L, 1, "GameObject"));
+
+    if (!objPtr || !*objPtr || (*objPtr)->IsMarkedForDeletion()) {
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    GameObject* obj = *objPtr;
+    lua_pushboolean(L, obj->IsActive());
+    return 1;
+}
+
+static int Lua_GameObject_AddComponent_MeshRenderer(lua_State* L) {
+    GameObject** objPtr = static_cast<GameObject**>(luaL_checkudata(L, 1, "GameObject"));
+
+    if (!objPtr || !*objPtr || (*objPtr)->IsMarkedForDeletion()) {
+        LOG_CONSOLE("[Lua] ERROR: Cannot add component to invalid/deleted GameObject");
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    GameObject* obj = *objPtr;
+
+    // Enqueue component addition for PostUpdate
+    auto& app = Application::GetInstance();
+    app.scripts->EnqueueOperation([obj]() {
+        if (!obj->IsMarkedForDeletion()) {
+            obj->CreateComponent(ComponentType::MESH); 
+            LOG_DEBUG("[Lua] Added MeshRenderer component in PostUpdate");
+        }
+        });
+
+    lua_pushboolean(L, true);
+    return 1;
+}
+
+static int Lua_GameObject_AddComponent_Material(lua_State* L) {
+    GameObject** objPtr = static_cast<GameObject**>(luaL_checkudata(L, 1, "GameObject"));
+
+    if (!objPtr || !*objPtr || (*objPtr)->IsMarkedForDeletion()) {
+        LOG_CONSOLE("[Lua] ERROR: Cannot add component to invalid/deleted GameObject");
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    GameObject* obj = *objPtr;
+
+    // Enqueue component addition for PostUpdate
+    auto& app = Application::GetInstance();
+    app.scripts->EnqueueOperation([obj]() {
+        if (!obj->IsMarkedForDeletion()) {
+            obj->CreateComponent(ComponentType::MATERIAL); 
+            LOG_DEBUG("[Lua] Added Material component in PostUpdate");
+        }
+        });
+
+    lua_pushboolean(L, true);
+    return 1;
+}
+
+static int Lua_GameObject_AddComponent(lua_State* L) {
+    GameObject* obj = *static_cast<GameObject**>(luaL_checkudata(L, 1, "GameObject"));
+    const char* componentType = luaL_checkstring(L, 2);
+
+    if (strcmp(componentType, "MeshRenderer") == 0) {
+        return Lua_GameObject_AddComponent_MeshRenderer(L);
+    }
+
+    if (strcmp(componentType, "Material") == 0) {
+        return Lua_GameObject_AddComponent_Material(L);
+    }
+
+    lua_pushboolean(L, false);
+    return 1;
+}
+
+static int Lua_GameObject_LoadMesh(lua_State* L) {
+    GameObject** objPtr = static_cast<GameObject**>(luaL_checkudata(L, 1, "GameObject"));
+
+    if (!objPtr || !*objPtr || (*objPtr)->IsMarkedForDeletion()) {
+        LOG_CONSOLE("[Lua] ERROR: Cannot load mesh on invalid/deleted GameObject");
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    GameObject* obj = *objPtr;
+    UID meshUID = static_cast<UID>(luaL_checknumber(L, 2));
+
+    Component* comp = obj->GetComponent(ComponentType::MESH);
+    ComponentMesh* mesh = static_cast<ComponentMesh*>(comp);
+    if (!mesh) {
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    // Enqueue mesh load for PostUpdate
+    auto& app = Application::GetInstance();
+    app.scripts->EnqueueOperation([mesh, meshUID]() {
+        mesh->LoadMeshByUID(meshUID);
+        });
+
+    lua_pushboolean(L, true);
+    return 1;
+}
+
+static int Lua_GameObject_LoadTexture(lua_State* L) {
+    GameObject** objPtr = static_cast<GameObject**>(luaL_checkudata(L, 1, "GameObject"));
+
+    if (!objPtr || !*objPtr || (*objPtr)->IsMarkedForDeletion()) {
+        LOG_CONSOLE("[Lua] ERROR: Cannot load texture on invalid/deleted GameObject");
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    GameObject* obj = *objPtr;
+    UID textureUID = static_cast<UID>(luaL_checknumber(L, 2));
+
+    Component* comp = obj->GetComponent(ComponentType::MATERIAL);
+    ComponentMaterial* mat = static_cast<ComponentMaterial*>(comp);
+    if (!mat) {
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    // Enqueue texture load for PostUpdate
+    auto& app = Application::GetInstance();
+    app.scripts->EnqueueOperation([mat, textureUID]() {
+        mat->LoadTextureByUID(textureUID);
+        });
+
+    lua_pushboolean(L, true);
+    return 1;
+}
+
+// Helper for ComponentMesh.SetMesh
+static int Lua_ComponentMesh_SetMesh(lua_State* L) {
+    ComponentMesh* mesh = static_cast<ComponentMesh*>(lua_touserdata(L, lua_upvalueindex(1)));
+    UID meshUID = static_cast<UID>(luaL_checknumber(L, 1));
+
+    // Enqueue mesh change for PostUpdate
+    auto& app = Application::GetInstance();
+    app.scripts->EnqueueOperation([mesh, meshUID]() {
+        mesh->LoadMeshByUID(meshUID);
+        });
+
+    return 0;
+}
+
+// Helper for ComponentMaterial.SetTexture
+static int Lua_ComponentMaterial_SetTexture(lua_State* L) {
+    ComponentMaterial* mat = static_cast<ComponentMaterial*>(lua_touserdata(L, lua_upvalueindex(1)));
+    UID textureUID = static_cast<UID>(luaL_checknumber(L, 1));
+
+    // Enqueue texture change for PostUpdate
+    auto& app = Application::GetInstance();
+    app.scripts->EnqueueOperation([mat, textureUID]() {
+        mat->LoadTextureByUID(textureUID);
+        });
+
+    return 0;
+}
+
+static int Lua_GameObject_GetComponent(lua_State* L) {
+    GameObject** objPtr = static_cast<GameObject**>(luaL_checkudata(L, 1, "GameObject"));
+
+    if (!objPtr || !*objPtr || (*objPtr)->IsMarkedForDeletion()) {
+        LOG_CONSOLE("[Lua] ERROR: Cannot get component from invalid/deleted GameObject");
+        lua_pushnil(L);
+        return 1;
+    }
+
+    GameObject* obj = *objPtr;
+    const char* componentType = luaL_checkstring(L, 2);
+
+    if (strcmp(componentType, "MeshRenderer") == 0) {
+        Component* comp = obj->GetComponent(ComponentType::MESH);
+        ComponentMesh* mesh = static_cast<ComponentMesh*>(comp);
+        if (!mesh) {
+            lua_pushnil(L);
+            return 1;
+        }
+
+        lua_newtable(L);
+
+        lua_pushlightuserdata(L, mesh);
+        lua_pushcclosure(L, Lua_ComponentMesh_SetMesh, 1);
+        lua_setfield(L, -2, "SetMesh");
+
+        return 1;
+    }
+
+    if (strcmp(componentType, "Material") == 0) {
+        Component* comp = obj->GetComponent(ComponentType::MATERIAL);
+        ComponentMaterial* mat = static_cast<ComponentMaterial*>(comp);
+        if (!mat) {
+            lua_pushnil(L);
+            return 1;
+        }
+
+        lua_newtable(L);
+
+        lua_pushlightuserdata(L, mat);
+        lua_pushcclosure(L, Lua_ComponentMaterial_SetTexture, 1);
+        lua_setfield(L, -2, "SetTexture");
+
+        return 1;
+    }
+
+    lua_pushnil(L);
+    return 1;
+}
+
 static int Lua_GameObject_Index(lua_State* L) {
-    GameObject* obj = *(GameObject**)luaL_checkudata(L, 1, "GameObject");
+    GameObject** objPtr = static_cast<GameObject**>(luaL_checkudata(L, 1, "GameObject"));
+
+    if (!objPtr || !*objPtr) {
+        LOG_CONSOLE("[Lua] ERROR: Attempting to access invalid GameObject (null or deleted)");
+        lua_pushnil(L);
+        return 1;
+    }
+
+    GameObject* obj = *objPtr;
+
+    if (obj->IsMarkedForDeletion()) {
+        LOG_CONSOLE("[Lua] WARNING: Accessing GameObject marked for deletion: %s", obj->GetName().c_str());
+        lua_pushnil(L);
+        return 1;
+    }
+
     const char* key = luaL_checkstring(L, 2);
 
     if (strcmp(key, "name") == 0) {
@@ -316,14 +658,16 @@ static int Lua_GameObject_Index(lua_State* L) {
     }
 
     if (strcmp(key, "transform") == 0) {
-        Transform* transform = static_cast<Transform*>(obj->GetComponent(ComponentType::TRANSFORM));
-        if (!transform) {
+        Component* comp = obj->GetComponent(ComponentType::TRANSFORM);
+        Transform* t = static_cast<Transform*>(comp);
+
+        if (!t) {
             lua_pushnil(L);
             return 1;
         }
 
-        Transform** udata = (Transform**)lua_newuserdata(L, sizeof(Transform*));
-        *udata = transform;
+        Transform** udata = static_cast<Transform**>(lua_newuserdata(L, sizeof(Transform*)));
+        *udata = t;
 
         luaL_getmetatable(L, "Transform");
         lua_setmetatable(L, -2);
@@ -331,90 +675,33 @@ static int Lua_GameObject_Index(lua_State* L) {
         return 1;
     }
 
-    // Métodos
-    if (strcmp(key, "AddScript") == 0) {
-        lua_pushcfunction(L, [](lua_State* L) -> int {
-            GameObject* obj = *(GameObject**)luaL_checkudata(L, 1, "GameObject");
-            const char* scriptPath = luaL_checkstring(L, 2);
-
-            // Crear ComponentScript
-            ComponentScript* script = static_cast<ComponentScript*>(obj->CreateComponent(ComponentType::SCRIPT));
-
-            if (!script) {
-                lua_pushboolean(L, false);
-                return 1;
-            }
-
-            // Buscar UID del script
-            ModuleResources* resources = Application::GetInstance().resources.get();
-            UID scriptUID = resources->Find(scriptPath);
-
-            if (scriptUID == 0) {
-                LOG_CONSOLE("[Lua] ERROR: Script not found: %s", scriptPath);
-                lua_pushboolean(L, false);
-                return 1;
-            }
-
-            // Cargar script
-            bool success = script->LoadScriptByUID(scriptUID);
-            lua_pushboolean(L, success);
-
-            return 1;
-            });
+    if (strcmp(key, "SetActive") == 0) {
+        lua_pushcfunction(L, Lua_GameObject_SetActive);
         return 1;
     }
 
-    if (strcmp(key, "SetMesh") == 0) {
-        lua_pushcfunction(L, [](lua_State* L) -> int {
-            GameObject* obj = *(GameObject**)luaL_checkudata(L, 1, "GameObject");
-            const char* meshPath = luaL_checkstring(L, 2);
-
-            ComponentMesh* mesh = static_cast<ComponentMesh*>(obj->GetComponent(ComponentType::MESH));
-            if (!mesh) {
-                mesh = static_cast<ComponentMesh*>(obj->CreateComponent(ComponentType::MESH));
-            }
-
-            ModuleResources* resources = Application::GetInstance().resources.get();
-            UID meshUID = resources->Find(meshPath);
-
-            if (meshUID == 0) {
-                LOG_CONSOLE("[Lua] ERROR: Mesh not found: %s", meshPath);
-                lua_pushboolean(L, false);
-                return 1;
-            }
-
-            bool success = mesh->LoadMeshByUID(meshUID);
-            lua_pushboolean(L, success);
-
-            return 1;
-            });
+    if (strcmp(key, "IsActive") == 0) {
+        lua_pushcfunction(L, Lua_GameObject_IsActive);
         return 1;
     }
 
-    if (strcmp(key, "SetMaterial") == 0) {
-        lua_pushcfunction(L, [](lua_State* L) -> int {
-            GameObject* obj = *(GameObject**)luaL_checkudata(L, 1, "GameObject");
-            const char* texturePath = luaL_checkstring(L, 2);
+    if (strcmp(key, "GetComponent") == 0) {
+        lua_pushcfunction(L, Lua_GameObject_GetComponent);
+        return 1;
+    }
 
-            ComponentMaterial* mat = static_cast<ComponentMaterial*>(obj->GetComponent(ComponentType::MATERIAL));
-            if (!mat) {
-                mat = static_cast<ComponentMaterial*>(obj->CreateComponent(ComponentType::MATERIAL));
-            }
+    if (strcmp(key, "AddComponent") == 0) {
+        lua_pushcfunction(L, Lua_GameObject_AddComponent);
+        return 1;
+    }
 
-            ModuleResources* resources = Application::GetInstance().resources.get();
-            UID textureUID = resources->Find(texturePath);
+    if (strcmp(key, "LoadMesh") == 0) {
+        lua_pushcfunction(L, Lua_GameObject_LoadMesh);
+        return 1;
+    }
 
-            if (textureUID == 0) {
-                LOG_CONSOLE("[Lua] ERROR: Texture not found: %s", texturePath);
-                lua_pushboolean(L, false);
-                return 1;
-            }
-
-            bool success = mat->LoadTextureByUID(textureUID);
-            lua_pushboolean(L, success);
-
-            return 1;
-            });
+    if (strcmp(key, "LoadTexture") == 0) {
+        lua_pushcfunction(L, Lua_GameObject_LoadTexture);
         return 1;
     }
 
@@ -422,7 +709,7 @@ static int Lua_GameObject_Index(lua_State* L) {
 }
 
 void ScriptManager::RegisterGameObjectAPI() {
-    // Crear metatable para GameObject
+    // Create metatable for GameObject
     luaL_newmetatable(L, "GameObject");
 
     lua_pushcfunction(L, Lua_GameObject_Index);
@@ -430,7 +717,7 @@ void ScriptManager::RegisterGameObjectAPI() {
 
     lua_pop(L, 1);
 
-    // Crear tabla GameObject global
+    // Create global GameObject table
     lua_newtable(L);
 
     lua_pushcfunction(L, Lua_GameObject_Create);
@@ -447,10 +734,127 @@ void ScriptManager::RegisterGameObjectAPI() {
     LOG_CONSOLE("[ScriptManager] GameObject API registered");
 }
 
-// API DE TRANSFORM
+// TRANSFORM API
+
+// Helper functions for Transform methods
+static int Lua_Transform_SetPosition(lua_State* L) {
+    Transform** tPtr = static_cast<Transform**>(luaL_checkudata(L, 1, "Transform"));
+
+    if (!tPtr || !*tPtr) {
+        LOG_CONSOLE("[Lua] ERROR: Cannot set position on invalid Transform");
+        return 0;
+    }
+
+    Transform* t = *tPtr;
+
+    // Verificar si el GameObject propietario está marcado para eliminación
+    GameObject* owner = t->GetOwner();
+    if (owner && owner->IsMarkedForDeletion()) {
+        LOG_CONSOLE("[Lua] WARNING: Attempting to set position on deleted GameObject");
+        return 0;
+    }
+
+    float x = static_cast<float>(luaL_checknumber(L, 2));
+    float y = static_cast<float>(luaL_checknumber(L, 3));
+    float z = static_cast<float>(luaL_checknumber(L, 4));
+
+    // Enqueue position change for PostUpdate
+    auto& app = Application::GetInstance();
+    app.scripts->EnqueueOperation([t, x, y, z]() {
+        GameObject* owner = t->GetOwner();
+        if (owner && !owner->IsMarkedForDeletion()) {
+            t->SetPosition(glm::vec3(x, y, z));
+        }
+        });
+
+    return 0;
+}
+
+static int Lua_Transform_SetRotation(lua_State* L) {
+    Transform** tPtr = static_cast<Transform**>(luaL_checkudata(L, 1, "Transform"));
+
+    if (!tPtr || !*tPtr) {
+        LOG_CONSOLE("[Lua] ERROR: Cannot set rotation on invalid Transform");
+        return 0;
+    }
+
+    Transform* t = *tPtr;
+
+    // Verificar si el GameObject propietario está marcado para eliminación
+    GameObject* owner = t->GetOwner();
+    if (owner && owner->IsMarkedForDeletion()) {
+        LOG_CONSOLE("[Lua] WARNING: Attempting to set rotation on deleted GameObject");
+        return 0;
+    }
+
+    float x = static_cast<float>(luaL_checknumber(L, 2));
+    float y = static_cast<float>(luaL_checknumber(L, 3));
+    float z = static_cast<float>(luaL_checknumber(L, 4));
+
+    // Enqueue rotation change for PostUpdate
+    auto& app = Application::GetInstance();
+    app.scripts->EnqueueOperation([t, x, y, z]() {
+        GameObject* owner = t->GetOwner();
+        if (owner && !owner->IsMarkedForDeletion()) {
+            t->SetRotation(glm::vec3(x, y, z));
+        }
+        });
+
+    return 0;
+}
+
+static int Lua_Transform_SetScale(lua_State* L) {
+    Transform** tPtr = static_cast<Transform**>(luaL_checkudata(L, 1, "Transform"));
+
+    if (!tPtr || !*tPtr) {
+        LOG_CONSOLE("[Lua] ERROR: Cannot set scale on invalid Transform");
+        return 0;
+    }
+
+    Transform* t = *tPtr;
+
+    // Verificar si el GameObject propietario está marcado para eliminación
+    GameObject* owner = t->GetOwner();
+    if (owner && owner->IsMarkedForDeletion()) {
+        LOG_CONSOLE("[Lua] WARNING: Attempting to set scale on deleted GameObject");
+        return 0;
+    }
+
+    float x = static_cast<float>(luaL_checknumber(L, 2));
+    float y = static_cast<float>(luaL_checknumber(L, 3));
+    float z = static_cast<float>(luaL_checknumber(L, 4));
+
+    // Enqueue scale change for PostUpdate
+    auto& app = Application::GetInstance();
+    app.scripts->EnqueueOperation([t, x, y, z]() {
+        GameObject* owner = t->GetOwner();
+        if (owner && !owner->IsMarkedForDeletion()) {
+            t->SetScale(glm::vec3(x, y, z));
+        }
+        });
+
+    return 0;
+}
 
 static int Lua_Transform_Index(lua_State* L) {
-    Transform* t = *(Transform**)luaL_checkudata(L, 1, "Transform");
+    Transform** tPtr = static_cast<Transform**>(luaL_checkudata(L, 1, "Transform"));
+
+    if (!tPtr || !*tPtr) {
+        LOG_CONSOLE("[Lua] ERROR: Accessing invalid Transform");
+        lua_pushnil(L);
+        return 1;
+    }
+
+    Transform* t = *tPtr;
+
+    // Verificar si el GameObject propietario está marcado para eliminación
+    GameObject* owner = t->GetOwner();
+    if (owner && owner->IsMarkedForDeletion()) {
+        LOG_CONSOLE("[Lua] WARNING: Accessing Transform of deleted GameObject");
+        lua_pushnil(L);
+        return 1;
+    }
+
     const char* key = luaL_checkstring(L, 2);
 
     if (strcmp(key, "position") == 0) {
@@ -496,38 +900,17 @@ static int Lua_Transform_Index(lua_State* L) {
     }
 
     if (strcmp(key, "SetPosition") == 0) {
-        lua_pushcfunction(L, [](lua_State* L) -> int {
-            Transform* t = *(Transform**)luaL_checkudata(L, 1, "Transform");
-            float x = (float)luaL_checknumber(L, 2);
-            float y = (float)luaL_checknumber(L, 3);
-            float z = (float)luaL_checknumber(L, 4);
-            t->SetPosition(glm::vec3(x, y, z));
-            return 0;
-            });
+        lua_pushcfunction(L, Lua_Transform_SetPosition);
         return 1;
     }
 
     if (strcmp(key, "SetRotation") == 0) {
-        lua_pushcfunction(L, [](lua_State* L) -> int {
-            Transform* t = *(Transform**)luaL_checkudata(L, 1, "Transform");
-            float x = (float)luaL_checknumber(L, 2);
-            float y = (float)luaL_checknumber(L, 3);
-            float z = (float)luaL_checknumber(L, 4);
-            t->SetRotation(glm::vec3(x, y, z));
-            return 0;
-            });
+        lua_pushcfunction(L, Lua_Transform_SetRotation);
         return 1;
     }
 
     if (strcmp(key, "SetScale") == 0) {
-        lua_pushcfunction(L, [](lua_State* L) -> int {
-            Transform* t = *(Transform**)luaL_checkudata(L, 1, "Transform");
-            float x = (float)luaL_checknumber(L, 2);
-            float y = (float)luaL_checknumber(L, 3);
-            float z = (float)luaL_checknumber(L, 4);
-            t->SetScale(glm::vec3(x, y, z));
-            return 0;
-            });
+        lua_pushcfunction(L, Lua_Transform_SetScale);
         return 1;
     }
 
@@ -546,7 +929,7 @@ void ScriptManager::RegisterComponentAPI() {
     LOG_CONSOLE("[ScriptManager] Transform API registered");
 }
 
-//NUEVA API DE PREFABS
+// PREFAB API
 
 // Prefab.Load(name, filepath)
 static int Lua_Prefab_Load(lua_State* L) {
@@ -559,23 +942,96 @@ static int Lua_Prefab_Load(lua_State* L) {
     return 1;
 }
 
-// Prefab.Instantiate(name)
+// Prefab.Instantiate(name) - Deferred operation
 static int Lua_Prefab_Instantiate(lua_State* L) {
     const char* name = luaL_checkstring(L, 1);
 
-    GameObject* instance = PrefabManager::GetInstance().InstantiatePrefab(name);
-
-    if (!instance) {
-        lua_pushnil(L);
-        return 1;
-    }
-
-    // Devolver userdata
-    GameObject** udata = (GameObject**)lua_newuserdata(L, sizeof(GameObject*));
-    *udata = instance;
+    // Create userdata that will be filled in PostUpdate
+    GameObject** udata = static_cast<GameObject**>(lua_newuserdata(L, sizeof(GameObject*)));
+    *udata = nullptr;  // Temporarily null
 
     luaL_getmetatable(L, "GameObject");
     lua_setmetatable(L, -2);
+
+    // Enqueue instantiation for PostUpdate
+    auto& app = Application::GetInstance();
+    app.scripts->EnqueueOperation([name, udata]() {
+        GameObject* instance = nullptr;
+
+        // First check if prefab is already loaded in PrefabManager
+        if (PrefabManager::GetInstance().HasPrefab(name)) {
+            instance = PrefabManager::GetInstance().InstantiatePrefab(name);
+        }
+        else {
+            // Try to find prefab in resources
+            ModuleResources* resources = Application::GetInstance().resources.get();
+
+            // Search for prefab by matching filename in all resources
+            UID prefabUID = 0;
+            const auto& allResources = resources->GetAllResources();
+
+            for (const auto& pair : allResources) {
+                UID uid = pair.first;
+                Resource* res = pair.second;
+
+                if (res->GetType() == Resource::PREFAB) {
+                    std::string assetPath = res->GetAssetFile();
+
+                    // Extract filename from path
+                    size_t lastSlash = assetPath.find_last_of("/\\");
+                    std::string filename = (lastSlash != std::string::npos)
+                        ? assetPath.substr(lastSlash + 1)
+                        : assetPath;
+
+                    // Match either by filename or by exact path
+                    if (filename == name || assetPath == name) {
+                        prefabUID = uid;
+                        break;
+                    }
+                }
+            }
+
+            if (prefabUID != 0) {
+                // Request the prefab resource
+                Resource* res = resources->RequestResource(prefabUID);
+                if (res && res->GetType() == Resource::PREFAB) {
+                    ResourcePrefab* prefabRes = static_cast<ResourcePrefab*>(res);
+                    instance = prefabRes->Instantiate();
+
+                    if (instance) {
+                        // Enable all scripts in the instantiated object and its children
+                        std::function<void(GameObject*)> enableScripts = [&](GameObject* obj) {
+                            // Get all script components and call their Start()
+                            auto components = obj->GetComponents();
+                            for (auto* comp : components) {
+                                if (comp->GetType() == ComponentType::SCRIPT) {
+                                    ComponentScript* script = static_cast<ComponentScript*>(comp);
+                                    if (script->IsActive()) {
+                                        script->CallStart();
+                                    }
+                                }
+                            }
+
+                            // Recursively enable scripts in children
+                            for (GameObject* child : obj->GetChildren()) {
+                                enableScripts(child);
+                            }
+                            };
+
+                        enableScripts(instance);
+                    }
+                }
+            }
+        }
+
+        if (instance) {
+            *udata = instance;
+            LOG_CONSOLE("[Lua] Prefab instantiated in PostUpdate: %s", name);
+        }
+        else {
+            LOG_CONSOLE("[Lua] ERROR: Failed to instantiate prefab: %s", name);
+        }
+        });
 
     return 1;
 }
@@ -593,3 +1049,5 @@ void ScriptManager::RegisterPrefabAPI() {
 
     LOG_CONSOLE("[ScriptManager] Prefab API registered");
 }
+
+

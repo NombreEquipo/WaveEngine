@@ -1,3 +1,5 @@
+-- BULLET CONTROLLER - SIMPLE PROJECTILE
+
 public = {
     speed = 20.0,
     lifetime = 5.0
@@ -5,54 +7,66 @@ public = {
 
 local timeAlive = 0
 local direction = {x = 0, y = 0, z = 0}
+local initialized = false
 
 function Start(self)
-    Engine.Log("Bullet spawned: " .. self.gameObject.name)
+    Engine.Log("=== Bullet Spawned ===")
     
-    -- Calcular dirección basada en la rotación inicial
     local rot = self.transform.rotation
+    
+    if rot == nil then
+        Engine.Log("ERROR: Bullet rotation is nil")
+        return
+    end
+    
     local radians = math.rad(rot.y)
     
+    -- Forward vector en el plano XZ
     direction.x = math.sin(radians)
-    direction.y = 0
+    direction.y = 0  -- Sin componente vertical
     direction.z = math.cos(radians)
     
-    Engine.Log("Bullet direction: " .. direction.x .. ", " .. direction.z)
+    -- Normalizar (debería estar normalizado ya, pero por seguridad)
+    local length = math.sqrt(direction.x * direction.x + direction.z * direction.z)
+    if length > 0 then
+        direction.x = direction.x / length
+        direction.z = direction.z / length
+    end
+    
+    initialized = true
+    
+    Engine.Log(string.format("Bullet initialized | Angle: %.1f° | Direction: (%.2f, 0, %.2f)", 
+        rot.y, direction.x, direction.z))
 end
 
 function Update(self, dt)
-    -- Mover hacia adelante en su dirección
+    if not initialized then
+        return
+    end
+    
     local pos = self.transform.position
     
-    self.transform:SetPosition(
-        pos.x + direction.x * self.public.speed * dt,
-        pos.y + direction.y * self.public.speed * dt,
-        pos.z + direction.z * self.public.speed * dt
-    )
+    if pos == nil then
+        Engine.Log("ERROR: Bullet position is nil")
+        return
+    end
     
-    -- Autodestruir después del tiempo de vida
+    -- Obtener velocidad desde variables públicas
+    local speed = self.public and self.public.speed or 20.0
+    local lifetime = self.public and self.public.lifetime or 5.0
+    
+    -- Mover la bala en la dirección calculada
+    local newX = pos.x + direction.x * speed * dt
+    local newY = pos.y + direction.y * speed * dt
+    local newZ = pos.z + direction.z * speed * dt
+    
+    self.transform:SetPosition(newX, newY, newZ)
+    
+    -- Control de vida
     timeAlive = timeAlive + dt
     
-    if timeAlive >= self.public.lifetime then
-        Engine.Log("Bullet destroyed (lifetime: " .. timeAlive .. "s)")
-        GameObject.Destroy(self.gameObject)
+    if timeAlive >= lifetime then
+        Engine.Log("Bullet destroyed after " .. string.format("%.2f", timeAlive) .. " seconds")
+        self:Destroy()
     end
 end
-
--- ==========================================
--- CÓMO CREAR EL PREFAB DE BALA:
--- ==========================================
---[[
-1. En tu motor, crea un GameObject llamado "Bullet"
-2. Añádele componentes:
-   - ComponentMesh: Usa una esfera pequeña (primitiva)
-     O importa un modelo de bala .fbx
-   - ComponentMaterial: Dale un color rojo/amarillo
-   - ComponentScript: Añade "Assets/Scripts/Bullet.lua"
-3. Ajusta la escala (ej: 0.2, 0.2, 0.2) para que sea pequeña
-4. En el Hierarchy, click derecho en "Bullet"
-5. Selecciona "Save as Prefab..."
-6. Guárdalo en: Assets/Prefabs/Bullet.prefab
-7. Elimina el objeto "Bullet" de la escena
-8. ¡Listo! El tanque ahora puede disparar balas
-]]

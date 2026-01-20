@@ -142,16 +142,32 @@ int GameObject::GetChildIndex(GameObject* child) const {
 }
 
 void GameObject::Update() {
-    if (!active) return;
+    // Si este GameObject está marcado para eliminación, no actualizar
+    if (markedForDeletion) {
+        return;
+    }
+
+    //if (!active) return;
 
     for (auto* component : components) {
         if (component->IsActive()) {
             component->Update();
         }
+
+        // Si durante el Update del componente se marcó para eliminación, detener
+        if (markedForDeletion) {
+            return;
+        }
     }
 
-    for (auto* child : children) {
-        child->Update();
+    // Crear copia de children para iterar de forma segura
+    std::vector<GameObject*> childrenCopy = children;
+
+    for (auto* child : childrenCopy) {
+        // Verificar que el hijo todavía es válido y no está marcado para eliminación
+        if (child && !child->IsMarkedForDeletion()) {
+            child->Update();
+        }
     }
 }
 
@@ -215,7 +231,8 @@ GameObject* GameObject::Deserialize(const nlohmann::json& gameObjectObj, GameObj
             Component* component = nullptr;
             if (type == ComponentType::TRANSFORM) {
                 component = newObject->GetComponent(ComponentType::TRANSFORM);
-            } else {
+            }
+            else {
                 component = newObject->CreateComponent(type);
             }
 

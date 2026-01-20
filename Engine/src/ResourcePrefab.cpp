@@ -91,13 +91,19 @@ GameObject* ResourcePrefab::Instantiate()
         return nullptr;
     }
 
+    // Generate unique name for this instance
+    static int instanceCounter = 0;
+    std::string baseName = instance->GetName();
+    std::string uniqueName = baseName + "_" + std::to_string(instanceCounter++);
+    instance->SetName(uniqueName);
+
     // Add to scene root
     GameObject* root = Application::GetInstance().scene->GetRoot();
     if (root) {
         root->AddChild(instance);
     }
 
-    LOG_DEBUG("[ResourcePrefab] Instantiated prefab: %s", instance->GetName().c_str());
+    LOG_DEBUG("[ResourcePrefab] Instantiated prefab: %s", uniqueName.c_str());
 
     return instance;
 }

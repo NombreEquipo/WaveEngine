@@ -81,6 +81,10 @@ void ModuleResources::LoadResourcesFromMetaFiles() {
     int registered = 0;
     int skipped = 0;
 
+
+    int prefabsFound = 0;
+    int prefabsRegistered = 0;
+
     for (const auto& entry : std::filesystem::recursive_directory_iterator(assetsPath)) {
         if (!entry.is_regular_file()) continue;
 
@@ -90,10 +94,21 @@ void ModuleResources::LoadResourcesFromMetaFiles() {
         if (extension == ".meta") continue;
 
         AssetType assetType = MetaFile::GetAssetType(extension);
+
+
+        if (extension == ".prefab") {
+            LOG_CONSOLE("[ModuleResources] Found .prefab file: %s", assetPath.c_str());
+            LOG_CONSOLE("[ModuleResources] AssetType: %d (7=PREFAB expected)", (int)assetType);
+        }
+
         if (assetType == AssetType::UNKNOWN) continue;
 
         std::string metaPath = assetPath + ".meta";
         if (!std::filesystem::exists(metaPath)) {
+
+            if (extension == ".prefab") {
+                LOG_CONSOLE("[ModuleResources] No .meta file for prefab: %s", assetPath.c_str());
+            }
             skipped++;
             continue;
         }
@@ -101,6 +116,10 @@ void ModuleResources::LoadResourcesFromMetaFiles() {
         MetaFile meta = MetaFile::Load(metaPath);
 
         if (meta.uid == 0) {
+
+            if (extension == ".prefab") {
+                LOG_CONSOLE("[ModuleResources] Invalid UID in .meta for prefab: %s", assetPath.c_str());
+            }
             skipped++;
             continue;
         }
@@ -139,27 +158,37 @@ void ModuleResources::LoadResourcesFromMetaFiles() {
                 registered++;
             }
             break;
+
         case AssetType::SCRIPT_LUA:
             resourceType = Resource::SCRIPT;
             resource = new ResourceScript(meta.uid);
             if (resource) {
                 resource->SetAssetFile(assetPath);
-                // Scripts NO van a Library, permanecen en Assets
                 resource->SetLibraryFile(assetPath);
                 resources[meta.uid] = resource;
                 registered++;
             }
             break;
-        case AssetType::PREFAB:  
+
+        case AssetType::PREFAB:
+
+            prefabsFound++;
+            LOG_CONSOLE("[ModuleResources] Processing prefab: %s", assetPath.c_str());
+            LOG_CONSOLE("[ModuleResources] Prefab UID: %llu", meta.uid);
+
             resourceType = Resource::PREFAB;
-            resource = new ResourcePrefab(meta.uid);
+            resource = new ResourcePrefab(meta.uid);  
+
             if (resource) {
                 resource->SetAssetFile(assetPath);
-                resource->SetLibraryFile(assetPath);  
+                resource->SetLibraryFile(assetPath);
                 resources[meta.uid] = resource;
+                prefabsRegistered++;
                 registered++;
             }
+
             break;
+
         default:
             continue;
         }
@@ -167,7 +196,21 @@ void ModuleResources::LoadResourcesFromMetaFiles() {
 
     LOG_CONSOLE("[ModuleResources] Resources registered: %d, skipped: %d",
         registered, skipped);
+
+
+    LOG_CONSOLE("[ModuleResources] Prefabs found: %d, registered: %d", prefabsFound, prefabsRegistered);
+
+
+    LOG_CONSOLE("[ModuleResources] LISTING ALL PREFABS");
+    for (const auto& [uid, res] : resources) {
+        if (res->GetType() == Resource::PREFAB) {
+            LOG_CONSOLE("[ModuleResources]   - Prefab: %s (UID: %llu)",
+                res->GetAssetFile().c_str(), uid);
+        }
+    }
+    LOG_CONSOLE("[ModuleResources] === END OF PREFAB LIST ===");
 }
+
 UID ModuleResources::Find(const char* fileInAssets) const {
     for (const auto& pair : resources) {
         if (pair.second->GetAssetFile() == fileInAssets) {
@@ -269,7 +312,7 @@ Resource* ModuleResources::CreateNewResourceWithUID(const char* assetsFile, Reso
         resource = new ResourceScript(uid);
         break;
     case Resource::PREFAB:
-        resource = new ResourceScript(uid);
+        resource = new ResourcePrefab(uid);
         break;
     default:
         LOG_CONSOLE("ERROR: Unsupported resource type");

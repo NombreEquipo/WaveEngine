@@ -34,6 +34,9 @@ public:
     void UpdateLocalMatrix();
     void UpdateGlobalMatrix();
 
+    // Getter para el GameObject propietario (necesario para validaciones en Lua)
+    GameObject* GetOwner() const { return owner; }
+
 private:
     // Transforms
     glm::vec3 position;
