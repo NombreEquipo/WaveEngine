@@ -23,7 +23,6 @@ public:
     bool LoadScript(const char* path);
     void PushInput();
     glm::vec3 MouseWorldPos();
-    //int Lua_SetPosition(lua_State* L);
 
     GameObject* owner = NULL;
 

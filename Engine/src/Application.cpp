@@ -142,7 +142,7 @@ bool Application::DoUpdate()
     bool result = true;
     for (const auto& module : moduleList) {
         // Skip scene updates when in editing mode
-        if (playState == PlayState::EDITING && module == scene) {
+        if ((playState == PlayState::EDITING || playState == PlayState::PAUSED) && module == scene) {
             continue;
         }
 

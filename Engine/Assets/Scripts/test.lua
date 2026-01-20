@@ -38,13 +38,14 @@ function Update()
     end
     if Input.MouseLeft  then
         print("CLick")
-            
+        print(Input.MouseX)
+        print(Input.MouseY)
         print(angleDeg)
 
     end   
 
     if Input.MouseRight  and not lastMouseLeft  then    
-        bullet = CreatePrimitive("Cube", "bullet")
+        bullet = CreatePrimitive("Sphere", "bullet")
         table.insert(bullets, bullet)
 
         TempPos = GetPosition(obj)
@@ -59,7 +60,7 @@ function Update()
     lastMouseLeft = Input.MouseRight            
 
     local dx = Input.MouseX  
-    local dy = Input.MouseY 
+    local dy = Input.MouseY * -1
     local angle  = atan2(dy,dx)
     angleDeg = math.deg(angle)
     SetRotation(turret,0,angleDeg,0)
@@ -95,6 +96,10 @@ function shoot(bullet, ang, counter)
 
     if DeleteTime[counter] <= 0 then
         DeleteGameObject(bullet)
+        table.remove(bullets, counter)
+        table.remove(angles, counter)
+        table.remove(DeleteTime, counter)
+
     else
         local rad = math.rad(ang)
         local dirX = math.cos(rad)
@@ -124,39 +129,3 @@ function MoveBackward(object, angl, speed)
 
     SetPosition(object, pos.x - dirX * speed, pos.y, pos.z - dirZ * speed)
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

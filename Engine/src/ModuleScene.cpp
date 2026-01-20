@@ -141,28 +141,26 @@ void ModuleScene::RebuildOctree()
 bool ModuleScene::Update()
 {
     bool Insert = false;
+
     // Update all GameObjects
     for (auto& obj : newObject)
     {
         root->AddChild(obj);
         Insert = true;
     }
-    if (Insert) {
-       /// RebuildOctree();
-        newObject.clear();
-    }
+    if (Insert) newObject.clear();
+    
     if (root)
     {
         root->Update();
     }
 
     // Full rebuild only if explicitly requested
-    if (needsOctreeRebuild)
+    if ( )
     {
         LOG_DEBUG("[ModuleScene] Full octree rebuild requested");
         RebuildOctree();
     }
-
     return true;
 }
 

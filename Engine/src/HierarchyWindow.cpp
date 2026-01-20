@@ -62,6 +62,9 @@ void HierarchyWindow::DrawGameObjectNode(GameObject* gameObject, int childIndex)
     if (gameObject == nullptr)
         return;
 
+    //Temporal solution for delete objects
+    if (Application::GetInstance().GetPlayState() == Application::PlayState::PLAYING) return;
+
     const std::vector<GameObject*>& children = gameObject->GetChildren();
     bool hasChildren = !children.empty();
 
