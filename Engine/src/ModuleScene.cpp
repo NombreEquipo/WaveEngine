@@ -156,7 +156,7 @@ bool ModuleScene::Update()
     }
 
     // Full rebuild only if explicitly requested
-    if ( )
+    if (needsOctreeRebuild)
     {
         LOG_DEBUG("[ModuleScene] Full octree rebuild requested");
         RebuildOctree();
@@ -234,7 +234,9 @@ void ModuleScene::CleanupMarkedObjects(GameObject* parent)
             delete child;
 
             // Mark octree for rebuild after deletion
-            needsOctreeRebuild = true;
+            if (Application::GetInstance().GetPlayState() == Application::PlayState::EDITING) needsOctreeRebuild = true;
+
+            LOG_CONSOLE("GameObject Delete");
         }
         else
         {

@@ -10,6 +10,8 @@ DeleteTime = {}
 function Start()
     obj = FindGameObject("this")
     turret = FindGameObject("TankTurret")
+    temp = GetRotation(obj)
+    x = temp.y
     if obj == nil then
         print("ERROR: No se ha encontrado el objeto!")
     else
@@ -31,28 +33,28 @@ function Update()
     if Input.D then
         SetRotation(obj,0, x, 0)
         x = x + 1
-    end 
-    if Input.A then 
+        rot = rot + 1 
+
+    elseif Input.A then 
         SetRotation(obj,0, x, 0)
         x = x - 1
-    end
-    if Input.MouseLeft  then
-        print("CLick")
-        print(Input.MouseX)
-        print(Input.MouseY)
-        print(angleDeg)
-
-    end   
+        rot = rot - 1
+    end 
+   
 
     if Input.MouseRight  and not lastMouseLeft  then    
         bullet = CreatePrimitive("Sphere", "bullet")
         table.insert(bullets, bullet)
 
         TempPos = GetPosition(obj)
+		SetScale(bullet,0.5,0.5,0.5)
         SetPosition(bullet,TempPos.x,0,TempPos.z)
 
-        local tempA = GetRotation(turret)
-        table.insert(angles, tempA.y)
+        local dx = Input.MouseX  
+        local dy = Input.MouseY * -1
+        local angle  = atan2(dy,dx)
+        local angleDeg = math.deg(angle)
+        table.insert(angles, angleDeg)
 
         table.insert(DeleteTime, 1000)
     end   
@@ -60,18 +62,16 @@ function Update()
     lastMouseLeft = Input.MouseRight            
 
     local dx = Input.MouseX  
-    local dy = Input.MouseY * -1
+    local dy = Input.MouseY
     local angle  = atan2(dy,dx)
     angleDeg = math.deg(angle)
-    SetRotation(turret,0,angleDeg,0)
+    SetRotation(turret,0,angleDeg - rot,0)
 
     cnt = 1
     for _, bullet in ipairs(bullets) do
     shoot(bullet, angles[cnt],cnt)
     cnt = cnt +1
     end
-
-
 end
 
 function atan2(y, x)
@@ -129,3 +129,7 @@ function MoveBackward(object, angl, speed)
 
     SetPosition(object, pos.x - dirX * speed, pos.y, pos.z - dirZ * speed)
 end
+
+
+
+

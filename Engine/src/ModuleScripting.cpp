@@ -209,6 +209,11 @@ bool ModuleScripting::Start()
     lua_pushcclosure(L, Lua_SetRotation, 1);
     lua_setglobal(L, "SetRotation");
 
+    // SetScale 
+    lua_pushlightuserdata(L, this);
+    lua_pushcclosure(L, Lua_SetScale, 1);
+    lua_setglobal(L, "SetScale");
+
     // GetPosition
     lua_pushlightuserdata(L, this);
     lua_pushcclosure(L, Lua_GetPosition, 1);
@@ -407,7 +412,7 @@ bool ModuleScripting::CreateScript(const std::string& name)
         "function Start()\n"
         "    -- Log('Start called from " + name + "')\n"
         "end\n\n"
-        "function Update()\n"
+        "function Update    ()\n"
         "    -- Code here runs every frame\n"
         "end\n";
 
