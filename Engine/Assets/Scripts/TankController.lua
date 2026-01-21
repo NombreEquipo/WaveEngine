@@ -44,7 +44,7 @@ function Update()
     end 
    
 
-    if Input.MouseRight  and not lastMouseLeft  then    
+    if Input.MouseLeft  and not lastMouseLeft  then    
         bullet = CreateGameObject("..//Assets//Bullet//CompleteShell.fbx","new")
         table.insert(bullets, bullet)
 
@@ -52,17 +52,20 @@ function Update()
 		SetScale(bullet,0.1,0.1,0.1)
         SetPosition(bullet,TempPos.x,0,TempPos.z)
 
+
         local dx = Input.MouseX  
         local dy = Input.MouseY * -1
         local angle  = atan2(dy,dx)
-        local angleDeg = math.deg(angle)
+        local angleDeg2 = math.deg(angle)
 
-        table.insert(angles, angleDeg)
+		SetRotation(bullet, 0, angleDeg, 0)
+
+        table.insert(angles, angleDeg2)
 
         table.insert(DeleteTime, 1000)
     end   
 
-    lastMouseLeft = Input.MouseRight            
+    lastMouseLeft = Input.MouseLeft            
 
     local dx = Input.MouseX  
     local dy = Input.MouseY
@@ -132,6 +135,10 @@ function MoveBackward(object, angl, speed)
 
     SetPosition(object, pos.x - dirX * speed, pos.y, pos.z - dirZ * speed)
 end
+
+
+
+
 
 
 
