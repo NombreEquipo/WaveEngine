@@ -1,6 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
 <WwiseDocument Type="WorkUnit" ID="{6930C14D-93A2-4ED9-8A57-1A155F47E29E}" SchemaVersion="133">
 	<Effects>
-		<WorkUnit Name="Default Work Unit" ID="{6930C14D-93A2-4ED9-8A57-1A155F47E29E}" PersistMode="Standalone"/>
+		<WorkUnit Name="Default Work Unit" ID="{6930C14D-93A2-4ED9-8A57-1A155F47E29E}" PersistMode="Standalone">
+			<ChildrenList>
+				<Effect Name="RoomVerb" ID="{035EDA02-5916-4913-BBDE-72069D6BCFAA}" PluginName="Wwise RoomVerb" CompanyID="0" PluginID="118" PluginType="3">
+					<ObjectLists>
+						<ObjectList Name="RTPC">
+							<RTPC Name="" ID="{D9D03A77-D030-4D14-BBDC-78F590AC8295}" ShortID="36890114">
+								<PropertyList>
+									<Property Name="PropertyName" Type="string" Value="ReverbLevel"/>
+								</PropertyList>
+								<ReferenceList>
+									<Reference Name="ControlInput">
+										<ObjectRef Name="TunnelAmount" ID="{5389D694-24F5-4C22-B928-8FE0DD148234}" WorkUnitID="{1BE8EDE9-6B2C-475A-9446-8D1624A2F33F}"/>
+									</Reference>
+									<Reference Name="Curve">
+										<Custom>
+											<Curve Name="" ID="{1E6FBF14-4918-4D16-AE3C-27517E8C35F9}">
+												<PropertyList>
+													<Property Name="Flags" Type="int32" Value="3"/>
+												</PropertyList>
+												<PointList>
+													<Point>
+														<XPos>0</XPos>
+														<YPos>-96.3</YPos>
+														<Flags>5</Flags>
+													</Point>
+													<Point>
+														<XPos>100</XPos>
+														<YPos>4.08441</YPos>
+														<Flags>37</Flags>
+													</Point>
+												</PointList>
+											</Curve>
+										</Custom>
+									</Reference>
+								</ReferenceList>
+							</RTPC>
+						</ObjectList>
+					</ObjectLists>
+				</Effect>
+				<Effect Name="Parametric_EQ" ID="{04311708-9144-47EE-931A-845E1BA59D20}" PluginName="Wwise Parametric EQ" CompanyID="0" PluginID="105" PluginType="3">
+					<PropertyList>
+						<Property Name="FilterTypeBand3" Type="int32" Value="5"/>
+						<Property Name="FrequencyBand3" Type="Real32" Value="8000"/>
+						<Property Name="OnOffBand3" Type="bool" Value="True"/>
+					</PropertyList>
+					<ObjectLists>
+						<ObjectList Name="RTPC">
+							<RTPC Name="" ID="{F88B3CEF-2789-49CB-926C-FA357D0EE345}" ShortID="1028739545">
+								<PropertyList>
+									<Property Name="PropertyName" Type="string" Value="GainBand3"/>
+								</PropertyList>
+								<ReferenceList>
+									<Reference Name="ControlInput">
+										<ObjectRef Name="TunnelAmount" ID="{5389D694-24F5-4C22-B928-8FE0DD148234}" WorkUnitID="{1BE8EDE9-6B2C-475A-9446-8D1624A2F33F}"/>
+									</Reference>
+									<Reference Name="Curve">
+										<Custom>
+											<Curve Name="" ID="{0F495CBC-24F0-4149-A0C4-95E57D95FBF8}">
+												<PropertyList>
+													<Property Name="Flags" Type="int32" Value="3"/>
+												</PropertyList>
+												<PointList>
+													<Point>
+														<XPos>0</XPos>
+														<YPos>0</YPos>
+														<Flags>5</Flags>
+													</Point>
+													<Point>
+														<XPos>100</XPos>
+														<YPos>-19.81512</YPos>
+														<Flags>37</Flags>
+													</Point>
+												</PointList>
+											</Curve>
+										</Custom>
+									</Reference>
+								</ReferenceList>
+							</RTPC>
+						</ObjectList>
+					</ObjectLists>
+				</Effect>
+			</ChildrenList>
+		</WorkUnit>
 	</Effects>
 </WwiseDocument>

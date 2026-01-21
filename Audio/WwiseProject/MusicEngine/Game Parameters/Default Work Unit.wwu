@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <WwiseDocument Type="WorkUnit" ID="{1BE8EDE9-6B2C-475A-9446-8D1624A2F33F}" SchemaVersion="133">
 	<GameParameters>
-		<WorkUnit Name="Default Work Unit" ID="{1BE8EDE9-6B2C-475A-9446-8D1624A2F33F}" PersistMode="Standalone"/>
+		<WorkUnit Name="Default Work Unit" ID="{1BE8EDE9-6B2C-475A-9446-8D1624A2F33F}" PersistMode="Standalone">
+			<ChildrenList>
+				<GameParameter Name="TunnelAmount" ID="{5389D694-24F5-4C22-B928-8FE0DD148234}">
+					<PropertyList>
+						<Property Name="InitialValue" Type="Real64" Value="0"/>
+					</PropertyList>
+				</GameParameter>
+			</ChildrenList>
+		</WorkUnit>
 	</GameParameters>
 </WwiseDocument>

@@ -9,6 +9,28 @@
 							<ObjectRef Name="System" ID="{B8D9EB09-15D3-4FCD-A15A-6504F9D3BE2B}" WorkUnitID="{BA17C15E-89BA-4B91-9662-A77F54F6ED50}"/>
 						</Reference>
 					</ReferenceList>
+					<ChildrenList>
+						<Bus Name="SFX" ID="{697B869C-8521-4EB7-8D9B-908050287E8C}">
+							<ObjectLists>
+								<ObjectList Name="Effects">
+									<EffectSlot Name="" ID="{581A5EA2-AFAC-4C5A-A690-C21CA55C10AA}" ShortID="331671477">
+										<ReferenceList>
+											<Reference Name="Effect" PluginName="Wwise RoomVerb" CompanyID="0" PluginID="118" PluginType="3">
+												<ObjectRef Name="RoomVerb" ID="{035EDA02-5916-4913-BBDE-72069D6BCFAA}" WorkUnitID="{6930C14D-93A2-4ED9-8A57-1A155F47E29E}"/>
+											</Reference>
+										</ReferenceList>
+									</EffectSlot>
+									<EffectSlot Name="" ID="{29650A0A-A564-44AE-A9A9-6DEBA27CA5A6}" ShortID="136886321">
+										<ReferenceList>
+											<Reference Name="Effect" PluginName="Wwise Parametric EQ" CompanyID="0" PluginID="105" PluginType="3">
+												<ObjectRef Name="Parametric_EQ" ID="{04311708-9144-47EE-931A-845E1BA59D20}" WorkUnitID="{6930C14D-93A2-4ED9-8A57-1A155F47E29E}"/>
+											</Reference>
+										</ReferenceList>
+									</EffectSlot>
+								</ObjectList>
+							</ObjectLists>
+						</Bus>
+					</ChildrenList>
 				</Bus>
 			</ChildrenList>
 		</WorkUnit>
