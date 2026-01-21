@@ -6,6 +6,7 @@
 #include "ModuleResources.h"
 #include "ResourceTexture.h"
 #include "ResourceMesh.h"
+#include "ResourceShader.h"
 #include "Log.h"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -2120,7 +2121,7 @@ bool AssetsWindow::ImportAssetToLibrary(const std::string& assetPath)
 
     bool success = false;
 
-    if (extension == ".fbx")
+    /*if (extension == ".fbx")
     {
         success = ImportFBXToLibrary(assetPath, meta);
     }
@@ -2129,6 +2130,53 @@ bool AssetsWindow::ImportAssetToLibrary(const std::string& assetPath)
     {
         success = ImportTextureToLibrary(assetPath, meta);
     }
+    else
+    {
+        LOG_CONSOLE("[AssetsWindow] ERROR: Unsupported file type: %s", extension.c_str());
+        return false;
+    }*/
+
+    if (extension == ".png" || extension == ".jpg" || extension == ".jpeg" || extension == ".tga" || extension == ".dds")
+    {
+        success = ImportTextureToLibrary(assetPath, meta);
+    }
+    else if (extension == ".vert" || extension == ".frag" || extension == ".glsl")
+    {
+        // register shader resource only (no library conversion)
+        ModuleResources* resources = Application::GetInstance().resources.get();
+        if (!resources) return false;
+
+        // if no uid yet, meta already created earlier in your function
+        Resource* r = resources->CreateNewResourceWithUID(assetPath.c_str(), Resource::SHADER, meta.uid);
+        if (!r) return false;
+
+        ResourceShader* rs = static_cast<ResourceShader*>(r);
+
+        // if importing .vert, use it as vertex path; derive frag
+        if (extension == ".vert")
+        {
+            rs->SetVertexPath(assetPath);
+            // frag derived on LoadInMemory
+        }
+        else if (extension == ".frag")
+        {
+            // if user imports frag first, try to pair with same stem .vert
+            std::filesystem::path p(assetPath);
+            std::string vpath = (p.parent_path() / (p.stem().string() + ".vert")).string();
+            rs->SetVertexPath(vpath);
+            rs->SetFragmentPath(assetPath);
+        }
+        else // .glsl
+        {
+            // treat as vertex path and pair .frag by convention
+            rs->SetVertexPath(assetPath);
+        }
+
+        // Optionally compile immediately (so errors go to console now)
+        r->LoadInMemory();
+        success = true;
+    }
+
     else
     {
         LOG_CONSOLE("[AssetsWindow] ERROR: Unsupported file type: %s", extension.c_str());

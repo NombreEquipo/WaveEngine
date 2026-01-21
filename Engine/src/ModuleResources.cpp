@@ -1,6 +1,7 @@
 ﻿#include "ModuleResources.h"
 #include "ResourceTexture.h"
 #include "ResourceMesh.h"
+#include "ResourceShader.h"
 #include "LibraryManager.h"
 #include "MetaFile.h"
 #include "TextureImporter.h"
@@ -8,6 +9,7 @@
 #include "Log.h"
 #include <filesystem>
 #include <random>
+
 
 // Resource Implementation
 Resource::Resource(UID uid, Type type)
@@ -48,6 +50,17 @@ bool ModuleResources::Start() {
 }
 
 bool ModuleResources::Update() {
+    for (auto& it : resources)
+    {
+        Resource* r = it.second;
+        if (!r) continue;
+        if (r->GetType() == Resource::SHADER && r->IsLoadedToMemory())
+        {
+            ResourceShader* rs = static_cast<ResourceShader*>(r);
+            rs->CheckAndHotReload();
+        }
+    }
+   
     return true;
 }
 
@@ -219,6 +232,8 @@ UID ModuleResources::ImportFile(const char* newFileInAssets) {
         std::string metaPath = std::string(newFileInAssets) + ".meta";
         meta.Save(metaPath);
     }
+    /*if (ext == ".vert" || ext == ".frag" || ext == ".glsl" || ext == ".shader")
+        return Resource::SHADER;*/
 
     return meta.uid;
 }
@@ -334,6 +349,9 @@ Resource::Type ModuleResources::GetResourceTypeFromExtension(const std::string& 
 
     if (ext == ".mesh") {
         return Resource::MESH;
+    }
+    if (ext == ".vert" || ext == ".frag" || ext == ".glsl" || ext == ".shader") {
+        return Resource::SHADER;
     }
 
     return Resource::UNKNOWN;

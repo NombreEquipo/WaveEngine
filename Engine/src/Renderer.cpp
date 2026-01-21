@@ -5,6 +5,8 @@
 #include "ComponentMesh.h"
 #include "ComponentMaterial.h"
 #include "ModuleEditor.h"
+#include "ResourceShader.h"
+
 
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
@@ -773,7 +775,21 @@ void Renderer::DrawScene(ComponentCamera* renderCamera, ComponentCamera* culling
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_STENCIL_TEST);
 
-    defaultShader->Use();
+    /*defaultShader->Use();*/
+    //ComponentMaterial* mat = static_cast<ComponentMaterial*>(gameObject->GetComponent(ComponentType::MATERIAL));
+    //Shader* s = GetShaderForMaterial(mat);
+    //if (!s) s = defaultShader.get();
+
+    //s->Use();
+    //s->SetMat4("projection", renderCamera->GetProjectionMatrix());
+    //s->SetMat4("view", renderCamera->GetViewMatrix());
+    //s->SetMat4("model", globalMatrix);
+
+    //// 贴图绑定仍然走你原来的 material->Bind() / defaultTexture->Bind()
+    //ApplyMaterialUniforms(s, mat);
+
+    // draw mesh...
+
 }
 
 void Renderer::DrawAllAABBs(GameObject* gameObject)
@@ -1534,4 +1550,51 @@ void Renderer::BindGameFramebuffer()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, gameFbo);
     glViewport(0, 0, gameFramebufferWidth, gameFramebufferHeight);
+}
+
+static Shader* GetShaderForMaterial(ComponentMaterial* mat)
+{
+    if (!mat) return Application::GetInstance().renderer->GetDefaultShader(); // 如果你没有 getter，就直接返回 nullptr
+
+    UID suid = mat->GetShaderUID();
+    if (suid == 0) return nullptr;
+
+    ModuleResources* res = Application::GetInstance().resources.get();
+    Resource* r = res ? res->GetResourceDirect(suid) : nullptr;
+    if (!r || r->GetType() != Resource::SHADER) return nullptr;
+
+    if (!r->IsLoadedToMemory())
+        r->LoadInMemory();
+
+    ResourceShader* rs = static_cast<ResourceShader*>(r);
+    return rs->GetRuntimeShader();
+}
+
+static void ApplyMaterialUniforms(Shader* shader, ComponentMaterial* mat)
+{
+    if (!shader || !mat) return;
+    for (const auto& kv : mat->GetAllUniforms())
+    {
+        const std::string& name = kv.first;
+        const auto& v = kv.second;
+
+        switch (v.type)
+        {
+        case ResourceShader::UniformType::Float:
+            shader->SetFloat(name, v.v4.x);
+            break;
+        case ResourceShader::UniformType::Int:
+            shader->SetInt(name, v.i);
+            break;
+        case ResourceShader::UniformType::Bool:
+            shader->SetBool(name, v.b);
+            break;
+        case ResourceShader::UniformType::Vec3:
+            shader->SetVec3(name, glm::vec3(v.v4));
+            break;
+        case ResourceShader::UniformType::Vec4:
+            shader->SetVec4(name, v.v4);
+            break;
+        }
+    }
 }

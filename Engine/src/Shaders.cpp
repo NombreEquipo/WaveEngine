@@ -614,3 +614,71 @@ void Shader::SetBool(const std::string& name, bool value) const
 {
     glUniform1i(glGetUniformLocation(shaderProgram, name.c_str()), (int)value);
 }
+
+static bool CompileStage(GLuint stage, const char* src, std::string* outErr)
+{
+    glShaderSource(stage, 1, &src, nullptr);
+    glCompileShader(stage);
+
+    GLint ok = 0;
+    glGetShaderiv(stage, GL_COMPILE_STATUS, &ok);
+    if (!ok)
+    {
+        GLint len = 0;
+        glGetShaderiv(stage, GL_INFO_LOG_LENGTH, &len);
+        std::string log(len, '\0');
+        glGetShaderInfoLog(stage, len, nullptr, log.data());
+        if (outErr) *outErr = log;
+        return false;
+    }
+    return true;
+}
+
+bool Shader::CreateFromSource(const std::string& vertexSrc,
+    const std::string& fragmentSrc,
+    std::string* outErrorLog)
+{
+    GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+    GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+
+    std::string err;
+    if (!CompileStage(vs, vertexSrc.c_str(), &err))
+    {
+        if (outErrorLog) *outErrorLog = "Vertex compile error:\n" + err;
+        glDeleteShader(vs);
+        glDeleteShader(fs);
+        return false;
+    }
+    if (!CompileStage(fs, fragmentSrc.c_str(), &err))
+    {
+        if (outErrorLog) *outErrorLog = "Fragment compile error:\n" + err;
+        glDeleteShader(vs);
+        glDeleteShader(fs);
+        return false;
+    }
+
+    shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vs);
+    glAttachShader(shaderProgram, fs);
+    glLinkProgram(shaderProgram);
+
+    glDeleteShader(vs);
+    glDeleteShader(fs);
+
+    GLint linked = 0;
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &linked);
+    if (!linked)
+    {
+        GLint len = 0;
+        glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &len);
+        std::string log(len, '\0');
+        glGetProgramInfoLog(shaderProgram, len, nullptr, log.data());
+        if (outErrorLog) *outErrorLog = "Link error:\n" + log;
+
+        glDeleteProgram(shaderProgram);
+        shaderProgram = 0;
+        return false;
+    }
+
+    return true;
+}
