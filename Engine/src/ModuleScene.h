@@ -35,6 +35,8 @@ public:
     // Scene serialization
     bool SaveScene(const std::string& filepath);
     bool LoadScene(const std::string& filepath);
+    // Append game objects from a scene file without clearing the current scene
+    bool LoadSceneAppend(const std::string& filepath);
     void ClearScene();
 
     // for raycast visualization

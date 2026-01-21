@@ -20,6 +20,57 @@ ModuleScene::ModuleScene() : Module()
     filesystem = nullptr;
 }
 
+bool ModuleScene::LoadSceneAppend(const std::string& filepath)
+{
+    LOG_CONSOLE("Appending scene from: %s", filepath.c_str());
+
+    // Read file
+    std::ifstream file(filepath);
+    if (!file.is_open()) {
+        LOG_CONSOLE("ERROR: Failed to open file for reading: %s", filepath.c_str());
+        return false;
+    }
+
+    nlohmann::json document;
+
+    try {
+        file >> document;
+    }
+    catch (const nlohmann::json::parse_error& e) {
+        LOG_CONSOLE("ERROR: Failed to parse JSON file: %s", e.what());
+        file.close();
+        return false;
+    }
+
+    file.close();
+
+    // Deserialize and append GameObjects
+    if (document.contains("gameObjects") && document["gameObjects"].is_array()) {
+        const nlohmann::json& gameObjectsArray = document["gameObjects"];
+
+        for (size_t i = 0; i < gameObjectsArray.size(); ++i) {
+            GameObject* obj = GameObject::Deserialize(gameObjectsArray[i], root);
+            if (!obj) {
+                LOG_CONSOLE("WARNING: Failed to deserialize GameObject at index %zu", i);
+            }
+        }
+    }
+
+    // Relink Scene Camera if any camera exists in appended hierarchy
+    if (root) {
+        ComponentCamera* foundCamera = FindCameraInHierarchy(root);
+        if (foundCamera) {
+            Application::GetInstance().camera->SetSceneCamera(foundCamera);
+        }
+    }
+
+    // Mark octree for rebuild
+    needsOctreeRebuild = true;
+
+    LOG_CONSOLE("Scene appended successfully");
+    return true;
+}
+
 ModuleScene::~ModuleScene()
 {
     if (root)

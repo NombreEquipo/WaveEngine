@@ -123,6 +123,25 @@ bool FileSystem::Start()
         app.camera->SetSceneCamera(sceneCamera);
     }
 
+    // Append particle emitters from Smoke scene if available
+    {
+        namespace fs = std::filesystem;
+        fs::path sceneDir = LibraryManager::GetAssetsRoot();
+        // Assume Scene folder is sibling of Assets, as used elsewhere
+        fs::path sceneFolder = sceneDir.parent_path() / "Scene";
+        fs::path smokeScenePath = sceneFolder / "Smoke.json";
+
+        if (fs::exists(smokeScenePath))
+        {
+            Application::GetInstance().scene->LoadSceneAppend(smokeScenePath.string());
+            LOG_CONSOLE("[FileSystem] Appended Smoke scene: %s", smokeScenePath.string().c_str());
+        }
+        else
+        {
+            LOG_DEBUG("[FileSystem] Smoke scene not found at: %s", smokeScenePath.string().c_str());
+        }
+    }
+
     return true;
 }
 
