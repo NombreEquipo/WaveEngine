@@ -82,6 +82,9 @@ public:
     int GetCullFaceMode() const { return cullFaceMode; }
     void SetCullFaceMode(int mode); // 0=Back, 1=Front, 2=Both
 
+    void SetLightDir(const glm::vec3& dir) { lightDir = dir; }
+    glm::vec3 GetLightDir() const { return lightDir; }
+
 	// Framebuffer management (Scene window)
     void CreateFramebuffer(int width, int height);
     void ResizeFramebuffer(int width, int height);
@@ -130,6 +133,7 @@ private:
     float clearColorG = 0.25f;
     float clearColorB = 0.3f;
     int cullFaceMode = 0; // GL_BACK
+    glm::vec3 lightDir = glm::vec3(1.0f, -1.0f, -1.0f);
 
     // Normal visualization buffers (reused to avoid repeated allocations)
     GLuint normalLinesVAO = 0;

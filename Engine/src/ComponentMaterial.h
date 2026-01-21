@@ -81,6 +81,8 @@ public:
     MaterialType GetMaterialType() const { return materialType; }
     void SetMaterialType(MaterialType type) { materialType = type; }
 
+    int GetLightingMode() const { return lightingMode; }
+
     bool HasMaterialProperties() const { return hasMaterialProperties; }
 
     void ReloadTexture();
@@ -114,6 +116,7 @@ private:
     float waveSpeed = 1.0f;
     float waveAmplitude = 1.0f;
     float waveFrequency = 1.0f;
+    int lightingMode = 1; // 0 = Per-Vertex, 1 = Per-Pixel
 
     MaterialType materialType = MaterialType::STANDARD;
 

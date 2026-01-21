@@ -17,7 +17,8 @@ ComponentMaterial::ComponentMaterial(GameObject* owner)
     texturePath(""),
     originalTexturePath(""),
     useCheckerboard(false),
-    hasMaterialProperties(false)  
+    hasMaterialProperties(false),
+    lightingMode(1)  
 {
 }
 
@@ -301,6 +302,13 @@ void ComponentMaterial::OnEditor()
             SetDiffuseColor(diffuse);
             changed = true;
         }
+
+        ImGui::Separator();
+        ImGui::Text("Lighting Mode:");
+        const char* modes[] = { "Vertex (Gouraud - Faceted)", "Pixel (Blinn-Phong - Smooth)" };
+        if (ImGui::Combo("##LightingMode", &lightingMode, modes, IM_ARRAYSIZE(modes))) {
+            changed = true;
+        }
     }
 }
 
@@ -521,6 +529,7 @@ void ComponentMaterial::Serialize(nlohmann::json& componentObj) const
         componentObj["opacity"] = opacity;
         componentObj["metallic"] = metallic;
         componentObj["roughness"] = roughness;
+        componentObj["lightingMode"] = lightingMode;
     }
 
     if (shaderUID != 0) {
@@ -583,6 +592,9 @@ void ComponentMaterial::Deserialize(const nlohmann::json& componentObj)
             }
             if (componentObj.contains("roughness")) {
                 roughness = componentObj["roughness"].get<float>();
+            }
+            if (componentObj.contains("lightingMode")) {
+                lightingMode = componentObj["lightingMode"].get<int>();
             }
         }
     }

@@ -983,7 +983,7 @@ void Renderer::DrawGameObjectIterative(GameObject* gameObject,
             currentShader->SetInt("hasTexture", hasTexture ? 1 : 0);
 
             // Configure light direction
-            currentShader->SetVec3("lightDir", glm::vec3(1.0f, -1.0f, -1.0f));
+            currentShader->SetVec3("lightDir", lightDir);
 
             if (hasTexture)
             {
@@ -1007,6 +1007,10 @@ void Renderer::DrawGameObjectIterative(GameObject* gameObject,
                     currentShader->SetVec3("materialDiffuse", glm::vec3(0.6f, 0.6f, 0.6f));
                 }
             }
+
+            // Send lighting mode (0 = Vertex, 1 = Pixel)
+            int lightingMode = material ? material->GetLightingMode() : 1;
+            currentShader->SetInt("lightingMode", lightingMode);
 
             // Set the texture sampler uniform
             //  Use the correct uniform location or name based on shader
