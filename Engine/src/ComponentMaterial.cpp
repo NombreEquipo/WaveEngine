@@ -5,8 +5,10 @@
 #include "ResourceTexture.h"
 #include "Renderer.h"
 #include "Texture.h"
+#include "ResourceShader.h"
 #include "Log.h"
 #include <glad/glad.h>
+#include <SDL3/SDL_timer.h>
 
 ComponentMaterial::ComponentMaterial(GameObject* owner)
     : Component(owner, ComponentType::MATERIAL),
@@ -22,6 +24,7 @@ ComponentMaterial::ComponentMaterial(GameObject* owner)
 ComponentMaterial::~ComponentMaterial()
 {
     ReleaseCurrentTexture();
+    ReleaseCurrentShader();
 }
 
 void ComponentMaterial::Update()
@@ -39,6 +42,50 @@ void ComponentMaterial::OnEditor()
         if (ImGui::Combo("Shader Type", &currentType, materialTypes, IM_ARRAYSIZE(materialTypes)))
         {
             materialType = static_cast<MaterialType>(currentType);
+        }
+
+        ImGui::Separator();
+        ImGui::Text("Custom Shader:");
+        ImGui::SameLine();
+
+        std::string currentShaderName = "None (Default)";
+        if (shaderUID != 0) {
+            ModuleResources* resources = Application::GetInstance().resources.get();
+            const Resource* res = resources->GetResourceDirect(shaderUID);
+            if (res) {
+                currentShaderName = res->GetAssetFile();
+                size_t lastSlash = currentShaderName.find_last_of("/\\");
+                if (lastSlash != std::string::npos)
+                    currentShaderName = currentShaderName.substr(lastSlash + 1);
+            }
+        }
+
+        if (ImGui::BeginCombo("##ShaderSelector", currentShaderName.c_str())) {
+            if (ImGui::Selectable("None (Default)", shaderUID == 0)) {
+                ReleaseCurrentShader();
+            }
+
+            ImGui::Separator();
+
+            ModuleResources* resources = Application::GetInstance().resources.get();
+            const auto& allResources = resources->GetAllResources();
+
+            for (const auto& pair : allResources) {
+                if (pair.second->GetType() == Resource::SHADER) {
+                    std::string name = pair.second->GetAssetFile();
+                    size_t lastSlash = name.find_last_of("/\\");
+                    if (lastSlash != std::string::npos) name = name.substr(lastSlash + 1);
+
+                    if (ImGui::Selectable(name.c_str(), shaderUID == pair.first)) {
+                        LoadShaderByUID(pair.first);
+                    }
+                }
+            }
+            ImGui::EndCombo();
+        }
+
+        if (shaderUID != 0 && ImGui::Button("Reload Shader")) {
+            LoadShaderByUID(shaderUID); 
         }
 
         if (materialType == MaterialType::WATER)
@@ -323,6 +370,44 @@ bool ComponentMaterial::LoadTexture(const std::string& path)
     return LoadTextureByUID(uid);
 }
 
+void ComponentMaterial::ReleaseCurrentShader()
+{
+    if (shaderUID != 0) {
+        Application::GetInstance().resources->ReleaseResource(shaderUID);
+        shaderUID = 0;
+    }
+    shaderPath = "";
+}
+
+bool ComponentMaterial::LoadShaderByUID(UID uid)
+{
+    if (uid == 0) return false;
+
+    ReleaseCurrentShader();
+
+    ResourceShader* shRes = dynamic_cast<ResourceShader*>(
+        Application::GetInstance().resources->RequestResource(uid)
+    );
+
+    if (!shRes) {
+        LOG_CONSOLE("[ComponentMaterial] ERROR: Failed to load shader with UID: %llu", uid);
+        return false;
+    }
+
+    shaderUID = uid;
+    shaderPath = shRes->GetAssetFile();
+    return true;
+}
+
+bool ComponentMaterial::LoadShader(const std::string& path)
+{
+    ModuleResources* resources = Application::GetInstance().resources.get();
+    UID uid = resources->Find(path.c_str());
+    if (uid == 0) uid = resources->ImportFile(path.c_str());
+    
+    return LoadShaderByUID(uid);
+}
+
 void ComponentMaterial::CreateCheckerboardTexture()
 {
     ReleaseCurrentTexture();
@@ -437,6 +522,10 @@ void ComponentMaterial::Serialize(nlohmann::json& componentObj) const
         componentObj["metallic"] = metallic;
         componentObj["roughness"] = roughness;
     }
+
+    if (shaderUID != 0) {
+        componentObj["shaderUID"] = shaderUID;
+    }
 }
 
 void ComponentMaterial::Deserialize(const nlohmann::json& componentObj)
@@ -506,6 +595,11 @@ void ComponentMaterial::Deserialize(const nlohmann::json& componentObj)
     }
     if (componentObj.contains("waveFrequency")) {
         waveFrequency = componentObj["waveFrequency"].get<float>();
+    }
+
+    if (componentObj.contains("shaderUID")) {
+        UID uid = componentObj["shaderUID"].get<UID>();
+        if (uid != 0) LoadShaderByUID(uid);
     }
 }
 

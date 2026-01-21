@@ -15,6 +15,7 @@ class GameWindow;
 class GameObject;
 struct Mesh;
 class AssetsWindow;
+class ShaderEditorWindow;
 
 enum class EditorWindowType
 {
@@ -25,7 +26,8 @@ enum class EditorWindowType
     HIERARCHY,
     INSPECTOR,
     CONSOLE,
-    ASSETS,  
+    ASSETS,
+    SHADER_EDITOR,
     ABOUT
 };
 
@@ -92,6 +94,7 @@ private:
     std::unique_ptr<SceneWindow> sceneWindow;
     std::unique_ptr<GameWindow> gameWindow;
     std::unique_ptr<AssetsWindow> assetsWindow;
+    std::unique_ptr<ShaderEditorWindow> shaderEditorWindow;
 
     // About window state
     bool showAbout = false;

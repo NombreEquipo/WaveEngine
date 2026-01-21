@@ -5,6 +5,7 @@
 #include "ComponentMesh.h"
 #include "ComponentMaterial.h"
 #include "ModuleEditor.h"
+#include "ResourceShader.h"
 
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
@@ -910,16 +911,27 @@ void Renderer::DrawGameObjectIterative(GameObject* gameObject,
         const glm::mat4& modelMatrix = transform->GetGlobalMatrix();
 
         Shader* currentShader = nullptr;
-        
+        ComponentMaterial* material = static_cast<ComponentMaterial*>(
+            currentObj->GetComponent(ComponentType::MATERIAL));
+
         if (showZBuffer) {
              currentShader = depthShader.get();
         } 
         else {
-             ComponentMaterial* material = static_cast<ComponentMaterial*>(currentObj->GetComponent(ComponentType::MATERIAL));
-             if (material && material->GetMaterialType() == MaterialType::WATER && waterShader) {
-                 currentShader = waterShader.get();
-             } else {
-                 currentShader = defaultShader.get();
+             if (material && material->GetShaderUID() != 0) {
+                 ResourceShader* resShader = static_cast<ResourceShader*>(
+                     Application::GetInstance().resources->GetResourceDirect(material->GetShaderUID()));
+                 if (resShader && resShader->GetShader()) {
+                     currentShader = resShader->GetShader();
+                 }
+             }
+
+             if (!currentShader) {
+                 if (material && (material->GetMaterialType() == MaterialType::WATER) && waterShader) {
+                     currentShader = waterShader.get();
+                 } else {
+                     currentShader = defaultShader.get();
+                 }
              }
         }
 
@@ -931,9 +943,6 @@ void Renderer::DrawGameObjectIterative(GameObject* gameObject,
             1, GL_FALSE, glm::value_ptr(renderCamera->GetViewMatrix()));
         glUniformMatrix4fv(glGetUniformLocation(currentShader->GetProgramID(), "model"),
             1, GL_FALSE, glm::value_ptr(modelMatrix));
-
-        ComponentMaterial* material = static_cast<ComponentMaterial*>(
-            currentObj->GetComponent(ComponentType::MATERIAL));
 
         bool materialBound = false;
 
@@ -966,21 +975,21 @@ void Renderer::DrawGameObjectIterative(GameObject* gameObject,
         }
         else
         {
-            defaultShader->SetVec3("tintColor", glm::vec3(1.0f));
+            currentShader->SetVec3("tintColor", glm::vec3(1.0f));
 
             bool hasTexture = (material && material->IsActive() && material->HasTexture());
 
             // Configure uniform hasTexture
-            defaultShader->SetInt("hasTexture", hasTexture ? 1 : 0);
+            currentShader->SetInt("hasTexture", hasTexture ? 1 : 0);
 
             // Configure light direction
-            defaultShader->SetVec3("lightDir", glm::vec3(1.0f, -1.0f, -1.0f));
+            currentShader->SetVec3("lightDir", glm::vec3(1.0f, -1.0f, -1.0f));
 
             if (hasTexture)
             {
                 material->Use();  // Bind the material's texture
                 materialBound = true;
-                defaultShader->SetVec3("materialDiffuse", glm::vec3(1.0f));
+                currentShader->SetVec3("materialDiffuse", glm::vec3(1.0f));
             }
             else
             {
@@ -990,17 +999,18 @@ void Renderer::DrawGameObjectIterative(GameObject* gameObject,
                 if (material && material->HasMaterialProperties())
                 {
                     glm::vec4 diffuse = material->GetDiffuseColor();
-                    defaultShader->SetVec3("materialDiffuse", glm::vec3(diffuse.r, diffuse.g, diffuse.b));
+                    currentShader->SetVec3("materialDiffuse", glm::vec3(diffuse.r, diffuse.g, diffuse.b));
                 }
                 else
                 {
                     // Default colour grey if no material is available
-                    defaultShader->SetVec3("materialDiffuse", glm::vec3(0.6f, 0.6f, 0.6f));
+                    currentShader->SetVec3("materialDiffuse", glm::vec3(0.6f, 0.6f, 0.6f));
                 }
             }
 
             // Set the texture sampler uniform
-            glUniform1i(defaultUniforms.texture1, 0);
+            //  Use the correct uniform location or name based on shader
+            glUniform1i(glGetUniformLocation(currentShader->GetProgramID(), "texture1"), 0);
         }
 
         const std::vector<Component*>& meshComponents =

@@ -1,6 +1,7 @@
 ﻿#include "ModuleResources.h"
 #include "ResourceTexture.h"
 #include "ResourceMesh.h"
+#include "ResourceShader.h"
 #include "LibraryManager.h"
 #include "MetaFile.h"
 #include "TextureImporter.h"
@@ -138,6 +139,18 @@ void ModuleResources::LoadResourcesFromMetaFiles() {
             }
             break;
 
+        case AssetType::SHADER_GLSL:
+            resourceType = Resource::SHADER;
+            resource = new ResourceShader(meta.uid);
+            if (resource) {
+                resource->SetAssetFile(assetPath);
+                // Shaders don't have a specific library path yet, they load from assets
+                resource->SetLibraryFile("");
+                resources[meta.uid] = resource;
+                registered++;
+            }
+            break;
+
         default:
             continue;
         }
@@ -200,6 +213,12 @@ UID ModuleResources::ImportFile(const char* newFileInAssets) {
         importSuccess = ImportModel(resource, newFileInAssets);
         break;
     }
+    case Resource::SHADER: {
+        // For shaders, we just need to ensure the asset file is set
+        // LoadInMemory will handle the rest.
+        importSuccess = true; 
+        break;
+    }
     default:
         LOG_CONSOLE("ERROR: Import not implemented for this type");
         break;
@@ -233,6 +252,10 @@ Resource* ModuleResources::CreateNewResourceWithUID(const char* assetsFile, Reso
 
     case Resource::MESH:
         resource = new ResourceMesh(uid);
+        break;
+
+    case Resource::SHADER:
+        resource = new ResourceShader(uid);
         break;
 
     default:
@@ -336,6 +359,10 @@ Resource::Type ModuleResources::GetResourceTypeFromExtension(const std::string& 
         return Resource::MESH;
     }
 
+    if (ext == ".glsl") {
+        return Resource::SHADER;
+    }
+
     return Resource::UNKNOWN;
 }
 
@@ -358,6 +385,8 @@ std::string ModuleResources::GenerateLibraryPath(Resource* resource) {
         return LibraryManager::GetMaterialPathFromUID(resource->GetUID());
     case Resource::ANIMATION:
         return LibraryManager::GetAnimationPathFromUID(resource->GetUID());
+    case Resource::SHADER:
+        return ""; // Shaders load directly from assets
     default:
         return "";
     }

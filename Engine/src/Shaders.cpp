@@ -109,6 +109,81 @@ void Shader::Use() const
     glUseProgram(shaderProgram);
 }
 
+bool Shader::LoadFromSource(const char* vSource, const char* fSource, const char* gSource)
+{
+    unsigned int vertexShader = CompileShader(GL_VERTEX_SHADER, vSource);
+    if (vertexShader == 0) return false;
+
+    unsigned int fragmentShader = CompileShader(GL_FRAGMENT_SHADER, fSource);
+    if (fragmentShader == 0) {
+        glDeleteShader(vertexShader);
+        return false;
+    }
+
+    unsigned int geometryShader = 0;
+    if (gSource != nullptr) {
+        geometryShader = CompileShader(GL_GEOMETRY_SHADER, gSource);
+        if (geometryShader == 0) {
+            glDeleteShader(vertexShader);
+            glDeleteShader(fragmentShader);
+            return false;
+        }
+    }
+
+    unsigned int newProgram = glCreateProgram();
+    glAttachShader(newProgram, vertexShader);
+    glAttachShader(newProgram, fragmentShader);
+    if (geometryShader != 0) glAttachShader(newProgram, geometryShader);
+    glLinkProgram(newProgram);
+
+    int success;
+    char infoLog[512];
+    glGetProgramiv(newProgram, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        glGetProgramInfoLog(newProgram, 512, NULL, infoLog);
+        LOG_CONSOLE("ERROR: Shader Program Linking Failed\n%s", infoLog);
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        if (geometryShader != 0) glDeleteShader(geometryShader);
+        glDeleteProgram(newProgram);
+        return false;
+    }
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+    if (geometryShader != 0) glDeleteShader(geometryShader);
+
+    // If there was an old program, delete it
+    if (shaderProgram != 0) {
+        glDeleteProgram(shaderProgram);
+    }
+
+    shaderProgram = newProgram;
+    return true;
+}
+
+unsigned int Shader::CompileShader(unsigned int type, const char* source)
+{
+    unsigned int shader = glCreateShader(type);
+    glShaderSource(shader, 1, &source, NULL);
+    glCompileShader(shader);
+
+    int success;
+    char infoLog[512];
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(shader, 512, NULL, infoLog);
+        const char* typeStr = (type == GL_VERTEX_SHADER) ? "Vertex" : (type == GL_FRAGMENT_SHADER ? "Fragment" : "Geometry");
+        LOG_CONSOLE("ERROR: %s Shader Compilation Failed\n%s", typeStr, infoLog);
+        glDeleteShader(shader);
+        return 0;
+    }
+
+    return shader;
+}
+
 void Shader::Delete()
 {
     if (shaderProgram != 0)

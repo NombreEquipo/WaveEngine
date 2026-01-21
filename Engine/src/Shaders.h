@@ -17,6 +17,8 @@ public:
     bool CreateNoTexture(); 
     bool CreateWater();
 
+    bool LoadFromSource(const char* vSource, const char* fSource, const char* gSource = nullptr);
+
     void Use() const;
     void Delete();
 
@@ -31,5 +33,7 @@ public:
     void SetBool(const std::string& name, bool value) const;
 
 private:
+    unsigned int CompileShader(unsigned int type, const char* source);
+
     unsigned int shaderProgram;
 };

@@ -24,6 +24,9 @@ public:
     bool LoadTextureByUID(UID uid);
     bool LoadTexture(const std::string& path);
 
+    bool LoadShaderByUID(UID uid);
+    bool LoadShader(const std::string& path);
+
     void CreateCheckerboardTexture();
     void RestoreOriginalTexture();
 
@@ -39,6 +42,9 @@ public:
 
     const std::string& GetTexturePath() const { return texturePath; }
     const std::string& GetOriginalTexturePath() const { return originalTexturePath; }
+
+    UID GetShaderUID() const { return shaderUID; }
+    const std::string& GetShaderPath() const { return shaderPath; }
 
     int GetTextureWidth() const;
     int GetTextureHeight() const;
@@ -81,14 +87,17 @@ public:
 
 private:
     void ReleaseCurrentTexture();
+    void ReleaseCurrentShader();
 
 private:
     UID textureUID;
+    UID shaderUID = 0;
     UID originalTextureUID;
     bool useCheckerboard;
 
     std::string texturePath;
     std::string originalTexturePath;
+    std::string shaderPath;
 
     //  Material properties
     glm::vec4 diffuseColor = glm::vec4(1.0f);
