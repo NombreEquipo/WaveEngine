@@ -127,6 +127,9 @@ bool FileSystem::Start()
         app.camera->SetSceneCamera(sceneCamera);
     }
 
+    //Scene with tank and cam script
+    app.GetInstance().scene.get()->LoadScene("..//Scene//TankScene.json");
+
     return true;
 }
 
