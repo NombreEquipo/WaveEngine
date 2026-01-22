@@ -120,17 +120,15 @@ function Update(self, dt)
         local barrelLength = self.public and self.public.barrelLength or 3.0
         local spawnHeight = self.public and self.public.spawnHeight or 1.0
         local bulletScale = self.public and self.public.bulletScale or 1.0
-        local spawnX = turretPos.x + forwardX * barrelLength
-        local spawnY = turretPos.y + spawnHeight
-        local spawnZ = turretPos.z + forwardZ * barrelLength
 
         _G.nextBulletData = {
-            x = spawnX,
-            y = spawnY,
-            z = spawnZ,
+            x = turretX + forwardX * barrelLength,
+            y = turretY + spawnHeight,
+            z = turretZ + forwardZ * barrelLength,
             dirX = forwardX,
             dirZ = forwardZ,
-            angle = worldAngle
+            angle = worldAngle,
+            scale = bulletScale
         }
         
         Prefab.Instantiate(self.public and self.public.bulletPrefab or "Bullet.prefab")

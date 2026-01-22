@@ -69,7 +69,7 @@
                     "type": 5
                 }
             ],
-            "name": "Bullet"
+            "name": "Bullet_Mesh"
         }
     ],
     "components": [
@@ -98,5 +98,5 @@
             "type": 5
         }
     ],
-    "name": "RootNode_0_1_6"
+    "name": "Bullet"
 }
