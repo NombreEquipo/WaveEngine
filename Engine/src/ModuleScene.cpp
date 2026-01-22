@@ -42,8 +42,6 @@ bool ModuleScene::Awake()
     return true;
 }
 
-// Al final de ModuleScene::Start(), reemplaza la inicialización del RTPC:
-
 bool ModuleScene::Start()
 {
     LOG_DEBUG("Initializing Scene");
@@ -58,8 +56,7 @@ bool ModuleScene::Start()
     }
     LOG_CONSOLE("[DEBUG] ModuleAudio is available");
 
-    // ... (código del listener) ...
-
+    // Listener
     listenerObject = new GameObject("AudioListener");
     Transform* listenerTransform = static_cast<Transform*>(
         listenerObject->GetComponent(ComponentType::TRANSFORM)
@@ -139,14 +136,14 @@ bool ModuleScene::Start()
 
     LOG_CONSOLE("Dynamic Audio Object created at (0, 0, 4)");
 
-    // CORREGIDO: Inicializar RTPC en todos los lugares necesarios
+    // Inicializar RTPC a 0 (sin túnel)
     AkGameObjectID staticId = staticAudioObject ? (AkGameObjectID)(uintptr_t)staticAudioObject : 0;
     AkGameObjectID dynamicId = dynamicAudioObject ? (AkGameObjectID)(uintptr_t)dynamicAudioObject : 0;
 
-    // Establecer RTPC inicial a 0 (sin efecto de túnel)
-    audio->SetRTPCByName("TunnelAmount", 0.0f, 0);  // Global
+    audio->SetRTPCByName("TunnelAmount", 0.0f, 0); // Global
     if (staticId)  audio->SetRTPCByName("TunnelAmount", 0.0f, staticId);
     if (dynamicId) audio->SetRTPCByName("TunnelAmount", 0.0f, dynamicId);
+    audio->SetRTPC(AK::GAME_PARAMETERS::TUNNELAMOUNT, 0.0f, audio->GetMusicGameObjectId());
 
     tunnelAmount = 0.0f;
     tunnelTarget = 0.0f;
@@ -157,9 +154,9 @@ bool ModuleScene::Start()
     LOG_CONSOLE("Audio 3D GameObjects initialized successfully!");
     LOG_CONSOLE("Press PLAY to start 3D audio");
     LOG_CONSOLE("Press 'M' to toggle 3D audio on/off (only when playing)");
-    LOG_CONSOLE("Press 'T' to toggle Tunnel FORCE test");
-    LOG_CONSOLE("Press '1' to set Tunnel to 0 (normal)");
-    LOG_CONSOLE("Press '2' to set Tunnel to 100 (full effect)");
+    LOG_CONSOLE("Press 'T' to toggle Tunnel (enter/exit, smooth)");
+    LOG_CONSOLE("Press '1' to FORCE Tunnel = 0");
+    LOG_CONSOLE("Press '2' to FORCE Tunnel = 100");
 
     return true;
 }
@@ -253,10 +250,6 @@ void ModuleScene::RebuildOctree()
     LOG_CONSOLE("Octree rebuilt: %d objects", insertedCount);
 }
 
-// En ModuleScene::Update(), reemplaza la sección del tunnel effect con esto:
-
-// En ModuleScene::Update(), reemplaza la sección del tunnel effect con esto:
-
 bool ModuleScene::Update()
 {
     if (root)
@@ -270,97 +263,81 @@ bool ModuleScene::Update()
     static bool key1Pressed = false;
     static bool key2Pressed = false;
 
+    // --- INPUT: T toggle tunnel smooth ---
     if (keys[SDL_SCANCODE_T] && !tKeyPressed)
     {
         tKeyPressed = true;
-        tunnelForce = !tunnelForce;
-        LOG_CONSOLE("[AUDIO] Tunnel FORCE = %s", tunnelForce ? "ON" : "OFF");
+
+        // Al pulsar T, volvemos a modo suave (sin fuerza)
+        tunnelForce = false;
+
+        // Toggle dentro/fuera
+        tunnelInside = !tunnelInside;
+        tunnelTarget = tunnelInside ? 100.0f : 0.0f;
+
+        LOG_CONSOLE("[AUDIO] Tunnel %s (target: %.2f)",
+            tunnelInside ? "ENTER" : "EXIT",
+            tunnelTarget);
     }
     if (!keys[SDL_SCANCODE_T]) tKeyPressed = false;
 
+    // --- INPUT: 1 force 0 ---
     if (keys[SDL_SCANCODE_1] && !key1Pressed)
     {
         key1Pressed = true;
+        tunnelForce = true;
         tunnelForceValue = 0.0f;
         LOG_CONSOLE("[AUDIO] Tunnel FORCE value = 0");
     }
     if (!keys[SDL_SCANCODE_1]) key1Pressed = false;
 
+    // --- INPUT: 2 force 100 ---
     if (keys[SDL_SCANCODE_2] && !key2Pressed)
     {
         key2Pressed = true;
+        tunnelForce = true;
         tunnelForceValue = 100.0f;
         LOG_CONSOLE("[AUDIO] Tunnel FORCE value = 100");
     }
     if (!keys[SDL_SCANCODE_2]) key2Pressed = false;
 
-    // SECCIÓN CORREGIDA DEL TUNNEL EFFECT
-    if (listenerObject)
+    // --- TUNNEL UPDATE (smooth) ---
+    // Nota: dejamos el AABB detection fuera por ahora porque pediste control por teclas.
+    // Si lo quieres reactivar, lo volvemos a meter con un flag.
+    const float smooth = 0.10f;
+    tunnelAmount = tunnelAmount + (tunnelTarget - tunnelAmount) * smooth;
+
+    const float finalTunnel = tunnelForce ? tunnelForceValue : tunnelAmount;
+
+    // Enviar RTPC SOLO si cambia lo suficiente (evita spam y llamadas constantes)
+    static float lastSent = -9999.0f;
+    if (std::fabs(finalTunnel - lastSent) >= 0.5f)
     {
-        Transform* lt = static_cast<Transform*>(listenerObject->GetComponent(ComponentType::TRANSFORM));
-        if (lt)
+        ModuleAudio* audioMod = ModuleAudio::Get();
+        if (audioMod)
         {
-            glm::vec3 p = lt->GetPosition();
+            // Global
+            audioMod->SetRTPCByName("TunnelAmount", finalTunnel, 0);
 
-            glm::vec3 tunnelMin = tunnelCenter - tunnelHalfSize;
-            glm::vec3 tunnelMax = tunnelCenter + tunnelHalfSize;
-
-            bool inside =
-                (p.x >= tunnelMin.x && p.x <= tunnelMax.x) &&
-                (p.y >= tunnelMin.y && p.y <= tunnelMax.y) &&
-                (p.z >= tunnelMin.z && p.z <= tunnelMax.z);
-
-            if (inside != tunnelInside)
+            // Static
+            if (staticAudioObject)
             {
-                tunnelInside = inside;
-                tunnelTarget = tunnelInside ? 100.0f : 0.0f;
-                LOG_CONSOLE("[AUDIO] Tunnel zone: %s (target: %.2f)",
-                    tunnelInside ? "ENTER" : "EXIT", tunnelTarget);
+                AkGameObjectID staticId = (AkGameObjectID)(uintptr_t)staticAudioObject;
+                audioMod->SetRTPCByName("TunnelAmount", finalTunnel, staticId);
             }
 
-            // Interpolación suave
-            const float smooth = 0.10f;
-            tunnelAmount = tunnelAmount + (tunnelTarget - tunnelAmount) * smooth;
-
-            // Valor final
-            float finalTunnel = tunnelForce ? tunnelForceValue : tunnelAmount;
-
-            ModuleAudio* audioMod = ModuleAudio::Get();
-            if (audioMod)
+            // Dynamic
+            if (dynamicAudioObject)
             {
-                audioMod->SetRTPCByName("TunnelAmount", finalTunnel, 0);
-                static float lastPrinted = -9999.0f;
-                
-                audioMod->SetRTPCByName("TunnelAmount", tunnelAmount, 0);
-
-                // justo debajo:
-                float v = audioMod->GetRTPCCachedByName("TunnelAmount");
-               
-
-
-                if (staticAudioObject)
-                {
-                    AkGameObjectID staticId = (AkGameObjectID)(uintptr_t)staticAudioObject;
-                    audioMod->SetRTPCByName("TunnelAmount", finalTunnel, staticId);
-                }
-
-                if (dynamicAudioObject)
-                {
-                    AkGameObjectID dynamicId = (AkGameObjectID)(uintptr_t)dynamicAudioObject;
-                    audioMod->SetRTPCByName("TunnelAmount", finalTunnel, dynamicId);
-                }
-                audioMod->SetRTPC(AK::GAME_PARAMETERS::TUNNELAMOUNT, finalTunnel, audioMod->GetMusicGameObjectId());
-
-                // Log solo cuando hay cambios significativos
-                static float lastLoggedValue = -1.0f;
-                if (std::abs(finalTunnel - lastLoggedValue) > 5.0f)
-                {
-                    LOG_CONSOLE("[AUDIO] TunnelAmount RTPC set to: %.2f (force: %s)",
-                        finalTunnel, tunnelForce ? "YES" : "NO");
-                    lastLoggedValue = finalTunnel;
-                }
+                AkGameObjectID dynamicId = (AkGameObjectID)(uintptr_t)dynamicAudioObject;
+                audioMod->SetRTPCByName("TunnelAmount", finalTunnel, dynamicId);
             }
+
+            // Music GO (por ID generado en header)
+            audioMod->SetRTPC(AK::GAME_PARAMETERS::TUNNELAMOUNT, finalTunnel, audioMod->GetMusicGameObjectId());
         }
+
+        lastSent = finalTunnel;
     }
 
     // Resto del código de SFX toggle...
@@ -423,7 +400,6 @@ bool ModuleScene::Update()
 
     return true;
 }
-
 
 bool ModuleScene::PostUpdate()
 {
@@ -545,7 +521,6 @@ bool ModuleScene::SaveScene(const std::string& filepath)
     LOG_CONSOLE("Saving scene to: %s", filepath.c_str());
 
     nlohmann::json document;
-
     document["version"] = 1;
 
     nlohmann::json gameObjectsArray = nlohmann::json::array();
