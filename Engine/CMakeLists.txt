@@ -136,6 +136,8 @@ set(PHYSICS_SRC
     src/ComponentRigidBody.h
     src/ComponentBoxCollider.cpp
     src/ComponentBoxCollider.h
+    src/ComponentSphereCollider.cpp
+    src/ComponentSphereCollider.h
     src/ComponentCollider.cpp
     src/ComponentCollider.h
 )

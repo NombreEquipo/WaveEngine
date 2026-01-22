@@ -386,6 +386,14 @@ void ModuleEditor::ShowMenuBar()
                 {
                     CreatePrimitiveGameObjectPhysics(Primitives::CreateCubeGameObject("StaticCube", 0.0f));
                 }
+                if (ImGui::MenuItem("Sphere"))
+                {
+                    CreatePrimitiveGameObjectPhysics(Primitives::CreateSphereGameObject("Sphere", 1.0f));
+                }
+                if (ImGui::MenuItem("StaticSphere"))
+                {
+                    CreatePrimitiveGameObjectPhysics(Primitives::CreateSphereGameObject("StaticSphere", 0.0f));
+                }
                 if (ImGui::MenuItem("Pyramid"))
                 {
                     CreatePrimitiveGameObject("Pyramid", Primitives::CreatePyramid());
@@ -393,10 +401,6 @@ void ModuleEditor::ShowMenuBar()
                 if (ImGui::MenuItem("Plane"))
                 {
                     CreatePrimitiveGameObject("Plane", Primitives::CreatePlane());
-                }
-                if (ImGui::MenuItem("Sphere"))
-                {
-                    CreatePrimitiveGameObject("Sphere", Primitives::CreateSphere());
                 }
                 if (ImGui::MenuItem("Cylinder"))
                 {

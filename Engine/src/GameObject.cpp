@@ -7,6 +7,8 @@
 #include "ComponentRotate.h"
 #include <nlohmann/json.hpp>
 #include "ComponentRigidBody.h"
+#include "ComponentBoxCollider.h"
+#include "ComponentSphereCollider.h"
 
 GameObject::GameObject(const std::string& name) : name(name), active(true), parent(nullptr) {
     CreateComponent(ComponentType::TRANSFORM);
@@ -57,6 +59,14 @@ Component* GameObject::CreateComponent(ComponentType type) {
     case ComponentType::RIGIDBODY:
         newComponent = new ComponentRigidBody(this);
         break;
+
+    case ComponentType::COLLIDER_SPHERE:
+            newComponent = new ComponentSphereCollider(this);
+            break;
+
+    case ComponentType::COLLIDER_BOX:
+            newComponent = new ComponentBoxCollider(this);
+            break;
 
     default:
         LOG_DEBUG("ERROR: Unknown component type requested for GameObject '%s'", name.c_str());

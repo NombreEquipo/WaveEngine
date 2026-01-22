@@ -8,6 +8,8 @@ Component::Component(GameObject* owner, ComponentType type) : owner(owner), type
     case ComponentType::MATERIAL: name = "Material"; break;
 	case ComponentType::CAMERA: name = "Camera"; break;
     case ComponentType::RIGIDBODY: name = "Rigidbody"; break;
+    case ComponentType::COLLIDER_BOX: name = "Box Collider"; break;
+    case ComponentType::COLLIDER_SPHERE: name = "Sphere Collider"; break;
     default: name = "Unknown Component";
     }
 }

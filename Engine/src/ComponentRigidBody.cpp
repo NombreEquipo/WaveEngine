@@ -30,6 +30,7 @@ ComponentRigidBody::~ComponentRigidBody()
 
 void ComponentRigidBody::Start()
 {
+    // 1. Obtener el Transform para la posición inicial y sincronización
     Transform* trans = static_cast<Transform*>(owner->GetComponent(ComponentType::TRANSFORM));
     if (trans) {
         initialPos = trans->GetPosition();
@@ -37,40 +38,55 @@ void ComponentRigidBody::Start()
         initialScale = trans->GetScale();
     }
 
-    // 1. Buscamos un Collider (Box, Sphere, etc.)
-    // Primero intentamos con BOX, luego con SPHERE (según los tipos que hayas creado)
+    // 2. DETECCIÓN AUTOMÁTICA DEL COLLIDER
+    // Buscamos si el objeto tiene un BoxCollider o un SphereCollider
     ComponentCollider* collider = (ComponentCollider*)owner->GetComponent(ComponentType::COLLIDER_BOX);
     
-    if (collider == nullptr) {
-        collider = (ComponentCollider*)owner->GetComponent(ComponentType::COLLIDER_SPHERE);
-    }
-
-    // 2. Asignamos la forma
     if (collider != nullptr) {
-        colShape = collider->GetShape(); 
-        // Nota: El Rigidbody NO debe borrar colShape en su destructor si pertenece al Collider
-    } else {
-        // Fallback: Caja de 1x1x1 por si olvidamos poner un collider
-        colShape = new btBoxShape(btVector3(0.5f, 0.5f, 0.5f));
+        shapeType = ShapeType::BOX;
+    } 
+    else {
+        // Si no hay caja, probamos con esfera
+        collider = (ComponentCollider*)owner->GetComponent(ComponentType::COLLIDER_SPHERE);
+        if (collider != nullptr) {
+            shapeType = ShapeType::SPHERE;
+        }
     }
 
-    // 3. Calculamos la inercia (si tiene masa, reacciona a fuerzas)
+    // 3. ASIGNACIÓN DE LA FORMA FÍSICA (btCollisionShape)
+    if (collider != nullptr) {
+        // Usamos la forma (box o sphere) definida en el componente collider
+        colShape = collider->GetShape(); 
+    } 
+    else {
+        // FALLBACK: Si el usuario olvidó poner un collider, creamos una caja por defecto
+        // para evitar que el motor crashee.
+        shapeType = ShapeType::BOX;
+        colShape = new btBoxShape(btVector3(0.5f, 0.5f, 0.5f));
+        LOG_CONSOLE("Warning: RigidBody en [%s] no tiene Collider. Usando Box por defecto.", owner->GetName().c_str());
+    }
+
+    // 4. CÁLCULO DE INERCIA
     btVector3 localInertia(0, 0, 0);
     if (mass != 0.0f) {
         colShape->calculateLocalInertia(mass, localInertia);
     }
 
-    // 4. Sincronizamos con el Transform global actual
+    // 5. CONFIGURACIÓN DEL TRANSFORM INICIAL PARA BULLET
     btTransform startTransform;
-    startTransform.setFromOpenGLMatrix(glm::value_ptr(trans->GetGlobalMatrix()));
+    if (trans) {
+        startTransform.setFromOpenGLMatrix(glm::value_ptr(trans->GetGlobalMatrix()));
+    } else {
+        startTransform.setIdentity();
+    }
 
-    // 5. Creamos el MotionState y el RigidBody
+    // 6. CREACIÓN DEL RIGID BODY
     motionState = new btDefaultMotionState(startTransform);
     btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, colShape, localInertia);
     
     rigidBody = new btRigidBody(rbInfo);
 
-    // 6. Añadimos el cuerpo al mundo de Bullet
+    // 7. AÑADIR AL MUNDO FÍSICO
     AddBodyToWorld();
 }
 

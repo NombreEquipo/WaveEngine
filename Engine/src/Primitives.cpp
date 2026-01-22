@@ -2,6 +2,7 @@
 #include "GameObject.h"
 #include "ComponentMesh.h"
 #include "ComponentBoxCollider.h"
+#include "ComponentSphereCollider.h"
 #include "ComponentRigidBody.h"
 #include "Application.h"
 #include "ModuleScene.h"
@@ -41,9 +42,10 @@ GameObject* Primitives::CreateSphereGameObject(const std::string& name, float ma
     ComponentMesh* mesh = (ComponentMesh*)go->CreateComponent(ComponentType::MESH);
     if (mesh) mesh->SetMesh(Primitives::CreateSphere());
 
-    // 3. Añadimos el Collider (Asumiendo que tienes COLLIDER_SPHERE)
-    // ComponentSphereCollider* sphereCol = (ComponentSphereCollider*)go->CreateComponent(ComponentType::COLLIDER_SPHERE);
-    // if (sphereCol) sphereCol->SetRadius(0.5f);
+    ComponentSphereCollider* sphereCol = (ComponentSphereCollider*)go->CreateComponent(ComponentType::COLLIDER_SPHERE);
+    if (sphereCol) {
+        sphereCol->SetRadius(0.5f); // El radio debe coincidir con la malla visual
+    }
 
     ComponentRigidBody* rb = (ComponentRigidBody*)go->CreateComponent(ComponentType::RIGIDBODY);
     if (rb) {
