@@ -333,18 +333,6 @@ void ModuleEditor::ShowMenuBar()
                 assetsWindow->SetOpen(assetsOpen);
             }
 
-            if (ImGui::MenuItem("Create Script"))
-            {
-                showCreateScriptPopup = true;
-                sprintf_s(scriptNameBuffer, "NewScript");
-            }
-
-            bool scriptEditorOpen = scriptEditorWindow->IsOpen();
-            if (ImGui::MenuItem("Script Editor", NULL, &scriptEditorOpen))
-            {
-                scriptEditorWindow->SetOpen(scriptEditorOpen);
-            }
-
             ImGui::Separator();
 
             if (ImGui::BeginMenu("Layout"))
@@ -398,6 +386,22 @@ void ModuleEditor::ShowMenuBar()
                 ImGui::EndMenu();
             }
 
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Script"))
+        {
+            if (ImGui::MenuItem("Create Script"))
+            {
+                showCreateScriptPopup = true;
+                sprintf_s(scriptNameBuffer, "NewScript");
+            }
+
+            bool scriptEditorOpen = scriptEditorWindow->IsOpen();
+            if (ImGui::MenuItem("Script Editor", NULL, &scriptEditorOpen))
+            {
+                scriptEditorWindow->SetOpen(scriptEditorOpen);
+            }
             ImGui::EndMenu();
         }
 

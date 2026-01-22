@@ -152,49 +152,61 @@ Includes the following menu options:
 
 ---
 
-## ✨ Extra features 
-- **Transparente textures**
-- **zBuffer**
-- **Assets icons**
-- **Asset Deletion:** Delete assets directly from the explorer with automatic cleanup of associated Library files
-- **Import Settings:** Basic implementation of import options for different asset types:
-  - **Textures:** Control filtering modes, max texture size, and flip options (X/Y axes)
-  - **Meshes:** Configure global scaling, axis configuration, Post-processing options: generate normals, flip uv, optimize meshes
-  - **Metadata:** All import settings are saved in .meta files to ensure proper regeneration of the Library folder
+## ✨ New Core Features 
+
+### **Lua-Based Scripting System**
+
+The engine now includes a built-in **Lua scripting system** that allows you to create, edit, and debug scripts directly inside the editor—no external IDE required.
 
 ---
 
-## ✨ New Core Features 
+### **Script Menu Options**
 
-### **Resource Management System**
-- Complete asset pipeline with automatic conversion to custom file formats
-- Assets stored in a structured "Assets" folder, with optimized versions cached in "Library"
-- Reference counting ensures resources are loaded only once regardless of usage count
-- Automatic regeneration of Library folder from Assets and metadata files
-- Support for importing new assets at runtime
+Include new script menu options: 
+- **Script:** 
+- Create Script: Create a new scripts on script folder with basic functions (Start() and Update()) 
+- Show or hide Script editor 
+- **File:** 
+- Save scene now can also save scripts 
+- Save scene will load the scene as usual but now with scripts
+  
+---
 
-### **Performance Optimizations**
-- **Frustum Culling:** Objects outside the camera view are not rendered
-- **Octree Spatial Partitioning:** Accelerates both rendering culling and object selection
-- **Debug Visualizations:** Toggle visual representations of AABBs, octree nodes, and frustum
+### **In-Editor Script Editing**
 
-### **Scene Management**
-- Scene serialization to custom file format
-- Automatic loading of default scene ("StreetEnvironment")
-- Complete GameObject hierarchy support with parent-child relationships
-- Runtime transformation of objects (position, rotation, scale)
+- Scripts can be **created, modified, and saved** directly inside the engine.
+- Syntax errors are **reported in real time**, including the **line number** where the error occurs.
+- **Variables declared at the top of the script** are automatically exposed in the **Inspector window**, where they can be edited.
 
-### **Camera System**
-- Configurable camera component with adjustable parameters
-- Selection system using raycasting with octree
-- Visual feedback for selection operations
+---
+### **Script Management**
 
-### **Custom File Formats**
-- Proprietary formats for models, textures and scenes
-- Metadata files storing import settings and dependencies
+Scripts can be attached to **GameObjects** and **Cameras**, allowing you to define custom behavior using Lua.
 
+- **Gameobject:**
+  - Find specific game objects: GameObject = FindGameObject("tag"), tag represents other objects names, but using "this" as tag u can modify the object that owns the script
+  - Create game object using primitives ( `Cube`, `Pyramid`, `Sphere`, `Plane`, `Cylinder`): GameObject = CreatePrimitive("Cube", "name")
+  - Create game object using specific fbx: GameObject = CreateGameObject("..//Assets//Tank.fbx", "name")
+  - Delete game objects: DeleteGameObject(GameObject)
+
+- **Gameobject Modifiers:**
+  - Transform Position: SetPosition(GameObject, x, y, z)
+  - Transform Rotation: SetRotation(GameObject, x, y, z)
+  - Transform Scale: SetScale(GameObject, x, y, z)
+
+- **Gameobject Data:**
+  - Transform Position: GetPosition(GameObject)
+  - Transform Rotation: GetRotation(GameObject)
+  - Transform Scale: GetScale(GameObject)
+
+  - **Input Data:**
+  - Mouse X Position: Input.MouseX
+  - Mouse Y Position: Input.MouseY
+  - Mouse left click: Input.MouseLeft
+  - Mouse right click: Input.MouseRight
+  - Key state: Input.A/Input.W/Input.S/...
 ---
 
 <p align="center">
-<sub>© 2025 Wave Engine — Developed by Haosheng Li & Ana Alcaraz — MIT License</sub>
+<sub>© 2025 Wave Engine — Developed by ....— MIT License</sub>
 </p>
