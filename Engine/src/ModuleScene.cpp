@@ -54,7 +54,6 @@ bool ModuleScene::Start()
         LOG_CONSOLE("[ERROR] ModuleAudio::Get() returned NULL!");
         return true;
     }
-    LOG_CONSOLE("[DEBUG] ModuleAudio is available");
 
     // Listener
     listenerObject = new GameObject("AudioListener");
@@ -73,8 +72,6 @@ bool ModuleScene::Start()
     if (listener) {
         listener->Enable();
     }
-
-    LOG_CONSOLE("AudioListener created at (0, 0, 0)");
 
     // Static Audio Object
     staticAudioObject = new GameObject("StaticSFX");
@@ -104,8 +101,6 @@ bool ModuleScene::Start()
         );
     }
 
-    LOG_CONSOLE("Static Audio Object created at (5, 0, 0)");
-
     // Dynamic Audio Object
     dynamicAudioObject = new GameObject("DynamicSFX");
     Transform* dynamicTransform = static_cast<Transform*>(
@@ -134,29 +129,24 @@ bool ModuleScene::Start()
         );
     }
 
-    LOG_CONSOLE("Dynamic Audio Object created at (0, 0, 4)");
-
-    // Inicializar RTPC a 0 (sin túnel)
-    AkGameObjectID staticId = staticAudioObject ? (AkGameObjectID)(uintptr_t)staticAudioObject : 0;
-    AkGameObjectID dynamicId = dynamicAudioObject ? (AkGameObjectID)(uintptr_t)dynamicAudioObject : 0;
-
-    audio->SetRTPCByName("TunnelAmount", 0.0f, 0); // Global
-    if (staticId)  audio->SetRTPCByName("TunnelAmount", 0.0f, staticId);
-    if (dynamicId) audio->SetRTPCByName("TunnelAmount", 0.0f, dynamicId);
-    audio->SetRTPC(AK::GAME_PARAMETERS::TUNNELAMOUNT, 0.0f, audio->GetMusicGameObjectId());
-
+    // ✅ Tunnel starts NORMAL
     tunnelAmount = 0.0f;
     tunnelTarget = 0.0f;
     tunnelInside = false;
     tunnelForce = false;
     tunnelForceValue = 0.0f;
 
+    // Set RTPC to 0 everywhere
+    AkGameObjectID staticId = staticAudioObject ? (AkGameObjectID)(uintptr_t)staticAudioObject : 0;
+    AkGameObjectID dynamicId = dynamicAudioObject ? (AkGameObjectID)(uintptr_t)dynamicAudioObject : 0;
+
+    audio->SetRTPCByName("TunnelAmount", 0.0f, 0); // global
+    if (staticId)  audio->SetRTPCByName("TunnelAmount", 0.0f, staticId);
+    if (dynamicId) audio->SetRTPCByName("TunnelAmount", 0.0f, dynamicId);
+    audio->SetRTPC(AK::GAME_PARAMETERS::TUNNELAMOUNT, 0.0f, audio->GetMusicGameObjectId());
+
     LOG_CONSOLE("Audio 3D GameObjects initialized successfully!");
-    LOG_CONSOLE("Press PLAY to start 3D audio");
-    LOG_CONSOLE("Press 'M' to toggle 3D audio on/off (only when playing)");
-    LOG_CONSOLE("Press 'T' to toggle Tunnel (enter/exit, smooth)");
-    LOG_CONSOLE("Press '1' to FORCE Tunnel = 0");
-    LOG_CONSOLE("Press '2' to FORCE Tunnel = 100");
+    LOG_CONSOLE("Keys: M toggle 3D SFX | T toggle Tunnel (smooth) | 1 force 0 | 2 force 100");
 
     return true;
 }
@@ -190,15 +180,12 @@ void ModuleScene::RebuildOctree()
         }
         };
 
-    if (root)
-    {
-        calculateBounds(root);
-    }
+    if (root) calculateBounds(root);
 
     if (!hasObjects)
     {
-        sceneMin = glm::vec3(-10.0f, -10.0f, -10.0f);
-        sceneMax = glm::vec3(10.0f, 10.0f, 10.0f);
+        sceneMin = glm::vec3(-10.0f);
+        sceneMax = glm::vec3(10.0f);
     }
     else
     {
@@ -209,9 +196,7 @@ void ModuleScene::RebuildOctree()
     }
 
     if (!octree)
-    {
         octree = std::make_unique<Octree>(sceneMin, sceneMax, 4, 5);
-    }
     else
     {
         octree->Clear();
@@ -224,13 +209,9 @@ void ModuleScene::RebuildOctree()
         if (!obj || !obj->IsActive()) return;
 
         ComponentMesh* mesh = static_cast<ComponentMesh*>(obj->GetComponent(ComponentType::MESH));
-
         if (mesh && mesh->IsActive() && mesh->HasMesh())
         {
-            if (octree->Insert(obj))
-            {
-                insertedCount++;
-            }
+            if (octree->Insert(obj)) insertedCount++;
         }
 
         for (GameObject* child : obj->GetChildren())
@@ -239,10 +220,7 @@ void ModuleScene::RebuildOctree()
         }
         };
 
-    if (root)
-    {
-        insertRecursive(root);
-    }
+    if (root) insertRecursive(root);
 
     needsOctreeRebuild = false;
 
@@ -252,95 +230,81 @@ void ModuleScene::RebuildOctree()
 
 bool ModuleScene::Update()
 {
-    if (root)
-    {
-        root->Update();
-    }
+    if (root) root->Update();
 
     const bool* keys = SDL_GetKeyboardState(nullptr);
 
+    // one-shot keys
     static bool tKeyPressed = false;
     static bool key1Pressed = false;
     static bool key2Pressed = false;
 
-    // --- INPUT: T toggle tunnel smooth ---
+    // T: toggle tunnel smooth enter/exit
     if (keys[SDL_SCANCODE_T] && !tKeyPressed)
     {
         tKeyPressed = true;
 
-        // Al pulsar T, volvemos a modo suave (sin fuerza)
-        tunnelForce = false;
-
-        // Toggle dentro/fuera
         tunnelInside = !tunnelInside;
         tunnelTarget = tunnelInside ? 100.0f : 0.0f;
 
-        LOG_CONSOLE("[AUDIO] Tunnel %s (target: %.2f)",
-            tunnelInside ? "ENTER" : "EXIT",
-            tunnelTarget);
+        // when toggling tunnel, disable force so you can hear the smooth
+        tunnelForce = false;
+
+        LOG_CONSOLE("[AUDIO] Tunnel %s (target %.0f)", tunnelInside ? "ENTER" : "EXIT", tunnelTarget);
     }
     if (!keys[SDL_SCANCODE_T]) tKeyPressed = false;
 
-    // --- INPUT: 1 force 0 ---
+    // 1: force 0
     if (keys[SDL_SCANCODE_1] && !key1Pressed)
     {
         key1Pressed = true;
         tunnelForce = true;
         tunnelForceValue = 0.0f;
-        LOG_CONSOLE("[AUDIO] Tunnel FORCE value = 0");
+        LOG_CONSOLE("[AUDIO] Tunnel FORCE = 0");
     }
     if (!keys[SDL_SCANCODE_1]) key1Pressed = false;
 
-    // --- INPUT: 2 force 100 ---
+    // 2: force 100
     if (keys[SDL_SCANCODE_2] && !key2Pressed)
     {
         key2Pressed = true;
         tunnelForce = true;
         tunnelForceValue = 100.0f;
-        LOG_CONSOLE("[AUDIO] Tunnel FORCE value = 100");
+        LOG_CONSOLE("[AUDIO] Tunnel FORCE = 100");
     }
     if (!keys[SDL_SCANCODE_2]) key2Pressed = false;
 
-    // --- TUNNEL UPDATE (smooth) ---
-    // Nota: dejamos el AABB detection fuera por ahora porque pediste control por teclas.
-    // Si lo quieres reactivar, lo volvemos a meter con un flag.
+    // Smooth approach to target
     const float smooth = 0.10f;
     tunnelAmount = tunnelAmount + (tunnelTarget - tunnelAmount) * smooth;
 
+    // Final value
     const float finalTunnel = tunnelForce ? tunnelForceValue : tunnelAmount;
 
-    // Enviar RTPC SOLO si cambia lo suficiente (evita spam y llamadas constantes)
-    static float lastSent = -9999.0f;
-    if (std::fabs(finalTunnel - lastSent) >= 0.5f)
+    // Apply RTPC
+    ModuleAudio* audioMod = ModuleAudio::Get();
+    if (audioMod)
     {
-        ModuleAudio* audioMod = ModuleAudio::Get();
-        if (audioMod)
+        // ✅ IMPORTANT: set it ONCE (no pisarlo)
+        audioMod->SetRTPCByName("TunnelAmount", finalTunnel, 0); // global
+
+        if (staticAudioObject)
         {
-            // Global
-            audioMod->SetRTPCByName("TunnelAmount", finalTunnel, 0);
-
-            // Static
-            if (staticAudioObject)
-            {
-                AkGameObjectID staticId = (AkGameObjectID)(uintptr_t)staticAudioObject;
-                audioMod->SetRTPCByName("TunnelAmount", finalTunnel, staticId);
-            }
-
-            // Dynamic
-            if (dynamicAudioObject)
-            {
-                AkGameObjectID dynamicId = (AkGameObjectID)(uintptr_t)dynamicAudioObject;
-                audioMod->SetRTPCByName("TunnelAmount", finalTunnel, dynamicId);
-            }
-
-            // Music GO (por ID generado en header)
-            audioMod->SetRTPC(AK::GAME_PARAMETERS::TUNNELAMOUNT, finalTunnel, audioMod->GetMusicGameObjectId());
+            AkGameObjectID staticId = (AkGameObjectID)(uintptr_t)staticAudioObject;
+            audioMod->SetRTPCByName("TunnelAmount", finalTunnel, staticId);
         }
 
-        lastSent = finalTunnel;
+        if (dynamicAudioObject)
+        {
+            AkGameObjectID dynamicId = (AkGameObjectID)(uintptr_t)dynamicAudioObject;
+            audioMod->SetRTPCByName("TunnelAmount", finalTunnel, dynamicId);
+        }
+
+        // music GO
+        audioMod->SetRTPC(AK::GAME_PARAMETERS::TUNNELAMOUNT, finalTunnel, audioMod->GetMusicGameObjectId());
     }
 
-    // Resto del código de SFX toggle...
+    // M toggle SFX (only when playing)
     if (sfxStarted)
     {
         static bool mKeyPressed = false;
@@ -350,7 +314,6 @@ bool ModuleScene::Update()
             mKeyPressed = true;
             sfxEnabled = !sfxEnabled;
 
-            ModuleAudio* audioMod = ModuleAudio::Get();
             if (audioMod && staticAudioObject && dynamicAudioObject)
             {
                 AkGameObjectID staticId = (AkGameObjectID)(uintptr_t)staticAudioObject;
@@ -371,13 +334,10 @@ bool ModuleScene::Update()
             }
         }
 
-        if (!keys[SDL_SCANCODE_M])
-        {
-            mKeyPressed = false;
-        }
+        if (!keys[SDL_SCANCODE_M]) mKeyPressed = false;
     }
 
-    // Movimiento del objeto dinámico
+    // Move dynamic object
     if (dynamicAudioObject != nullptr && dynamicAudioObject->IsActive())
     {
         static float t = 0.0f;
@@ -570,7 +530,6 @@ bool ModuleScene::LoadScene(const std::string& filepath)
     file.close();
 
     Application::GetInstance().selectionManager->ClearSelection();
-
     ClearScene();
 
     if (document.contains("gameObjects") && document["gameObjects"].is_array()) {
@@ -604,7 +563,6 @@ void ModuleScene::ClearScene()
     if (!root) return;
 
     Application::GetInstance().selectionManager->ClearSelection();
-
     Application::GetInstance().camera->SetSceneCamera(nullptr);
 
     listenerObject = nullptr;

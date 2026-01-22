@@ -9,7 +9,6 @@ class GameObject;
 class FileSystem;
 class Renderer;
 class ComponentCamera;
-class SceneWindow;
 
 class ModuleScene : public Module
 {
@@ -61,13 +60,11 @@ private:
     unsigned int staticPlayingID = 0;
     unsigned int dynamicPlayingID = 0;
 
-    glm::vec3 tunnelCenter = glm::vec3(0.0f, 0.0f, 0.0f);
-    glm::vec3 tunnelHalfSize = glm::vec3(2.0f, 2.0f, 2.0f);
+    // Tunnel (manual control)
+    float tunnelAmount = 0.0f;      // current (smoothed)
+    float tunnelTarget = 0.0f;      // target (0 or 100)
+    bool  tunnelInside = false;     // toggled with T
 
-    float tunnelAmount = 0.0f;
-    float tunnelTarget = 0.0f;
-    bool  tunnelInside = false;
-
-    bool tunnelForce = false;
-    float tunnelForceValue = 0.0f;
+    bool tunnelForce = false;       // set with 1/2
+    float tunnelForceValue = 0.0f;  // 0 or 100
 };
