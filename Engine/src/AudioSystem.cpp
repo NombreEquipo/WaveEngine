@@ -23,6 +23,11 @@
 
 #include <windows.h>
 
+AudioEvent::AudioEvent() {
+    playingID = 0L;
+    eventCallback = (AkCallbackFunc)AudioSystem::EventCallBack;
+}
+
 AudioSystem::AudioSystem() {
 
 }
@@ -161,7 +166,7 @@ bool AudioSystem::InitCommunication() {
 }
 
 bool AudioSystem::Awake() {
-	
+
 	//Check engine has successfully initialized
     if (!InitEngine()) {
         LOG_CONSOLE("Failed to initialized the Audio Engine");
@@ -174,17 +179,19 @@ bool AudioSystem::Awake() {
     LOG_CONSOLE("Header Version: %d", AK_WWISESDK_VERSION_MAJOR);
     LOG_CONSOLE("Build Date: %s", __DATE__);
 
+    //create audio events
+    for (size_t i = 0; i < MAX_AUDIO_EVENTS; ++i) {
+
+        audioEvents.push_back(new AudioEvent);
+    }
+
     //load init bank
     LoadBank(BANKNAME_INIT);
 
     //load project specific bank
     LoadBank(BANKNAME_MUSIC);
 
-	//create audio events
-	for (size_t i = 0; i < MAX_AUDIO_EVENTS; ++i) {
-        
-        audioEvents.push_back(new AudioEvent);
-	}
+	
 
     SetGlobalVolume(globalVolume);
     return true;
@@ -230,6 +237,108 @@ bool AudioSystem::CleanUp() {
 
 }
 
+void AudioSystem::PlayEvent(AkUniqueID event, AkGameObjectID goID)
+{
+    for (size_t i = 0; i < MAX_AUDIO_EVENTS; i++)
+    {
+        //grab the first available slot (0L) to play an event in the max events pool 
+        if (audioEvents[i]->playingID == 0L)
+        {
+            AK::SoundEngine::PostEvent(event, goID, AkCallbackType::AK_EndOfEvent, audioEvents[i]->eventCallback, (void*)audioEvents[i]);
+            LOG_DEBUG("Playing event from %d audiogameobject", goID);
+            audioEvents[i]->playingID = 1L; //1L = event slot is now taken
+
+            return;
+        }
+    }
+    LOG_DEBUG("Maximum amount of audio events at the same time reached: %d", MAX_AUDIO_EVENTS);
+}
+
+
+// wrapper for string version of PlayEvent
+void AudioSystem::PlayEvent(const wchar_t* eventName, AkGameObjectID goID)
+{
+    AkUniqueID eventID = AK::SoundEngine::GetIDFromString(eventName);
+
+    if (eventID == AK_INVALID_UNIQUE_ID)
+    {
+        LOG_CONSOLE("Wwise Error: Event name '%ls' not found!", eventName);
+        return;
+    }
+
+    PlayEvent(eventID, goID);
+}
+
+void AudioSystem::StopEvent(AkUniqueID event, AkGameObjectID goID) {
+    AK::SoundEngine::ExecuteActionOnEvent(event, AK::SoundEngine::AkActionOnEventType::AkActionOnEventType_Stop, goID);
+    LOG_DEBUG("Stopping event from %d audiogameobject", goID);
+}
+
+void AudioSystem::PauseEvent(AkUniqueID event, AkGameObjectID goID) {
+    AK::SoundEngine::ExecuteActionOnEvent(event, AK::SoundEngine::AkActionOnEventType::AkActionOnEventType_Pause, goID);
+    LOG_DEBUG("Pausing event from %d audiogameobject", goID);
+}
+
+void AudioSystem::ResumeEvent(AkUniqueID event, AkGameObjectID goID) {
+    AK::SoundEngine::ExecuteActionOnEvent(event, AK::SoundEngine::AkActionOnEventType::AkActionOnEventType_Resume, gameObjectIDs[goID]);
+    LOG_DEBUG("Resuming event from %d audiogameobject", goID);
+}
+
+void AudioSystem::SetState(AkStateGroupID stateGroup, AkStateID state)
+{
+    AK::SoundEngine::SetState(stateGroup, state);
+    LOG_DEBUG("Setting wwise state through ID");
+}
+
+void AudioSystem::SetState(const char* stateGroup, const char* state)
+{
+    AK::SoundEngine::SetState(stateGroup, state);
+    LOG_DEBUG("Setting wwise state through name");
+}
+
+
+void AudioSystem::SetSwitch(AkSwitchGroupID switchGroup, AkSwitchStateID switchState, AkGameObjectID goID)
+{
+    AK::SoundEngine::SetSwitch(switchGroup, switchState, goID);
+    LOG_DEBUG("Setting wwise switch");
+}
+
+void AudioSystem::SetRTPCValue(AkRtpcID rtpcID, AkRtpcValue value) {
+    AK::SoundEngine::SetRTPCValue(rtpcID, value);
+    LOG_DEBUG("Setting RTPC value through ID");
+}
+
+void AudioSystem::SetRTPCValue(const char* name, int value) {
+    AK::SoundEngine::SetRTPCValue(name, value);
+    LOG_DEBUG("Setting RTPC value through name");
+}
+
+
+void AudioSystem::SetGlobalVolume(float vol) {
+    if (vol < 0.0f) vol = 0.0f;
+    else if (vol > 100.0f) vol = 100.0f;
+
+    globalVolume = vol;
+    AK::SoundEngine::SetOutputVolume(AK::SoundEngine::GetOutputID(AK_INVALID_UNIQUE_ID, 0.0f), (AkReal32)(vol * 0.01f)); //because wwise maps volume 0 to 1!
+}
+
+void AudioSystem::SetMasterVolume(int vol) {
+    AK::SoundEngine::SetRTPCValue(AK::GAME_PARAMETERS::MASTER_VOLUME, (AkRtpcValue)vol);
+}
+
+void AudioSystem::SetMusicVolume(int vol) {
+    AK::SoundEngine::SetRTPCValue(AK::GAME_PARAMETERS::MUSIC_VOLUME, (AkRtpcValue)vol);
+}
+
+void AudioSystem::SetSFXVolume(int vol) {
+    AK::SoundEngine::SetRTPCValue(AK::GAME_PARAMETERS::SFX_VOLUME, (AkRtpcValue)vol);
+}
+//
+//void AudioSystem::SetDialogVolume(int vol) {
+//    AK::SoundEngine::SetRTPCValue(AK::GAME_PARAMETERS::DIALOG_VOLUME, (AkRtpcValue)vol);
+//}
+
+
 void AudioSystem::LoadBank(const wchar_t* bankName) {
     AkBankID bankID;
     AKRESULT eResult = AK::SoundEngine::LoadBank(bankName, bankID);
@@ -266,6 +375,20 @@ void AudioSystem::SetPosition(AkGameObjectID id, const glm::vec3& pos, const glm
     soundPos.SetPosition(pos.x, pos.y, pos.z);
     soundPos.SetOrientation(front.x, front.y, front.z, top.x, top.y, top.z);
     AK::SoundEngine::SetPosition(id, soundPos);
+}
+
+
+
+void AudioSystem::EventCallBack(AkCallbackType in_eType, AkEventCallbackInfo* in_pEventInfo, void* in_pCallbackInfo, void* in_pCookie)
+{
+    // in this version of Wwise, the 'cookie' is passed as the 4th parameter
+    // this is the pointer to the AudioEvent passed in PostEvent
+    AudioEvent* pEvent = (AudioEvent*)in_pCookie;
+
+    if (pEvent && in_eType == AkCallbackType::AK_EndOfEvent)
+    {
+        pEvent->playingID = 0L; 
+    }
 }
 
 //---------------AK and helpers

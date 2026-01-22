@@ -7,14 +7,13 @@
 
 class AudioComponent;
 
-#define MAX_AUDIO_EVENTS 20
+#define MAX_AUDIO_EVENTS 30
 
 class AudioEvent {
 public:
-	AudioEvent() {
-	};
+	AudioEvent();
 
-	bool IsPlaying() {
+	bool IsEventPlaying() {
 		return playingID != 0;
 	};
 
@@ -34,8 +33,48 @@ public:
 
 	bool CleanUp();
 
-	void SetGlobalVolume(float volume) { globalVolume = volume; }
+
+	void PlayEvent(AkUniqueID event, AkGameObjectID goID);
+
+	void PlayEvent(const wchar_t* eventName, AkGameObjectID goID);
+	void StopEvent(AkUniqueID event, AkGameObjectID goID);
+	void PauseEvent(AkUniqueID event, AkGameObjectID goID);
+	void ResumeEvent(AkUniqueID event, AkGameObjectID goID);
+
+	// ----------------------- STATES ---------------------- //
+	void SetState(AkStateGroupID stateGroup, AkStateID state);
+	void SetState(const char* stateGroup, const char* state);
+
+	// ---------------------- SWITCHES ---------------------- //
+	void SetSwitch(AkSwitchGroupID switchGroup, AkSwitchStateID switchState, AkGameObjectID goID);
+
+	// ------------------------ RTPC ------------------------ //
+	void SetRTPCValue(const char* name, int value);
+	void SetRTPCValue(AkRtpcID rtpcID, AkRtpcValue value);
+
+	/* (From Wwise Docs) On playback, if no such game object-specific value has been set, 
+	the sound engine will look for a global RTPC value that will have been set by calling 
+	AK::SoundEngine::SetRTPCValue() with the AK_INVALID_GAME_OBJECT parameter or with no specified game object. 
+	If this global value does not exist, the sound engine will use the 
+	Game Parameter's default value as specified in the Wwise authoring application.
+	
+	Therefore these methods are for global parameters set in WWiseProject
+	
+	*/
+
+	////audio engine functions
+	//void PlayEngine();
+	//void PauseEngine();
+	//void StopEngine();
+
+
+	void SetGlobalVolume(float volume);
 	float GetGlobalVolume() { return globalVolume; }
+	
+	void SetMasterVolume(int volume);
+	/*void SetDialogVolume(int volume);*/
+	void SetSFXVolume(int volume);
+	void SetMusicVolume(int volume);
 
 	void RegisterAudioComponent(AudioComponent* component);
 	void UnregisterAudioComponent(AudioComponent* component);
@@ -43,6 +82,9 @@ public:
 	void RegisterGameObject(AkGameObjectID id, const char* name);
 	void UnregisterGameObject(AkGameObjectID id);
 	void SetPosition(AkGameObjectID id, const glm::vec3& pos, const glm::vec3& front, const glm::vec3& top);
+
+	static void EventCallBack(AkCallbackType in_eType, AkEventCallbackInfo* in_pEventInfo, void* in_pCallbackInfo, void* in_pCookie);
+
 
 private:
 	bool InitEngine();
@@ -53,6 +95,8 @@ private:
 	bool InitCommunication();
 
 	void AudioSystem::LoadBank(const wchar_t* bankName);
+
+	
 
 	float globalVolume = 100.0f;
 

@@ -17,6 +17,7 @@
 InspectorWindow::InspectorWindow()
     : EditorWindow("Inspector")
 {
+  
 }
 
 void InspectorWindow::Draw()
@@ -901,11 +902,39 @@ void InspectorWindow::DrawAudioSourceComponent(GameObject* selectedObject) {
         }
 
         if (ImGui::Button("Play")) {
-            source->PlayEvent(source->eventName.c_str());
+
+            std::string nameStr = source->eventName;
+            std::wstring wideName(nameStr.begin(), nameStr.end());
+
+            //get ID using  WIDE string
+            AkUniqueID eventID = AK::SoundEngine::GetIDFromString(wideName.c_str());
+            
+            
+            if (eventID == AK_INVALID_UNIQUE_ID)
+            {
+                LOG_CONSOLE("Wwise Error: Event name '%ls' not found!", source->eventName);
+                return;
+            }
+
+            Application::GetInstance().audio.get()->PlayAudio(source, eventID);
+            
         }
         ImGui::SameLine();
         if (ImGui::Button("Stop")) {
-            source->StopEvent(source->eventName.c_str());
+
+            std::string nameStr = source->eventName;
+            std::wstring wideName(nameStr.begin(), nameStr.end());
+
+            //get ID using  WIDE string
+            AkUniqueID eventID = AK::SoundEngine::GetIDFromString(wideName.c_str());
+
+            if (eventID == AK_INVALID_UNIQUE_ID)
+            {
+                LOG_CONSOLE("Wwise Error: Event name '%ls' not found!", source->eventName);
+                return;
+            }
+
+            Application::GetInstance().audio.get()->StopAudio(source, eventID);
         }
     }
 }

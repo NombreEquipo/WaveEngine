@@ -7,8 +7,14 @@
 AudioListener::AudioListener(GameObject* containerGO)
     : Component(containerGO, ComponentType::LISTENER)
 {
-    this->owner = containerGO;
-    this->goID = (AkGameObjectID)this;
+    /*this->owner = containerGO;*/
+    this->goID = (AkGameObjectID)containerGO; 
+    this->GO = std::shared_ptr<GameObject>(containerGO, [](GameObject*) {});
+    if (this->goID == 0){
+        LOG_CONSOLE("Listener gameobject ID was nullptr");
+        return;
+    }
+
 
     AK::SoundEngine::RegisterGameObj(this->goID, "MainListener");
     AK::SoundEngine::SetDefaultListeners(&this->goID, 1);

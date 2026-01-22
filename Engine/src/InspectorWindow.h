@@ -4,6 +4,7 @@
 #include <imgui.h>  
 #include <ImGuizmo.h>
 #include <vector>
+#include "AudioSystem.h"
 
 class GameObject;
 
@@ -39,6 +40,8 @@ private:
     // Helper methods
     void GetAllGameObjects(GameObject* root, std::vector<GameObject*>& outObjects);
     bool IsDescendantOf(GameObject* potentialDescendant, GameObject* potentialAncestor);
+
+    AudioSystem* audioSystem;
 
     // Gizmo state
     ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::TRANSLATE;

@@ -20,7 +20,10 @@
 
 #include "Module.h"
 #include "AudioSystem.h"
+#include "AudioSource.h"
 #include <memory>
+
+
 
 class ModuleAudio : public Module {
 public:
@@ -31,5 +34,19 @@ public:
     bool Update() override;
     bool CleanUp() override;
 
+    void PlayAudio(AudioSource* source, AkUniqueID event);
+    void PlayAudio(AudioSource* source, const wchar_t* eventName);
+
+    void StopAudio(AudioSource* source, AkUniqueID event);
+
+    void PauseAudio(AudioSource* source, AkUniqueID event);
+
+    void ResumeAudio(AudioSource* source, AkUniqueID event);
+
+    void SetSwitch(AudioSource* source, AkSwitchGroupID switchGroup, AkSwitchStateID switchState);
+
+
     std::unique_ptr<AudioSystem> audioSystem;
 };
+
+

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WwiseDocument Type="WorkUnit" ID="{F7D79E53-8C87-4B2D-9C7B-4D4D9C5E20AB}" SchemaVersion="133">
+	<Events>
+		<WorkUnit Name="Default Work Unit" ID="{F7D79E53-8C87-4B2D-9C7B-4D4D9C5E20AB}" PersistMode="Standalone">
+			<ChildrenList>
+				<Event Name="Play_LookinFresh" ID="{AA7F5DED-771C-45B7-81FB-B880BC6EC428}">
+					<ChildrenList>
+						<Action Name="" ID="{C7D924C5-CF98-474B-BEDA-9B66DE89B150}" ShortID="960650751">
+							<ReferenceList>
+								<Reference Name="Target">
+									<ObjectRef Name="LookinFresh_Playlist" ID="{9037899F-5605-420E-88A5-1889CC89EB1D}" WorkUnitID="{E6B49273-C487-4B59-8546-E4217EE02E56}"/>
+								</Reference>
+							</ReferenceList>
+						</Action>
+					</ChildrenList>
+				</Event>
+				<Event Name="HelpMe" ID="{84CBD89F-1713-4085-A80D-62410557503B}">
+					<ChildrenList>
+						<Action Name="" ID="{BB62EE20-C653-4402-96FA-B4803500D272}" ShortID="555144948">
+							<ReferenceList>
+								<Reference Name="Target">
+									<ObjectRef Name="HelpMe" ID="{5834A212-7E22-4362-B41A-82A3A690E991}" WorkUnitID="{E6B49273-C487-4B59-8546-E4217EE02E56}"/>
+								</Reference>
+							</ReferenceList>
+						</Action>
+					</ChildrenList>
+				</Event>
+			</ChildrenList>
+		</WorkUnit>
+	</Events>
+</WwiseDocument>

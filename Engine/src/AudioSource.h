@@ -12,13 +12,13 @@ public:
     //override from AudioComponent
     void SetTransform() override;
 
-    //Play sound by its name
-    void PlayEvent(const char* eventName);
+    ////Play sound by its name
+    //void PlayEvent(const char* eventName);
 
-    //Play sound by its id
-    void PlayEvent(AkUniqueID eventID);
+    ////Play sound by its id
+    //void PlayEvent(AkUniqueID eventID);
 
-    void StopEvent(const char* eventName);
+    //void StopEvent(const char* eventName);
 
 public:
     std::string eventName = "";

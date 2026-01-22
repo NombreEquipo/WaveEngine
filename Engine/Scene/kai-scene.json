@@ -24,9 +24,9 @@
                                                         0.0
                                                     ],
                                                     "rotation": [
-                                                        -4.8531413552696385e-20,
-                                                        -2.241435015870838e-33,
-                                                        -5.292443133048108e-12
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
                                                     ],
                                                     "scale": [
                                                         1.0,
@@ -37,7 +37,7 @@
                                                 },
                                                 {
                                                     "active": true,
-                                                    "meshUID": 5139974064370242971,
+                                                    "meshUID": 141673722846350096,
                                                     "type": 1
                                                 },
                                                 {
@@ -63,7 +63,7 @@
                                                     "hasMaterialProperties": true,
                                                     "metallic": 0.0,
                                                     "opacity": 1.0,
-                                                    "originalTextureUID": 14933488625876465996,
+                                                    "originalTextureUID": 558336465179007685,
                                                     "roughness": 0.5,
                                                     "shininess": 32.0,
                                                     "specularColor": [
@@ -72,7 +72,7 @@
                                                         0.8999999761581421,
                                                         1.0
                                                     ],
-                                                    "textureUID": 14933488625876465996,
+                                                    "textureUID": 558336465179007685,
                                                     "type": 2,
                                                     "useCheckerboard": false
                                                 }
@@ -185,7 +185,7 @@
                                                 },
                                                 {
                                                     "active": true,
-                                                    "meshUID": 5139974064370242972,
+                                                    "meshUID": 141673722846350097,
                                                     "type": 1
                                                 },
                                                 {
@@ -211,7 +211,7 @@
                                                     "hasMaterialProperties": true,
                                                     "metallic": 0.0,
                                                     "opacity": 1.0,
-                                                    "originalTextureUID": 7887423088524502703,
+                                                    "originalTextureUID": 5806545959545516835,
                                                     "roughness": 0.5,
                                                     "shininess": 32.0,
                                                     "specularColor": [
@@ -220,7 +220,7 @@
                                                         0.8999999761581421,
                                                         1.0
                                                     ],
-                                                    "textureUID": 7887423088524502703,
+                                                    "textureUID": 5806545959545516835,
                                                     "type": 2,
                                                     "useCheckerboard": false
                                                 }
@@ -333,7 +333,7 @@
                                                 },
                                                 {
                                                     "active": true,
-                                                    "meshUID": 5139974064370242973,
+                                                    "meshUID": 141673722846350098,
                                                     "type": 1
                                                 },
                                                 {
@@ -359,7 +359,7 @@
                                                     "hasMaterialProperties": true,
                                                     "metallic": 0.0,
                                                     "opacity": 1.0,
-                                                    "originalTextureUID": 7887423088524502703,
+                                                    "originalTextureUID": 5806545959545516835,
                                                     "roughness": 0.5,
                                                     "shininess": 32.0,
                                                     "specularColor": [
@@ -368,7 +368,7 @@
                                                         0.8999999761581421,
                                                         1.0
                                                     ],
-                                                    "textureUID": 7887423088524502703,
+                                                    "textureUID": 5806545959545516835,
                                                     "type": 2,
                                                     "useCheckerboard": false
                                                 }
@@ -481,7 +481,7 @@
                                                 },
                                                 {
                                                     "active": true,
-                                                    "meshUID": 5139974064370242974,
+                                                    "meshUID": 141673722846350099,
                                                     "type": 1
                                                 },
                                                 {
@@ -507,7 +507,7 @@
                                                     "hasMaterialProperties": true,
                                                     "metallic": 0.0,
                                                     "opacity": 1.0,
-                                                    "originalTextureUID": 8923526209380654283,
+                                                    "originalTextureUID": 7075306534483672705,
                                                     "roughness": 0.5,
                                                     "shininess": 32.0,
                                                     "specularColor": [
@@ -516,7 +516,7 @@
                                                         0.8999999761581421,
                                                         1.0
                                                     ],
-                                                    "textureUID": 8923526209380654283,
+                                                    "textureUID": 7075306534483672705,
                                                     "type": 2,
                                                     "useCheckerboard": false
                                                 }
@@ -629,7 +629,7 @@
                                                 },
                                                 {
                                                     "active": true,
-                                                    "meshUID": 5139974064370242975,
+                                                    "meshUID": 141673722846350100,
                                                     "type": 1
                                                 },
                                                 {
@@ -655,7 +655,7 @@
                                                     "hasMaterialProperties": true,
                                                     "metallic": 0.0,
                                                     "opacity": 1.0,
-                                                    "originalTextureUID": 8923526209380654283,
+                                                    "originalTextureUID": 7075306534483672705,
                                                     "roughness": 0.5,
                                                     "shininess": 32.0,
                                                     "specularColor": [
@@ -664,7 +664,7 @@
                                                         0.8999999761581421,
                                                         1.0
                                                     ],
-                                                    "textureUID": 8923526209380654283,
+                                                    "textureUID": 7075306534483672705,
                                                     "type": 2,
                                                     "useCheckerboard": false
                                                 }
@@ -777,7 +777,7 @@
                                                 },
                                                 {
                                                     "active": true,
-                                                    "meshUID": 5139974064370242976,
+                                                    "meshUID": 141673722846350101,
                                                     "type": 1
                                                 },
                                                 {
@@ -803,7 +803,7 @@
                                                     "hasMaterialProperties": true,
                                                     "metallic": 0.0,
                                                     "opacity": 1.0,
-                                                    "originalTextureUID": 2356646492431978539,
+                                                    "originalTextureUID": 16647892424427638876,
                                                     "roughness": 0.5,
                                                     "shininess": 32.0,
                                                     "specularColor": [
@@ -812,7 +812,7 @@
                                                         0.8999999761581421,
                                                         1.0
                                                     ],
-                                                    "textureUID": 2356646492431978539,
+                                                    "textureUID": 16647892424427638876,
                                                     "type": 2,
                                                     "useCheckerboard": false
                                                 }
@@ -922,7 +922,7 @@
                                         },
                                         {
                                             "active": true,
-                                            "meshUID": 5139974064370242977,
+                                            "meshUID": 141673722846350102,
                                             "type": 1
                                         },
                                         {
@@ -948,7 +948,7 @@
                                             "hasMaterialProperties": true,
                                             "metallic": 0.0,
                                             "opacity": 1.0,
-                                            "originalTextureUID": 7887423088524502703,
+                                            "originalTextureUID": 5806545959545516835,
                                             "roughness": 0.5,
                                             "shininess": 32.0,
                                             "specularColor": [
@@ -957,7 +957,7 @@
                                                 0.8999999761581421,
                                                 1.0
                                             ],
-                                            "textureUID": 7887423088524502703,
+                                            "textureUID": 5806545959545516835,
                                             "type": 2,
                                             "useCheckerboard": false
                                         }
@@ -1046,7 +1046,7 @@
                                                 },
                                                 {
                                                     "active": true,
-                                                    "meshUID": 5139974064370242978,
+                                                    "meshUID": 141673722846350103,
                                                     "type": 1
                                                 },
                                                 {
@@ -1072,7 +1072,7 @@
                                                     "hasMaterialProperties": true,
                                                     "metallic": 0.0,
                                                     "opacity": 1.0,
-                                                    "originalTextureUID": 8923526209380654283,
+                                                    "originalTextureUID": 7075306534483672705,
                                                     "roughness": 0.5,
                                                     "shininess": 32.0,
                                                     "specularColor": [
@@ -1081,7 +1081,7 @@
                                                         0.8999999761581421,
                                                         1.0
                                                     ],
-                                                    "textureUID": 8923526209380654283,
+                                                    "textureUID": 7075306534483672705,
                                                     "type": 2,
                                                     "useCheckerboard": false
                                                 }
@@ -1191,7 +1191,7 @@
                                         },
                                         {
                                             "active": true,
-                                            "meshUID": 5139974064370242979,
+                                            "meshUID": 141673722846350104,
                                             "type": 1
                                         },
                                         {
@@ -1217,7 +1217,7 @@
                                             "hasMaterialProperties": true,
                                             "metallic": 0.0,
                                             "opacity": 1.0,
-                                            "originalTextureUID": 2356646492431978539,
+                                            "originalTextureUID": 16647892424427638876,
                                             "roughness": 0.5,
                                             "shininess": 32.0,
                                             "specularColor": [
@@ -1226,7 +1226,7 @@
                                                 0.8999999761581421,
                                                 1.0
                                             ],
-                                            "textureUID": 2356646492431978539,
+                                            "textureUID": 16647892424427638876,
                                             "type": 2,
                                             "useCheckerboard": false
                                         }
@@ -1312,7 +1312,7 @@
                                         },
                                         {
                                             "active": true,
-                                            "meshUID": 5139974064370242980,
+                                            "meshUID": 141673722846350105,
                                             "type": 1
                                         },
                                         {
@@ -1338,7 +1338,7 @@
                                             "hasMaterialProperties": true,
                                             "metallic": 0.0,
                                             "opacity": 1.0,
-                                            "originalTextureUID": 3196507841732221276,
+                                            "originalTextureUID": 16270433273830406031,
                                             "roughness": 0.5,
                                             "shininess": 32.0,
                                             "specularColor": [
@@ -1347,7 +1347,7 @@
                                                 0.8999999761581421,
                                                 1.0
                                             ],
-                                            "textureUID": 3196507841732221276,
+                                            "textureUID": 16270433273830406031,
                                             "type": 2,
                                             "useCheckerboard": false
                                         }
@@ -1436,7 +1436,7 @@
                                                 },
                                                 {
                                                     "active": true,
-                                                    "meshUID": 5139974064370242981,
+                                                    "meshUID": 141673722846350106,
                                                     "type": 1
                                                 },
                                                 {
@@ -1462,7 +1462,7 @@
                                                     "hasMaterialProperties": true,
                                                     "metallic": 0.0,
                                                     "opacity": 1.0,
-                                                    "originalTextureUID": 7887423088524502703,
+                                                    "originalTextureUID": 5806545959545516835,
                                                     "roughness": 0.5,
                                                     "shininess": 32.0,
                                                     "specularColor": [
@@ -1471,7 +1471,7 @@
                                                         0.8999999761581421,
                                                         1.0
                                                     ],
-                                                    "textureUID": 7887423088524502703,
+                                                    "textureUID": 5806545959545516835,
                                                     "type": 2,
                                                     "useCheckerboard": false
                                                 }
@@ -1584,7 +1584,7 @@
                                                 },
                                                 {
                                                     "active": true,
-                                                    "meshUID": 5139974064370242982,
+                                                    "meshUID": 141673722846350107,
                                                     "type": 1
                                                 },
                                                 {
@@ -1610,7 +1610,7 @@
                                                     "hasMaterialProperties": true,
                                                     "metallic": 0.0,
                                                     "opacity": 1.0,
-                                                    "originalTextureUID": 7887423088524502703,
+                                                    "originalTextureUID": 5806545959545516835,
                                                     "roughness": 0.5,
                                                     "shininess": 32.0,
                                                     "specularColor": [
@@ -1619,7 +1619,7 @@
                                                         0.8999999761581421,
                                                         1.0
                                                     ],
-                                                    "textureUID": 7887423088524502703,
+                                                    "textureUID": 5806545959545516835,
                                                     "type": 2,
                                                     "useCheckerboard": false
                                                 }
@@ -1732,7 +1732,7 @@
                                                 },
                                                 {
                                                     "active": true,
-                                                    "meshUID": 5139974064370242983,
+                                                    "meshUID": 141673722846350108,
                                                     "type": 1
                                                 },
                                                 {
@@ -1875,7 +1875,7 @@
                                         },
                                         {
                                             "active": true,
-                                            "meshUID": 5139974064370242984,
+                                            "meshUID": 141673722846350109,
                                             "type": 1
                                         },
                                         {
@@ -1901,7 +1901,7 @@
                                             "hasMaterialProperties": true,
                                             "metallic": 0.0,
                                             "opacity": 1.0,
-                                            "originalTextureUID": 7887423088524502703,
+                                            "originalTextureUID": 5806545959545516835,
                                             "roughness": 0.5,
                                             "shininess": 32.0,
                                             "specularColor": [
@@ -1910,7 +1910,7 @@
                                                 0.8999999761581421,
                                                 1.0
                                             ],
-                                            "textureUID": 7887423088524502703,
+                                            "textureUID": 5806545959545516835,
                                             "type": 2,
                                             "useCheckerboard": false
                                         }
@@ -1999,7 +1999,7 @@
                                                 },
                                                 {
                                                     "active": true,
-                                                    "meshUID": 5139974064370242985,
+                                                    "meshUID": 141673722846350110,
                                                     "type": 1
                                                 },
                                                 {
@@ -2025,7 +2025,7 @@
                                                     "hasMaterialProperties": true,
                                                     "metallic": 0.0,
                                                     "opacity": 1.0,
-                                                    "originalTextureUID": 8923526209380654283,
+                                                    "originalTextureUID": 7075306534483672705,
                                                     "roughness": 0.5,
                                                     "shininess": 32.0,
                                                     "specularColor": [
@@ -2034,7 +2034,7 @@
                                                         0.8999999761581421,
                                                         1.0
                                                     ],
-                                                    "textureUID": 8923526209380654283,
+                                                    "textureUID": 7075306534483672705,
                                                     "type": 2,
                                                     "useCheckerboard": false
                                                 }
@@ -2147,7 +2147,7 @@
                                                 },
                                                 {
                                                     "active": true,
-                                                    "meshUID": 5139974064370242986,
+                                                    "meshUID": 141673722846350111,
                                                     "type": 1
                                                 },
                                                 {
@@ -2173,7 +2173,7 @@
                                                     "hasMaterialProperties": true,
                                                     "metallic": 0.0,
                                                     "opacity": 1.0,
-                                                    "originalTextureUID": 5323166755355988913,
+                                                    "originalTextureUID": 8057482603548063513,
                                                     "roughness": 0.5,
                                                     "shininess": 32.0,
                                                     "specularColor": [
@@ -2182,7 +2182,7 @@
                                                         0.8999999761581421,
                                                         1.0
                                                     ],
-                                                    "textureUID": 5323166755355988913,
+                                                    "textureUID": 8057482603548063513,
                                                     "type": 2,
                                                     "useCheckerboard": false
                                                 }
@@ -2292,7 +2292,7 @@
                                         },
                                         {
                                             "active": true,
-                                            "meshUID": 5139974064370242987,
+                                            "meshUID": 141673722846350112,
                                             "type": 1
                                         },
                                         {
@@ -2318,7 +2318,7 @@
                                             "hasMaterialProperties": true,
                                             "metallic": 0.0,
                                             "opacity": 1.0,
-                                            "originalTextureUID": 8514698901979424482,
+                                            "originalTextureUID": 15456542229766191456,
                                             "roughness": 0.5,
                                             "shininess": 32.0,
                                             "specularColor": [
@@ -2327,7 +2327,7 @@
                                                 0.8999999761581421,
                                                 1.0
                                             ],
-                                            "textureUID": 8514698901979424482,
+                                            "textureUID": 15456542229766191456,
                                             "type": 2,
                                             "useCheckerboard": false
                                         }
@@ -2416,7 +2416,7 @@
                                                 },
                                                 {
                                                     "active": true,
-                                                    "meshUID": 5139974064370242988,
+                                                    "meshUID": 141673722846350113,
                                                     "type": 1
                                                 },
                                                 {
@@ -2442,7 +2442,7 @@
                                                     "hasMaterialProperties": true,
                                                     "metallic": 0.0,
                                                     "opacity": 1.0,
-                                                    "originalTextureUID": 8923526209380654283,
+                                                    "originalTextureUID": 7075306534483672705,
                                                     "roughness": 0.5,
                                                     "shininess": 32.0,
                                                     "specularColor": [
@@ -2451,9 +2451,13 @@
                                                         0.8999999761581421,
                                                         1.0
                                                     ],
-                                                    "textureUID": 8923526209380654283,
+                                                    "textureUID": 7075306534483672705,
                                                     "type": 2,
                                                     "useCheckerboard": false
+                                                },
+                                                {
+                                                    "active": true,
+                                                    "type": 6
                                                 }
                                             ],
                                             "name": "City_building_022"
@@ -2564,7 +2568,7 @@
                                                 },
                                                 {
                                                     "active": true,
-                                                    "meshUID": 5139974064370242989,
+                                                    "meshUID": 141673722846350114,
                                                     "type": 1
                                                 },
                                                 {
@@ -2590,7 +2594,7 @@
                                                     "hasMaterialProperties": true,
                                                     "metallic": 0.0,
                                                     "opacity": 1.0,
-                                                    "originalTextureUID": 592532233655192983,
+                                                    "originalTextureUID": 8316147816499023371,
                                                     "roughness": 0.5,
                                                     "shininess": 32.0,
                                                     "specularColor": [
@@ -2599,7 +2603,7 @@
                                                         0.8999999761581421,
                                                         1.0
                                                     ],
-                                                    "textureUID": 592532233655192983,
+                                                    "textureUID": 8316147816499023371,
                                                     "type": 2,
                                                     "useCheckerboard": false
                                                 }
@@ -2712,7 +2716,7 @@
                                                 },
                                                 {
                                                     "active": true,
-                                                    "meshUID": 5139974064370242990,
+                                                    "meshUID": 141673722846350115,
                                                     "type": 1
                                                 },
                                                 {
@@ -2738,7 +2742,7 @@
                                                     "hasMaterialProperties": true,
                                                     "metallic": 0.0,
                                                     "opacity": 1.0,
-                                                    "originalTextureUID": 592532233655192983,
+                                                    "originalTextureUID": 8316147816499023371,
                                                     "roughness": 0.5,
                                                     "shininess": 32.0,
                                                     "specularColor": [
@@ -2747,7 +2751,7 @@
                                                         0.8999999761581421,
                                                         1.0
                                                     ],
-                                                    "textureUID": 592532233655192983,
+                                                    "textureUID": 8316147816499023371,
                                                     "type": 2,
                                                     "useCheckerboard": false
                                                 }
@@ -2860,7 +2864,7 @@
                                                 },
                                                 {
                                                     "active": true,
-                                                    "meshUID": 5139974064370242991,
+                                                    "meshUID": 141673722846350116,
                                                     "type": 1
                                                 },
                                                 {
@@ -2886,7 +2890,7 @@
                                                     "hasMaterialProperties": true,
                                                     "metallic": 0.0,
                                                     "opacity": 1.0,
-                                                    "originalTextureUID": 3196507841732221276,
+                                                    "originalTextureUID": 16270433273830406031,
                                                     "roughness": 0.5,
                                                     "shininess": 32.0,
                                                     "specularColor": [
@@ -2895,7 +2899,7 @@
                                                         0.8999999761581421,
                                                         1.0
                                                     ],
-                                                    "textureUID": 3196507841732221276,
+                                                    "textureUID": 16270433273830406031,
                                                     "type": 2,
                                                     "useCheckerboard": false
                                                 }
@@ -3008,7 +3012,7 @@
                                                 },
                                                 {
                                                     "active": true,
-                                                    "meshUID": 5139974064370242992,
+                                                    "meshUID": 141673722846350117,
                                                     "type": 1
                                                 },
                                                 {
@@ -3034,7 +3038,7 @@
                                                     "hasMaterialProperties": true,
                                                     "metallic": 0.0,
                                                     "opacity": 1.0,
-                                                    "originalTextureUID": 2356646492431978539,
+                                                    "originalTextureUID": 16647892424427638876,
                                                     "roughness": 0.5,
                                                     "shininess": 32.0,
                                                     "specularColor": [
@@ -3043,7 +3047,7 @@
                                                         0.8999999761581421,
                                                         1.0
                                                     ],
-                                                    "textureUID": 2356646492431978539,
+                                                    "textureUID": 16647892424427638876,
                                                     "type": 2,
                                                     "useCheckerboard": false
                                                 }
@@ -3153,7 +3157,7 @@
                                         },
                                         {
                                             "active": true,
-                                            "meshUID": 5139974064370242993,
+                                            "meshUID": 141673722846350118,
                                             "type": 1
                                         },
                                         {
@@ -3179,7 +3183,7 @@
                                             "hasMaterialProperties": true,
                                             "metallic": 0.0,
                                             "opacity": 1.0,
-                                            "originalTextureUID": 8514698901979424482,
+                                            "originalTextureUID": 15456542229766191456,
                                             "roughness": 0.5,
                                             "shininess": 32.0,
                                             "specularColor": [
@@ -3188,7 +3192,7 @@
                                                 0.8999999761581421,
                                                 1.0
                                             ],
-                                            "textureUID": 8514698901979424482,
+                                            "textureUID": 15456542229766191456,
                                             "type": 2,
                                             "useCheckerboard": false
                                         }
@@ -3277,7 +3281,7 @@
                                                 },
                                                 {
                                                     "active": true,
-                                                    "meshUID": 5139974064370242994,
+                                                    "meshUID": 141673722846350119,
                                                     "type": 1
                                                 },
                                                 {
@@ -3303,7 +3307,7 @@
                                                     "hasMaterialProperties": true,
                                                     "metallic": 0.0,
                                                     "opacity": 1.0,
-                                                    "originalTextureUID": 592532233655192983,
+                                                    "originalTextureUID": 8316147816499023371,
                                                     "roughness": 0.5,
                                                     "shininess": 32.0,
                                                     "specularColor": [
@@ -3312,7 +3316,7 @@
                                                         0.8999999761581421,
                                                         1.0
                                                     ],
-                                                    "textureUID": 592532233655192983,
+                                                    "textureUID": 8316147816499023371,
                                                     "type": 2,
                                                     "useCheckerboard": false
                                                 }
@@ -3425,7 +3429,7 @@
                                                 },
                                                 {
                                                     "active": true,
-                                                    "meshUID": 5139974064370242995,
+                                                    "meshUID": 141673722846350120,
                                                     "type": 1
                                                 },
                                                 {
@@ -3571,7 +3575,7 @@
                                                 },
                                                 {
                                                     "active": true,
-                                                    "meshUID": 5139974064370242996,
+                                                    "meshUID": 141673722846350121,
                                                     "type": 1
                                                 },
                                                 {
@@ -3717,7 +3721,7 @@
                                                 },
                                                 {
                                                     "active": true,
-                                                    "meshUID": 5139974064370242997,
+                                                    "meshUID": 141673722846350122,
                                                     "type": 1
                                                 },
                                                 {
@@ -3743,7 +3747,7 @@
                                                     "hasMaterialProperties": true,
                                                     "metallic": 0.0,
                                                     "opacity": 1.0,
-                                                    "originalTextureUID": 5323166755355988913,
+                                                    "originalTextureUID": 8057482603548063513,
                                                     "roughness": 0.5,
                                                     "shininess": 32.0,
                                                     "specularColor": [
@@ -3752,7 +3756,7 @@
                                                         0.8999999761581421,
                                                         1.0
                                                     ],
-                                                    "textureUID": 5323166755355988913,
+                                                    "textureUID": 8057482603548063513,
                                                     "type": 2,
                                                     "useCheckerboard": false
                                                 }
@@ -3862,7 +3866,7 @@
                                         },
                                         {
                                             "active": true,
-                                            "meshUID": 5139974064370242998,
+                                            "meshUID": 141673722846350123,
                                             "type": 1
                                         },
                                         {
@@ -3888,7 +3892,7 @@
                                             "hasMaterialProperties": true,
                                             "metallic": 0.0,
                                             "opacity": 1.0,
-                                            "originalTextureUID": 8514698901979424482,
+                                            "originalTextureUID": 15456542229766191456,
                                             "roughness": 0.5,
                                             "shininess": 32.0,
                                             "specularColor": [
@@ -3897,7 +3901,7 @@
                                                 0.8999999761581421,
                                                 1.0
                                             ],
-                                            "textureUID": 8514698901979424482,
+                                            "textureUID": 15456542229766191456,
                                             "type": 2,
                                             "useCheckerboard": false
                                         }
@@ -3983,7 +3987,7 @@
                                         },
                                         {
                                             "active": true,
-                                            "meshUID": 5139974064370242999,
+                                            "meshUID": 141673722846350124,
                                             "type": 1
                                         },
                                         {
@@ -4009,7 +4013,7 @@
                                             "hasMaterialProperties": true,
                                             "metallic": 0.0,
                                             "opacity": 1.0,
-                                            "originalTextureUID": 14933488625876465996,
+                                            "originalTextureUID": 558336465179007685,
                                             "roughness": 0.5,
                                             "shininess": 32.0,
                                             "specularColor": [
@@ -4018,7 +4022,7 @@
                                                 0.8999999761581421,
                                                 1.0
                                             ],
-                                            "textureUID": 14933488625876465996,
+                                            "textureUID": 558336465179007685,
                                             "type": 2,
                                             "useCheckerboard": false
                                         }
@@ -4104,7 +4108,7 @@
                                         },
                                         {
                                             "active": true,
-                                            "meshUID": 5139974064370243000,
+                                            "meshUID": 141673722846350125,
                                             "type": 1
                                         },
                                         {
@@ -4130,7 +4134,7 @@
                                             "hasMaterialProperties": true,
                                             "metallic": 0.0,
                                             "opacity": 1.0,
-                                            "originalTextureUID": 3196507841732221276,
+                                            "originalTextureUID": 16270433273830406031,
                                             "roughness": 0.5,
                                             "shininess": 32.0,
                                             "specularColor": [
@@ -4139,7 +4143,7 @@
                                                 0.8999999761581421,
                                                 1.0
                                             ],
-                                            "textureUID": 3196507841732221276,
+                                            "textureUID": 16270433273830406031,
                                             "type": 2,
                                             "useCheckerboard": false
                                         }
@@ -4243,176 +4247,19 @@
                 },
                 {
                     "active": true,
-                    "aspectRatio": 1.601123571395874,
+                    "aspectRatio": 1.826704502105713,
                     "farPlane": 500.0,
                     "fov": 45.0,
                     "frustumCullingEnabled": false,
                     "nearPlane": 0.10000000149011612,
                     "type": 3
-                }
-            ],
-            "name": "Camera"
-        },
-        {
-            "active": true,
-            "children": [
-                {
-                    "active": true,
-                    "children": [],
-                    "components": [
-                        {
-                            "active": true,
-                            "position": [
-                                0.0,
-                                0.0,
-                                0.0
-                            ],
-                            "rotation": [
-                                0.0,
-                                0.0,
-                                0.0
-                            ],
-                            "scale": [
-                                100.0,
-                                100.0,
-                                100.0
-                            ],
-                            "type": 0
-                        },
-                        {
-                            "active": true,
-                            "meshUID": 7678279909780219849,
-                            "type": 1
-                        },
-                        {
-                            "active": true,
-                            "ambientColor": [
-                                0.0,
-                                0.0,
-                                0.0,
-                                1.0
-                            ],
-                            "diffuseColor": [
-                                0.800000011920929,
-                                0.800000011920929,
-                                0.800000011920929,
-                                1.0
-                            ],
-                            "emissiveColor": [
-                                0.0,
-                                0.0,
-                                0.0,
-                                1.0
-                            ],
-                            "hasMaterialProperties": true,
-                            "metallic": 0.0,
-                            "opacity": 1.0,
-                            "originalTextureUID": 1107441312755817566,
-                            "roughness": 0.5,
-                            "shininess": 32.0,
-                            "specularColor": [
-                                0.0,
-                                0.0,
-                                0.0,
-                                1.0
-                            ],
-                            "textureUID": 1107441312755817566,
-                            "type": 2,
-                            "useCheckerboard": false
-                        }
-                    ],
-                    "name": "Chimney"
                 },
                 {
                     "active": true,
-                    "children": [],
-                    "components": [
-                        {
-                            "active": true,
-                            "position": [
-                                0.0,
-                                0.0,
-                                0.0
-                            ],
-                            "rotation": [
-                                0.0,
-                                0.0,
-                                0.0
-                            ],
-                            "scale": [
-                                15.000004768371582,
-                                15.000004768371582,
-                                15.000004768371582
-                            ],
-                            "type": 0
-                        },
-                        {
-                            "active": true,
-                            "meshUID": 7678279909780219850,
-                            "type": 1
-                        },
-                        {
-                            "active": true,
-                            "ambientColor": [
-                                0.0,
-                                0.0,
-                                0.0,
-                                1.0
-                            ],
-                            "diffuseColor": [
-                                0.800000011920929,
-                                0.800000011920929,
-                                0.800000011920929,
-                                1.0
-                            ],
-                            "emissiveColor": [
-                                0.0,
-                                0.0,
-                                0.0,
-                                1.0
-                            ],
-                            "hasMaterialProperties": true,
-                            "metallic": 0.0,
-                            "opacity": 1.0,
-                            "originalTextureUID": 1107441312755817566,
-                            "roughness": 0.5,
-                            "shininess": 32.0,
-                            "specularColor": [
-                                0.0,
-                                0.0,
-                                0.0,
-                                1.0
-                            ],
-                            "textureUID": 1107441312755817566,
-                            "type": 2,
-                            "useCheckerboard": false
-                        }
-                    ],
-                    "name": "Baker_house"
+                    "type": 5
                 }
             ],
-            "components": [
-                {
-                    "active": true,
-                    "position": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "rotation": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "scale": [
-                        0.01260315626859665,
-                        0.01260315626859665,
-                        0.01260315626859665
-                    ],
-                    "type": 0
-                }
-            ],
-            "name": "RootNode"
+            "name": "Camera"
         }
     ],
     "version": 1

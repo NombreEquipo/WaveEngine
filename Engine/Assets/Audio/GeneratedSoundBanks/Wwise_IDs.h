@@ -13,27 +13,47 @@ namespace AK
 {
     namespace EVENTS
     {
+        static const AkUniqueID HELPME = 1896801622U;
         static const AkUniqueID PLAY_LOOKINFRESH = 111646406U;
     } // namespace EVENTS
 
     namespace STATES
     {
-        namespace LOOKINFRESH_STATE
+        namespace TIMEOFDAY
         {
-            static const AkUniqueID GROUP = 1714298281U;
+            static const AkUniqueID GROUP = 3729505769U;
 
             namespace STATE
             {
-                static const AkUniqueID HOTLANTIS = 1220000209U;
+                static const AkUniqueID DAY = 311764537U;
+                static const AkUniqueID NIGHT = 1011622525U;
                 static const AkUniqueID NONE = 748895195U;
-                static const AkUniqueID SHRIMPKICKS = 2048228345U;
             } // namespace STATE
-        } // namespace LOOKINFRESH_STATE
+        } // namespace TIMEOFDAY
 
     } // namespace STATES
 
+    namespace SWITCHES
+    {
+        namespace SHOP
+        {
+            static const AkUniqueID GROUP = 251412225U;
+
+            namespace SWITCH
+            {
+                static const AkUniqueID HOTLANTIS = 1220000209U;
+                static const AkUniqueID SHRIMPKICKS = 2048228345U;
+            } // namespace SWITCH
+        } // namespace SHOP
+
+    } // namespace SWITCHES
+
     namespace GAME_PARAMETERS
     {
+        static const AkUniqueID MASTER_VOLUME = 4179668880U;
+        static const AkUniqueID MUSIC_VOLUME = 1006694123U;
+        static const AkUniqueID REVERB_VOLUME = 4143275766U;
+        static const AkUniqueID SFX_VOLUME = 1564184899U;
         static const AkUniqueID SS_AIR_FEAR = 1351367891U;
         static const AkUniqueID SS_AIR_FREEFALL = 3002758120U;
         static const AkUniqueID SS_AIR_FURY = 1029930033U;
@@ -55,6 +75,9 @@ namespace AK
     namespace BUSSES
     {
         static const AkUniqueID MAIN_AUDIO_BUS = 2246998526U;
+        static const AkUniqueID MUSIC_BUS = 3127962312U;
+        static const AkUniqueID REVERB_BUS = 2955179355U;
+        static const AkUniqueID SFX_BUS = 1502772432U;
     } // namespace BUSSES
 
     namespace AUDIO_DEVICES
