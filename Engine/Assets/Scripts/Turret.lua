@@ -4,6 +4,8 @@
 public = {
     fireRate = 0.5,
     barrelLength = 3.0,
+    spawnHeight = 1.8,
+    bulletScale = 6.0,
     groundPlaneY = 0.0,
     bulletPrefab = "Bullet.prefab",
     basePitchOffset = -90.0
@@ -88,8 +90,10 @@ function FireBullet(self)
     
     -- Calculate spawn position at barrel tip
     local barrelLength = self.public and self.public.barrelLength or 3.0
+	local spawnHeight = self.public and self.public.spawnHeight or 0.8
+    local bulletScale = self.public and self.public.bulletScale or 1.0
     local spawnX = turretPos.x + forwardX * barrelLength
-    local spawnY = turretPos.y + 0.8
+    local spawnY = turretPos.y + spawnHeight
     local spawnZ = turretPos.z + forwardZ * barrelLength
     
     -- Store bullet spawn data in global table
@@ -99,7 +103,8 @@ function FireBullet(self)
         z = spawnZ,
         angle = currentYaw,
         dirX = forwardX,
-        dirZ = forwardZ
+        dirZ = forwardZ,
+		scale = bulletScale
     }
     
     Engine.Log(string.format("💥 Bullet fired | Angle: %.1f° | Dir: (%.3f, 0, %.3f) | Spawn: (%.1f, %.1f, %.1f)", 

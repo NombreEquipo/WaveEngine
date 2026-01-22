@@ -19,19 +19,22 @@ function Update(self, dt)
     if not initialized then
         if _G.nextBulletData then
             local data = _G.nextBulletData
-            
             -- Set initial position
             self.transform:SetPosition(data.x, data.y, data.z)
-            
+
+            -- Set rotation
+            self.transform:SetRotation(-90, data.angle, 0)
+
+            -- Set scale
+            local scale = data.scale or 1.0
+            self.transform:SetScale(scale, scale, scale)
+
             -- Use pre-calculated direction from turret
             direction.x = data.dirX
             direction.y = 0
             direction.z = data.dirZ
             
             initialized = true
-            
-            Engine.Log(string.format(" Bullet initialized | Angle: %.1f° | Dir: (%.3f, 0, %.3f) | Pos: (%.1f, %.1f, %.1f)", 
-                data.angle, direction.x, direction.z, data.x, data.y, data.z))
             
             -- Clear the global data for next bullet
             _G.nextBulletData = nil
