@@ -239,6 +239,11 @@
                     ],
                     "type": 2,
                     "useCheckerboard": false
+                },
+                {
+                    "active": true,
+                    "scriptUID": 17415563879416647993,
+                    "type": 5
                 }
             ],
             "name": "Base.001"
@@ -270,5 +275,5 @@
             "type": 5
         }
     ],
-    "name": "Tank"
+    "name": "Tank_0"
 }
