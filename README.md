@@ -47,7 +47,7 @@ The component exposes a complete UI for real-time editing:
 
 | **Editor Workflow** | **In-Game Simulation** |
 |:-------------------:|:----------------------:|
-| <img src="[ruta_del_gif]" alt="Smoke Effect Preview" width="400"/> | <img src="[ruta_del_gif]" alt="Fireworks Effect Preview" width="400"/> |
+| ![Humo](https://github.com/user-attachments/assets/8f9e94eb-8920-4417-b690-22ae1a76120b) |![Fireworks](https://github.com/user-attachments/assets/f56da579-f60f-4065-9a80-a1ed7b64e665) |
 | *Smoke effect in chimneys* | *Fireworks effect* |
 
 ### **Creation Process**
@@ -60,6 +60,30 @@ The component exposes a complete UI for real-time editing:
   <em>(Click the image to watch a One-minute time-lapse video showing the process of using the particle system)</em>
 </p>
 
+### **Creation Process Smoke effect in chimneys**
+
+### **Creation Process Fireworks effect**
+
+To demonstrate the capabilities of the engine's modular **Particle System**, a dynamic firework simulation has been implemented. This feature showcases real-time object instantiation, physics-based particles, and automatic memory management.
+
+**Technical Implementation:**
+The lifecycle of a firework is managed by `ModuleScene` and consists of two distinct phases, ensuring a realistic effect without performance drops:
+
+1.  **Ascent Phase:**
+    * Instantiates a rocket with a **Cone Emitter** attached to its base to simulate a smoke trail.
+    * The particle module is configured with **local simulation** to follow the rocket's position perfectly as it ascends.
+    * Uses a random timer (fuse) and random starting position to ensure variety.
+
+2.  **Detonation Phase:**
+    * Once the fuse timer expires, the rocket is destroyed, and a separate "Explosion" object is spawned at its exact last position.
+    * This object uses a **Sphere Emitter** with `Burst()` functionality to emit 150+ particles instantly in all directions.
+    * **Randomization:** The explosion color is procedurally generated at runtime.
+
+3.  **Cleaning:**
+    * To prevent memory leaks, both the rocket (after exploding) and the explosion effect (after fading out) are automatically flagged with `MarkForDeletion()`.
+    * The engine cleans up these "dead" GameObjects at the end of the frame, keeping the hierarchy clean and performance stable.
+
+
 ---
 
 ## 🦀 Controls
@@ -70,10 +94,12 @@ The component exposes a complete UI for real-time editing:
 
 ---
 
+
 ## 🔧 Technical Details
 
 ### **Rendering & Physics**
-- **Billboarding:** Quad rendering that aligns perfectly with the active camera.
+- **Billboarding:** Quad rendering that aligns perfectly with the active 
+camera.
 - **Z-Sorting:** Real-time depth sorting to handle alpha transparency artifacts correctly.
 - **Additive Blending:** Optional rendering mode for light-emitting effects (fire, sparks).
 - **Physics Integration:** Support for gravity vectors, velocity randomization, and angular velocity (spin).
