@@ -167,22 +167,22 @@ The engine now includes a built-in **Lua scripting system** that allows you to c
 
 Include new script menu options: 
 - **Script:** 
- - Create Script: Create a new scripts on script folder with basic functions (Start() and Update()) 
- - Show or hide Script editor 
+  - Create Script: Create a new scripts on script folder with basic functions (Start() and Update()) 
+  - Show or hide Script editor 
 - **File:** 
- - Save scene now can also save scripts 
- - Save scene will load the scene as usual but now with scripts
+  - Save scene now can also save scripts 
+  - Save scene will load the scene as usual but now with scripts
   
 ---
 
 ### **Play Controls**
 
 - **Play:** 
- - Starts the runtime simulation, executing `Start()` and `Update()` on all active scripts and GameObjects.
+  - Starts the runtime simulation, executing `Start()` and `Update()` on all active scripts and GameObjects.
 - **Pause:** 
- - Freezes the simulation while preserving the current state, allowing execution to resume at any time.
+  - Freezes the simulation while preserving the current state, allowing execution to resume at any time.
 - **Stop:** 
- - Stops execution and reverts all changes made during Play mode, restoring the original scene state.
+  - Stops execution and reverts all changes made during Play mode, restoring the original scene state.
 
 ---
 
@@ -270,7 +270,7 @@ Scripts can be attached to **GameObjects** and **Cameras**, allowing you to defi
 ---
 
 <p align="center">
-  <img src="Gifs/EngineDemo.gif" alt="Editor Scripting Demo" width="720">
+  <img src="Gifs/EngineDemo.gif" alt="Editor Scripting Demo" width="900">
 </p>
 
 <p align="center">
