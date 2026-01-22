@@ -11,6 +11,7 @@ Application::Application() : isRunning(true), playState(PlayState::EDITING)
     input = std::make_shared<Input>();
     renderContext = std::make_shared<RenderContext>();
     renderer = std::make_shared<Renderer>();
+    physics = std::make_shared<ModulePhysics>();
     scene = std::make_shared<ModuleScene>();
     camera = std::make_shared<ModuleCamera>();
     editor = std::make_shared<ModuleEditor>();
@@ -18,11 +19,11 @@ Application::Application() : isRunning(true), playState(PlayState::EDITING)
     time = std::make_shared<Time>();
     grid = std::make_shared<Grid>();
     resources = std::make_shared<ModuleResources>();
-    physics = std::make_shared<ModulePhysics>();
 
     AddModule(std::static_pointer_cast<Module>(window));
     AddModule(std::static_pointer_cast<Module>(input));
     AddModule(std::static_pointer_cast<Module>(renderContext));
+    AddModule(std::static_pointer_cast<Module>(physics));
     AddModule(std::static_pointer_cast<Module>(scene));
     AddModule(std::static_pointer_cast<Module>(camera));
     AddModule(std::static_pointer_cast<Module>(editor));
@@ -31,7 +32,6 @@ Application::Application() : isRunning(true), playState(PlayState::EDITING)
     AddModule(std::static_pointer_cast<Module>(time));
     AddModule(std::static_pointer_cast<Module>(grid));
     AddModule(std::static_pointer_cast<Module>(renderer));
-    AddModule(std::static_pointer_cast<Module>(physics));
 
     selectionManager = new SelectionManager();
 }

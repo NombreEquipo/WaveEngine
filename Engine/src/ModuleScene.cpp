@@ -46,6 +46,8 @@ bool ModuleScene::Start()
 
     LOG_CONSOLE("Scene ready");
 
+    CreateCube();
+
     return true;
 }
 
@@ -369,4 +371,42 @@ ComponentCamera* ModuleScene::FindCameraInHierarchy(GameObject* obj)
     }
 
     return nullptr;
+}
+
+GameObject* ModuleScene::CreateCube() 
+{
+    // 1. Crear el GameObject base (esto ya le añade el Transform por defecto)
+    GameObject* go = CreateGameObject("Cube");
+
+    // 2. Añadir y configurar el ComponentMesh
+    ComponentMesh* mesh = static_cast<ComponentMesh*>(go->CreateComponent(ComponentType::MESH));
+    if (mesh) {
+        mesh->SetMesh(Primitives::CreateCube()); // Usa tu clase Primitives
+    }
+
+    // 3. Añadir y configurar el ComponentRigidBody
+    ComponentRigidBody* rb = static_cast<ComponentRigidBody*>(go->CreateComponent(ComponentType::RIGIDBODY));
+    if (rb) {
+        // Configuramos el tipo de forma para que coincida con la primitiva
+        rb->SetShapeType(ShapeType::BOX); 
+    }
+
+    return go;
+}
+
+GameObject* ModuleScene::CreateSphere() 
+{
+    GameObject* go = CreateGameObject("Sphere");
+
+    ComponentMesh* mesh = static_cast<ComponentMesh*>(go->CreateComponent(ComponentType::MESH));
+    if (mesh) {
+        mesh->SetMesh(Primitives::CreateSphere());
+    }
+
+    ComponentRigidBody* rb = static_cast<ComponentRigidBody*>(go->CreateComponent(ComponentType::RIGIDBODY));
+    if (rb) {
+        rb->SetShapeType(ShapeType::SPHERE); // Configura Bullet para usar una esfera
+    }
+
+    return go;
 }

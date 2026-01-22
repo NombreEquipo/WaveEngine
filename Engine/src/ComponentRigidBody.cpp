@@ -4,9 +4,15 @@
 #include "Application.h"
 #include "ModulePhysics.h"
 
+#include <imgui.h> 
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/quaternion.hpp>
 
-ComponentRigidBody::ComponentRigidBody(GameObject* owner) : Component(owner, ComponentType::RIGIDBODY)
+ComponentRigidBody::ComponentRigidBody(GameObject* owner) 
+    : Component(owner, ComponentType::RIGIDBODY), 
+      centerOffset(0.0f, 0.0f, 0.0f),
+      lastScale(1.0f, 1.0f, 1.0f),
+      shapeType(ShapeType::BOX) // Inicializamos en BOX
 {
 }
 
@@ -14,90 +20,255 @@ ComponentRigidBody::~ComponentRigidBody()
 {
     RemoveBodyFromWorld();
     
-    if (rigidBody) delete rigidBody;
-    if (motionState) delete motionState;
-    if (colShape) delete colShape;
+    if (rigidBody) { 
+        delete rigidBody->getMotionState(); 
+        delete rigidBody; 
+        rigidBody = nullptr;
+    }
+    
+    if (colShape) {
+        delete colShape;
+        colShape = nullptr;
+    }
 }
 
 void ComponentRigidBody::Start()
 {
-    // 1. Obtener Transform del GameObject
     Transform* trans = dynamic_cast<Transform*>(owner->GetComponent(ComponentType::TRANSFORM));
-    glm::vec3 pos = trans->GetPosition();
-    glm::quat rot = trans->GetRotation();
-    glm::vec3 scale = trans->GetScale(); // <--- LEEMOS LA ESCALA
+    
+    if (trans)
+        lastScale = trans->GetScale();
+    
+    // --- CREACIÓN DE LA FORMA SEGÚN EL TIPO ---
+    CreateShape();
+    // ------------------------------------------
 
-    // 2. Crear Shape: CAJA
-    // Primitives::CreateCube crea un cubo de 1x1x1 (de -0.5 a 0.5).
-    // btBoxShape toma "half-extents" (mitad del tamaño desde el centro).
-    // Por tanto: (1.0 * scale) / 2.0 = scale * 0.5
-    colShape = new btBoxShape(btVector3(scale.x * 0.5f, scale.y * 0.5f, scale.z * 0.5f));
-
-    // 3. Configurar posición inicial
     btTransform startTransform;
     startTransform.setIdentity();
-    startTransform.setOrigin(btVector3(pos.x, pos.y, pos.z));
-    startTransform.setRotation(btQuaternion(rot.x, rot.y, rot.z, rot.w));
+
+    if (trans)
+    {
+        glm::vec3 pos = trans->GetPosition();
+        glm::quat rot = trans->GetRotationQuat();
+
+        glm::vec3 finalPos = pos + (rot * centerOffset);
+
+        startTransform.setOrigin(btVector3(finalPos.x, finalPos.y, finalPos.z));
+        startTransform.setRotation(btQuaternion(rot.x, rot.y, rot.z, rot.w));
+    }
 
     motionState = new btDefaultMotionState(startTransform);
 
-    // 4. Calcular inercia (solo si es dinámico)
     btVector3 localInertia(0, 0, 0);
-    if (mass > 0.0f)
+    if (mass != 0.0f)
         colShape->calculateLocalInertia(mass, localInertia);
 
-    // 5. Crear cuerpo rígido
     btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, colShape, localInertia);
     rigidBody = new btRigidBody(rbInfo);
 
-    // 6. Añadir al mundo
+    UpdateRigidBodyScale();
     AddBodyToWorld();
+
+    if (rigidBody) {
+    rigidBody->setActivationState(DISABLE_DEACTIVATION); // Opcional: que nunca se duerma
+    // O simplemente:
+    rigidBody->activate(true);
+    }   
+}
+
+// Nueva función para gestionar la creación de formas
+void ComponentRigidBody::CreateShape()
+{
+    if (colShape) {
+        delete colShape;
+        colShape = nullptr;
+    }
+
+    switch (shapeType)
+    {
+    case ShapeType::BOX:
+        // Caja base de 1x1x1 (Half extents 0.5)
+        colShape = new btBoxShape(btVector3(0.5f, 0.5f, 0.5f));
+        break;
+
+    case ShapeType::SPHERE:
+        // Esfera base de radio 0.5 (Diámetro 1.0)
+        colShape = new btSphereShape(0.5f);
+        break;
+
+    case ShapeType::CAPSULE:
+        // Cápsula eje Y: radio 0.5, altura 1.0 (altura total = 2.0 contando semiesferas)
+        // Bullet define altura como la parte cilíndrica.
+        colShape = new btCapsuleShape(0.5f, 1.0f);
+        break;
+
+    case ShapeType::CYLINDER:
+        // Cilindro eje Y: radio 0.5, altura 1.0 (half extent 0.5)
+        colShape = new btCylinderShape(btVector3(0.5f, 0.5f, 0.5f));
+        break;
+    }
 }
 
 void ComponentRigidBody::Update()
 {
-    // Solo actualizamos si el objeto es dinámico (se mueve)
-    if (mass > 0.0f && rigidBody)
+    if (!rigidBody) return;
+
+    Transform* transformComp = dynamic_cast<Transform*>(owner->GetComponent(ComponentType::TRANSFORM));
+    if (!transformComp) return;
+
+    glm::vec3 currentScale = transformComp->GetScale();
+    if (glm::distance(currentScale, lastScale) > 0.001f)
     {
-        // Obtener la transformación simulada por Bullet
+        lastScale = currentScale;
+        UpdateRigidBodyScale();
+    }
+
+    if (mass > 0.0f) // Dinámico
+    {
         btTransform trans;
         if (rigidBody->getMotionState())
-        {
             rigidBody->getMotionState()->getWorldTransform(trans);
-        }
         else
-        {
             trans = rigidBody->getWorldTransform();
-        }
 
-        // Convertir de Bullet a GLM
         btVector3 origin = trans.getOrigin();
         btQuaternion rotation = trans.getRotation();
 
-        glm::vec3 newPos(origin.getX(), origin.getY(), origin.getZ());
-        glm::quat newRot(rotation.getW(), rotation.getX(), rotation.getY(), rotation.getZ());
+        glm::vec3 bulletPos(origin.getX(), origin.getY(), origin.getZ());
+        glm::quat bulletRot(rotation.getW(), rotation.getX(), rotation.getY(), rotation.getZ());
 
-        // Actualizar el Transform del GameObject
-        Transform* transformComp = dynamic_cast<Transform*>(owner->GetComponent(ComponentType::TRANSFORM));
-        if (transformComp)
+        glm::vec3 visualPos = bulletPos - (bulletRot * centerOffset);
+
+        transformComp->SetPosition(visualPos);
+        transformComp->SetRotationQuat(bulletRot);
+    }
+    else // Estático
+    {
+        glm::vec3 pos = transformComp->GetPosition();
+        glm::quat rot = transformComp->GetRotationQuat();
+        glm::vec3 finalPos = pos + (rot * centerOffset);
+
+        btTransform worldTrans;
+        worldTrans.setOrigin(btVector3(finalPos.x, finalPos.y, finalPos.z));
+        worldTrans.setRotation(btQuaternion(rot.x, rot.y, rot.z, rot.w));
+
+        rigidBody->setWorldTransform(worldTrans);
+        if(rigidBody->getMotionState())
+             rigidBody->getMotionState()->setWorldTransform(worldTrans);
+    }
+}
+
+void ComponentRigidBody::OnEditor()
+{
+    if (ImGui::CollapsingHeader("Rigid Body", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        // --- SELECTOR DE FORMA ---
+        const char* shapeItems[] = { "Box", "Sphere", "Capsule", "Cylinder" };
+        int currentItem = static_cast<int>(shapeType);
+        if (ImGui::Combo("Shape", &currentItem, shapeItems, IM_ARRAYSIZE(shapeItems)))
         {
-            transformComp->SetPosition(newPos);
-            // CORRECCIÓN: Usamos SetRotationQuat en lugar de SetRotation
-            transformComp->SetRotationQuat(newRot); 
+            SetShapeType(static_cast<ShapeType>(currentItem));
+        }
+        // -------------------------
+
+        float newMass = mass;
+        if (ImGui::DragFloat("Mass", &newMass, 0.1f, 0.0f, 1000.0f))
+        {
+            SetMass(newMass);
+        }
+
+        glm::vec3 newOffset = centerOffset;
+        if (ImGui::DragFloat3("Center Offset", (float*)&newOffset, 0.1f))
+        {
+            SetCenterOffset(newOffset);
+        }
+    }
+}
+
+void ComponentRigidBody::SetShapeType(ShapeType newType)
+{
+    if (shapeType != newType)
+    {
+        shapeType = newType;
+        // Si el cuerpo ya existe, hay que recrearlo
+        if (rigidBody)
+        {
+            RemoveBodyFromWorld();
+            CreateShape(); // Crea el nuevo btCollisionShape
+            
+            // Reasignar shape al rigidBody existente
+            rigidBody->setCollisionShape(colShape);
+            
+            // Recalcular inercia y propiedades
+            UpdateRigidBodyScale(); // Esto recalcula inercia y aplica escala
+            
+            AddBodyToWorld();
         }
     }
 }
 
 void ComponentRigidBody::SetMass(float newMass)
 {
-    mass = newMass;
+    if (mass != newMass)
+    {
+        mass = newMass;
+        if (rigidBody)
+        {
+            RemoveBodyFromWorld();
+            
+            btVector3 localInertia(0, 0, 0);
+            if (mass > 0.0f)
+                colShape->calculateLocalInertia(mass, localInertia);
+            
+            rigidBody->setMassProps(mass, localInertia);
+            rigidBody->clearForces();
+            
+            AddBodyToWorld();
+        }
+    }
+}
+
+void ComponentRigidBody::SetCenterOffset(const glm::vec3& offset)
+{
+    centerOffset = offset;
 }
 
 void ComponentRigidBody::AddBodyToWorld()
 {
-    if (rigidBody && Application::GetInstance().physics)
+    // Añadimos comprobación triple: que exista el módulo, que exista el mundo y que tengamos un rigidBody
+    if (rigidBody && 
+        Application::GetInstance().physics && 
+        Application::GetInstance().physics->GetWorld() != nullptr)
     {
         Application::GetInstance().physics->GetWorld()->addRigidBody(rigidBody);
+    }
+    else {
+        // Esto te avisará en la consola si algo falla en lugar de cerrarse
+        LOG_CONSOLE("Physics Warning: No se pudo añadir el cuerpo al mundo (Mundo no inicializado)");
+    }
+}
+
+void ComponentRigidBody::UpdateRigidBodyScale()
+{
+    if (rigidBody && colShape)
+    {
+        btVector3 scale(lastScale.x, lastScale.y, lastScale.z);
+        colShape->setLocalScaling(scale);
+        
+        if (mass > 0.0f) {
+            btVector3 localInertia(0, 0, 0);
+            colShape->calculateLocalInertia(mass, localInertia);
+            rigidBody->setMassProps(mass, localInertia);
+        }
+        
+        rigidBody->activate(true);
+        
+        // ¡Seguridad extra aquí también!
+        if (Application::GetInstance().physics && 
+            Application::GetInstance().physics->GetWorld() != nullptr) 
+        {
+            Application::GetInstance().physics->GetWorld()->updateSingleAabb(rigidBody);
+        }
     }
 }
 

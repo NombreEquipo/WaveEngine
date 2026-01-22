@@ -26,6 +26,10 @@ public:
 
     GameObject* GetRoot() const { return root; }
 
+    GameObject* CreateCube();
+    
+    GameObject* CreateSphere();
+
     void CleanupMarkedObjects(GameObject* parent);
 
     Octree* GetOctree() { return octree.get(); }
