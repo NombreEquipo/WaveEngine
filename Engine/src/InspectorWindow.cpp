@@ -9,6 +9,9 @@
 #include "ComponentCamera.h"
 #include "ComponentRotate.h"
 #include "ResourceTexture.h"
+#include "ComponentRigidBody.h"
+#include "ComponentBoxCollider.h"
+#include "ComponentSphereCollider.h"
 #include "Log.h"
 
 InspectorWindow::InspectorWindow()
@@ -252,7 +255,7 @@ void InspectorWindow::DrawTransformComponent(GameObject* selectedObject)
             transform->SetRotation(glm::vec3(0.0f, 0.0f, 0.0f));
             transform->SetScale(glm::vec3(1.0f, 1.0f, 1.0f));
 
-            // Rebuild despu�s de reset
+            // Rebuild despu�s de reset
             Application::GetInstance().scene->MarkOctreeForRebuild();
 
             LOG_DEBUG("Transform reset for: %s", selectedObject->GetName().c_str());
@@ -793,74 +796,73 @@ bool InspectorWindow::DrawGameObjectSection(GameObject* selectedObject)
 {
     bool objectDeleted = false;
 
+    // --- SECCIÓN SUPERIOR: DATOS DEL GAMEOBJECT ---
     if (ImGui::CollapsingHeader("GameObject", ImGuiTreeNodeFlags_DefaultOpen))
     {
         ImGui::Text("Actions:");
         ImGui::Spacing();
 
-        // Delete button
+        // Botón Delete
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.3f, 0.3f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
-
         if (ImGui::Button("Delete GameObject", ImVec2(-1, 0)))
         {
             if (selectedObject != Application::GetInstance().scene->GetRoot())
             {
                 selectedObject->MarkForDeletion();
-                LOG_DEBUG("GameObject '%s' marked for deletion", selectedObject->GetName().c_str());
-                LOG_CONSOLE("GameObject '%s' marked for deletion", selectedObject->GetName().c_str());
-
                 Application::GetInstance().selectionManager->ClearSelection();
                 objectDeleted = true;
             }
-            else
-            {
-                LOG_CONSOLE("Cannot delete Root GameObject!");
-            }
         }
-
-        ImGui::PopStyleColor(3);
-
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::BeginTooltip();
-            ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Delete GameObject");
-            ImGui::Separator();
-            ImGui::Text("Marks this GameObject for deletion");
-            ImGui::Text("Shortcut: Backspace key");
-            ImGui::EndTooltip();
-        }
+        ImGui::PopStyleColor();
 
         ImGui::Spacing();
 
-        // Create empty child button
+        // Botón Create Empty Child
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.6f, 0.2f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.7f, 0.3f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.5f, 0.1f, 1.0f));
-
         if (ImGui::Button("Create Empty Child", ImVec2(-1, 0)))
         {
             GameObject* newChild = Application::GetInstance().scene->CreateGameObject("Empty");
             newChild->SetParent(selectedObject);
-
             Application::GetInstance().selectionManager->SetSelectedObject(newChild);
-
-            LOG_DEBUG("Created empty child for '%s'", selectedObject->GetName().c_str());
-            LOG_CONSOLE("Created empty child '%s' under '%s'", newChild->GetName().c_str(), selectedObject->GetName().c_str());
         }
+        ImGui::PopStyleColor();
+    }
 
-        ImGui::PopStyleColor(3);
+    ImGui::Separator();
 
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::BeginTooltip();
-            ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "Create Empty Child");
-            ImGui::Separator();
-            ImGui::Text("Creates a new empty GameObject as a child");
-            ImGui::Text("of this GameObject");
-            ImGui::EndTooltip();
+    // --- SECCIÓN DE COMPONENTES ---
+    // IMPORTANTE: Asegúrate de que estas funciones NO se llamen en ningún otro sitio de este archivo
+    DrawTransformComponent(selectedObject);
+    DrawMeshComponent(selectedObject);
+    DrawMaterialComponent(selectedObject);
+    
+    // Físicas (Nuevas)
+    DrawRigidBodyComponent(selectedObject);
+    DrawColliderComponent(selectedObject);
+
+    DrawCameraComponent(selectedObject);
+    DrawRotateComponent(selectedObject);
+
+    // --- BOTÓN PARA AÑADIR COMPONENTES NUEVOS ---
+    ImGui::Spacing();
+    ImGui::Separator();
+    if (ImGui::Button("Add Component", ImVec2(ImGui::GetContentRegionAvail().x, 30))) {
+        ImGui::OpenPopup("AddComponentPopup");
+    }
+
+    if (ImGui::BeginPopup("AddComponentPopup")) {
+        if (ImGui::MenuItem("RigidBody")) {
+            if (!selectedObject->GetComponent(ComponentType::RIGIDBODY)) {
+                ComponentRigidBody* rb = (ComponentRigidBody*)selectedObject->CreateComponent(ComponentType::RIGIDBODY);
+                rb->Start();
+            }
         }
+        if (ImGui::MenuItem("Box Collider")) {
+            if (!selectedObject->GetComponent(ComponentType::COLLIDER_BOX)) {
+                selectedObject->CreateComponent(ComponentType::COLLIDER_BOX);
+            }
+        }
+        ImGui::EndPopup();
     }
 
     return objectDeleted;
@@ -894,4 +896,30 @@ bool InspectorWindow::IsDescendantOf(GameObject* potentialDescendant, GameObject
     }
 
     return false;
+}
+
+void InspectorWindow::DrawRigidBodyComponent(GameObject* selectedObject)
+{
+    ComponentRigidBody* rb = static_cast<ComponentRigidBody*>(selectedObject->GetComponent(ComponentType::RIGIDBODY));
+    if (rb != nullptr)
+    {
+        rb->OnEditor();
+    }
+}
+
+void InspectorWindow::DrawColliderComponent(GameObject* selectedObject)
+{
+    // Buscamos Box Collider
+    Component* boxCol = selectedObject->GetComponent(ComponentType::COLLIDER_BOX);
+    if (boxCol != nullptr)
+    {
+        boxCol->OnEditor();
+    }
+
+    // Buscamos Sphere Collider
+    Component* sphereCol = selectedObject->GetComponent(ComponentType::COLLIDER_SPHERE);
+    if (sphereCol != nullptr)
+    {
+        sphereCol->OnEditor();
+    }
 }

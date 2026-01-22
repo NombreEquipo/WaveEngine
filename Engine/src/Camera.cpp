@@ -168,7 +168,7 @@ void Camera::FocusOnTarget(const glm::vec3& targetPosition, float targetRadius)
 	orbitTarget = targetPosition;
 
 	// Calculate an appropriate distance based on the object's radius
-	// Multiplicador balanceado para buena visualización
+	// Multiplicador balanceado para buena visualizaciï¿½n
 	orbitDistance = targetRadius * 0.05;
 
 	if (orbitDistance < 2.0f)
@@ -210,4 +210,19 @@ glm::vec3 Camera::ScreenToWorldRay(int mouseX, int mouseY, int screenWidth, int 
 	glm::vec3 rayDir = glm::normalize(glm::vec3(rayWorld));
 
 	return rayDir;
+}
+
+void Camera::HandleKeyboardInput(bool forward, bool backward, bool left, bool right, float deltaTime)
+{
+    float velocity = movementSpeed * deltaTime;
+
+    // cameraFront ya lo tienes actualizado en tu UpdateCameraVectors()
+    if (forward)  cameraPos += cameraFront * velocity;
+    if (backward) cameraPos -= cameraFront * velocity;
+
+    // Calculamos el vector Right usando el producto cruzado
+    glm::vec3 cameraRight = glm::normalize(glm::cross(cameraFront, cameraUp));
+
+    if (left)  cameraPos -= cameraRight * velocity;
+    if (right) cameraPos += cameraRight * velocity;
 }

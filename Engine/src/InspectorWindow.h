@@ -33,6 +33,8 @@ private:
     void DrawMeshComponent(GameObject* selectedObject);
     void DrawMaterialComponent(GameObject* selectedObject);
     void DrawRotateComponent(GameObject* selectedObject);
+    void DrawRigidBodyComponent(GameObject* selectedObject);
+    void DrawColliderComponent(GameObject* selectedObject);
 
     // Helper methods
     void GetAllGameObjects(GameObject* root, std::vector<GameObject*>& outObjects);
