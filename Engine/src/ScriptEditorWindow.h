@@ -37,6 +37,63 @@ struct TextLine
     std::string errorMessage;
 };
 
+// Structure for each open tab/script   
+struct ScriptTab
+{
+    std::string filePath;
+    std::string fileName;         
+    std::string originalContent;
+    char* textBuffer = nullptr;
+    bool hasUnsavedChanges = false;
+    std::vector<TextLine> lines;
+    std::vector<SyntaxError> syntaxErrors;
+    float scrollY = 0.0f;
+    bool wantClose = false;    
+
+    ScriptTab() = default;
+    ~ScriptTab() {
+        if (textBuffer) {
+            delete[] textBuffer;
+            textBuffer = nullptr;
+        }
+    }
+
+    ScriptTab(ScriptTab&& other) noexcept
+        : filePath(std::move(other.filePath))
+        , fileName(std::move(other.fileName))
+        , originalContent(std::move(other.originalContent))
+        , textBuffer(other.textBuffer)
+        , hasUnsavedChanges(other.hasUnsavedChanges)
+        , lines(std::move(other.lines))
+        , syntaxErrors(std::move(other.syntaxErrors))
+        , scrollY(other.scrollY)
+        , wantClose(other.wantClose)
+    {
+        other.textBuffer = nullptr;
+    }
+
+    ScriptTab& operator=(ScriptTab&& other) noexcept {
+        if (this != &other) {
+            if (textBuffer) delete[] textBuffer;
+            filePath = std::move(other.filePath);
+            fileName = std::move(other.fileName);
+            originalContent = std::move(other.originalContent);
+            textBuffer = other.textBuffer;
+            hasUnsavedChanges = other.hasUnsavedChanges;
+            lines = std::move(other.lines);
+            syntaxErrors = std::move(other.syntaxErrors);
+            scrollY = other.scrollY;
+            wantClose = other.wantClose;
+            other.textBuffer = nullptr;
+        }
+        return *this;
+    }
+
+    // Disable copy 
+    ScriptTab(const ScriptTab&) = delete;
+    ScriptTab& operator=(const ScriptTab&) = delete;
+};
+
 class ScriptEditorWindow : public EditorWindow
 {
 public:
@@ -51,11 +108,21 @@ public:
     // Save current script
     bool SaveScript();
 
-    // Check if there are unsaved changes
-    bool HasUnsavedChanges() const { return hasUnsavedChanges; }
+    // Save a specific tab
+    bool SaveTab(int tabIndex);
+
+    // Close a specific tab
+    void CloseTab(int tabIndex);
+
+    // Check if there are unsaved changes in any tab
+    bool HasUnsavedChanges() const;
+
+    // Get number of open tabs
+    size_t GetOpenTabCount() const { return openTabs.size(); }
 
 private:
     void DrawMenuBar();
+    void DrawTabs();
     void DrawTextEditor();
     void DrawColoredReadOnlyView(ImVec2 editorSize, float lineNumberWidth);
     void DrawEditableView(ImVec2 editorSize, float lineNumberWidth);
@@ -63,8 +130,8 @@ private:
     void DrawErrorPanel();
     void DrawStatusBar();
 
-    bool LoadScriptFromFile(const std::string& path);
-    void MarkAsModified();
+    bool LoadScriptIntoTab(ScriptTab& tab, const std::string& path);
+    void MarkCurrentTabAsModified();
 
     // Syntax highlighting
     void InitializeLuaKeywords();
@@ -76,36 +143,33 @@ private:
 
     // Error checking
     void CheckSyntaxErrors();
+    void CheckSyntaxErrorsForTab(ScriptTab& tab);
     void ParseTextIntoLines();
+    void ParseTextIntoLinesForTab(ScriptTab& tab);
 
-    std::string currentScriptPath;
-    std::string scriptContent;
-    std::string originalContent;
+    // Helpers
+    int FindTabByPath(const std::string& path) const;
+    ScriptTab* GetActiveTab();
 
-    bool hasUnsavedChanges;
-
-    // Text editor state
-    char* textBuffer;
-    size_t bufferSize;
+	// Tab management
+    std::vector<ScriptTab> openTabs;
+    int activeTabIndex = -1;
+	size_t bufferSize = 1024 * 1024;  // 1MB for buffer
 
     // Editor settings
-    bool showLineNumbers;
-    float fontSize;
-    bool enableSyntaxHighlighting;
-    bool autoCheckSyntax;
+    bool showLineNumbers = true;
+    float fontSize = 16.0f;
+    bool enableSyntaxHighlighting = true;
+    bool autoCheckSyntax = true;
 
     // Search/Replace
-    char searchText[256];
-    char replaceText[256];
-    bool showSearchReplace;
+    char searchText[256] = {};
+    char replaceText[256] = {};
+    bool showSearchReplace = false;
 
     // Syntax highlighting data
     std::unordered_set<std::string> luaKeywords;
     std::unordered_set<std::string> luaBuiltinFunctions;
-
-    // Line tracking
-    std::vector<TextLine> lines;
-    std::vector<SyntaxError> syntaxErrors;
 
     // Colors
     ImVec4 colorKeyword;
@@ -119,7 +183,6 @@ private:
     ImVec4 colorLineNumber;
     ImVec4 colorBackground;
 
-    // Scroll position
-    float scrollY;
-    int currentLine;
+	// Tab pending close index
+    int tabPendingClose = -1;
 };

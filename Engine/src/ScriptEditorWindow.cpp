@@ -3,25 +3,12 @@
 #include <fstream>
 #include <sstream>
 #include <cctype>
+#include <filesystem>
 #include "Log.h"
 
 ScriptEditorWindow::ScriptEditorWindow()
-    : EditorWindow("Script Editor"),
-    hasUnsavedChanges(false),
-    bufferSize(1024 * 1024),
-    showLineNumbers(true),
-    fontSize(16.0f),
-    showSearchReplace(false),
-    enableSyntaxHighlighting(true),
-    autoCheckSyntax(true),
-    scrollY(0.0f),
-    currentLine(1)
+    : EditorWindow("Script Editor")
 {
-    textBuffer = new char[bufferSize];
-    memset(textBuffer, 0, bufferSize);
-    memset(searchText, 0, sizeof(searchText));
-    memset(replaceText, 0, sizeof(replaceText));
-
     InitializeLuaKeywords();
 
     colorKeyword = ImVec4(0.98f, 0.45f, 0.45f, 1.0f);
@@ -38,7 +25,7 @@ ScriptEditorWindow::ScriptEditorWindow()
 
 ScriptEditorWindow::~ScriptEditorWindow()
 {
-    delete[] textBuffer;
+    openTabs.clear();
 }
 
 void ScriptEditorWindow::InitializeLuaKeywords()
@@ -58,6 +45,27 @@ void ScriptEditorWindow::InitializeLuaKeywords()
     };
 }
 
+ScriptTab* ScriptEditorWindow::GetActiveTab()
+{
+    if (activeTabIndex >= 0 && activeTabIndex < static_cast<int>(openTabs.size()))
+    {
+        return &openTabs[activeTabIndex];
+    }
+    return nullptr;
+}
+
+int ScriptEditorWindow::FindTabByPath(const std::string& path) const
+{
+    for (size_t i = 0; i < openTabs.size(); ++i)
+    {
+        if (openTabs[i].filePath == path)
+        {
+            return static_cast<int>(i);
+        }
+    }
+    return -1;
+}
+
 void ScriptEditorWindow::Draw()
 {
     if (!isOpen) return;
@@ -68,80 +76,163 @@ void ScriptEditorWindow::Draw()
     {
         DrawMenuBar();
 
-        if (showSearchReplace)
+        if (!openTabs.empty())
         {
-            ImGui::Separator();
-            ImGui::Text("Search:");
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(200);
-            ImGui::InputText("##search", searchText, sizeof(searchText));
+            DrawTabs();
 
-            ImGui::SameLine();
-            ImGui::Text("Replace:");
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(200);
-            ImGui::InputText("##replace", replaceText, sizeof(replaceText));
-
-            ImGui::SameLine();
-            if (ImGui::Button("Replace All"))
+            if (showSearchReplace)
             {
-                std::string content = textBuffer;
-                std::string search = searchText;
-                std::string replace = replaceText;
+                ImGui::Separator();
+                ImGui::Text("Search:");
+                ImGui::SameLine();
+                ImGui::SetNextItemWidth(200);
+                ImGui::InputText("##search", searchText, sizeof(searchText));
 
-                size_t pos = 0;
-                int count = 0;
-                while ((pos = content.find(search, pos)) != std::string::npos)
+                ImGui::SameLine();
+                ImGui::Text("Replace:");
+                ImGui::SameLine();
+                ImGui::SetNextItemWidth(200);
+                ImGui::InputText("##replace", replaceText, sizeof(replaceText));
+
+                ImGui::SameLine();
+                if (ImGui::Button("Replace All"))
                 {
-                    content.replace(pos, search.length(), replace);
-                    pos += replace.length();
-                    count++;
+                    ScriptTab* tab = GetActiveTab();
+                    if (tab && tab->textBuffer)
+                    {
+                        std::string content = tab->textBuffer;
+                        std::string search = searchText;
+                        std::string replace = replaceText;
+
+                        size_t pos = 0;
+                        int count = 0;
+                        while ((pos = content.find(search, pos)) != std::string::npos)
+                        {
+                            content.replace(pos, search.length(), replace);
+                            pos += replace.length();
+                            count++;
+                        }
+
+                        strncpy_s(tab->textBuffer, bufferSize, content.c_str(), _TRUNCATE);
+                        MarkCurrentTabAsModified();
+                        LOG_CONSOLE("[ScriptEditor] Replaced %d occurrences", count);
+                    }
                 }
 
-                strncpy_s(textBuffer, bufferSize, content.c_str(), _TRUNCATE);
-                MarkAsModified();
-                LOG_CONSOLE("[ScriptEditor] Replaced %d occurrences", count);
+                ImGui::Separator();
             }
 
-            ImGui::Separator();
+            DrawTextEditor();
+
+            ScriptTab* tab = GetActiveTab();
+            if (tab && !tab->syntaxErrors.empty())
+            {
+                DrawErrorPanel();
+            }
+
+            DrawStatusBar();
         }
-
-        DrawTextEditor();
-
-        if (!syntaxErrors.empty())
+        else
         {
-            DrawErrorPanel();
-        }
+			// Message when no scripts are open
+            ImVec2 center = ImGui::GetContentRegionAvail();
+            ImGui::SetCursorPosY(center.y / 2);
 
-        DrawStatusBar();
+            const char* msg = "No scripts open";
+            float textWidth = ImGui::CalcTextSize(msg).x;
+            ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - textWidth) / 2);
+            ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "%s", msg);
+
+            const char* hint = "Double-click a .lua file in Assets to open it";
+            textWidth = ImGui::CalcTextSize(hint).x;
+            ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - textWidth) / 2);
+            ImGui::TextColored(ImVec4(0.4f, 0.4f, 0.4f, 1.0f), "%s", hint);
+        }
     }
     ImGui::End();
 
-    if (!isOpen && hasUnsavedChanges)
+	// Popup to confirm tab closure with unsaved changes
+    if (tabPendingClose >= 0)
     {
-        ImGui::OpenPopup("Unsaved Changes##ScriptEditor");
+        ImGui::OpenPopup("Close Tab?##ScriptEditor");
+    }
+
+    if (ImGui::BeginPopupModal("Close Tab?##ScriptEditor", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        if (tabPendingClose >= 0 && tabPendingClose < static_cast<int>(openTabs.size()))
+        {
+            ImGui::Text("'%s' has unsaved changes!", openTabs[tabPendingClose].fileName.c_str());
+            ImGui::Text("Do you want to save before closing?");
+            ImGui::Separator();
+
+            if (ImGui::Button("Save", ImVec2(100, 0)))
+            {
+                SaveTab(tabPendingClose);
+                CloseTab(tabPendingClose);
+                tabPendingClose = -1;
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Don't Save", ImVec2(100, 0)))
+            {
+                CloseTab(tabPendingClose);
+                tabPendingClose = -1;
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Cancel", ImVec2(100, 0)))
+            {
+                tabPendingClose = -1;
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        else
+        {
+            tabPendingClose = -1;
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+
+	// Manage popup for unsaved changes when closing the entire window
+    if (!isOpen && HasUnsavedChanges())
+    {
+        ImGui::OpenPopup("Unsaved Changes##ScriptEditorWindow");
         isOpen = true;
     }
 
-    if (ImGui::BeginPopupModal("Unsaved Changes##ScriptEditor", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    if (ImGui::BeginPopupModal("Unsaved Changes##ScriptEditorWindow", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        ImGui::Text("You have unsaved changes!");
-        ImGui::Text("Do you want to save before closing?");
+        ImGui::Text("You have unsaved changes in one or more scripts!");
+        ImGui::Text("Do you want to save all before closing?");
         ImGui::Separator();
 
-        if (ImGui::Button("Save", ImVec2(120, 0)))
+        if (ImGui::Button("Save All", ImVec2(120, 0)))
         {
-            SaveScript();
-            hasUnsavedChanges = false;
+            for (size_t i = 0; i < openTabs.size(); ++i)
+            {
+                if (openTabs[i].hasUnsavedChanges)
+                {
+                    SaveTab(static_cast<int>(i));
+                }
+            }
             isOpen = false;
             ImGui::CloseCurrentPopup();
         }
 
         ImGui::SameLine();
 
-        if (ImGui::Button("Discard", ImVec2(120, 0)))
+        if (ImGui::Button("Discard All", ImVec2(120, 0)))
         {
-            hasUnsavedChanges = false;
+            for (auto& tab : openTabs)
+            {
+                tab.hasUnsavedChanges = false;
+            }
             isOpen = false;
             ImGui::CloseCurrentPopup();
         }
@@ -157,20 +248,122 @@ void ScriptEditorWindow::Draw()
     }
 }
 
+void ScriptEditorWindow::DrawTabs()
+{
+    ImGuiTabBarFlags tabBarFlags = ImGuiTabBarFlags_Reorderable |
+                                    ImGuiTabBarFlags_AutoSelectNewTabs |
+                                    ImGuiTabBarFlags_FittingPolicyScroll;
+
+	// Tab colors
+    ImGui::PushStyleColor(ImGuiCol_TabActive, ImVec4(0.5f, 0.2f, 0.7f, 1.0f));           // Purple
+	ImGui::PushStyleColor(ImGuiCol_TabHovered, ImVec4(0.6f, 0.3f, 0.8f, 1.0f));          // Light purple
+    ImGui::PushStyleColor(ImGuiCol_Tab, ImVec4(0.25f, 0.25f, 0.3f, 1.0f));               // Gray
+    ImGui::PushStyleColor(ImGuiCol_TabUnfocusedActive, ImVec4(0.4f, 0.15f, 0.55f, 1.0f)); // Dark purple
+
+    if (ImGui::BeginTabBar("ScriptTabs", tabBarFlags))
+    {
+        for (int i = 0; i < static_cast<int>(openTabs.size()); ++i)
+        {
+            ScriptTab& tab = openTabs[i];
+
+			// Add * if there are unsaved changes
+            std::string tabName = tab.fileName;
+            if (tab.hasUnsavedChanges)
+            {
+                tabName += " *";
+            }
+            tabName += "##" + std::to_string(i);  
+
+            bool tabOpen = true;
+
+			// BeginTabItem returns true if the tab is selected
+            if (ImGui::BeginTabItem(tabName.c_str(), &tabOpen))
+            {
+				// Update active tab index
+                if (activeTabIndex != i)
+                {
+                    activeTabIndex = i;
+                    ParseTextIntoLinesForTab(tab);
+                }
+                ImGui::EndTabItem();
+            }
+
+            // Click on X
+            if (!tabOpen)
+            {
+                if (tab.hasUnsavedChanges)
+                {
+					// Show popup to confirm
+                    tabPendingClose = i;
+                }
+                else
+                {
+                    CloseTab(i);
+					--i;  // Adjust index after closing
+                }
+            }
+        }
+
+        ImGui::EndTabBar();
+    }
+
+    ImGui::PopStyleColor(4);
+}
+
 void ScriptEditorWindow::DrawMenuBar()
 {
     if (ImGui::BeginMenuBar())
     {
         if (ImGui::BeginMenu("File"))
         {
-            if (ImGui::MenuItem("Save", "Ctrl+S", false, !currentScriptPath.empty()))
+            ScriptTab* tab = GetActiveTab();
+            bool hasActiveTab = (tab != nullptr);
+
+            if (ImGui::MenuItem("Save", "Ctrl+S", false, hasActiveTab))
             {
                 SaveScript();
             }
 
+            if (ImGui::MenuItem("Save All", "Ctrl+Shift+S", false, !openTabs.empty()))
+            {
+                for (size_t i = 0; i < openTabs.size(); ++i)
+                {
+                    SaveTab(static_cast<int>(i));
+                }
+            }
+
             ImGui::Separator();
 
-            if (ImGui::MenuItem("Close"))
+            if (ImGui::MenuItem("Close Tab", "Ctrl+W", false, hasActiveTab))
+            {
+                if (tab->hasUnsavedChanges)
+                {
+                    tabPendingClose = activeTabIndex;
+                }
+                else
+                {
+                    CloseTab(activeTabIndex);
+                }
+            }
+
+            if (ImGui::MenuItem("Close All", nullptr, false, !openTabs.empty()))
+            {
+				// Close all tabs and check for unsaved changes
+                bool hasChanges = HasUnsavedChanges();
+                if (hasChanges)
+                {
+                    isOpen = false;
+                }
+                else
+                {
+                    openTabs.clear();
+                    activeTabIndex = -1;
+                }
+            }
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Close Window"))
             {
                 isOpen = false;
             }
@@ -202,7 +395,7 @@ void ScriptEditorWindow::DrawMenuBar()
 
         if (ImGui::BeginMenu("Tools"))
         {
-            if (ImGui::MenuItem("Check Syntax Now"))
+            if (ImGui::MenuItem("Check Syntax Now", nullptr, false, GetActiveTab() != nullptr))
             {
                 CheckSyntaxErrors();
             }
@@ -213,11 +406,40 @@ void ScriptEditorWindow::DrawMenuBar()
         ImGui::EndMenuBar();
     }
 
+	// Keyword shortcuts
     if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl))
     {
-        if (ImGui::IsKeyPressed(ImGuiKey_S) && !currentScriptPath.empty())
+        if (ImGui::IsKeyPressed(ImGuiKey_S))
         {
-            SaveScript();
+            if (ImGui::IsKeyDown(ImGuiKey_LeftShift) || ImGui::IsKeyDown(ImGuiKey_RightShift))
+            {
+                // Ctrl+Shift+S: Save All
+                for (size_t i = 0; i < openTabs.size(); ++i)
+                {
+                    SaveTab(static_cast<int>(i));
+                }
+            }
+            else
+            {
+                // Ctrl+S: Save current
+                SaveScript();
+            }
+        }
+
+        if (ImGui::IsKeyPressed(ImGuiKey_W))
+        {
+            ScriptTab* tab = GetActiveTab();
+            if (tab)
+            {
+                if (tab->hasUnsavedChanges)
+                {
+                    tabPendingClose = activeTabIndex;
+                }
+                else
+                {
+                    CloseTab(activeTabIndex);
+                }
+            }
         }
 
         if (ImGui::IsKeyPressed(ImGuiKey_F))
@@ -236,11 +458,14 @@ void ScriptEditorWindow::DrawMenuBar()
 
 void ScriptEditorWindow::DrawTextEditor()
 {
-    ParseTextIntoLines();
+    ScriptTab* tab = GetActiveTab();
+    if (!tab || !tab->textBuffer) return;
+
+    ParseTextIntoLinesForTab(*tab);
 
     float lineNumberWidth = showLineNumbers ? 60.0f : 0.0f;
     ImVec2 editorSize = ImGui::GetContentRegionAvail();
-    editorSize.y -= (!syntaxErrors.empty() ? 80.0f : 20.0f);
+    editorSize.y -= (!tab->syntaxErrors.empty() ? 80.0f : 20.0f);
 
     if (enableSyntaxHighlighting)
     {
@@ -254,6 +479,9 @@ void ScriptEditorWindow::DrawTextEditor()
 
 void ScriptEditorWindow::DrawColoredReadOnlyView(ImVec2 editorSize, float lineNumberWidth)
 {
+    ScriptTab* tab = GetActiveTab();
+    if (!tab) return;
+
     ImGui::BeginChild("ColoredEditor", editorSize, true);
 
     ImDrawList* drawList = ImGui::GetWindowDrawList();
@@ -283,7 +511,7 @@ void ScriptEditorWindow::DrawColoredReadOnlyView(ImVec2 editorSize, float lineNu
     int firstLine = static_cast<int>(scrollY / lineHeight);
     int lastLine = firstLine + static_cast<int>(editorSize.y / lineHeight) + 2;
 
-    for (int i = firstLine; i < lastLine && i < static_cast<int>(lines.size()); ++i)
+    for (int i = firstLine; i < lastLine && i < static_cast<int>(tab->lines.size()); ++i)
     {
         float yPos = screenPos.y + (i * lineHeight) - scrollY + 5.0f;
 
@@ -292,19 +520,19 @@ void ScriptEditorWindow::DrawColoredReadOnlyView(ImVec2 editorSize, float lineNu
         {
             char lineNum[16];
             snprintf(lineNum, sizeof(lineNum), "%4d", i + 1);
-            ImVec4 numColor = lines[i].hasError ? colorError : colorLineNumber;
+            ImVec4 numColor = tab->lines[i].hasError ? colorError : colorLineNumber;
 
             drawList->AddText(ImVec2(screenPos.x + 10, yPos),
                 ImGui::ColorConvertFloat4ToU32(numColor), lineNum);
         }
 
         // Colored text
-        RenderTextWithSyntaxHighlighting(lines[i].content, i,
+        RenderTextWithSyntaxHighlighting(tab->lines[i].content, i,
             ImVec2(screenPos.x + lineNumberWidth + 10, yPos));
     }
 
     // Dummy for scrolling
-    ImGui::Dummy(ImVec2(1000.0f, lines.size() * lineHeight));
+    ImGui::Dummy(ImVec2(1000.0f, tab->lines.size() * lineHeight));
 
     // Double-click to edit
     if (ImGui::IsWindowHovered() && ImGui::IsMouseDoubleClicked(0))
@@ -321,6 +549,9 @@ void ScriptEditorWindow::DrawColoredReadOnlyView(ImVec2 editorSize, float lineNu
 
 void ScriptEditorWindow::DrawEditableView(ImVec2 editorSize, float lineNumberWidth)
 {
+    ScriptTab* tab = GetActiveTab();
+    if (!tab || !tab->textBuffer) return;
+
     ImGui::BeginChild("EditableEditor", editorSize, true);
 
     if (showLineNumbers)
@@ -328,9 +559,9 @@ void ScriptEditorWindow::DrawEditableView(ImVec2 editorSize, float lineNumberWid
         ImGui::BeginChild("LineNums", ImVec2(lineNumberWidth, 0), true, ImGuiWindowFlags_NoScrollbar);
         ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
 
-        for (size_t i = 0; i < lines.size(); ++i)
+        for (size_t i = 0; i < tab->lines.size(); ++i)
         {
-            ImVec4 numColor = lines[i].hasError ? colorError : colorLineNumber;
+            ImVec4 numColor = tab->lines[i].hasError ? colorError : colorLineNumber;
             ImGui::TextColored(numColor, "%4zu", i + 1);
         }
 
@@ -345,13 +576,13 @@ void ScriptEditorWindow::DrawEditableView(ImVec2 editorSize, float lineNumberWid
 
     bool textChanged = ImGui::InputTextMultiline(
         "##text",
-        textBuffer,
+        tab->textBuffer,
         bufferSize,
         ImVec2(-1, -1),
         ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_CallbackAlways,
         [](ImGuiInputTextCallbackData* data) -> int {
             ScriptEditorWindow* editor = (ScriptEditorWindow*)data->UserData;
-            editor->MarkAsModified();
+            editor->MarkCurrentTabAsModified();
             return 0;
         },
         this
@@ -377,6 +608,9 @@ void ScriptEditorWindow::DrawLineNumbers()
 
 void ScriptEditorWindow::DrawErrorPanel()
 {
+    ScriptTab* tab = GetActiveTab();
+    if (!tab) return;
+
     ImGui::Separator();
 
     if (ImGui::BeginChild("ErrorPanel", ImVec2(0, 60), true))
@@ -384,7 +618,7 @@ void ScriptEditorWindow::DrawErrorPanel()
         ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "Syntax Errors:");
         ImGui::Separator();
 
-        for (const auto& error : syntaxErrors)
+        for (const auto& error : tab->syntaxErrors)
         {
             ImGui::TextColored(colorError, "Line %d: %s", error.lineNumber, error.message.c_str());
         }
@@ -394,11 +628,14 @@ void ScriptEditorWindow::DrawErrorPanel()
 
 void ScriptEditorWindow::DrawStatusBar()
 {
+    ScriptTab* tab = GetActiveTab();
+    if (!tab) return;
+
     ImGui::Separator();
 
-    std::string status = currentScriptPath.empty() ? "No file loaded" : currentScriptPath;
+    std::string status = tab->filePath;
 
-    if (hasUnsavedChanges)
+    if (tab->hasUnsavedChanges)
     {
         status += " *";
     }
@@ -406,6 +643,10 @@ void ScriptEditorWindow::DrawStatusBar()
     ImGui::Text("%s", status.c_str());
 
     ImGui::SameLine(ImGui::GetWindowWidth() - 400);
+
+	// Show number of open tabs
+    ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "[%zu tabs]", openTabs.size());
+    ImGui::SameLine();
 
     if (enableSyntaxHighlighting)
     {
@@ -418,18 +659,18 @@ void ScriptEditorWindow::DrawStatusBar()
 
     ImGui::SameLine();
 
-    if (!syntaxErrors.empty())
+    if (!tab->syntaxErrors.empty())
     {
-        ImGui::TextColored(colorError, "%zu error(s)", syntaxErrors.size());
+        ImGui::TextColored(colorError, "%zu error(s)", tab->syntaxErrors.size());
         ImGui::SameLine();
     }
-    else if (!currentScriptPath.empty())
+    else if (!tab->filePath.empty())
     {
         ImGui::TextColored(ImVec4(0.3f, 1.0f, 0.3f, 1.0f), "OK");
         ImGui::SameLine();
     }
 
-    ImGui::Text("Lines: %zu", lines.size());
+    ImGui::Text("Lines: %zu", tab->lines.size());
 }
 
 void ScriptEditorWindow::RenderTextWithSyntaxHighlighting(const std::string& text, int lineNumber, ImVec2 startPos)
@@ -583,9 +824,20 @@ ImVec4 ScriptEditorWindow::GetColorForToken(TokenType type)
 
 void ScriptEditorWindow::ParseTextIntoLines()
 {
-    lines.clear();
+    ScriptTab* tab = GetActiveTab();
+    if (tab)
+    {
+        ParseTextIntoLinesForTab(*tab);
+    }
+}
 
-    std::stringstream ss(textBuffer);
+void ScriptEditorWindow::ParseTextIntoLinesForTab(ScriptTab& tab)
+{
+    tab.lines.clear();
+
+    if (!tab.textBuffer) return;
+
+    std::stringstream ss(tab.textBuffer);
     std::string line;
 
     while (std::getline(ss, line))
@@ -593,32 +845,43 @@ void ScriptEditorWindow::ParseTextIntoLines()
         TextLine textLine;
         textLine.content = line;
         textLine.hasError = false;
-        lines.push_back(textLine);
+        tab.lines.push_back(textLine);
     }
 
-    if (lines.empty())
+    if (tab.lines.empty())
     {
         TextLine empty;
         empty.content = "";
         empty.hasError = false;
-        lines.push_back(empty);
+        tab.lines.push_back(empty);
     }
 }
 
 void ScriptEditorWindow::CheckSyntaxErrors()
 {
-    syntaxErrors.clear();
+    ScriptTab* tab = GetActiveTab();
+    if (tab)
+    {
+        CheckSyntaxErrorsForTab(*tab);
+    }
+}
 
-    for (auto& line : lines)
+void ScriptEditorWindow::CheckSyntaxErrorsForTab(ScriptTab& tab)
+{
+    tab.syntaxErrors.clear();
+
+    for (auto& line : tab.lines)
     {
         line.hasError = false;
         line.errorMessage.clear();
     }
 
+    if (!tab.textBuffer) return;
+
     lua_State* L = luaL_newstate();
     if (!L) return;
 
-    int result = luaL_loadstring(L, textBuffer);
+    int result = luaL_loadstring(L, tab.textBuffer);
 
     if (result != LUA_OK)
     {
@@ -642,12 +905,12 @@ void ScriptEditorWindow::CheckSyntaxErrors()
                     SyntaxError syntaxError;
                     syntaxError.lineNumber = lineNum;
                     syntaxError.message = message;
-                    syntaxErrors.push_back(syntaxError);
+                    tab.syntaxErrors.push_back(syntaxError);
 
-                    if (lineNum > 0 && lineNum <= static_cast<int>(lines.size()))
+                    if (lineNum > 0 && lineNum <= static_cast<int>(tab.lines.size()))
                     {
-                        lines[lineNum - 1].hasError = true;
-                        lines[lineNum - 1].errorMessage = message;
+                        tab.lines[lineNum - 1].hasError = true;
+                        tab.lines[lineNum - 1].errorMessage = message;
                     }
                 }
                 catch (...) {}
@@ -662,74 +925,146 @@ void ScriptEditorWindow::CheckSyntaxErrors()
 
 void ScriptEditorWindow::OpenScript(const std::string& scriptPath)
 {
-    if (LoadScriptFromFile(scriptPath))
+	// Check if already open
+    int existingIndex = FindTabByPath(scriptPath);
+    if (existingIndex >= 0)
     {
-        currentScriptPath = scriptPath;
-        hasUnsavedChanges = false;
+		// Activate existing tab
+        activeTabIndex = existingIndex;
         isOpen = true;
-        enableSyntaxHighlighting = true;
+        return;
+    }
 
-        ParseTextIntoLines();
+	// Create new tab
+    ScriptTab newTab;
+
+    if (LoadScriptIntoTab(newTab, scriptPath))
+    {
+        openTabs.push_back(std::move(newTab));
+        activeTabIndex = static_cast<int>(openTabs.size()) - 1;
+        isOpen = true;
+
+        ScriptTab& tab = openTabs[activeTabIndex];
+        ParseTextIntoLinesForTab(tab);
 
         if (autoCheckSyntax)
         {
-            CheckSyntaxErrors();
+            CheckSyntaxErrorsForTab(tab);
         }
 
         LOG_CONSOLE("[ScriptEditor] Opened: %s", scriptPath.c_str());
     }
 }
 
-bool ScriptEditorWindow::LoadScriptFromFile(const std::string& path)
+bool ScriptEditorWindow::LoadScriptIntoTab(ScriptTab& tab, const std::string& path)
 {
     std::ifstream file(path, std::ios::binary);
     if (!file.is_open()) return false;
 
     std::stringstream buffer;
     buffer << file.rdbuf();
-    scriptContent = buffer.str();
-    originalContent = scriptContent;
+    std::string content = buffer.str();
     file.close();
 
-    if (scriptContent.size() >= 3 &&
-        (unsigned char)scriptContent[0] == 0xEF &&
-        (unsigned char)scriptContent[1] == 0xBB &&
-        (unsigned char)scriptContent[2] == 0xBF)
+	// Remove BOM if present
+    if (content.size() >= 3 &&
+        (unsigned char)content[0] == 0xEF &&
+        (unsigned char)content[1] == 0xBB &&
+        (unsigned char)content[2] == 0xBF)
     {
-        scriptContent = scriptContent.substr(3);
+        content = content.substr(3);
     }
 
-    strncpy_s(textBuffer, bufferSize, scriptContent.c_str(), _TRUNCATE);
+	// Config tab
+    tab.filePath = path;
+    tab.fileName = std::filesystem::path(path).filename().string();
+    tab.originalContent = content;
+    tab.hasUnsavedChanges = false;
+
+	// Create buffer
+    tab.textBuffer = new char[bufferSize];
+    memset(tab.textBuffer, 0, bufferSize);
+    strncpy_s(tab.textBuffer, bufferSize, content.c_str(), _TRUNCATE);
+
     return true;
 }
 
 bool ScriptEditorWindow::SaveScript()
 {
-    if (currentScriptPath.empty()) return false;
+    return SaveTab(activeTabIndex);
+}
 
-    std::ofstream file(currentScriptPath, std::ios::binary);
+bool ScriptEditorWindow::SaveTab(int tabIndex)
+{
+    if (tabIndex < 0 || tabIndex >= static_cast<int>(openTabs.size()))
+        return false;
+
+    ScriptTab& tab = openTabs[tabIndex];
+
+    if (tab.filePath.empty() || !tab.textBuffer)
+        return false;
+
+    std::ofstream file(tab.filePath, std::ios::binary);
     if (!file.is_open()) return false;
 
-    file << textBuffer;
+    file << tab.textBuffer;
     file.close();
 
-    originalContent = textBuffer;
-    hasUnsavedChanges = false;
+    tab.originalContent = tab.textBuffer;
+    tab.hasUnsavedChanges = false;
 
-    LOG_CONSOLE("[ScriptEditor] Saved: %s", currentScriptPath.c_str());
+    LOG_CONSOLE("[ScriptEditor] Saved: %s", tab.filePath.c_str());
 
     if (autoCheckSyntax)
     {
-        CheckSyntaxErrors();
+        CheckSyntaxErrorsForTab(tab);
     }
 
     return true;
 }
 
-void ScriptEditorWindow::MarkAsModified()
+void ScriptEditorWindow::CloseTab(int tabIndex)
 {
-    if (strcmp(textBuffer, originalContent.c_str()) != 0)
+    if (tabIndex < 0 || tabIndex >= static_cast<int>(openTabs.size()))
+        return;
+
+    LOG_CONSOLE("[ScriptEditor] Closed: %s", openTabs[tabIndex].fileName.c_str());
+
+    openTabs.erase(openTabs.begin() + tabIndex);
+
+	// Adjust active tab index
+    if (openTabs.empty())
     {
-        hasUnsavedChanges = true;
+        activeTabIndex = -1;
+    }
+    else if (activeTabIndex >= static_cast<int>(openTabs.size()))
+    {
+        activeTabIndex = static_cast<int>(openTabs.size()) - 1;
+    }
+    else if (activeTabIndex > tabIndex)
+    {
+        activeTabIndex--;
+    }
+}
+
+bool ScriptEditorWindow::HasUnsavedChanges() const
+{
+    for (const auto& tab : openTabs)
+    {
+        if (tab.hasUnsavedChanges)
+            return true;
+    }
+    return false;
+}
+
+void ScriptEditorWindow::MarkCurrentTabAsModified()
+{
+    ScriptTab* tab = GetActiveTab();
+    if (tab && tab->textBuffer)
+    {
+        if (strcmp(tab->textBuffer, tab->originalContent.c_str()) != 0)
+        {
+            tab->hasUnsavedChanges = true;
+        }
     }
 }
