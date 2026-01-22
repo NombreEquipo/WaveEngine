@@ -184,27 +184,71 @@ Include new script menu options:
 Scripts can be attached to **GameObjects** and **Cameras**, allowing you to define custom behavior using Lua.
 
 - **Gameobject:**
-  - Find specific game objects: GameObject = FindGameObject("tag"), tag represents other objects names, but using "this" as tag u can modify the object that owns the script
-  - Create game object using primitives ( `Cube`, `Pyramid`, `Sphere`, `Plane`, `Cylinder`): GameObject = CreatePrimitive("Cube", "name")
-  - Create game object using specific fbx: GameObject = CreateGameObject("..//Assets//Tank.fbx", "name")
-  - Delete game objects: DeleteGameObject(GameObject)
+  - Find specific game objects, `tag` represents the name of another object. Use `"this"` to reference the GameObject that owns the script:
+  ```lua
+   GameObject = FindGameObject("tag")
+   ``` 
+  - Create game object using primitives ( `Cube`, `Pyramid`, `Sphere`, `Plane`, `Cylinder`): 
+  ```lua
+  GameObject = CreatePrimitive("Cube", "name")
+  ```
+  - Create game object using specific fbx:
+  ```lua 
+  GameObject = CreateGameObject("..//Assets//Tank.fbx", "name")
+  ```
+  - Delete game objects: 
+  ```lua
+  DeleteGameObject(GameObject)
+  ```
 
 - **Gameobject Modifiers:**
-  - Transform Position: SetPosition(GameObject, x, y, z)
-  - Transform Rotation: SetRotation(GameObject, x, y, z)
-  - Transform Scale: SetScale(GameObject, x, y, z)
+  - Transform Position: 
+  ```lua
+  SetPosition(GameObject, x, y, z)
+  ```
+  - Transform Rotation: 
+  ```lua
+  SetRotation(GameObject, x, y, z)
+  ```
+  - Transform Scale:
+  ```lua 
+  SetScale(GameObject, x, y, z)
+  ```
 
 - **Gameobject Data:**
-  - Transform Position: GetPosition(GameObject)
-  - Transform Rotation: GetRotation(GameObject)
-  - Transform Scale: GetScale(GameObject)
-
+  - Transform Position: 
+  ```lua
+  GetPosition(GameObject)
+  ```
+  - Transform Rotation: 
+  ```lua 
+  GetRotation(GameObject)
+  ```
+  - Transform Scale: 
+  ```lua
+  GetScale(GameObject)
+  ```
   - **Input Data:**
-  - Mouse X Position: Input.MouseX
-  - Mouse Y Position: Input.MouseY
-  - Mouse left click: Input.MouseLeft
-  - Mouse right click: Input.MouseRight
-  - Key state: Input.A/Input.W/Input.S/...
+  - Mouse X Position: 
+  ```lua
+  Input.MouseX
+  ```
+  - Mouse Y Position: 
+  ```lua
+  Input.MouseY
+  ```
+  - Mouse left click: 
+  ```lua
+  Input.MouseLeft
+  ```
+  - Mouse right click:
+  ```lua
+   Input.MouseRight
+   ```
+  - Key state: 
+  ```lua
+  Input.A/Input.W/Input.S/...
+  ```
 ---
 
 <p align="center">
