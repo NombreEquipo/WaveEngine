@@ -66,27 +66,15 @@ function Update(self, dt)
         return 
     end
     
-    -- Calcular posición mundial de la torreta (simplificado)
-    local turretX, turretY, turretZ = 0, 0, 0
-    
-    if tankObject and tankObject.transform then
-        local tankPos = tankObject.transform.position
-        
-        if tankPos and self.transform.position then
-            local localPos = self.transform.position
-            
-            -- Ya no necesitamos rotar porque Base.001 se encarga
-            turretX = tankPos.x + localPos.x
-            turretY = tankPos.y + localPos.y
-            turretZ = tankPos.z + localPos.z
-        end
-    else
-        if self.transform.position then
-            turretX = self.transform.position.x
-            turretY = self.transform.position.y
-            turretZ = self.transform.position.z
-        end
+    -- Get world position of the turret
+    local worldPos = self.transform.worldPosition
+    if not worldPos then
+        Engine.Log("[Turret] ERROR: worldPosition is nil")
+        return
     end
+    local turretX = worldPos.x
+    local turretY = worldPos.y
+    local turretZ = worldPos.z
     
     -- Calcular ángulo hacia el mouse
     local dx = worldX - turretX

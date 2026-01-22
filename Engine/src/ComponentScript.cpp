@@ -598,6 +598,21 @@ void ComponentScript::CreateTransformUserdata(lua_State* L, Transform* transform
             return 1;
         }
 
+		// World position
+        if (strcmp(key, "worldPosition") == 0) {
+            const glm::mat4& globalMatrix = t->GetGlobalMatrix();
+
+            lua_newtable(L);
+            lua_pushnumber(L, globalMatrix[3][0]);
+            lua_setfield(L, -2, "x");
+            lua_pushnumber(L, globalMatrix[3][1]);
+            lua_setfield(L, -2, "y");
+            lua_pushnumber(L, globalMatrix[3][2]);
+            lua_setfield(L, -2, "z");
+
+            return 1;
+        }
+
         // Propiedad "rotation"
         if (strcmp(key, "rotation") == 0) {
             const glm::vec3& rot = t->GetRotation();

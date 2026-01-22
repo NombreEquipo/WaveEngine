@@ -17,32 +17,33 @@ end
 function Update(self, dt)
     -- Initialize on first Update (spawn data is ready now)
     if not initialized then
-        if _G.nextBulletData then
-            local data = _G.nextBulletData
+        local data = _G.nextBulletData
+        if data and data.x and data.y and data.z then
+
+            -- Clear the global data for next bullet
+            _G.nextBulletData = nil
+
             -- Set initial position
             self.transform:SetPosition(data.x, data.y, data.z)
 
             -- Set rotation
-            self.transform:SetRotation(-90, data.angle, 0)
+            self.transform:SetRotation(-90, data.angle or 0, 0)
 
             -- Set scale
-            local scale = data.scale or 1.0
-            self.transform:SetScale(scale, scale, scale)
+            local bulletScale = data.scale or 1.0
+            self.transform:SetScale(bulletScale, bulletScale, bulletScale)
 
             -- Use pre-calculated direction from turret
-            direction.x = data.dirX
+            direction.x = data.dirX or 0
             direction.y = 0
-            direction.z = data.dirZ
-            
+            direction.z = data.dirZ or 1
+
             initialized = true
-            
-            -- Clear the global data for next bullet
-            _G.nextBulletData = nil
-            
+
             -- Don't move this frame, just set position
             return
         else
-            Engine.Log(" WARNING: Bullet has no spawn data - using defaults")
+            Engine.Log("[Bullet] WARNING: No spawn data - using defaults")
             initialized = true
         end
     end
