@@ -211,18 +211,3 @@ glm::vec3 Camera::ScreenToWorldRay(int mouseX, int mouseY, int screenWidth, int 
 
 	return rayDir;
 }
-
-void Camera::HandleKeyboardInput(bool forward, bool backward, bool left, bool right, float deltaTime)
-{
-    float velocity = movementSpeed * deltaTime;
-
-    // cameraFront ya lo tienes actualizado en tu UpdateCameraVectors()
-    if (forward)  cameraPos += cameraFront * velocity;
-    if (backward) cameraPos -= cameraFront * velocity;
-
-    // Calculamos el vector Right usando el producto cruzado
-    glm::vec3 cameraRight = glm::normalize(glm::cross(cameraFront, cameraUp));
-
-    if (left)  cameraPos -= cameraRight * velocity;
-    if (right) cameraPos += cameraRight * velocity;
-}
