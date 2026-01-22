@@ -175,6 +175,8 @@ Include new script menu options:
   
 ---
 
+![Editor Scripting Demo](Gifs/EngineFunctions.gif)
+
 ### **In-Editor Script Editing**
 
 - Scripts can be **created, modified, and saved** directly inside the engine.
