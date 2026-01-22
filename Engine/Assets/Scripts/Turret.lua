@@ -1,4 +1,3 @@
-
 public = {
     fireRate = 0.5,
     barrelLength = 3.0,
@@ -67,20 +66,19 @@ function Update(self, dt)
         return 
     end
     
-    -- Calcular posición mundial de la torreta
+    -- Calcular posición mundial de la torreta (simplificado)
     local turretX, turretY, turretZ = 0, 0, 0
     
     if tankObject and tankObject.transform then
         local tankPos = tankObject.transform.position
-        local tankRot = tankObject.transform.rotation
         
-        if tankPos and tankRot and self.transform.position then
+        if tankPos and self.transform.position then
             local localPos = self.transform.position
             
-            local tankRadians = math.rad(tankRot.y)
-            turretX = tankPos.x + localPos.x * math.cos(tankRadians) - localPos.z * math.sin(tankRadians)
+            -- Ya no necesitamos rotar porque Base.001 se encarga
+            turretX = tankPos.x + localPos.x
             turretY = tankPos.y + localPos.y
-            turretZ = tankPos.z + localPos.x * math.sin(tankRadians) + localPos.z * math.cos(tankRadians)
+            turretZ = tankPos.z + localPos.z
         end
     else
         if self.transform.position then
@@ -95,20 +93,13 @@ function Update(self, dt)
     local dz = worldZ - turretZ
     local worldAngle = math.deg(math.atan(dx, dz))
     
-    -- Restar rotación del tanque
-    local tankYaw = 0
-    if tankObject and tankObject.transform and tankObject.transform.rotation then
-        tankYaw = tankObject.transform.rotation.y or 0
-    end
-    
-    local localYaw = worldAngle - tankYaw
-    
     -- Log ocasional para debug
     if math.random(1, 120) == 1 then
-        Engine.Log(string.format("[Turret] Rotating to: X=%.1f, Y=%.1f, Z=%.1f", baseRotX, localYaw, baseRotZ))
+        Engine.Log(string.format("[Turret] Rotating to: X=%.1f, Y=%.1f, Z=%.1f", baseRotX, worldAngle, baseRotZ))
     end
     
-    self.transform:SetRotation(baseRotX, localYaw, baseRotZ)
+    -- Rotar solo en Y (yaw), manteniendo X y Z originales
+    self.transform:SetRotation(baseRotX, worldAngle, baseRotZ)
     
     -- Sistema de disparo
     fireCooldown = fireCooldown - dt
