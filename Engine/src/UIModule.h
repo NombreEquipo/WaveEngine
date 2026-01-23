@@ -5,11 +5,11 @@
 
 class Texture;
 
-class UIModule : public Module
+class ModuleUI : public Module
 {
 public:
-    UIModule();
-    ~UIModule();
+    ModuleUI();
+    ~ModuleUI();
 
     bool Start() override;
     bool Update() override;

@@ -15,7 +15,7 @@
 #include "SelectionManager.h"
 #include "ModuleCamera.h" 
 #include "ModuleResources.h" 
-#include "UIModule.h"
+#include "ModuleUI.h"
 
 class Module;
 
@@ -41,7 +41,7 @@ public:
     void Step();
     PlayState GetPlayState() const { return playState; }
 
-    std::shared_ptr<UIModule> ui;
+    std::shared_ptr<ModuleUI> ui;
     std::shared_ptr<Window> window;
     std::shared_ptr<Input> input;
     std::shared_ptr<RenderContext> renderContext;
@@ -57,7 +57,7 @@ public:
     SelectionManager* selectionManager;
 
 private:
-
+    // Private constructor for singleton
     Application();
     ~Application() = default;
     Application(const Application&) = delete;

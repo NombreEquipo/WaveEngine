@@ -1,4 +1,4 @@
-#include "UIModule.h"
+#include "ModuleUI.h"
 #include "Application.h"
 #include "ModuleResources.h"
 #include "Texture.h"
@@ -7,26 +7,25 @@
 #include "Time.h"
 #include "Log.h"
 #include <imgui.h>
-bool UIModule::colour = true;
+bool ModuleUI::colour = true;
 
-UIModule::UIModule() : Module()
+ModuleUI::ModuleUI() : Module()
 {
-	name = "UIModule";
+	name = "ModuleUI";
 }
 
-UIModule::~UIModule()
-
+ModuleUI::~ModuleUI()
 {
 }
 
-bool UIModule::Start()
+bool ModuleUI::Start()
 {
 	LOG_DEBUG("Initializing Module UI");
 	
 	return true;
 }
 
-bool UIModule::Update()
+bool ModuleUI::Update()
 {
 
 	if (Application::GetInstance().input->GetKey(SDL_SCANCODE_F1) == KEY_DOWN)
@@ -67,7 +66,7 @@ bool UIModule::Update()
 	return true;
 }
 
-void UIModule::RenderMainMenu()
+void ModuleUI::RenderMainMenu()
 {
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
 	ImGui::SetNextWindowPos(viewport->Pos);
@@ -112,14 +111,14 @@ void UIModule::RenderMainMenu()
 	ImGui::End();
 }
 
-void UIModule::StartGame()
+void ModuleUI::StartGame()
 {
 	uiState = UIState::FADING_OUT;
 	fadeAlpha = 1.0f;
 	LOG_CONSOLE("Inicio: %s", playerNameInput);
 }
 
-void UIModule::RenderOptionsWindow()
+void ModuleUI::RenderOptionsWindow()
 {
 	ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_FirstUseEver);
 
@@ -149,7 +148,7 @@ void UIModule::RenderOptionsWindow()
 }
 
 
-void UIModule::RenderHUD()
+void ModuleUI::RenderHUD()
 {
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
 	ImVec2 center = ImVec2(viewport->Size.x * 0.5f, viewport->Size.y * 0.5f);
@@ -168,7 +167,8 @@ void UIModule::RenderHUD()
 	ImGui::End();
 	ImGui::PopStyleColor();
 }
-void UIModule::DrawCrosshairInsideWindow() {
+void ModuleUI::DrawCrosshairInsideWindow() {
+	//ImGui::Begin("crosstest");
 	ImVec2 center = ImVec2(
 		ImGui::GetWindowPos().x + ImGui::GetWindowSize().x * 0.5f,
 		ImGui::GetWindowPos().y + ImGui::GetWindowSize().y * 0.5f

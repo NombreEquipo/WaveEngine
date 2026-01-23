@@ -14,7 +14,7 @@ Application::Application() : isRunning(true), playState(PlayState::EDITING)
     scene = std::make_shared<ModuleScene>();
     camera = std::make_shared<ModuleCamera>();
     editor = std::make_shared<ModuleEditor>();
-    ui = std::make_shared<UIModule>();
+    ui = std::make_shared<ModuleUI>();
     filesystem = std::make_shared<FileSystem>();
     time = std::make_shared<Time>();
     grid = std::make_shared<Grid>();
