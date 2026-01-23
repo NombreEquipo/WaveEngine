@@ -1,34 +1,206 @@
 <h1 align="center">🌊 Wave Engine 🌊</h1>
 
 <p align="center">
-  <img src="GifEditor.gif" alt="Editor Scripting Demo" width="500">
-</p> 
-
-<p align="center">
-  <img src="Gif_Juego.gif" alt="Editor Scripting Demo" width="500">
-</p> 
-
-[![Ver video](https://img.youtube.com/vi/79wXfoxlBjI/maxresdefault.jpg)](https://www.youtube.com/watch?v=79wXfoxlBjI) 
-
-<p align="center">
 This project is a custom 3D game engine developed in C++ using OpenGL as the main graphics API.  
-It integrates several external libraries such as Assimp (for 3D model loading), DevIL (for texture management), and ImGui (for the user interface).
+This project was created as part of the Game Engines course at CITM (Centre de la Imatge i la Tecnologia Multimèdia).
 </p>
 
 <p align="center">
-In version 2.0, we've evolved beyond simple FBX dependency, implementing a complete resource management system with custom file formats and significant rendering optimizations. The engine now features an advanced editor interface with scene serialization, resource management, and acceleration structures for optimal performance.
+The engine integrates several external libraries including Assimp (for 3D model loading), DevIL (for texture management), ImGui (for the user interface), and Lua (for scripting). Also has a resource management system with custom file formats, an advanced editor interface, scene serialization, and a Lua scripting system that allows runtime gameplay programming.
 </p>
 
 <p align="center">
-🔗 <strong>GitHub Repository:</strong> <a href="https://github.com/Audra0000/Engine">https://github.com/Audra0000/Engine</a>
+🔗 <strong>GitHub Repository:</strong> <a href="https://github.com/bottzo/Motor2025/tree/Scripting-HaoshengAna2">https://github.com/bottzo/Motor2025/tree/Scripting-HaoshengAna2</a>
 </p>
+
+<p align="center">
+📦 <strong>Latest Release:</strong> <a href="#">[Download Link - Coming Soon]</a>
+</p>
+
+---
+
+## 📹 Video Demonstration
+
+[![Ver video](https://img.youtube.com/vi/79wXfoxlBjI/maxresdefault.jpg)](https://www.youtube.com/watch?v=79wXfoxlBjI)
+
+<p align="center"><em>Click the image above to watch the full engine demonstration video</em></p>
 
 ---
 
 ## 🎏 Team Members
 
-- **Haosheng Li** — [GitHub: HaosLii](https://github.com/HaosLii)  
+- **Haosheng Li** — [GitHub: HaosLii](https://github.com/HaosLii)
 - **Ana Alcaraz** — [GitHub: Audra0000](https://github.com/Audra0000)
+
+The implementation of the Lua-based scripting system was carried out jointly. Both team members collaborated on integrating the base architecture, although Ana Alcaraz took on a slightly larger implementation load for the foundation. We divided the specific functionalities as follows:
+
+**Ana Alcaraz**: Handled the management of object lifecycle and integration with the editor (corresponding to 30% and 20% of the task respectively). This included:
+
+- Implementing runtime prefab creation (bullets). 
+- Managing timers for entity destruction. 
+- Publishing environment variables in the inspector. 
+- Integrating a text editor window within the engine to modify scripts in real-time. 
+
+**Haosheng Li** handled the movement logic (50%). This includes:
+
+- Developing scripts for tank movement and rotation using keyboard input. 
+- Implementing the script for the turret to rotate and aim toward the mouse position in the scene. 
+
+---
+
+## 🏗️ Core Engine Systems
+
+### **Application**
+The core module that manages the engine's lifecycle. Contains all modules and controls the game loop (Awake → Start → Update → PostUpdate → CleanUp). Also handles Play/Pause/Stop states.
+
+### **ModuleScene**
+Manages the scene and GameObject tree. Has a root node from which all objects hang. Also maintains an Octree for spatial optimization (frustum culling, raycasting).
+
+### **GameObject / Components**
+Entity-component system:
+- **GameObject:** Container with name, transform, children, and components
+- **Transform:** Position, rotation, scale (local and global)
+- **ComponentMesh:** 3D geometry
+- **ComponentMaterial:** Textures and materials
+- **ComponentCamera:** Game camera
+- **ComponentScript:** Lua scripts
+
+### **ModuleResources**
+Resource system with unique UIDs. Manages loading/unloading of:
+- **ResourceMesh** - 3D meshes
+- **ResourceTexture** - Textures
+- **ResourceScript** - Lua scripts
+- **ResourcePrefab** - Prefabs
+
+### **Renderer**
+Draws the scene using OpenGL. Manages:
+- Frustum culling with octree
+- Mesh rendering with materials
+- Debug drawing (AABBs, grid, Frustum culling)
+
+### **ModuleEditor**
+Editor system with ImGui windows:
+- **HierarchyWindow** - Object tree
+- **InspectorWindow** - Selected object properties
+- **AssetsWindow** - File browser
+- **ScriptEditorWindow** - Lua script editor
+- **GameWindow / SceneWindow** - Viewports
+
+### **SelectionManager**
+Manages object selection in the editor (single/multi-select).
+
+### **Resource Management System**
+- Complete asset pipeline with automatic conversion to custom file formats
+- Assets stored in a structured "Assets" folder, with optimized versions cached in "Library"
+- Reference counting ensures resources are loaded only once regardless of usage count
+- Automatic regeneration of Library folder from Assets and metadata files
+- Support for importing new assets at runtime
+
+### **Performance Optimizations**
+- **Frustum Culling:** Objects outside the camera view are not rendered
+- **Octree Spatial Partitioning:** Accelerates both rendering culling and object selection
+- **Debug Visualizations:** Toggle visual representations of AABBs, octree nodes, and frustum
+
+### **Scene Management**
+- Scene serialization to custom file format
+- Automatic loading of default scene ("StreetEnvironment")
+- Complete GameObject hierarchy support with parent-child relationships
+- Runtime transformation of objects (position, rotation, scale)
+
+### **Camera System**
+- Configurable camera component with adjustable parameters
+- Selection system using raycasting with octree
+- Visual feedback for selection operations
+
+### **Custom File Formats**
+- Proprietary formats for models, textures and scenes
+- Metadata files storing import settings and dependencies
+
+### **Additional Features**
+- **Transparent textures**
+- **zBuffer**
+- **Assets icons**
+- **Asset Deletion:** Delete assets directly from the explorer with automatic cleanup of associated Library files
+- **Import Settings:** Basic implementation of import options for different asset types:
+  - **Textures:** Control filtering modes, max texture size, and flip options (X/Y axes)
+  - **Meshes:** Configure global scaling, axis configuration, Post-processing options: generate normals, flip uv, optimize meshes
+  - **Metadata:** All import settings are saved in .meta files to ensure proper regeneration of the Library folder
+
+---
+
+## 🎮 Scripting System (High-Level Feature)
+
+<p align="center">
+  <img src="GifEditor.gif" alt="Editor Scripting Demo" width="500"> <img src="Gif_Juego.gif" alt="Gameplay Scripting Demo" width="500">
+</p>
+
+The engine's scripting system allows users to program custom behaviors for GameObjects using the Lua language. The architecture is divided into three main components: the ScriptManager that maintains the global Lua state, the ComponentScript that connects scripts with GameObjects, and the ResourceScript that manages script files as engine resources.
+
+### **ScriptManager**
+The ScriptManager is the core module of the scripting system. During engine initialization, this module creates a Lua state and loads the language's standard libraries. Additionally, it registers all engine APIs that will be available to scripts.
+
+The exposed APIs include utility functions such as logging (Engine.Log), input functions (Input.GetKey, Input.GetKeyDown, Input.GetMousePosition), and Time.GetDeltaTime to obtain the elapsed time between frames. It also exposes an API to manipulate GameObjects: search for objects by name (GameObject.Find), create them (GameObject.Create), destroy them (GameObject.Destroy), and access the Transform to modify position, rotation, and scale.
+
+An important feature is the deferred operations system. When a script requests an operation that modifies the scene, it is queued and executed during the engine's PostUpdate phase, avoiding concurrency issues.
+
+### **ComponentScript**
+The ComponentScript is attached to a GameObject to give it behavior through a Lua script. Each instance maintains its own isolated environment within the global Lua state, allowing multiple objects to use the same script without interfering with each other.
+
+The lifecycle is simple: when the engine enters Play mode, the script's Start function is called once. Then, on each frame, the Update function is called passing the self object and delta time as parameters.
+
+### **Public Variables**
+Scripts can declare a table called public to expose variables editable from the editor's Inspector. These variables can be numbers, strings, booleans, or vectors. Values are serialized with the scene and preserved during hot reload.
+
+### **ResourceScript**
+The ResourceScript represents a Lua file as a resource managed by the engine. It stores the timestamp of the file's last modification to detect changes and enable automatic hot reload of scripts while preserving public variable values.
+
+### **Metatables and Userdata**
+To expose C++ objects to Lua, the system uses metatables and userdata. Transforms and GameObjects are represented as userdata with metatables that implement the __index metamethod, intercepting access to properties and methods. Operations that modify the scene are queued for deferred execution during PostUpdate.
+
+The system includes validations to prevent crashes, verifying that pointers are valid before accessing objects. Lua errors are caught using pcall and reported without stopping engine execution.
+
+---
+
+## 🎁 Prefab System (Extra Feature)
+
+The prefab system allows saving complete GameObjects as reusable templates that can be instantiated multiple times during game execution. A prefab captures an object's hierarchical structure, including all its components, properties, and child objects, storing it in a JSON file that can be loaded later to create identical copies.
+
+### **System Architecture**
+The prefab system consists of three main classes working together. The Prefab class represents an individual template and contains the serialized data of the original GameObject. The PrefabManager acts as a central registry that stores and manages all loaded prefabs in memory. Finally, the ResourcePrefab integrates prefabs with the engine's resource system, allowing them to be managed with unique UIDs just like textures or meshes.
+
+### **The Prefab Class**
+The Prefab class encapsulates a serialized GameObject's data and provides methods to save, load, and instantiate objects. Internally, it stores a JSON object containing all necessary information to reconstruct the original GameObject.
+
+When creating a prefab from an existing GameObject, the SaveFromGameObject method traverses the object and all its components, serializing each one in JSON format. This includes the object's name, its Transform with position, rotation and scale, and all additional components such as meshes, materials, or scripts. If the GameObject has children, these are also serialized, preserving the complete hierarchy.
+
+The resulting file is saved to disk with a .prefab extension and contains a readable JSON structure that can be inspected or manually edited if necessary.
+
+### **PrefabManager**
+The PrefabManager is a singleton that maintains a dictionary of all loaded prefabs, indexed by name. It provides a centralized interface to load prefabs from files, create new prefabs from existing GameObjects, and instantiate copies of already loaded prefabs.
+
+The InstantiatePrefab method searches for the prefab by name in the dictionary and delegates creation to the Prefab class's Instantiate method. If the prefab isn't loaded, it returns a null pointer and logs an error to the console.
+
+### **ResourcePrefab**
+The ResourcePrefab integrates prefabs with the engine's resource system. Each .prefab file in the Assets folder is automatically registered as a resource with its own unique UID. This allows referencing prefabs consistently even if files are renamed or moved.
+
+This integration allows Lua scripts to reference prefabs by filename, while internally the system resolves the reference to the correct UID by searching among all prefab-type resources.
+
+### **Instantiation Process**
+Prefab instantiation is a process that completely reconstructs a GameObject from its serialized data. First, a new GameObject is created with the name stored in the prefab. Then it iterates over the list of serialized components, creating each one and calling its Deserialize method to restore its properties.
+
+The Transform is restored with the original position, rotation, and scale. Mesh and material components load their associated resources using the stored UIDs. ComponentScripts load their scripts and restore public variable values that were saved in the prefab.
+
+If the prefab contains child objects, these are instantiated recursively following the same process, and parent-child relationships are established to reconstruct the original hierarchy.
+
+### **Integration with the Scripting System**
+Lua scripts can instantiate prefabs using the Prefab.Instantiate function, which receives the prefab filename as a parameter. This operation executes in a deferred manner to maintain consistency with other scene-modifying operations.
+
+A common pattern is using global Lua variables to pass initialization information to newly created prefabs. For example, when a turret fires a bullet, before instantiating the bullet prefab it stores the spawn position, movement direction, and other parameters in a global variable. The bullet's script reads this data during its first Update to configure itself correctly.
+
+### **Component Serialization**
+Each component type implements its own Serialize and Deserialize methods that define how its properties are saved and restored. The Transform serializes three vectors for position, rotation, and scale. ComponentMesh saves the UID of its assigned mesh. ComponentMaterial stores the texture UID and material properties such as colors or shader parameters.
+
+ComponentScript serializes the associated Lua script's UID along with all public variables and their current values. This allows each prefab instance to have different values in its public variables, which are preserved when saving and loading the scene or creating the prefab.
 
 ---
 
@@ -53,6 +225,15 @@ In version 2.0, we've evolved beyond simple FBX dependency, implementing a compl
 | Rotate | E | |
 | Scale | R | |
 | Toggle Coordinate System | T | |
+
+| Script Editor Action | Key 1 | Key 2 |
+|------------|------------|------------|
+| Save | Ctrl + S | |
+| Save all | Ctrl + Shift + S | |
+| Close Tab | Ctrl + W | |
+| Find & Replace | Ctrl + F | |
+| Highlighting | Ctrl + H | |
+
 ---
 
 ## 🐠 User Interface
@@ -90,7 +271,7 @@ This window is divided into **five tabs**:
    - Enable or disable **face culling** and choose its mode  
    - Toggle **wireframe mode**  
    - Change the **background color** of the scene
-   - Toggle debug visualization for AABBs, octree,raycast, zBuffer  
+   - Toggle debug visualization for AABBs, octree, raycast, zBuffer  
 5. **Hardware:**  
    - Displays detailed information about the system hardware in use  
 
@@ -136,6 +317,11 @@ Provides detailed information and transformation options for the selected GameOb
 - **Camera Component** (when selected):  
   - Active frustum culling
   - Toggle debug visualization for frustum culling
+- **Script Component** (when added):  
+  - Change script
+  - Remove script
+  - Reload script
+  - Public variables editing
 
 ---
 
@@ -155,6 +341,7 @@ Includes the following menu options:
   - Create primitves
   - Add rotate component
 - **Help:**
+  - *GitHub web:* Opens the repository web
   - *GitHub documentation:* Opens the official documentation  
   - *Report a bug:* Opens `[Link to repo]/issues`  
   - *Download latest:* Opens `[Link to repo]/releases`  
@@ -162,49 +349,26 @@ Includes the following menu options:
 
 ---
 
-## ✨ Extra features 
-- **Transparente textures**
-- **zBuffer**
-- **Assets icons**
-- **Asset Deletion:** Delete assets directly from the explorer with automatic cleanup of associated Library files
-- **Import Settings:** Basic implementation of import options for different asset types:
-  - **Textures:** Control filtering modes, max texture size, and flip options (X/Y axes)
-  - **Meshes:** Configure global scaling, axis configuration, Post-processing options: generate normals, flip uv, optimize meshes
-  - **Metadata:** All import settings are saved in .meta files to ensure proper regeneration of the Library folder
+## 📄 License
 
----
+MIT License
 
-## ✨ New Core Features 
+Copyright (c) 2025 Ana Alcaraz
 
-### **Resource Management System**
-- Complete asset pipeline with automatic conversion to custom file formats
-- Assets stored in a structured "Assets" folder, with optimized versions cached in "Library"
-- Reference counting ensures resources are loaded only once regardless of usage count
-- Automatic regeneration of Library folder from Assets and metadata files
-- Support for importing new assets at runtime
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-### **Performance Optimizations**
-- **Frustum Culling:** Objects outside the camera view are not rendered
-- **Octree Spatial Partitioning:** Accelerates both rendering culling and object selection
-- **Debug Visualizations:** Toggle visual representations of AABBs, octree nodes, and frustum
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-### **Scene Management**
-- Scene serialization to custom file format
-- Automatic loading of default scene ("StreetEnvironment")
-- Complete GameObject hierarchy support with parent-child relationships
-- Runtime transformation of objects (position, rotation, scale)
-
-### **Camera System**
-- Configurable camera component with adjustable parameters
-- Selection system using raycasting with octree
-- Visual feedback for selection operations
-
-### **Custom File Formats**
-- Proprietary formats for models, textures and scenes
-- Metadata files storing import settings and dependencies
-
----
-
-<p align="center">
-<sub>© 2025 Wave Engine — Developed by Haosheng Li & Ana Alcaraz — MIT License</sub>
-</p>
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
