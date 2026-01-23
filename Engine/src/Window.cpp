@@ -48,7 +48,7 @@ bool Window::Start()
 
     // Create window WITH OpenGL flag
     window = SDL_CreateWindow(
-        "Wave Engine",
+        "Motor 2025",
         width,
         height,
         SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
