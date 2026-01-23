@@ -341,7 +341,7 @@ DropPosition HierarchyWindow::GetDropPosition(GameObject* draggedObject, GameObj
 void HierarchyWindow::DrawInsertionLine(const ImVec2& start, const ImVec2& end)
 {
     ImDrawList* drawList = ImGui::GetWindowDrawList();
-    drawList->AddLine(start, end, IM_COL32(255, 200, 0, 255), 2.0f);
+    drawList->AddLine(start, end, IM_COL32(255, 0, 255, 255), 2.0f);
 }
 
 void HierarchyWindow::HandleAutoScroll()

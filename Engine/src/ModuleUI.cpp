@@ -182,7 +182,6 @@ void ModuleUI::RenderHUD()
 	ImGui::PopStyleColor();
 }
 void ModuleUI::DrawCrosshairInsideWindow() {
-	//ImGui::Begin("crosstest");
 	ImVec2 center = ImVec2(
 		ImGui::GetWindowPos().x + ImGui::GetWindowSize().x * 0.5f,
 		ImGui::GetWindowPos().y + ImGui::GetWindowSize().y * 0.5f
@@ -196,13 +195,13 @@ void ModuleUI::DrawCrosshairInsideWindow() {
 	ImDrawList* drawList = ImGui::GetWindowDrawList();
 
 	if (colour==true) {
-		drawList->AddLine(ImVec2(center.x, center.y - gap), ImVec2(center.x, center.y - gap - lineSize), IM_COL32(0, 255, 255, 255), thickness);
+		drawList->AddLine(ImVec2(center.x, center.y - gap), ImVec2(center.x, center.y - gap - lineSize), IM_COL32(255, 0, 0, 255), thickness);
 
-		drawList->AddLine(ImVec2(center.x, center.y + gap), ImVec2(center.x, center.y + gap + lineSize), IM_COL32(0, 255,255, 255), thickness);
+		drawList->AddLine(ImVec2(center.x, center.y + gap), ImVec2(center.x, center.y + gap + lineSize), IM_COL32(255, 0,0, 255), thickness);
 
-		drawList->AddLine(ImVec2(center.x - gap, center.y), ImVec2(center.x - gap - lineSize, center.y), IM_COL32(0, 255, 255, 255), thickness);
+		drawList->AddLine(ImVec2(center.x - gap, center.y), ImVec2(center.x - gap - lineSize, center.y), IM_COL32(255, 0, 0, 255), thickness);
 
-		drawList->AddLine(ImVec2(center.x + gap, center.y), ImVec2(center.x + gap + lineSize, center.y), IM_COL32(0, 255, 255, 255), thickness);
+		drawList->AddLine(ImVec2(center.x + gap, center.y), ImVec2(center.x + gap + lineSize, center.y), IM_COL32(255, 0, 0, 255), thickness);
 	}
 	else {
 	drawList->AddLine(ImVec2(center.x, center.y - gap), ImVec2(center.x, center.y - gap - lineSize), color, thickness);

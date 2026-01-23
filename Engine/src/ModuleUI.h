@@ -35,7 +35,7 @@ private:
     std::shared_ptr<Texture> mainMenuBackground;
     std::shared_ptr<Texture> crosshairTexture;
 
-    char playerNameInput[64] = "Player 1";
+    char playerNameInput[64] = "Username";
     float fadeAlpha = 0.0f;
     float fadeSpeed = 0.5f; 
 
