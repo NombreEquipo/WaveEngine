@@ -95,13 +95,15 @@ public:
 		}
 	}
 
-	void RegisterGameObject(AkGameObjectID id, const char* name);
-	void UnregisterGameObject(AkGameObjectID id);
-	void SetPosition(AkGameObjectID id, const glm::vec3& pos, const glm::vec3& front, const glm::vec3& top);
+	//void RegisterGameObject(AkGameObjectID id, const char* name);
+	//void UnregisterGameObject(AkGameObjectID id);
+	//void SetPosition(AkGameObjectID id, const glm::vec3& pos, const glm::vec3& front, const glm::vec3& top);
 
 	// Reverb zone registration
 	void RegisterReverbZone(ReverbZone* zone);
 	void UnregisterReverbZone(ReverbZone* zone);
+	//void UpdateReverbPreset(AkGameObjectID sourceID, ReverbZone* bestZone);
+
 
 	static void EventCallBack(AkCallbackType in_eType, AkEventCallbackInfo* in_pEventInfo, void* in_pCallbackInfo, void* in_pCookie);
 
@@ -111,6 +113,8 @@ public:
 	// Control verbose debug logging for this subsystem (default: off)
 	inline void SetDebugLogging(bool enable) { enableDebugLogs = enable; }
 	inline bool IsDebugLoggingEnabled() const { return enableDebugLogs; }
+
+
 
 private:
 	bool InitEngine();
@@ -125,10 +129,11 @@ private:
 
 	// processing reverb zones each frame
 	void ProcessReverbZones();
+	
 
 	// set aux send helper
-	void SetGameObjectAuxSend(AkGameObjectID id, const wchar_t* auxBusName, float controlValue);
-
+	void SetGameObjectAuxSend(AkGameObjectID id, AkUniqueID busId, float controlValue);
+	
 	float globalVolume = 100.0f;
 
 	std::vector<AkGameObjectID> gameObjectIDs;
@@ -167,6 +172,8 @@ private:
 
 	// Toggle to reduce log noise (default: false)
 	bool enableDebugLogs = false;
+
+
 
 
 public:

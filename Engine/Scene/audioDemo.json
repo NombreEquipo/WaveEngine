@@ -25,7 +25,7 @@
                 },
                 {
                     "active": true,
-                    "aspectRatio": 2.1380367279052734,
+                    "aspectRatio": 2.0950920581817627,
                     "farPlane": 500.0,
                     "fov": 40.20000076293945,
                     "frustumCullingEnabled": false,
@@ -62,14 +62,14 @@
                                                         {
                                                             "active": true,
                                                             "position": [
-                                                                7.847053527832031,
-                                                                0.477257639169693,
-                                                                1.6975765228271484
+                                                                7.847137451171875,
+                                                                0.47726309299468994,
+                                                                1.6973857879638672
                                                             ],
                                                             "rotation": [
-                                                                -2.8131375007234283e-10,
+                                                                -3.4156624750814046e-10,
                                                                 6.8301910687296186e-06,
-                                                                -2.0660886890233598e-10
+                                                                -2.5220531219005693e-10
                                                             ],
                                                             "scale": [
                                                                 0.9999998211860657,
@@ -128,13 +128,15 @@
                                                         },
                                                         {
                                                             "active": true,
-                                                            "auxBusName": "Reverb_AuxBus",
+                                                            "auxBusID": 2877329779,
+                                                            "auxBusName": "Reverb_LargePlate",
                                                             "enabled": true,
                                                             "extents": [
                                                                 5.0,
                                                                 5.0,
                                                                 5.0
                                                             ],
+                                                            "presetIndex": 3,
                                                             "priority": 0,
                                                             "radius": 5.800000190734863,
                                                             "shape": 0,

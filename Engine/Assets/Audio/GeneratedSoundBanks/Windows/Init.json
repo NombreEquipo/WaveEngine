@@ -10,17 +10,73 @@
     "Type": "User",
     "GUID": "{701ECBBD-9C7B-4030-8CDB-749EE5D1C7B9}",
     "Language": "SFX",
-    "Hash": "{88D7F1A2-BE19-A686-5B7C-722234C7E35A}",
+    "Hash": "{18353A7D-8196-82F2-7804-71C19027D51B}",
     "ObjectPath": "Init",
     "ShortName": "Init",
     "Path": "Init.bnk",
     "Plugins": {
      "ShareSets": [
       {
+       "Id": "48620415",
+       "Name": "Have_U_Ever_Been_Outside",
+       "ObjectPath": "\\Effects\\Factory Effects\\RoomVerb\\Exteriors\\Have_U_Ever_Been_Outside",
+       "GUID": "{FE29AE8D-FD86-4652-A95D-68D32F5760EC}",
+       "LibName": "Wwise RoomVerb",
+       "LibId": "7733251"
+      },
+      {
+       "Id": "1144018367",
+       "Name": "Plate_Large",
+       "ObjectPath": "\\Effects\\Factory Effects\\RoomVerb\\Plates\\Plate_Large",
+       "GUID": "{62CB7384-421D-4F9A-9CF1-E90F7336A07B}",
+       "LibName": "Wwise RoomVerb",
+       "LibId": "7733251"
+      },
+      {
+       "Id": "2891462749",
+       "Name": "Room_Medium_High_Absorbtion",
+       "ObjectPath": "\\Effects\\Factory Effects\\RoomVerb\\Rooms\\Room_Medium_High_Absorbtion",
+       "GUID": "{E22DBBB6-7656-4B93-A28D-C003FD416889}",
+       "LibName": "Wwise RoomVerb",
+       "LibId": "7733251"
+      },
+      {
+       "Id": "2900412812",
+       "Name": "Robotic_Trash",
+       "ObjectPath": "\\Effects\\Factory Effects\\RoomVerb\\Claustrophobia\\Robotic_Trash",
+       "GUID": "{18FEB1E8-36C5-4B2D-959A-8F3CE9ECBB0E}",
+       "LibName": "Wwise RoomVerb",
+       "LibId": "7733251"
+      },
+      {
+       "Id": "3036946058",
+       "Name": "Inside_Your_Head",
+       "ObjectPath": "\\Effects\\Factory Effects\\RoomVerb\\Claustrophobia\\Inside_Your_Head",
+       "GUID": "{AE2D0AE1-8963-400A-AA4A-52A7A6397F89}",
+       "LibName": "Wwise RoomVerb",
+       "LibId": "7733251"
+      },
+      {
        "Id": "3164629247",
        "Name": "Holy",
        "ObjectPath": "\\Effects\\Factory Effects\\RoomVerb\\Cathedrals\\Holy",
        "GUID": "{CC7B8638-C670-4AD5-B3FB-331EA81037F6}",
+       "LibName": "Wwise RoomVerb",
+       "LibId": "7733251"
+      },
+      {
+       "Id": "3290519051",
+       "Name": "Aluminium_Tank",
+       "ObjectPath": "\\Effects\\Factory Effects\\RoomVerb\\Huge Spaces\\Aluminium_Tank",
+       "GUID": "{0D20C91A-F750-47E0-AE32-00E5F2AA1272}",
+       "LibName": "Wwise RoomVerb",
+       "LibId": "7733251"
+      },
+      {
+       "Id": "3442768367",
+       "Name": "Hall_Large_Dark",
+       "ObjectPath": "\\Effects\\Factory Effects\\RoomVerb\\Halls\\Hall_Large_Dark",
+       "GUID": "{0F6A7D6D-131C-4650-9561-FC05F5C7A37B}",
        "LibName": "Wwise RoomVerb",
        "LibId": "7733251"
       }
@@ -66,14 +122,105 @@
     ],
     "AuxBusses": [
      {
-      "Id": "2858851216",
-      "Name": "Reverb_AuxBus",
-      "ObjectPath": "\\Busses\\Default Work Unit\\Main Audio Bus\\Reverb_AuxBus",
+      "Id": "1204176067",
+      "Name": "Reverb_Absorption",
+      "ObjectPath": "\\Busses\\Default Work Unit\\Main Audio Bus\\Reverb_Absorption",
+      "GUID": "{F2430640-E339-4DAF-A3A6-F7511DCD102F}",
+      "PluginRefs": {
+       "ShareSets": [
+        {
+         "Id": "2891462749"
+        }
+       ]
+      }
+     },
+     {
+      "Id": "1741738112",
+      "Name": "Reverb_Cathedral",
+      "ObjectPath": "\\Busses\\Default Work Unit\\Main Audio Bus\\Reverb_Cathedral",
       "GUID": "{64009C03-8FCF-4415-9CF9-F5AC4444D726}",
       "PluginRefs": {
        "ShareSets": [
         {
          "Id": "3164629247"
+        }
+       ]
+      }
+     },
+     {
+      "Id": "2098287461",
+      "Name": "Reverb_Outside",
+      "ObjectPath": "\\Busses\\Default Work Unit\\Main Audio Bus\\Reverb_Outside",
+      "GUID": "{716E7EE7-E3F1-454E-B138-DDDC187F22C7}",
+      "PluginRefs": {
+       "ShareSets": [
+        {
+         "Id": "48620415"
+        }
+       ]
+      }
+     },
+     {
+      "Id": "2100234192",
+      "Name": "Reverb_InsideMyHead",
+      "ObjectPath": "\\Busses\\Default Work Unit\\Main Audio Bus\\Reverb_InsideMyHead",
+      "GUID": "{44985131-50E8-43FD-B7E0-D1F56C2EED65}",
+      "PluginRefs": {
+       "ShareSets": [
+        {
+         "Id": "3036946058"
+        }
+       ]
+      }
+     },
+     {
+      "Id": "2637049263",
+      "Name": "Reverb_LongDarkHall",
+      "ObjectPath": "\\Busses\\Default Work Unit\\Main Audio Bus\\Reverb_LongDarkHall",
+      "GUID": "{D9EA95D1-1B49-4759-AD24-104B147B9973}",
+      "PluginRefs": {
+       "ShareSets": [
+        {
+         "Id": "3442768367"
+        }
+       ]
+      }
+     },
+     {
+      "Id": "2877329779",
+      "Name": "Reverb_LargePlate",
+      "ObjectPath": "\\Busses\\Default Work Unit\\Main Audio Bus\\Reverb_LargePlate",
+      "GUID": "{74317D9E-E568-40FF-B6D7-3340DA2D5A61}",
+      "PluginRefs": {
+       "ShareSets": [
+        {
+         "Id": "1144018367"
+        }
+       ]
+      }
+     },
+     {
+      "Id": "3522965360",
+      "Name": "Reverb_Robotic",
+      "ObjectPath": "\\Busses\\Default Work Unit\\Main Audio Bus\\Reverb_Robotic",
+      "GUID": "{E6B61723-32EF-463C-B0F0-CEE4AE0176BE}",
+      "PluginRefs": {
+       "ShareSets": [
+        {
+         "Id": "2900412812"
+        }
+       ]
+      }
+     },
+     {
+      "Id": "4165278950",
+      "Name": "Reverb_AluminumTank",
+      "ObjectPath": "\\Busses\\Default Work Unit\\Main Audio Bus\\Reverb_AluminumTank",
+      "GUID": "{54A85C7B-0306-48FF-A2EF-D2B8948C1362}",
+      "PluginRefs": {
+       "ShareSets": [
+        {
+         "Id": "3290519051"
         }
        ]
       }
@@ -189,6 +336,64 @@
         "Name": "PizzaParlor",
         "ObjectPath": "\\States\\Default Work Unit\\BGM_State\\PizzaParlor",
         "GUID": "{B4515133-463C-4D09-8EF9-F32B7B62A759}"
+       }
+      ]
+     }
+    ],
+    "SwitchGroups": [
+     {
+      "Id": "2817781829",
+      "Name": "Reverb_Busses",
+      "ObjectPath": "\\Switches\\Default Work Unit\\Reverb_Busses",
+      "GUID": "{E68DE0C5-B527-4778-BBB1-2261FCF62880}",
+      "Switches": [
+       {
+        "Id": "438105790",
+        "Name": "Outside",
+        "ObjectPath": "\\Switches\\Default Work Unit\\Reverb_Busses\\Outside",
+        "GUID": "{7FFC46DD-ECF5-432F-9528-6B4AE9528B49}"
+       },
+       {
+        "Id": "701863527",
+        "Name": "Inside_My_Head",
+        "ObjectPath": "\\Switches\\Default Work Unit\\Reverb_Busses\\Inside_My_Head",
+        "GUID": "{ACCB129B-06D9-4A85-A3F6-2CAAE21C70F4}"
+       },
+       {
+        "Id": "1021965139",
+        "Name": "Large_Plate",
+        "ObjectPath": "\\Switches\\Default Work Unit\\Reverb_Busses\\Large_Plate",
+        "GUID": "{51ACD9F4-65FD-48B8-A20F-5FF3E551FED0}"
+       },
+       {
+        "Id": "1024696295",
+        "Name": "Cathedral",
+        "ObjectPath": "\\Switches\\Default Work Unit\\Reverb_Busses\\Cathedral",
+        "GUID": "{7889C2EB-DB77-47B8-A31B-D14148EE6104}"
+       },
+       {
+        "Id": "1220391191",
+        "Name": "Robotic",
+        "ObjectPath": "\\Switches\\Default Work Unit\\Reverb_Busses\\Robotic",
+        "GUID": "{4E7659F6-7C73-452C-8489-86DD370523F1}"
+       },
+       {
+        "Id": "1964438385",
+        "Name": "Metal_Tank",
+        "ObjectPath": "\\Switches\\Default Work Unit\\Reverb_Busses\\Metal_Tank",
+        "GUID": "{14D68433-F405-484A-81C4-66FF3F45EB8E}"
+       },
+       {
+        "Id": "2513696264",
+        "Name": "Long_Dark_Hall",
+        "ObjectPath": "\\Switches\\Default Work Unit\\Reverb_Busses\\Long_Dark_Hall",
+        "GUID": "{0738706E-5743-40E2-B9C0-D976B924430F}"
+       },
+       {
+        "Id": "4282896854",
+        "Name": "Absorption",
+        "ObjectPath": "\\Switches\\Default Work Unit\\Reverb_Busses\\Absorption",
+        "GUID": "{ADF99226-B226-434F-891D-4D213A287360}"
        }
       ]
      }
@@ -672,6 +877,6 @@
     ]
    }
   ],
-  "FileHash": "{72B8F7F9-806F-392E-9EDE-A9EBE7C0EA94}"
+  "FileHash": "{FE579513-EBCF-283D-0982-9BC6E9235A1E}"
  }
 }

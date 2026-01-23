@@ -15,7 +15,6 @@ namespace AK
     {
         static const AkUniqueID HELPME = 1896801622U;
         static const AkUniqueID PLAY_CLUBPENGUIN = 2681289886U;
-        static const AkUniqueID PLAY_COFFEESHOP = 586175602U;
         static const AkUniqueID PLAY_LOOKINFRESH = 111646406U;
         static const AkUniqueID TALKINGSFX = 2400116970U;
     } // namespace EVENTS
@@ -35,6 +34,27 @@ namespace AK
         } // namespace BGM_STATE
 
     } // namespace STATES
+
+    namespace SWITCHES
+    {
+        namespace REVERB_BUSSES
+        {
+            static const AkUniqueID GROUP = 2817781829U;
+
+            namespace SWITCH
+            {
+                static const AkUniqueID ABSORPTION = 4282896854U;
+                static const AkUniqueID CATHEDRAL = 1024696295U;
+                static const AkUniqueID INSIDE_MY_HEAD = 701863527U;
+                static const AkUniqueID LARGE_PLATE = 1021965139U;
+                static const AkUniqueID LONG_DARK_HALL = 2513696264U;
+                static const AkUniqueID METAL_TANK = 1964438385U;
+                static const AkUniqueID OUTSIDE = 438105790U;
+                static const AkUniqueID ROBOTIC = 1220391191U;
+            } // namespace SWITCH
+        } // namespace REVERB_BUSSES
+
+    } // namespace SWITCHES
 
     namespace GAME_PARAMETERS
     {
@@ -69,7 +89,14 @@ namespace AK
 
     namespace AUX_BUSSES
     {
-        static const AkUniqueID REVERB_AUXBUS = 2858851216U;
+        static const AkUniqueID REVERB_ABSORPTION = 1204176067U;
+        static const AkUniqueID REVERB_ALUMINUMTANK = 4165278950U;
+        static const AkUniqueID REVERB_CATHEDRAL = 1741738112U;
+        static const AkUniqueID REVERB_INSIDEMYHEAD = 2100234192U;
+        static const AkUniqueID REVERB_LARGEPLATE = 2877329779U;
+        static const AkUniqueID REVERB_LONGDARKHALL = 2637049263U;
+        static const AkUniqueID REVERB_OUTSIDE = 2098287461U;
+        static const AkUniqueID REVERB_ROBOTIC = 3522965360U;
     } // namespace AUX_BUSSES
 
     namespace AUDIO_DEVICES

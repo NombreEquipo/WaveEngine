@@ -363,6 +363,8 @@ void AudioSystem::UnregisterReverbZone(ReverbZone* zone)
     if (it != reverbZones.end()) reverbZones.erase(it);
 }
 
+
+
 // processing reverb zones each frame
 void AudioSystem::ProcessReverbZones()
 {
@@ -397,11 +399,13 @@ void AudioSystem::ProcessReverbZones()
 
     // Determine best (highest-priority) zone that contains the listener (for debug & consistent send)
     ReverbZone* listenerBestZone = nullptr;
+
+
     int listenerBestPriority = INT_MIN;
     for (ReverbZone* zone : reverbZones) {
         if (!zone || !zone->enabled) continue;
         if (zone->ContainsPoint(listenerPos)) {
-            if (enableDebugLogs) LOG_DEBUG("Checking zone %s: Result=%d", zone->auxBusName.c_str(), zone->ContainsPoint(listenerPos));
+            if (enableDebugLogs) LOG_DEBUG("Checking zone with ID: '%u': Result=%d", zone->auxBusID, zone->ContainsPoint(listenerPos));
 
             if (zone->priority > listenerBestPriority) {
                 listenerBestPriority = zone->priority;
@@ -413,11 +417,10 @@ void AudioSystem::ProcessReverbZones()
     // Update debug tracking and log transitions
     if (listenerBestZone != currentListenerZone) {
         if (currentListenerZone) {
-            if (enableDebugLogs) LOG_DEBUG("Listener left reverb zone '%s'", currentListenerZone->auxBusName.c_str());
+            if (enableDebugLogs) LOG_DEBUG("Listener left reverb zone with ID '%u'", currentListenerZone->auxBusID);
         }
         if (listenerBestZone) {
-            if (enableDebugLogs) LOG_DEBUG("Listener entered reverb zone '%s' (wet=%.2f priority=%d)",
-                listenerBestZone->auxBusName.c_str(), listenerBestZone->wetLevel, listenerBestZone->priority);
+            if (enableDebugLogs) LOG_DEBUG("Listener entered reverb zone with ID '%u' (wet=%.2f priority=%d)", listenerBestZone->auxBusID, listenerBestZone->wetLevel, listenerBestZone->priority);
         }
         currentListenerZone = listenerBestZone;
     }
@@ -426,14 +429,14 @@ void AudioSystem::ProcessReverbZones()
     if (listenerID != AK_INVALID_GAME_OBJECT) {
         // First clear sends for known busses (conservative)
         for (ReverbZone* zone : reverbZones) {
-            if (!zone || zone->auxBusName.empty()) continue;
-            std::wstring wideName(zone->auxBusName.begin(), zone->auxBusName.end());
-            SetGameObjectAuxSend(listenerID, wideName.c_str(), 0.0f);
+            if (!zone || zone->auxBusID == AK_INVALID_AUX_ID) continue;
+            /*std::wstring wideName(zone->auxBusName.begin(), zone->auxBusName.end());*/
+            SetGameObjectAuxSend(listenerID, zone->auxBusID, 0.0f);
         }
 
-        if (listenerBestZone && !listenerBestZone->auxBusName.empty()) {
-            std::wstring wideName(listenerBestZone->auxBusName.begin(), listenerBestZone->auxBusName.end());
-            SetGameObjectAuxSend(listenerID, wideName.c_str(), listenerBestZone->wetLevel);
+        if (listenerBestZone && listenerBestZone->auxBusID != AK_INVALID_AUX_ID) {
+            /*std::wstring wideName(listenerBestZone->auxBusName.begin(), listenerBestZone->auxBusName.end());*/
+            SetGameObjectAuxSend(listenerID, listenerBestZone->auxBusID, listenerBestZone->wetLevel);
         }
     }
 
@@ -468,7 +471,7 @@ void AudioSystem::ProcessReverbZones()
         for (ReverbZone* zone : reverbZones) {
             if (!zone || !zone->enabled) continue;
             if (zone->ContainsPoint(sourcePos)) {
-                if (enableDebugLogs) LOG_DEBUG("Checking zone %s: Result=%d", zone->auxBusName.c_str(), zone->ContainsPoint(listenerPos));
+                if (enableDebugLogs) LOG_DEBUG("Checking zone from auxBusID %u: Result=%d", zone->auxBusID, zone->ContainsPoint(listenerPos));
                 if (zone->priority > bestPriority) {
                     bestPriority = zone->priority;
                     bestZone = zone;
@@ -477,66 +480,58 @@ void AudioSystem::ProcessReverbZones()
         }
 
         if (bestZone) {
-            // We found a zone! Only set the reverb for THIS specific bus.
-            std::wstring wideName(bestZone->auxBusName.begin(), bestZone->auxBusName.end());
-            SetGameObjectAuxSend(sourceID, wideName.c_str(), bestZone->wetLevel);
+            //// We found a zone! Only set the reverb for THIS specific bus.
+            //std::wstring wideName(bestZone->auxBusName.begin(), bestZone->auxBusName.end());
+            SetGameObjectAuxSend(sourceID, bestZone->auxBusID, bestZone->wetLevel);
         }
         else {
             // ONLY if we are in NO zone at all, then we clear the faders.
             for (ReverbZone* zone : reverbZones) {
-                std::wstring wideName(zone->auxBusName.begin(), zone->auxBusName.end());
-                SetGameObjectAuxSend(sourceID, wideName.c_str(), 0.0f);
+                /*std::wstring wideName(zone->auxBusName.begin(), zone->auxBusName.end());*/
+                SetGameObjectAuxSend(sourceID, zone->auxBusID, 0.0f);
             }
         }
     }
 }
 
-void AudioSystem::SetGameObjectAuxSend(AkGameObjectID id, const wchar_t* auxBusName, float controlValue)
+void AudioSystem::SetGameObjectAuxSend(AkGameObjectID id, AkUniqueID busId, float controlValue)
 {
-    if (id == AK_INVALID_GAME_OBJECT || auxBusName == nullptr) {
-        if (enableDebugLogs) LOG_DEBUG("SetGameObjectAuxSend: invalid parameters id=%d auxBusName=%p control=%.2f", id, (void*)auxBusName, controlValue);
+    // basic parameter validation
+    if (id == AK_INVALID_GAME_OBJECT) {
+        if (enableDebugLogs) LOG_DEBUG("SetGameObjectAuxSendByID: invalid Game Object ID.");
         return;
     }
 
-    // Use find_if because we need to compare 'id' to 'comp->goID'
-    auto it = std::find_if(audioComponents.begin(), audioComponents.end(),
-        [id](AudioComponent* comp) {
-            return comp && comp->goID == id;
-        });
-
-    // Convert auxBusName to narrow for logging
-    std::wstring wname(auxBusName);
-    std::string auxName;
-    auxName.assign(wname.begin(), wname.end());
-
-    // Resolve Aux Bus ID
-    AkAuxBusID busId = (AkAuxBusID)AK::SoundEngine::GetIDFromString(auxBusName);
-
-    // Check for invalid id
+    // handle reverb clearing if no zone is active
     if (busId == AK_INVALID_UNIQUE_ID) {
-        if (enableDebugLogs) LOG_DEBUG("SetGameObjectAuxSend: Aux bus name '%s' not found (GetIDFromString returned invalid id). control=%.2f targetGO=%d", auxName.c_str(), controlValue, GetMainListenerWwiseID());
+        AK::SoundEngine::SetGameObjectAuxSendValues(id, nullptr, 0);
+        if (enableDebugLogs) LOG_DEBUG("SetGameObjectAuxSendByID: Clearing sends for GO %u", id);
         return;
     }
 
-    if (GetMainListenerWwiseID() == AK_INVALID_UNIQUE_ID) {
-        if (enableDebugLogs) LOG_DEBUG("SetGameObjectAuxSend: listenerID %d was invalid", GetMainListenerWwiseID());
+    // listener validation
+    AkGameObjectID listenerID = GetMainListenerWwiseID();
+    if (listenerID == AK_INVALID_UNIQUE_ID) {
+        if (enableDebugLogs) LOG_DEBUG("SetGameObjectAuxSendByID: main listener ID was invalid.");
         return;
     }
 
-    // Build AkAuxSendValue array (one element)
+    // build akauxsendvalue
     AkAuxSendValue send;
-    AkAuxSendValue sends[1];
-    send.auxBusID = busId;
-    send.listenerID = GetMainListenerWwiseID();
+    send.auxBusID = (AkAuxBusID)busId;
+    send.listenerID = listenerID;
     send.fControlValue = controlValue;
-    sends[0] = send;
 
-    // Log before applying
-    if (enableDebugLogs) LOG_DEBUG("SetGameObjectAuxSend: applying aux send -> bus='%s' (id=%u) control=%.2f to GO id=%u", auxName.c_str(), (unsigned int)busId, controlValue, send.listenerID);
+    // apply the routing
+    AK::SoundEngine::SetGameObjectAuxSendValues(id, &send, 1);
 
-    // Apply send
-    AK::SoundEngine::SetGameObjectAuxSendValues(id, sends, 1);
+    // set the master reverb volume rtpc
     SetRTPCValue(AK::GAME_PARAMETERS::REVERB_VOLUME, controlValue);
+
+    if (enableDebugLogs) {
+        LOG_DEBUG("SetGameObjectAuxSendByID: Applying Bus ID %u (Vol: %.2f) to GO %u",
+            (unsigned int)busId, controlValue, (unsigned int)id);
+    }
 }
 
 void AudioSystem::DiscoverAuxBuses()
