@@ -45,9 +45,9 @@ Siguiendo los requerimientos de la asignatura, hemos implementado un sistema de 
 
 ## 📽️ Scene Creation Timelapse
 
-En este vídeo de 1 minuto se muestra el proceso de diseño de una escena, configurando los componentes físicos y los constraints desde cero:
+En el siguiente vídeo se muestra el proceso de diseño de una escena, configurando los componentes físicos y los constraints desde cero:
 
-[![Watch the video](https://drive.google.com/file/d/1QPZXN4Q8vPpQJ6Qza2XsVvcpFhlluP_G/view?usp=sharing)]
+▶️ **[Ver Vídeo de la Entrega (Google Drive)](https://drive.google.com/file/d/1QPZXN4Q8vPpQJ6Qza2XsVvcpFhlluP_G/view?usp=sharing)**
 
 ---
 
