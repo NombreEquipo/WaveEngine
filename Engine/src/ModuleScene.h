@@ -54,6 +54,7 @@ private:
     std::unique_ptr<Octree> octree;
     bool needsOctreeRebuild = false;
     GameObject* root = nullptr;
+    GameObject* car = nullptr;
 
     Renderer* renderer = nullptr;
     FileSystem* filesystem = nullptr;

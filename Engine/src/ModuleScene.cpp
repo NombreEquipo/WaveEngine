@@ -169,6 +169,38 @@ bool ModuleScene::Update()
         RebuildOctree();
     }
 
+    if (Application::GetInstance().GetPlayState() == Application::PlayState::PLAYING && car) {
+        
+        Input* input = Application::GetInstance().input.get();
+        ComponentRigidBody* rb = (ComponentRigidBody*)car->GetComponent(ComponentType::RIGIDBODY);
+
+        // CONDICIÓN: Solo si se mantiene el click derecho
+        if (rb && rb->GetRigidBody() && input->GetMouseButtonDown(SDL_BUTTON_RIGHT) != KEY_REPEAT) {
+            
+            btRigidBody* bulletBody = rb->GetRigidBody();
+            float speed = 12.0f;
+            btVector3 currentVel = bulletBody->getLinearVelocity();
+            btVector3 movement(0, 0, 0);
+
+            // Leer teclas WASD
+            if (input->GetKey(SDL_SCANCODE_W) == KEY_REPEAT) movement += btVector3(0, 0, speed);
+            if (input->GetKey(SDL_SCANCODE_S) == KEY_REPEAT) movement += btVector3(0, 0, -speed);
+            if (input->GetKey(SDL_SCANCODE_A) == KEY_REPEAT) movement += btVector3(speed, 0, 0);
+            if (input->GetKey(SDL_SCANCODE_D) == KEY_REPEAT) movement += btVector3(-speed, 0, 0);
+
+            // Aplicar movimiento manteniendo la gravedad (Y)
+            bulletBody->setLinearVelocity(btVector3(movement.x(), currentVel.y(), movement.z()));
+            
+            // Activar el cuerpo para que Bullet no lo ponga en "sleep"
+            bulletBody->activate(true);
+        }
+        else if (rb && rb->GetRigidBody()) {
+            // OPCIONAL: Si sueltas el click o no pulsas nada, el coche se detiene en XZ
+            btVector3 currentVel = rb->GetRigidBody()->getLinearVelocity();
+            rb->GetRigidBody()->setLinearVelocity(btVector3(0, currentVel.y(), 0));
+        }
+    }
+
     return true;
 }
 
@@ -460,15 +492,6 @@ void ModuleScene::FirstScene()
         }
     }
 
-    GameObject* car = Primitives::CreateCubeGameObject("Car", 1.0f);
-    if (car) {
-        Transform* trans = (Transform*)car->GetComponent(ComponentType::TRANSFORM);
-        if (trans) {
-            trans->SetPosition(glm::vec3(0.0f, 5.0f, 0.0f));
-            trans->SetScale(glm::vec3(2.0f, 1.0f, 5.0f));
-        }
-    }
-
     GameObject* anchor = Primitives::CreateCubeGameObject("Initial_Anchor", 0.0f);
     if (anchor) {
         Transform* tA = (Transform*)anchor->GetComponent(ComponentType::TRANSFORM);
@@ -498,6 +521,35 @@ void ModuleScene::FirstScene()
             // Forzamos la creación en Bullet
             p2p->CreateConstraint();
         }
+    }
+
+    car = CreateGameObject("car");
+
+    // 2. VISUALS: Añadir malla de cubo y material
+    ComponentMesh* mesh = (ComponentMesh*)car->CreateComponent(ComponentType::MESH);
+    if (mesh) {
+        mesh->SetMesh(Primitives::CreateCube()); // Crea el cubo visible
+    }
+    car->CreateComponent(ComponentType::MATERIAL); // Le da un color base (gris/blanco)
+
+    // 3. TRANSFORM: Posición inicial
+    Transform* trans = (Transform*)car->GetComponent(ComponentType::TRANSFORM);
+    if (trans) {
+        trans->SetPosition(glm::vec3(0.0f, 2.0f, 0.0f)); // Aparece sobre el suelo
+        trans->SetScale(glm::vec3(5.0f, 2.0f, 6.0f));
+    }
+
+    // 4. COLLIDER: Definir la caja de colisión
+    ComponentBoxCollider* col = (ComponentBoxCollider*)car->CreateComponent(ComponentType::COLLIDER_BOX);
+    if (col) {
+        col->SetSize(glm::vec3(1.0f, 1.0f, 1.0f)); // Tamaño igual al cubo visual
+    }
+
+    // 5. RIGIDBODY: Habilitar la simulación física
+    ComponentRigidBody* rb = (ComponentRigidBody*)car->CreateComponent(ComponentType::RIGIDBODY);
+    if (rb) {
+        rb->SetMass(15.0f); 
+        rb->Start();
     }
 }
 
