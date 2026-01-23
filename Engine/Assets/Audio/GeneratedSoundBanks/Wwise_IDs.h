@@ -13,10 +13,10 @@ namespace AK
 {
     namespace EVENTS
     {
-        static const AkUniqueID HELPME = 1896801622U;
+        static const AkUniqueID PLAY_AMBIENCE = 278617630U;
         static const AkUniqueID PLAY_CLUBPENGUIN = 2681289886U;
-        static const AkUniqueID PLAY_LOOKINFRESH = 111646406U;
-        static const AkUniqueID TALKINGSFX = 2400116970U;
+        static const AkUniqueID PLAY_RADIOSTATIC = 111273809U;
+        static const AkUniqueID PLAY_TALKINGSFX = 1277677597U;
     } // namespace EVENTS
 
     namespace STATES

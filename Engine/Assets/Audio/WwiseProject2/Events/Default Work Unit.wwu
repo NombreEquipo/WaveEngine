@@ -3,29 +3,7 @@
 	<Events>
 		<WorkUnit Name="Default Work Unit" ID="{F7D79E53-8C87-4B2D-9C7B-4D4D9C5E20AB}" PersistMode="Standalone">
 			<ChildrenList>
-				<Event Name="Play_LookinFresh" ID="{AA7F5DED-771C-45B7-81FB-B880BC6EC428}">
-					<ChildrenList>
-						<Action Name="" ID="{C7D924C5-CF98-474B-BEDA-9B66DE89B150}" ShortID="960650751">
-							<ReferenceList>
-								<Reference Name="Target">
-									<ObjectRef Name="LookinFresh_Switch" ID="{C9E51BFB-E933-4E25-94D0-C6B6F469C2EE}" WorkUnitID="{E6B49273-C487-4B59-8546-E4217EE02E56}"/>
-								</Reference>
-							</ReferenceList>
-						</Action>
-					</ChildrenList>
-				</Event>
-				<Event Name="HelpMe" ID="{84CBD89F-1713-4085-A80D-62410557503B}">
-					<ChildrenList>
-						<Action Name="" ID="{BB62EE20-C653-4402-96FA-B4803500D272}" ShortID="555144948">
-							<ReferenceList>
-								<Reference Name="Target">
-									<ObjectRef Name="HelpMe" ID="{5834A212-7E22-4362-B41A-82A3A690E991}" WorkUnitID="{E6B49273-C487-4B59-8546-E4217EE02E56}"/>
-								</Reference>
-							</ReferenceList>
-						</Action>
-					</ChildrenList>
-				</Event>
-				<Event Name="TalkingSFX" ID="{2408F51F-9869-4000-BE1D-F416FC96603E}">
+				<Event Name="Play_TalkingSFX" ID="{2408F51F-9869-4000-BE1D-F416FC96603E}">
 					<ChildrenList>
 						<Action Name="" ID="{B7D21CC6-82C2-4237-8E20-417CB6ACC3BA}" ShortID="138905718">
 							<ReferenceList>
@@ -53,6 +31,28 @@
 							<ReferenceList>
 								<Reference Name="Target">
 									<ObjectRef Name="CPMusic_Switch" ID="{255D671E-305B-4B3A-AC1D-EDF7ED95898C}" WorkUnitID="{E6B49273-C487-4B59-8546-E4217EE02E56}"/>
+								</Reference>
+							</ReferenceList>
+						</Action>
+					</ChildrenList>
+				</Event>
+				<Event Name="Play_Ambience" ID="{D8092CF2-62B7-4F0B-B962-689E720F0947}">
+					<ChildrenList>
+						<Action Name="" ID="{5F670F0E-BFD3-4554-8713-4D686AEB0910}" ShortID="180120716">
+							<ReferenceList>
+								<Reference Name="Target">
+									<ObjectRef Name="mansionAmbience" ID="{55E2BD47-9FE7-4121-B881-B1B9E7BE7336}" WorkUnitID="{E6B49273-C487-4B59-8546-E4217EE02E56}"/>
+								</Reference>
+							</ReferenceList>
+						</Action>
+					</ChildrenList>
+				</Event>
+				<Event Name="Play_RadioStatic" ID="{3551EEE5-E060-46CA-9383-5F51686E58F0}">
+					<ChildrenList>
+						<Action Name="" ID="{7E64E410-97EE-4B9E-840A-450E97BB2FF2}" ShortID="41016852">
+							<ReferenceList>
+								<Reference Name="Target">
+									<ObjectRef Name="radio-static" ID="{FF27F106-AC9B-4EFF-A7B9-769C43A03ADF}" WorkUnitID="{E6B49273-C487-4B59-8546-E4217EE02E56}"/>
 								</Reference>
 							</ReferenceList>
 						</Action>
