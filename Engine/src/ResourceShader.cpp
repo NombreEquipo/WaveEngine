@@ -79,7 +79,7 @@ void ResourceShader::ParseUniformsFromSources(const std::string& vs, const std::
                 std::string n = (*it)[2].str();
 
                 // Filter engine reserved uniforms
-                if (n == "model" || n == "view" || n == "projection") continue;
+                if (n == "model" || n == "view" || n == "projection" || n == "time") continue;
 
                 UniformType ut;
                 if (t == "float") ut = UniformType::Float;
