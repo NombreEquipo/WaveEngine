@@ -198,7 +198,7 @@ void ModuleAudio::SetRTPC(unsigned int rtpcId, float value, AkGameObjectID gameO
 
     AKRESULT r = AK::SoundEngine::SetRTPCValue((AkRtpcID)rtpcId, value, target);
 
-    // cache debug (lo último que seteas tú)
+    
     rtpcCacheById[rtpcId] = value;
 
     if (r != AK_Success)
@@ -220,7 +220,7 @@ void ModuleAudio::SetRTPCByName(const char* rtpcName, float value, AkGameObjectI
     }
     else
     {
-        // Esto NO es Query API, es hashing interno (sí está disponible)
+        
         id = (unsigned int)AK::SoundEngine::GetIDFromString(rtpcName);
         rtpcNameToIdCache[rtpcName] = id;
     }
@@ -449,7 +449,7 @@ bool ModuleAudio::InitWwise()
     }
     std::printf("OK: Main.bnk loaded (ID: %u)\n", mainBankId);
 
-    // Check ID TunnelAmount (hash vs header)
+    
     unsigned int byName = (unsigned int)AK::SoundEngine::GetIDFromString("TunnelAmount");
     unsigned int byHeader = (unsigned int)AK::GAME_PARAMETERS::TUNNELAMOUNT;
     std::printf("[AUDIO] TunnelAmount ID check: byName=%u byHeader=%u\n", byName, byHeader);
@@ -516,7 +516,7 @@ bool ModuleAudio::LoadBankFromMemory(
     if (!std::filesystem::exists(fullPath))
         return false;
 
-    // debug: tamaño + timestamp del archivo
+    
     const auto fsize = std::filesystem::file_size(fullPath);
     const auto ftime = std::filesystem::last_write_time(fullPath).time_since_epoch().count();
     std::printf("[AUDIO] Bank file: %ls size=%llu lastWrite=%lld\n",

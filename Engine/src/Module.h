@@ -40,7 +40,7 @@ public:
 	}
 
 	// Called each loop iteration
-	virtual bool Update() // Aqui luego podemos añadit el dt
+	virtual bool Update() 
 	{
 		return true;
 	}

@@ -129,18 +129,18 @@ bool ModuleScene::Start()
         );
     }
 
-    // ✅ Tunnel starts NORMAL
+    //Tunnel starts NORMAL
     tunnelAmount = 0.0f;
     tunnelTarget = 0.0f;
     tunnelInside = false;
     tunnelForce = false;
     tunnelForceValue = 0.0f;
 
-    // Set RTPC to 0 everywhere
+    
     AkGameObjectID staticId = staticAudioObject ? (AkGameObjectID)(uintptr_t)staticAudioObject : 0;
     AkGameObjectID dynamicId = dynamicAudioObject ? (AkGameObjectID)(uintptr_t)dynamicAudioObject : 0;
 
-    audio->SetRTPCByName("TunnelAmount", 0.0f, 0); // global
+    audio->SetRTPCByName("TunnelAmount", 0.0f, 0); 
     if (staticId)  audio->SetRTPCByName("TunnelAmount", 0.0f, staticId);
     if (dynamicId) audio->SetRTPCByName("TunnelAmount", 0.0f, dynamicId);
     audio->SetRTPC(AK::GAME_PARAMETERS::TUNNELAMOUNT, 0.0f, audio->GetMusicGameObjectId());
@@ -247,7 +247,7 @@ bool ModuleScene::Update()
         tunnelInside = !tunnelInside;
         tunnelTarget = tunnelInside ? 100.0f : 0.0f;
 
-        // when toggling tunnel, disable force so you can hear the smooth
+        
         tunnelForce = false;
 
         LOG_CONSOLE("[AUDIO] Tunnel %s (target %.0f)", tunnelInside ? "ENTER" : "EXIT", tunnelTarget);
@@ -285,8 +285,8 @@ bool ModuleScene::Update()
     ModuleAudio* audioMod = ModuleAudio::Get();
     if (audioMod)
     {
-        // ✅ IMPORTANT: set it ONCE (no pisarlo)
-        audioMod->SetRTPCByName("TunnelAmount", finalTunnel, 0); // global
+        
+        audioMod->SetRTPCByName("TunnelAmount", finalTunnel, 0); 
 
         if (staticAudioObject)
         {

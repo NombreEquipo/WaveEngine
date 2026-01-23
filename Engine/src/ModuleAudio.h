@@ -47,11 +47,11 @@ public:
 
     unsigned int PostEvent(unsigned int eventId, AkGameObjectID gameObjectId);
 
-    // RTPC (write)
+   
     void SetRTPC(unsigned int rtpcId, float value, AkGameObjectID gameObjectId = 0);
     void SetRTPCByName(const char* rtpcName, float value, AkGameObjectID gameObjectId = 0);
 
-    // RTPC (debug readback SIN Query API) -> lee lo último que tú has seteado
+  
     float GetRTPCCached(unsigned int rtpcId) const;
     float GetRTPCCachedByName(const char* rtpcName) const;
 
@@ -89,7 +89,7 @@ private:
     bool isPlaying = false;
     bool isPaused = false;
 
-    // Debug cache de RTPCs (sin Query API)
+    
     std::unordered_map<unsigned int, float> rtpcCacheById;
     mutable std::unordered_map<std::string, unsigned int> rtpcNameToIdCache;
 };

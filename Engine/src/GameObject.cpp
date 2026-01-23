@@ -5,8 +5,8 @@
 #include "ComponentMaterial.h"
 #include "ComponentCamera.h"
 #include "ComponentRotate.h"
-#include "ComponentAudioSource.h"      // ← NUEVO
-#include "ComponentAudioListener.h"    // ← NUEVO
+#include "ComponentAudioSource.h"      
+#include "ComponentAudioListener.h"    
 #include <nlohmann/json.hpp>
 
 GameObject::GameObject(const std::string& name) : name(name), active(true), parent(nullptr) {
@@ -56,11 +56,9 @@ Component* GameObject::CreateComponent(ComponentType type) {
         newComponent = new ComponentRotate(this);
         break;
 
-        // ========================================
-        // NUEVO: COMPONENTES DE AUDIO
-        // ========================================
+       
     case ComponentType::AUDIO_SOURCE:
-        // Por defecto, sin evento (se configurará después)
+        
         newComponent = new ComponentAudioSource(this, 0, false);
         break;
 
@@ -70,7 +68,7 @@ Component* GameObject::CreateComponent(ComponentType type) {
         }
         newComponent = new ComponentAudioListener(this);
         break;
-        // ========================================
+      
 
     default:
         LOG_DEBUG("ERROR: Unknown component type requested for GameObject '%s'", name.c_str());

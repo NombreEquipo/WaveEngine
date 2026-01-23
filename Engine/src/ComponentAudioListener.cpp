@@ -6,7 +6,7 @@ ComponentAudioListener::ComponentAudioListener(GameObject* owner)
     : Component(owner, ComponentType::AUDIO_LISTENER)
 {
     name = "AudioListener";
-    // ID estable: usamos la dirección del GameObject
+   
     akId = (AkGameObjectID)(uintptr_t)owner;
 }
 
@@ -15,12 +15,11 @@ void ComponentAudioListener::Enable()
     ModuleAudio* audio = ModuleAudio::Get();
     if (!audio) return;
 
-    // Registrar como listener en Wwise
     registered = audio->RegisterAudioGameObject(akId, "MainListener");
 
     if (registered)
     {
-        // Establecer este GameObject como EL listener principal
+       
         audio->SetListener(akId);
     }
 }
@@ -47,8 +46,8 @@ void ComponentAudioListener::Update()
     // Actualizar posición del listener en Wwise
     audio->SetGameObjectTransform(akId,
         px, py, pz,
-        0.0f, 0.0f, 1.0f,  // forward
-        0.0f, 1.0f, 0.0f   // up
+        0.0f, 0.0f, 1.0f,  
+        0.0f, 1.0f, 0.0f   
     );
 }
 

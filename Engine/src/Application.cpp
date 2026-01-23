@@ -20,13 +20,11 @@ Application::Application() : isRunning(true), playState(PlayState::EDITING)
     resources = std::make_shared<ModuleResources>();
     audio = std::make_shared<ModuleAudio>();
 
-    // ========================================
-    // ORDEN CORREGIDO: Audio ANTES de Scene
-    // ========================================
+   
     AddModule(std::static_pointer_cast<Module>(window));
     AddModule(std::static_pointer_cast<Module>(input));
     AddModule(std::static_pointer_cast<Module>(renderContext));
-    AddModule(std::static_pointer_cast<Module>(audio));       // ← Audio ANTES de Scene
+    AddModule(std::static_pointer_cast<Module>(audio));       
     AddModule(std::static_pointer_cast<Module>(scene));
     AddModule(std::static_pointer_cast<Module>(camera));
     AddModule(std::static_pointer_cast<Module>(editor));
@@ -200,9 +198,9 @@ void Application::Play()
         audio->OnPlay();
     }
 
-    // ========================================
-    // NUEVO: Iniciar audio 3D
-    // ========================================
+    
+    //Iniciar audio 3D
+   
     if (scene) {
         scene->StartAudio3D();
     }
@@ -218,13 +216,7 @@ void Application::Pause()
         audio->OnPause();
     }
 
-    // Nota: Los SFX 3D siguen sonando en pausa
-    // Si quieres que se pausen también, descomenta esto:
-    /*
-    if (scene) {
-        scene->StopAudio3D();
-    }
-    */
+    
 }
 
 void Application::Stop()
@@ -244,9 +236,9 @@ void Application::Stop()
         audio->OnStop();
     }
 
-    // ========================================
-    // NUEVO: Detener audio 3D
-    // ========================================
+    
+    // Detener audio 3D
+    
     if (scene) {
         scene->StopAudio3D();
     }

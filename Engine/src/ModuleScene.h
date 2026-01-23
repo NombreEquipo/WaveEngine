@@ -60,11 +60,11 @@ private:
     unsigned int staticPlayingID = 0;
     unsigned int dynamicPlayingID = 0;
 
-    // Tunnel (manual control)
-    float tunnelAmount = 0.0f;      // current (smoothed)
-    float tunnelTarget = 0.0f;      // target (0 or 100)
-    bool  tunnelInside = false;     // toggled with T
+    
+    float tunnelAmount = 0.0f;     
+    float tunnelTarget = 0.0f;      
+    bool  tunnelInside = false;     
 
-    bool tunnelForce = false;       // set with 1/2
-    float tunnelForceValue = 0.0f;  // 0 or 100
+    bool tunnelForce = false;       
+    float tunnelForceValue = 0.0f;  
 };

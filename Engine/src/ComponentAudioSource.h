@@ -5,7 +5,7 @@
 class ComponentAudioSource : public Component
 {
 public:
-    // eventId: por ejemplo AK::EVENTS::SFX_STATIC_PLAY
+    
     ComponentAudioSource(GameObject* owner, unsigned int eventId, bool playOnEnable = true);
 
     void Enable() override;
