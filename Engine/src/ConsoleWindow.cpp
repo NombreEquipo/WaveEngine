@@ -23,6 +23,8 @@ void ConsoleWindow::Draw()
     ImGui::SameLine();
     ImGui::Checkbox("Library Info", &showLibraryInfo);
     ImGui::SameLine();
+    ImGui::Checkbox("Shaders", &showShaders);
+    ImGui::SameLine();
     ImGui::Checkbox("Errors", &showErrors);
     ImGui::SameLine();
     ImGui::Checkbox("Warnings", &showWarnings);
@@ -51,8 +53,21 @@ void ConsoleWindow::Draw()
         bool isSuccess = false;
         bool isLoading = false;
         bool isLibraryInfo = false;
+        bool isShader = false;
 
-        if (log.find("DevIL") != std::string::npos ||
+        if (log.find("Shader") != std::string::npos || 
+            log.find("Program Linking") != std::string::npos || 
+            log.find("COMPILATION FAILED") != std::string::npos)
+        {
+            isShader = true;
+            if (log.find("ERROR") != std::string::npos || log.find("Failed") != std::string::npos || log.find("FAILED") != std::string::npos)
+                color = ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
+            else if (log.find("successfully") != std::string::npos)
+                color = ImVec4(0.4f, 1.0f, 0.4f, 1.0f);
+            else
+                color = ImVec4(0.0f, 1.0f, 1.0f, 1.0f);
+        }
+        else if (log.find("DevIL") != std::string::npos ||
             log.find("SDL3") != std::string::npos ||
             log.find("OpenGL") != std::string::npos ||
             log.find("ASSIMP") != std::string::npos ||
@@ -86,7 +101,12 @@ void ConsoleWindow::Draw()
         else
             isInfo = true;
 
-        if (isLibraryInfo)
+        if (isShader)
+        {
+            if (!showShaders)
+                continue;
+        }
+        else if (isLibraryInfo)
         {
             if (!showLibraryInfo)
                 continue;

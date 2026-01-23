@@ -18,6 +18,7 @@ private:
     bool showSuccess = true;
     bool showLoading = true;
     bool showLibraryInfo = true;
+    bool showShaders = true;
 
     // Scroll control
     bool autoScroll = true;

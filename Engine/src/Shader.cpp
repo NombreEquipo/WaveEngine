@@ -44,7 +44,7 @@ bool Shader::Create()
     if (!success)
     {
         glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cerr << "ERROR: Vertex Shader Compilation Failed\n" << infoLog << std::endl;
+        LOG_CONSOLE("ERROR: Vertex Shader Compilation Failed\n%s", infoLog);
         return false;
     }
 
@@ -74,7 +74,7 @@ bool Shader::Create()
     if (!success)
     {
         glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        std::cerr << "ERROR: Fragment Shader Compilation Failed\n" << infoLog << std::endl;
+        LOG_CONSOLE("ERROR: Fragment Shader Compilation Failed\n%s", infoLog);
         glDeleteShader(vertexShader);
         return false;
     }
@@ -89,7 +89,7 @@ bool Shader::Create()
     if (!success)
     {
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cerr << "ERROR: Shader Program Linking Failed\n" << infoLog << std::endl;
+        LOG_CONSOLE("ERROR: Shader Program Linking Failed\n%s", infoLog);
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
         return false;
@@ -237,7 +237,7 @@ bool Shader::CreateSimpleColor()
     if (!success)
     {
         glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cerr << "ERROR: Simple Vertex Shader Compilation Failed\n" << infoLog << std::endl;
+        LOG_CONSOLE("ERROR: Simple Vertex Shader Compilation Failed\n%s", infoLog);
         return false;
     }
 
@@ -265,7 +265,7 @@ bool Shader::CreateSimpleColor()
     if (!success)
     {
         glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        std::cerr << "ERROR: Simple Fragment Shader Compilation Failed\n" << infoLog << std::endl;
+        LOG_CONSOLE("ERROR: Simple Fragment Shader Compilation Failed\n%s", infoLog);
         glDeleteShader(vertexShader);
         return false;
     }
@@ -279,6 +279,7 @@ bool Shader::CreateSimpleColor()
     if (!success)
     {
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        LOG_CONSOLE("ERROR: Simple Shader Program Linking Failed\n%s", infoLog);
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
         return false;
@@ -322,7 +323,7 @@ bool Shader::CreateWithDiscard()
     if (!success)
     {
         glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cerr << "ERROR: Discard Vertex Shader Compilation Failed\n" << infoLog << std::endl;
+        LOG_CONSOLE("ERROR: Discard Vertex Shader Compilation Failed\n%s", infoLog);
         return false;
     }
 
@@ -350,7 +351,7 @@ bool Shader::CreateWithDiscard()
     if (!success)
     {
         glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        std::cerr << "ERROR: Discard Fragment Shader Compilation Failed\n" << infoLog << std::endl;
+        LOG_CONSOLE("ERROR: Discard Fragment Shader Compilation Failed\n%s", infoLog);
         glDeleteShader(vertexShader);
         return false;
     }
@@ -364,6 +365,7 @@ bool Shader::CreateWithDiscard()
     if (!success)
     {
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        LOG_CONSOLE("ERROR: Discard Shader Program Linking Failed\n%s", infoLog);
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
         return false;
@@ -425,7 +427,7 @@ bool Shader::CreateSingleColor()
     if (!success)
     {
         glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cerr << "ERROR: Outline Vertex Shader Compilation Failed\n" << infoLog << std::endl;
+        LOG_CONSOLE("ERROR: Outline Vertex Shader Compilation Failed\n%s", infoLog);
         return false;
     }
 
@@ -449,7 +451,7 @@ bool Shader::CreateSingleColor()
     if (!success)
     {
         glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        std::cerr << "ERROR: Outline Fragment Shader Compilation Failed\n" << infoLog << std::endl;
+        LOG_CONSOLE("ERROR: Outline Fragment Shader Compilation Failed\n%s", infoLog);
         glDeleteShader(vertexShader);
         return false;
     }
@@ -463,6 +465,7 @@ bool Shader::CreateSingleColor()
     if (!success)
     {
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        LOG_CONSOLE("ERROR: Outline Shader Program Linking Failed\n%s", infoLog);
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
         return false;
@@ -524,7 +527,7 @@ bool Shader::CreateDepthVisualization()
     if (!success)
     {
         glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cerr << "ERROR: Depth Vertex Shader Compilation Failed\n" << infoLog << std::endl;
+        LOG_CONSOLE("ERROR: Depth Vertex Shader Compilation Failed\n%s", infoLog);
         return false;
     }
 
@@ -537,7 +540,7 @@ bool Shader::CreateDepthVisualization()
     if (!success)
     {
         glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        std::cerr << "ERROR: Depth Fragment Shader Compilation Failed\n" << infoLog << std::endl;
+        LOG_CONSOLE("ERROR: Depth Fragment Shader Compilation Failed\n%s", infoLog);
         glDeleteShader(vertexShader);
         return false;
     }
@@ -551,7 +554,7 @@ bool Shader::CreateDepthVisualization()
     if (!success)
     {
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cerr << "ERROR: Depth Shader Program Linking Failed\n" << infoLog << std::endl;
+        LOG_CONSOLE("ERROR: Depth Shader Program Linking Failed\n%s", infoLog);
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
         return false;
@@ -639,6 +642,7 @@ bool Shader::CreateNoTexture()
     if (!success)
     {
         glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+        LOG_CONSOLE("ERROR: NoTexture Vertex Shader Compilation Failed\n%s", infoLog);
         return false;
     }
 
@@ -650,7 +654,7 @@ bool Shader::CreateNoTexture()
     if (!success)
     {
         glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        std::cerr << "ERROR: NoTexture Fragment Shader Compilation Failed\n" << infoLog << std::endl;
+        LOG_CONSOLE("ERROR: NoTexture Fragment Shader Compilation Failed\n%s", infoLog);
         glDeleteShader(vertexShader);
         return false;
     }
@@ -664,7 +668,7 @@ bool Shader::CreateNoTexture()
     if (!success)
     {
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cerr << "ERROR: NoTexture Shader Program Linking Failed\n" << infoLog << std::endl;
+        LOG_CONSOLE("ERROR: NoTexture Shader Program Linking Failed\n%s", infoLog);
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
         return false;
@@ -911,7 +915,7 @@ bool Shader::CreateWater()
     if (!success)
     {
         glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cerr << "ERROR: Water Vertex Shader Compilation Failed\n" << infoLog << std::endl;
+        LOG_CONSOLE("ERROR: Water Vertex Shader Compilation Failed\n%s", infoLog);
         return false;
     }
 
@@ -924,7 +928,7 @@ bool Shader::CreateWater()
     if (!success)
     {
         glGetShaderInfoLog(geometryShader, 512, NULL, infoLog);
-        std::cerr << "ERROR: Water Geometry Shader Compilation Failed\n" << infoLog << std::endl;
+        LOG_CONSOLE("ERROR: Water Geometry Shader Compilation Failed\n%s", infoLog);
         glDeleteShader(vertexShader);
         return false;
     }
@@ -937,7 +941,7 @@ bool Shader::CreateWater()
     if (!success)
     {
         glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        std::cerr << "ERROR: Water Fragment Shader Compilation Failed\n" << infoLog << std::endl;
+        LOG_CONSOLE("ERROR: Water Fragment Shader Compilation Failed\n%s", infoLog);
         glDeleteShader(vertexShader);
         glDeleteShader(geometryShader);
         return false;
@@ -953,7 +957,7 @@ bool Shader::CreateWater()
     if (!success)
     {
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cerr << "ERROR: Water Shader Program Linking Failed\n" << infoLog << std::endl;
+        LOG_CONSOLE("ERROR: Water Shader Program Linking Failed\n%s", infoLog);
         glDeleteShader(vertexShader);
         glDeleteShader(geometryShader);
         glDeleteShader(fragmentShader);
