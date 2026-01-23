@@ -20,6 +20,45 @@
 #include <unordered_set>
 #include <chrono>
 #include <string>
+#include <cstdlib>
+static std::filesystem::path FindWwiseBanksDir()
+{
+    if (const char* env = std::getenv("MOTOR2025_WWISE_BANKS"))
+    {
+        std::filesystem::path p(env);
+        if (std::filesystem::exists(p)) return p;
+    }
+
+    std::filesystem::path exeDir;
+
+    const char* base = SDL_GetBasePath();   
+    if (base && base[0])
+    {
+        exeDir = std::filesystem::path(base);
+        
+    }
+    else
+    {
+        exeDir = std::filesystem::current_path();
+    }
+
+    const std::filesystem::path suffix =
+        std::filesystem::path("Audio") / "WwiseProject" / "MusicEngine" / "GeneratedSoundBanks" / "Windows";
+
+    std::filesystem::path p = exeDir;
+    for (int i = 0; i < 8; ++i)
+    {
+        std::filesystem::path candidate = (p / suffix).lexically_normal();
+        if (std::filesystem::exists(candidate))
+            return candidate;
+
+        if (!p.has_parent_path()) break;
+        p = p.parent_path();
+    }
+
+    return (exeDir / suffix).lexically_normal();
+}
+
 
 static std::filesystem::path GetBankDirPath()
 {
@@ -453,7 +492,9 @@ bool ModuleAudio::InitWwise()
 
     std::printf("OK: Listener assigned (DefaultListenerGO)\n");
 
-    const std::filesystem::path bankDir = GetBankDirPath();
+    const std::filesystem::path bankDir = FindWwiseBanksDir();
+
+    std::printf("[AUDIO] Using BankDir: %ls\n", bankDir.wstring().c_str());
 
     if (!std::filesystem::exists(bankDir))
     {
@@ -461,7 +502,7 @@ bool ModuleAudio::InitWwise()
         TerminateWwise();
         return false;
     }
-    std::printf("OK: Bank directory exists: %ls\n", bankDir.wstring().c_str());
+
 
 
     if (!LoadBankFromMemory(bankDir / "Init.bnk", initBankId, initBankData))
