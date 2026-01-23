@@ -220,8 +220,8 @@ Includes the following menu options:
          - Volume can be changed
          - Set on Awake toggle
             - When Play mode is active, Event immediately plays
-          
-![EnignesAudio_SourceCreation](https://github.com/bottzo/Motor2025/raw/Audio-System_VroomTeam/readmeFiles/createSource.gif)
+
+![EnignesAudio_SourceCreation](https://github.com/user-attachments/assets/9688b6dd-f6be-4406-a2a2-fd2dd6b5ecd1)
 
 - **Spatial Audio**
    - Both Audio Listener(s) and Audio Source(s) position are set for Wwise, allowing Spatial Audio adjusted to the Game Object positions
@@ -239,8 +239,8 @@ Includes the following menu options:
       - Change Wet Level
       - Set Priority
       - Toggle to set as Enable/Disabled
-    
-![EnignesAudio_ReverbCreation](https://github.com/user-attachments/assets/94988fde-5ced-4b81-a001-d113122c2e87)
+
+![EnignesAudio_ReverbCreation](https://github.com/user-attachments/assets/d0db756a-5ea7-4618-a65e-3ed5d6c27a9c)
 
 - **Audio Component Serialization**
    - When a scene is saved, Audio Source and Audio Listener components are saved
