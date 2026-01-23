@@ -10,7 +10,7 @@ In this version, the engine adds a Lua scripting system that allows developers t
 </p>
 
 <p align="center">
-🔗 <strong>GitHub Repository:</strong> <a href="https://[github.com/Audra0000/Engine](https://github.com/bottzo/Motor2025/edit/Scripting(Grup_AJJ)">https://[github.com/Audra0000/Engine](https://github.com/bottzo/Motor2025/edit/Scripting(Grup_AJJ)</a>
+🔗 <strong>GitHub Repository:</strong> <a href="https://github.com/bottzo/Motor2025/tree/Scripting(Grup_AJJ)">https://github.com/bottzo/Motor2025/tree/Scripting(Grup_AJJ)</a>
 </p>
 
 ---
