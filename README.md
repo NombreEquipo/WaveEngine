@@ -1,24 +1,31 @@
-<h1 align="center">🌊 Wave Engine 🌊</h1>
+<h1 align="center"> Motor 2025 </h1>
 
 <p align="center">
-This project is a custom 3D game engine developed in C++ using OpenGL as the main graphics API.  
+This project is a custom 3D game engine developed in C++ using OpenGL as the main graphics API, made for a subject in Game developement.  
 It integrates several external libraries such as Assimp (for 3D model loading), DevIL (for texture management), and ImGui (for the user interface).
 </p>
 
 <p align="center">
-In version 2.0, we've evolved beyond simple FBX dependency, implementing a complete resource management system with custom file formats and significant rendering optimizations. The engine now features an advanced editor interface with scene serialization, resource management, and acceleration structures for optimal performance.
+In latest version, we've developed in more depth the UI and added a Main Menu, with a fade out effect and player name inputbox, Options Menu with diverse toggles such as vsync or colour themes.In the HUD there's a crosshair in the middle of the scene windom that has toggable colours. 
 </p>
 
 <p align="center">
-🔗 <strong>GitHub Repository:</strong> <a href="https://github.com/Audra0000/Engine">https://github.com/Audra0000/Engine</a>
+🔗 <strong>GitHub Repository:</strong> <a href="https://github.com/bottzo/Motor2025/tree/UI---Ivan%2CBernat%2CMaria">https://github.com/bottzo/Motor2025/tree/UI---Ivan%2CBernat%2CMaria</a>
 </p>
 
 ---
 
 ## 🎏 Team Members
 
-- **Haosheng Li** — [GitHub: HaosLii](https://github.com/HaosLii)  
-- **Ana Alcaraz** — [GitHub: Audra0000](https://github.com/Audra0000)
+- **Bernat Loza** — [GitHub: BerniF0x](https://github.com/BerniF0x) 
+-Work done, Main Menu, Option Menu, testing
+<img src="https://github.com/bottzo/Motor2025/blob/UI---Ivan%2CBernat%2CMaria/Engine/Assets/ReadmePhotos/Bernat.png" width="100" alt="Bernat">
+- **Iván Álvarez** — [GitHub: Ivalpe](https://github.com/Ivalpe)
+-Work done, Vsync, Release, Video, general fixes
+<img src="https://github.com/bottzo/Motor2025/blob/UI---Ivan%2CBernat%2CMaria/Engine/Assets/ReadmePhotos/Ivan.jpg" width="100" alt="Ivan">
+- **Maria Besora** — [GitHub: mariabeo](https://github.com/mariabeo)
+-Work done, Main menu fade, Crosshair, extra toggles.
+<img src="https://github.com/bottzo/Motor2025/blob/UI---Ivan%2CBernat%2CMaria/Engine/Assets/ReadmePhotos/Maria.jpg" width="100" alt="Maria">
 
 ---
 
@@ -43,6 +50,7 @@ In version 2.0, we've evolved beyond simple FBX dependency, implementing a compl
 | Rotate | E | |
 | Scale | R | |
 | Toggle Coordinate System | T | |
+|Option Menu | F1 | |
 ---
 
 ## 🐠 User Interface
@@ -59,6 +67,10 @@ Additionally, it includes several **interactive options**:
 - **Clear:** Erases all current console messages  
 - **Log filters:** Enable or disable the display of specific types of logs (info, warnings, errors)
 
+### **New UI specifics**
+-Main Menu
+-Option Menu
+-HUD crosshair
 ---
 
 ### **Configuration**
@@ -153,48 +165,32 @@ Includes the following menu options:
 ---
 
 ## ✨ Extra features 
-- **Transparente textures**
-- **zBuffer**
-- **Assets icons**
-- **Asset Deletion:** Delete assets directly from the explorer with automatic cleanup of associated Library files
-- **Import Settings:** Basic implementation of import options for different asset types:
-  - **Textures:** Control filtering modes, max texture size, and flip options (X/Y axes)
-  - **Meshes:** Configure global scaling, axis configuration, Post-processing options: generate normals, flip uv, optimize meshes
-  - **Metadata:** All import settings are saved in .meta files to ensure proper regeneration of the Library folder
+- **Dark and light theme**
+- **Crosshair colour change**
 
 ---
 
-## ✨ New Core Features 
+## ✨ New Core Features UI Engine
 
-### **Resource Management System**
-- Complete asset pipeline with automatic conversion to custom file formats
-- Assets stored in a structured "Assets" folder, with optimized versions cached in "Library"
-- Reference counting ensures resources are loaded only once regardless of usage count
-- Automatic regeneration of Library folder from Assets and metadata files
-- Support for importing new assets at runtime
+### **Main Menu**
+- A menu at the beginig of the load, you can choose a player name then press start, it fades out.
+![MMenu](https://github.com/bottzo/Motor2025/blob/UI---Ivan%2CBernat%2CMaria/Engine/Assets/Pruebas/MainMenu.gif)
 
-### **Performance Optimizations**
-- **Frustum Culling:** Objects outside the camera view are not rendered
-- **Octree Spatial Partitioning:** Accelerates both rendering culling and object selection
-- **Debug Visualizations:** Toggle visual representations of AABBs, octree nodes, and frustum
 
-### **Scene Management**
-- Scene serialization to custom file format
-- Automatic loading of default scene ("StreetEnvironment")
-- Complete GameObject hierarchy support with parent-child relationships
-- Runtime transformation of objects (position, rotation, scale)
+### **Options Menu**
+- F1, option menu that let's you turn on/off the vsync Aand has UI options, colour change the crosshair or change the window theme.
+![Menu](https://github.com/bottzo/Motor2025/blob/UI---Ivan%2CBernat%2CMaria/Engine/Assets/Pruebas/Menu.gif)
 
-### **Camera System**
-- Configurable camera component with adjustable parameters
-- Selection system using raycasting with octree
-- Visual feedback for selection operations
+### **Crosshair**
+- Crosshair in the center of scene rendered on top of everything else.
+![CRosshair](https://github.com/bottzo/Motor2025/blob/UI---Ivan%2CBernat%2CMaria/Engine/Assets/Pruebas/Crosshair.gif)
 
-### **Custom File Formats**
-- Proprietary formats for models, textures and scenes
-- Metadata files storing import settings and dependencies
+
+## ✨ Video
+- **Video** — [Video UI](https://drive.google.com/file/d/1-Fb5xuGHLuT8gNNSD-4yBmbuVm7JjmJm/view?usp=sharing) — [Video Scene](https://drive.google.com/file/d/1rT5xrdZACu9JwDBhv7i_Tp_BFSKC_qNn/view?usp=sharing)
 
 ---
 
 <p align="center">
-<sub>© 2025 Wave Engine — Developed by Haosheng Li & Ana Alcaraz — MIT License</sub>
+<sub>© Motor 2025  — Developed by Bernat Loza, Iván Álvarez, Maria Besora — MIT License</sub>
 </p>
