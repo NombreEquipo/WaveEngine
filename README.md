@@ -17,8 +17,14 @@ In version 3.1, we developed a particle system for the engine, in it you can cha
 - **Aniol López** — [GitHub: Aniolobolo](https://github.com/Aniolobolo)
 - **Saüc Pellejero** — [GitHub: ZReiNa](https://github.com/ZReiNa)
 
-Particle system implementation: Aniol,Asier.
-Demo:Saüc.
+## Work division
+
+Particle system implementation:
+- **Asier Ulloa**: Created the particle editor and particle class.
+- **Aniol López**: Testing and bugfixing.
+
+Demo:
+- **Saüc Pellejero**: Added fireworks and smoke particles on some chimneys.
 
 ## 🦀 Controls
 
