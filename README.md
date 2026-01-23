@@ -14,7 +14,7 @@ The engine integrates several external libraries including Assimp (for 3D model 
 </p>
 
 <p align="center">
-📦 <strong>Latest Release:</strong> <a href="#">[Download Link - Coming Soon]</a>
+📦 <strong>Latest Release:</strong> <a href="https://github.com/bottzo/Motor2025/releases/tag/Scripting2">https://github.com/bottzo/Motor2025/releases/tag/Scripting2</a>
 </p>
 
 ---
