@@ -512,7 +512,7 @@ void ScriptEditorWindow::DrawColoredReadOnlyView(ImVec2 editorSize, float lineNu
 
     for (int i = firstLine; i < lastLine && i < static_cast<int>(tab->lines.size()); ++i)
     {
-        float yPos = screenPos.y + (i * lineHeight) - scrollY + 5.0f;
+        float yPos = screenPos.y + (i * lineHeight) - scrollY;
 
         // Line number
         if (showLineNumbers)
@@ -553,10 +553,16 @@ void ScriptEditorWindow::DrawEditableView(ImVec2 editorSize, float lineNumberWid
 
     ImGui::BeginChild("EditableEditor", editorSize, true);
 
+    ImVec2 framePadding = ImGui::GetStyle().FramePadding;
+
     if (showLineNumbers)
     {
-        ImGui::BeginChild("LineNums", ImVec2(lineNumberWidth, 0), true, ImGuiWindowFlags_NoScrollbar);
+        ImGui::BeginChild("LineNums", ImVec2(lineNumberWidth, 0), false, ImGuiWindowFlags_NoScrollbar);
         ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + framePadding.y);
+
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 
         for (size_t i = 0; i < tab->lines.size(); ++i)
         {
@@ -564,6 +570,7 @@ void ScriptEditorWindow::DrawEditableView(ImVec2 editorSize, float lineNumberWid
             ImGui::TextColored(numColor, "%4zu", i + 1);
         }
 
+        ImGui::PopStyleVar();
         ImGui::PopStyleColor();
         ImGui::EndChild();
         ImGui::SameLine();
