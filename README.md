@@ -62,6 +62,8 @@ Demo:Saüc.
   <img src="fireworks.gif" alt="Firework particle showcase" width="500">
 </p> 
 
+This particle system works like the other game engines' particle systems. You can add a particle system to any game object and edit a lot of values, such as the scale of the particles, their velocity, rotation, texture, and a lot more for you to experiment. You can also edit some of their values based on the velocity or lifetime of the particles, making it a very versatile particle editor for users to experiment and create particles for their games. 
+
 ---
 ## 🐠 User Interface
 
