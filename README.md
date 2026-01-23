@@ -23,27 +23,30 @@ In this version, a functioning audio system has been implemented through the int
 ## 🐚 Audio System Team Members
 
 - **Kai Caire** — [GitHub: KaiCaire](https://github.com/KaiCaire)
-    <img src="https://github.com/user-attachments/assets/c232d27c-41bc-4696-a234-1969de811b18" width="50%">
    - Wwise Low Level Integration
    - Wwise Events & Buses Setup
    - Interactive Music Implementation 
    - Reverb Effect Configuration
    - Reverb Zone Preset GUI implementation
-   
+
+<img src="https://github.com/user-attachments/assets/c232d27c-41bc-4696-a234-1969de811b18" width="20%">
+
 - **Lara Guevara** — [GitHub: LaraGuevara](https://github.com/LaraGuevara)
-  <img src="https://github.com/user-attachments/assets/4b5283bd-056e-48a9-80cd-aed7f3da277a" width="50%">
    - Audio Listener and Audio Source components
    - Spatial Audio Implementation
    - Audio Components (Source & Listener) Serialization
    - Audio Components (Source & Listener) Inspector GUI
    - Move Component (for Spatial Audio test)
 
+<img src="https://github.com/user-attachments/assets/4b5283bd-056e-48a9-80cd-aed7f3da277a" width="20%">
+
 - **Marti Mach** — [GitHub: 0psycada](https://github.com/0psycada)
-  <img src="https://github.com/user-attachments/assets/840841b0-04e5-434e-8dfa-ff3919d2c0aa" width="50%">
    - Audio Effect Implementation
    - Reverb Zone component
    - Reverb Zone Serialization
    - Reverb Zone component Inspector GUI
+ 
+<img src="https://github.com/user-attachments/assets/840841b0-04e5-434e-8dfa-ff3919d2c0aa" width="20%">
 
 ## 🎏 Core Engine Team Members
 
@@ -217,8 +220,8 @@ Includes the following menu options:
          - Volume can be changed
          - Set on Awake toggle
             - When Play mode is active, Event immediately plays
-          
-![EnignesAudio_SourceCreation](https://github.com/bottzo/Motor2025/blob/Audio-System_VroomTeam/readmeFiles/createSource.gif)
+
+![EnignesAudio_SourceCreation](https://github.com/user-attachments/assets/9688b6dd-f6be-4406-a2a2-fd2dd6b5ecd1)
 
 - **Spatial Audio**
    - Both Audio Listener(s) and Audio Source(s) position are set for Wwise, allowing Spatial Audio adjusted to the Game Object positions
@@ -235,9 +238,9 @@ Includes the following menu options:
       - See current Aux Bus Name
       - Change Wet Level
       - Set Priority
-      - Toggle to set as Enable/Disabled 
+      - Toggle to set as Enable/Disabled
 
-![EnignesAudio_ReverbCreation](https://github.com/bottzo/Motor2025/blob/Audio-System_VroomTeam/readmeFiles/createReverb.gif)
+![EnignesAudio_ReverbCreation](https://github.com/user-attachments/assets/d0db756a-5ea7-4618-a65e-3ed5d6c27a9c)
 
 - **Audio Component Serialization**
    - When a scene is saved, Audio Source and Audio Listener components are saved
@@ -268,7 +271,7 @@ Includes the following menu options:
        - Outside: A subtle, open-air ambience with natural reflections and zero "boxy" build-up.
 
 ## Scene Creation
-![EnginesAudio_SaveLoad](https://github.com/bottzo/Motor2025/blob/Audio-System_VroomTeam/readmeFiles/createScene_video.mp4)
+![EnginesAudio_SaveLoad](https://github.com/bottzo/Motor2025/raw/Audio-System_VroomTeam/readmeFiles/createScene_video.mp4)
 
 <p align="center">
 <sub>© 2025 Wave Engine  — MIT License</sub>
