@@ -212,40 +212,21 @@ void SetRTPCByName(const char* rtpcName, float value, AkGameObjectID gameObjectI
 ---
 ## 🎬 Demostración
 
-### Funcionamiento en el Editor
+### Funcionamiento botones escena
 
-<p align="center">
-  <img src="images/demo_editor.gif" alt="Demo en Editor" width="700"/>
-  <br/>
-  <i>Configuración de componentes de audio en el editor</i>
-</p>
+![demo](https://github.com/user-attachments/assets/21aec162-f644-410e-8af7-55c08075cf51)
 
-### Funcionamiento en Juego
 
-<p align="center">
-  <img src="images/demo_game.gif" alt="Demo en Juego" width="700"/>
-  <br/>
-  <i>Audio espacial 3D en tiempo de ejecución</i>
-</p>
+### Funcionamiento slider volumen
+
+![demo](https://github.com/user-attachments/assets/2ba2674b-dc53-4e84-b724-d2a2aaf76519)
+
 
 ---
 
 ## 🎥 Video de Demostración
 
-<p align="center">
-  <a href="[LINK_AL_VIDEO]">
-    <img src="images/video_thumbnail.png" alt="Video Demo" width="600"/>
-  </a>
-  <br/>
-  <i>Click para ver el video de demostración (1 minuto en cámara rápida)</i>
-</p>
-
-**Contenido del video:**
-1. Creación de una escena nueva
-2. Añadir GameObjects con ComponentAudioSource
-3. Configurar el AudioListener en la cámara
-4. Demostración del audio 3D en ejecución
-5. [Demostración del Tunnel Effect - si está implementado]
+[![Video Demo](https://github.com/user-attachments/assets/6c419186-4b40-44ff-adeb-4eb5e817c0c0)](https://youtu.be/0nrjMqgHxOM)
 
 ---
 
