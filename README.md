@@ -23,30 +23,30 @@ In this version, a functioning audio system has been implemented through the int
 ## 🐚 Audio System Team Members
 
 - **Kai Caire** — [GitHub: KaiCaire](https://github.com/KaiCaire)
-
-    <img src="https://github.com/user-attachments/assets/c232d27c-41bc-4696-a234-1969de811b18" width="20%">
    - Wwise Low Level Integration
    - Wwise Events & Buses Setup
    - Interactive Music Implementation 
    - Reverb Effect Configuration
    - Reverb Zone Preset GUI implementation
-   
-- **Lara Guevara** — [GitHub: LaraGuevara](https://github.com/LaraGuevara)
 
-  <img src="https://github.com/user-attachments/assets/4b5283bd-056e-48a9-80cd-aed7f3da277a" width="20%">
+<img src="https://github.com/user-attachments/assets/c232d27c-41bc-4696-a234-1969de811b18" width="20%">
+
+- **Lara Guevara** — [GitHub: LaraGuevara](https://github.com/LaraGuevara)
    - Audio Listener and Audio Source components
    - Spatial Audio Implementation
    - Audio Components (Source & Listener) Serialization
    - Audio Components (Source & Listener) Inspector GUI
    - Move Component (for Spatial Audio test)
 
-- **Marti Mach** — [GitHub: 0psycada](https://github.com/0psycada)
+<img src="https://github.com/user-attachments/assets/4b5283bd-056e-48a9-80cd-aed7f3da277a" width="20%">
 
-  <img src="https://github.com/user-attachments/assets/840841b0-04e5-434e-8dfa-ff3919d2c0aa" width="20%">
+- **Marti Mach** — [GitHub: 0psycada](https://github.com/0psycada)
    - Audio Effect Implementation
    - Reverb Zone component
    - Reverb Zone Serialization
    - Reverb Zone component Inspector GUI
+ 
+<img src="https://github.com/user-attachments/assets/840841b0-04e5-434e-8dfa-ff3919d2c0aa" width="20%">
 
 ## 🎏 Core Engine Team Members
 
@@ -238,9 +238,9 @@ Includes the following menu options:
       - See current Aux Bus Name
       - Change Wet Level
       - Set Priority
-      - Toggle to set as Enable/Disabled 
-
-<img src="https://github.com/bottzo/Motor2025/raw/Audio-System_VroomTeam/readmeFiles/createReverb.gif" width="500">
+      - Toggle to set as Enable/Disabled
+    
+![EnignesAudio_ReverbCreation](https://github.com/user-attachments/assets/94988fde-5ced-4b81-a001-d113122c2e87)
 
 - **Audio Component Serialization**
    - When a scene is saved, Audio Source and Audio Listener components are saved
