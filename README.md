@@ -256,15 +256,14 @@ Includes the following menu options:
          - Move Component
    - Configurable and serializable Roomverb Presets from Wwise by a drop down in the Inspector in the Reverb Zone component, both in editor and at runtime.
      Managed in Wwise through Individual Auxiliary Busses
-         - Cathedral: A massive stone interior with long, shimmering decay and grand scale.
-         - Inside My Head: A tight, claustrophobic resonance that mimics internal dialogue or extreme proximity.
-         - Aluminum Tank: A high-frequency, ringing resonance typical of hollow metal containers or industrial pipes.
-         - Absorption: A deadened, muffled space that swallows high frequencies, perfect for padded rooms or thick carpets
-         - Large Plate: A classic, dense studio reverb that provides a smooth, metallic wash to any sound.
-         - Long Dark Hall: An eerie, expansive tunnel effect with a cold atmosphere and distant echoes.
-         - Robotic: A glitched, digitized reverb with metallic artifacts that sounds like an old, slightly malfunctioning robot
-         - Outside: A subtle, open-air ambience with natural reflections and zero "boxy" build-up.
-
+       - Cathedral: A massive stone interior with long, shimmering decay and grand scale.
+       - Inside My Head: A tight, claustrophobic resonance that mimics internal dialogue or extreme proximity.
+       - Aluminum Tank: A high-frequency, ringing resonance typical of hollow metal containers or industrial pipes.
+       - Absorption: A deadened, muffled space that swallows high frequencies, perfect for padded rooms or thick carpets
+       - Large Plate: A classic, dense studio reverb that provides a smooth, metallic wash to any sound.
+       - Long Dark Hall: An eerie, expansive tunnel effect with a cold atmosphere and distant echoes.
+       - Robotic: A glitched, digitized reverb with metallic artifacts that sounds like an old, slightly malfunctioning robot
+       - Outside: A subtle, open-air ambience with natural reflections and zero "boxy" build-up.
      
 See video here (a GIF for audio is not that useful, is it?): https://github.com/user-attachments/assets/d621ab74-c59e-4b35-af22-f43eb9aa292c
 
