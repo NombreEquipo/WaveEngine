@@ -15,6 +15,7 @@
 #include <fstream>
 #include "ComponentCollider.h"
 #include "ComponentBoxCollider.h"
+#include "ComponentSphereCollider.h"
 #include "ComponentMaterial.h"
 
 ModuleScene::ModuleScene() : Module()
@@ -431,6 +432,19 @@ void ModuleScene::FirstScene()
     if (sceneCamera)
     {
         app.camera->SetSceneCamera(sceneCamera);
+    }
+
+    ComponentSphereCollider* col = (ComponentSphereCollider*)cameraGO->CreateComponent(ComponentType::COLLIDER_SPHERE);
+    col->SetRadius(0.5f);
+
+    // 2. Añadimos el RigidBody
+    ComponentRigidBody* rb = (ComponentRigidBody*)cameraGO->CreateComponent(ComponentType::RIGIDBODY);
+    rb->SetMass(1.0f); // Masa > 0 para que sea dinámico y colisione
+
+    if (rb->GetRigidBody()) {
+        rb->GetRigidBody()->setGravity(btVector3(0, 0, 0)); // Cámara flotante
+        rb->GetRigidBody()->setDamping(0.9f, 0.9f); // Para que no deslice infinitamente
+        rb->Start();
     }
 
     GameObject* floor = Primitives::CreateCubeGameObject("Floor", 0.0f);
