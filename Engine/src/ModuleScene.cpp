@@ -45,48 +45,8 @@ bool ModuleScene::Start()
     if (renderer) renderer->DrawScene();
 
     root = new GameObject("Root");
-    
-    // Obtenemos referencia a la instancia para acceder a los módulos
-    Application& app = Application::GetInstance();
 
-    // --- 1. SUELO ESTÁTICO ---
-    GameObject* floor = Primitives::CreateCubeGameObject("Floor", 0.0f);
-    if (floor) {
-        Transform* trans = (Transform*)floor->GetComponent(ComponentType::TRANSFORM);
-        if (trans) {
-            trans->SetPosition(glm::vec3(0.0f, -0.5f, 0.0f));
-            trans->SetScale(glm::vec3(40.0f, 0.5f, 40.0f));
-        }
-    }
-
-    float mass = 1.0f;
-
-    GameObject* house1 = Primitives::CreateCubeGameObject("House1", mass);
-    if (house1) {
-        Transform* trans = (Transform*)house1->GetComponent(ComponentType::TRANSFORM);
-        if (trans) {
-            trans->SetPosition(glm::vec3(15.0f, 10.0f, 10.0f));
-            trans->SetScale(glm::vec3(5.0f, 7.0f, 5.0f));
-        }
-    }
-
-    GameObject* house2 = Primitives::CreateCubeGameObject("House2", mass);
-    if (house2) {
-        Transform* trans = (Transform*)house2->GetComponent(ComponentType::TRANSFORM);
-        if (trans) {
-            trans->SetPosition(glm::vec3(-15.0f, 15.0f, 10.0f));
-            trans->SetScale(glm::vec3(5.0f, 7.0f, 5.0f));
-        }
-    }
-
-    GameObject* car = Primitives::CreateCubeGameObject("Car", mass);
-    if (car) {
-        Transform* trans = (Transform*)car->GetComponent(ComponentType::TRANSFORM);
-        if (trans) {
-            trans->SetPosition(glm::vec3(0.0f, 5.0f, 0.0f));
-            trans->SetScale(glm::vec3(2.0f, 1.0f, 5.0f));
-        }
-    }
+    FirstScene();
 
     LOG_CONSOLE("Escena creada: Suelo y 3 objetos con escalas y texturas aplicadas.");
     return true;
@@ -447,5 +407,65 @@ void ModuleScene::ApplyPhysicsToAll(GameObject* obj) {
 
     for (GameObject* child : obj->GetChildren()) {
         ApplyPhysicsToAll(child);
+    }
+}
+
+void ModuleScene::FirstScene()
+{
+    Application& app = Application::GetInstance();
+
+    GameObject* cameraGO = app.scene->CreateGameObject("MainCamera");
+
+    Transform* transform = static_cast<Transform*>(
+        cameraGO->GetComponent(ComponentType::TRANSFORM)
+        );
+    if (transform)
+    {
+        transform->SetPosition(glm::vec3(0.0f, 1.5f, 10.0f));
+    }
+
+    ComponentCamera* sceneCamera = static_cast<ComponentCamera*>(
+        cameraGO->CreateComponent(ComponentType::CAMERA)
+        );
+
+    if (sceneCamera)
+    {
+        app.camera->SetSceneCamera(sceneCamera);
+    }
+
+    GameObject* floor = Primitives::CreateCubeGameObject("Floor", 0.0f);
+    if (floor) {
+        Transform* trans = (Transform*)floor->GetComponent(ComponentType::TRANSFORM);
+        if (trans) {
+            trans->SetPosition(glm::vec3(0.0f, -0.5f, 0.0f));
+            trans->SetScale(glm::vec3(40.0f, 0.5f, 40.0f));
+        }
+    }
+
+    GameObject* house1 = Primitives::CreateCubeGameObject("House1", 1.0f);
+    if (house1) {
+        Transform* trans = (Transform*)house1->GetComponent(ComponentType::TRANSFORM);
+        if (trans) {
+            trans->SetPosition(glm::vec3(15.0f, 10.0f, -10.0f));
+            trans->SetScale(glm::vec3(5.0f, 7.0f, 5.0f));
+        }
+    }
+
+    GameObject* house2 = Primitives::CreateCubeGameObject("House2", 1.0f);
+    if (house2) {
+        Transform* trans = (Transform*)house2->GetComponent(ComponentType::TRANSFORM);
+        if (trans) {
+            trans->SetPosition(glm::vec3(-7.0f, 10.0f, 18.0f));
+            trans->SetScale(glm::vec3(5.0f, 7.0f, 5.0f));
+        }
+    }
+
+    GameObject* car = Primitives::CreateCubeGameObject("Car", 1.0f);
+    if (car) {
+        Transform* trans = (Transform*)car->GetComponent(ComponentType::TRANSFORM);
+        if (trans) {
+            trans->SetPosition(glm::vec3(0.0f, 5.0f, 0.0f));
+            trans->SetScale(glm::vec3(2.0f, 1.0f, 5.0f));
+        }
     }
 }

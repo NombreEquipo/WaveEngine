@@ -43,6 +43,7 @@ public:
     bool LoadScene(const std::string& filepath);
     void ClearScene();
     void ApplyPhysicsToAll(GameObject* obj);
+    void FirstScene();
 
     // for raycast visualization
     glm::vec3 lastRayOrigin = glm::vec3(0.0f);

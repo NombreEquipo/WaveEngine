@@ -58,27 +58,6 @@ bool FileSystem::Start()
         return true;
     }
 
-    // Crear cámara de escena
-    Application& app = Application::GetInstance();
-    GameObject* cameraGO = app.scene->CreateGameObject("Camera");
-
-    Transform* transform = static_cast<Transform*>(
-        cameraGO->GetComponent(ComponentType::TRANSFORM)
-        );
-    if (transform)
-    {
-        transform->SetPosition(glm::vec3(0.0f, 1.5f, 10.0f));
-    }
-
-    ComponentCamera* sceneCamera = static_cast<ComponentCamera*>(
-        cameraGO->CreateComponent(ComponentType::CAMERA)
-        );
-
-    if (sceneCamera)
-    {
-        app.camera->SetSceneCamera(sceneCamera);
-    }
-
     return true;
 }
 
