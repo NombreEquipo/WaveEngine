@@ -10,11 +10,21 @@
     "Type": "User",
     "GUID": "{701ECBBD-9C7B-4030-8CDB-749EE5D1C7B9}",
     "Language": "SFX",
-    "Hash": "{1EBEBC11-7B71-2944-F357-7C50BCC98A66}",
+    "Hash": "{0608D3FB-82FF-B06F-FF2E-89632E596400}",
     "ObjectPath": "Init",
     "ShortName": "Init",
     "Path": "Init.bnk",
     "Plugins": {
+     "ShareSets": [
+      {
+       "Id": "3164629247",
+       "Name": "Holy",
+       "ObjectPath": "\\Effects\\Factory Effects\\RoomVerb\\Cathedrals\\Holy",
+       "GUID": "{CC7B8638-C670-4AD5-B3FB-331EA81037F6}",
+       "LibName": "Wwise RoomVerb",
+       "LibId": "7733251"
+      }
+     ],
      "AudioDevices": [
       {
        "Id": "2317455096",
@@ -39,7 +49,15 @@
       "Id": "1502772432",
       "Name": "SFX Bus",
       "ObjectPath": "\\Busses\\Default Work Unit\\Main Audio Bus\\SFX Bus",
-      "GUID": "{E901AF86-38FB-46EA-B16A-DDF987F9D27D}"
+      "GUID": "{E901AF86-38FB-46EA-B16A-DDF987F9D27D}",
+      "AuxBusRefs": [
+       {
+        "Id": "2858851216",
+        "Name": "Reverb_AuxBus",
+        "ObjectPath": "\\Busses\\Default Work Unit\\Main Audio Bus\\Reverb_AuxBus",
+        "GUID": "{64009C03-8FCF-4415-9CF9-F5AC4444D726}"
+       }
+      ]
      },
      {
       "Id": "2246998526",
@@ -48,16 +66,25 @@
       "GUID": "{1514A4D8-1DA6-412A-A17E-75CA0C2149F3}"
      },
      {
-      "Id": "2955179355",
-      "Name": "Reverb Bus",
-      "ObjectPath": "\\Busses\\Default Work Unit\\Main Audio Bus\\Reverb Bus",
-      "GUID": "{CC3A5574-BDAD-4F60-8013-C70F6A014CB4}"
-     },
-     {
       "Id": "3127962312",
       "Name": "Music Bus",
       "ObjectPath": "\\Busses\\Default Work Unit\\Main Audio Bus\\Music Bus",
       "GUID": "{698D2083-4775-48F4-99FC-21A2D5A77980}"
+     }
+    ],
+    "AuxBusses": [
+     {
+      "Id": "2858851216",
+      "Name": "Reverb_AuxBus",
+      "ObjectPath": "\\Busses\\Default Work Unit\\Main Audio Bus\\Reverb_AuxBus",
+      "GUID": "{64009C03-8FCF-4415-9CF9-F5AC4444D726}",
+      "PluginRefs": {
+       "ShareSets": [
+        {
+         "Id": "3164629247"
+        }
+       ]
+      }
      }
     ],
     "GameParameters": [
@@ -653,6 +680,6 @@
     ]
    }
   ],
-  "FileHash": "{AF36A061-8B6A-E5E8-878B-7772FC3171CA}"
+  "FileHash": "{CE015967-565D-DACB-2593-B217A4A7EB99}"
  }
 }

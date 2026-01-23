@@ -191,12 +191,16 @@ void Application::Play()
 
     playState = PlayState::PLAYING;
     time->Resume();
+    AK::SoundEngine::WakeupFromSuspend();
 }
 
 void Application::Pause()
 {
     playState = PlayState::PAUSED;
+    
     time->Pause();
+
+    AK::SoundEngine::Suspend();
 }
 
 void Application::Stop()

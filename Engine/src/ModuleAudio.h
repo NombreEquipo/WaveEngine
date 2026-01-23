@@ -11,6 +11,7 @@
 
 
 #include <AK/SpatialAudio/Common/AkSpatialAudio.h>		// Spatial Audio
+//#include <AK/Plugin/AkRoomVerbFXFactory.h> //Roomverb
 
 
 #ifndef AK_OPTIMIZED

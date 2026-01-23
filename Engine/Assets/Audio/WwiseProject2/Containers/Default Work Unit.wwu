@@ -5,6 +5,7 @@
 			<ChildrenList>
 				<MusicPlaylistContainer Name="LookinFresh_Playlist" ID="{9037899F-5605-420E-88A5-1889CC89EB1D}" ShortID="160621463">
 					<PropertyList>
+						<Property Name="UseGameAuxSends" Type="bool" Value="True"/>
 						<Property Name="Volume" Type="Real64">
 							<ValueList>
 								<Value>1</Value>
@@ -16,7 +17,7 @@
 							<ObjectRef Name="Default Conversion Settings" ID="{6D1B890C-9826-4384-BF07-C15223E9FB56}" WorkUnitID="{FB418BE9-1BF2-46F3-B748-3C670469BE90}"/>
 						</Reference>
 						<Reference Name="OutputBus">
-							<ObjectRef Name="Main Audio Bus" ID="{1514A4D8-1DA6-412A-A17E-75CA0C2149F3}" WorkUnitID="{F0D31CEB-8F9E-4AA4-B822-589F2A4A8993}"/>
+							<ObjectRef Name="Music Bus" ID="{698D2083-4775-48F4-99FC-21A2D5A77980}" WorkUnitID="{F0D31CEB-8F9E-4AA4-B822-589F2A4A8993}"/>
 						</Reference>
 						<Reference Name="PlaylistRoot">
 							<Custom>
@@ -307,6 +308,7 @@
 				<Sound Name="HelpMe" ID="{5834A212-7E22-4362-B41A-82A3A690E991}" ShortID="80399166">
 					<PropertyList>
 						<Property Name="3DSpatialization" Type="int16" Value="2"/>
+						<Property Name="UseGameAuxSends" Type="bool" Value="True"/>
 					</PropertyList>
 					<ReferenceList>
 						<Reference Name="Attenuation">
@@ -316,7 +318,7 @@
 							<ObjectRef Name="Default Conversion Settings" ID="{6D1B890C-9826-4384-BF07-C15223E9FB56}" WorkUnitID="{FB418BE9-1BF2-46F3-B748-3C670469BE90}"/>
 						</Reference>
 						<Reference Name="OutputBus">
-							<ObjectRef Name="Main Audio Bus" ID="{1514A4D8-1DA6-412A-A17E-75CA0C2149F3}" WorkUnitID="{F0D31CEB-8F9E-4AA4-B822-589F2A4A8993}"/>
+							<ObjectRef Name="SFX Bus" ID="{E901AF86-38FB-46EA-B16A-DDF987F9D27D}" WorkUnitID="{F0D31CEB-8F9E-4AA4-B822-589F2A4A8993}"/>
 						</Reference>
 					</ReferenceList>
 					<ChildrenList>
@@ -333,12 +335,15 @@
 					</ActiveSourceList>
 				</Sound>
 				<MusicSwitchContainer Name="LookinFresh_Switch" ID="{C9E51BFB-E933-4E25-94D0-C6B6F469C2EE}" ShortID="87044287">
+					<PropertyList>
+						<Property Name="UseGameAuxSends" Type="bool" Value="True"/>
+					</PropertyList>
 					<ReferenceList>
 						<Reference Name="Conversion">
 							<ObjectRef Name="Default Conversion Settings" ID="{6D1B890C-9826-4384-BF07-C15223E9FB56}" WorkUnitID="{FB418BE9-1BF2-46F3-B748-3C670469BE90}"/>
 						</Reference>
 						<Reference Name="OutputBus">
-							<ObjectRef Name="Main Audio Bus" ID="{1514A4D8-1DA6-412A-A17E-75CA0C2149F3}" WorkUnitID="{F0D31CEB-8F9E-4AA4-B822-589F2A4A8993}"/>
+							<ObjectRef Name="Music Bus" ID="{698D2083-4775-48F4-99FC-21A2D5A77980}" WorkUnitID="{F0D31CEB-8F9E-4AA4-B822-589F2A4A8993}"/>
 						</Reference>
 						<Reference Name="TransitionRoot">
 							<Custom>
@@ -639,6 +644,7 @@
 					<PropertyList>
 						<Property Name="3DSpatialization" Type="int16" Value="2"/>
 						<Property Name="IsLoopingEnabled" Type="bool" Value="True"/>
+						<Property Name="UseGameAuxSends" Type="bool" Value="True"/>
 					</PropertyList>
 					<ReferenceList>
 						<Reference Name="Attenuation">
@@ -648,7 +654,7 @@
 							<ObjectRef Name="Default Conversion Settings" ID="{6D1B890C-9826-4384-BF07-C15223E9FB56}" WorkUnitID="{FB418BE9-1BF2-46F3-B748-3C670469BE90}"/>
 						</Reference>
 						<Reference Name="OutputBus">
-							<ObjectRef Name="Main Audio Bus" ID="{1514A4D8-1DA6-412A-A17E-75CA0C2149F3}" WorkUnitID="{F0D31CEB-8F9E-4AA4-B822-589F2A4A8993}"/>
+							<ObjectRef Name="SFX Bus" ID="{E901AF86-38FB-46EA-B16A-DDF987F9D27D}" WorkUnitID="{F0D31CEB-8F9E-4AA4-B822-589F2A4A8993}"/>
 						</Reference>
 					</ReferenceList>
 					<ChildrenList>
@@ -677,7 +683,7 @@
 							<ObjectRef Name="Default Conversion Settings" ID="{6D1B890C-9826-4384-BF07-C15223E9FB56}" WorkUnitID="{FB418BE9-1BF2-46F3-B748-3C670469BE90}"/>
 						</Reference>
 						<Reference Name="OutputBus">
-							<ObjectRef Name="Main Audio Bus" ID="{1514A4D8-1DA6-412A-A17E-75CA0C2149F3}" WorkUnitID="{F0D31CEB-8F9E-4AA4-B822-589F2A4A8993}"/>
+							<ObjectRef Name="Music Bus" ID="{698D2083-4775-48F4-99FC-21A2D5A77980}" WorkUnitID="{F0D31CEB-8F9E-4AA4-B822-589F2A4A8993}"/>
 						</Reference>
 					</ReferenceList>
 					<ChildrenList>
@@ -694,12 +700,15 @@
 					</ActiveSourceList>
 				</Sound>
 				<MusicSwitchContainer Name="CPMusic_Switch" ID="{255D671E-305B-4B3A-AC1D-EDF7ED95898C}" ShortID="713144153">
+					<PropertyList>
+						<Property Name="UseGameAuxSends" Type="bool" Value="True"/>
+					</PropertyList>
 					<ReferenceList>
 						<Reference Name="Conversion">
 							<ObjectRef Name="Default Conversion Settings" ID="{6D1B890C-9826-4384-BF07-C15223E9FB56}" WorkUnitID="{FB418BE9-1BF2-46F3-B748-3C670469BE90}"/>
 						</Reference>
 						<Reference Name="OutputBus">
-							<ObjectRef Name="Main Audio Bus" ID="{1514A4D8-1DA6-412A-A17E-75CA0C2149F3}" WorkUnitID="{F0D31CEB-8F9E-4AA4-B822-589F2A4A8993}"/>
+							<ObjectRef Name="Music Bus" ID="{698D2083-4775-48F4-99FC-21A2D5A77980}" WorkUnitID="{F0D31CEB-8F9E-4AA4-B822-589F2A4A8993}"/>
 						</Reference>
 						<Reference Name="TransitionRoot">
 							<Custom>
@@ -749,7 +758,7 @@
 					<ChildrenList>
 						<MusicSegment Name="pizzaParlor" ID="{E7C026AC-CF0E-47C9-9A34-5ED64A7289B6}" ShortID="600405078">
 							<PropertyList>
-								<Property Name="EndPosition" Type="Real64" Value="34080.5903091937"/>
+								<Property Name="EndPosition" Type="Real64" Value="330094.875283447"/>
 							</PropertyList>
 							<ReferenceList>
 								<Reference Name="Conversion">
@@ -792,7 +801,7 @@
 													<ObjectList Name="Clips">
 														<MusicClip Name="Charlies Here - Pizza Parlor _ Club Penguin OST" ID="{9F573052-08FD-459F-9BEB-02DAEABAAB5C}">
 															<PropertyList>
-																<Property Name="EndTrimOffset" Type="Real64" Value="34080.5890710305"/>
+																<Property Name="EndTrimOffset" Type="Real64" Value="330094.875283447"/>
 																<Property Name="FadeInMode" Type="int16" Value="0"/>
 																<Property Name="FadeOutMode" Type="int16" Value="0"/>
 															</PropertyList>
@@ -810,7 +819,7 @@
 																				<Flags>5</Flags>
 																			</Point>
 																			<Point>
-																				<XPos>34.08059</XPos>
+																				<XPos>330.09488</XPos>
 																				<YPos>0</YPos>
 																				<Flags>37</Flags>
 																			</Point>
@@ -829,7 +838,7 @@
 																				<Flags>5</Flags>
 																			</Point>
 																			<Point>
-																				<XPos>34.08059</XPos>
+																				<XPos>330.09488</XPos>
 																				<YPos>0</YPos>
 																				<Flags>37</Flags>
 																			</Point>
@@ -848,7 +857,7 @@
 																				<Flags>5</Flags>
 																			</Point>
 																			<Point>
-																				<XPos>34.08059</XPos>
+																				<XPos>330.09488</XPos>
 																				<YPos>0</YPos>
 																				<Flags>37</Flags>
 																			</Point>
@@ -878,7 +887,7 @@
 						</MusicSegment>
 						<MusicSegment Name="coffeeShop" ID="{D40C1F4E-2F12-4A36-8BCB-CDB59B3E86AD}" ShortID="252615378">
 							<PropertyList>
-								<Property Name="EndPosition" Type="Real64" Value="40174.8972970704"/>
+								<Property Name="EndPosition" Type="Real64" Value="330335.723869959"/>
 							</PropertyList>
 							<ReferenceList>
 								<Reference Name="Conversion">
@@ -921,7 +930,7 @@
 													<ObjectList Name="Clips">
 														<MusicClip Name="coffeeShop" ID="{83FCE92B-9C73-4BD9-9F0A-B2D9A025861E}">
 															<PropertyList>
-																<Property Name="EndTrimOffset" Type="Real64" Value="40096.6843728105"/>
+																<Property Name="EndTrimOffset" Type="Real64" Value="329473.650793651"/>
 																<Property Name="FadeInMode" Type="int16" Value="0"/>
 																<Property Name="FadeOutMode" Type="int16" Value="0"/>
 															</PropertyList>
@@ -939,7 +948,7 @@
 																				<Flags>5</Flags>
 																			</Point>
 																			<Point>
-																				<XPos>40.09668</XPos>
+																				<XPos>329.47365</XPos>
 																				<YPos>0</YPos>
 																				<Flags>37</Flags>
 																			</Point>
@@ -958,7 +967,7 @@
 																				<Flags>5</Flags>
 																			</Point>
 																			<Point>
-																				<XPos>40.09668</XPos>
+																				<XPos>329.47365</XPos>
 																				<YPos>0</YPos>
 																				<Flags>37</Flags>
 																			</Point>
@@ -977,7 +986,7 @@
 																				<Flags>5</Flags>
 																			</Point>
 																			<Point>
-																				<XPos>40.09668</XPos>
+																				<XPos>329.47365</XPos>
 																				<YPos>0</YPos>
 																				<Flags>37</Flags>
 																			</Point>
@@ -999,7 +1008,7 @@
 									<MusicCue Name="Exit Cue" ID="{C658A094-E858-4EDB-94B4-B0A0ED09C404}">
 										<PropertyList>
 											<Property Name="CueType" Type="int16" Value="1"/>
-											<Property Name="TimeMs" Type="Real64" Value="30000"/>
+											<Property Name="TimeMs" Type="Real64" Value="152064.761904762"/>
 										</PropertyList>
 									</MusicCue>
 								</ObjectList>

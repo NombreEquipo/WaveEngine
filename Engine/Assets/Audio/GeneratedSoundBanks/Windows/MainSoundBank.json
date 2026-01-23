@@ -10,7 +10,7 @@
     "Type": "User",
     "GUID": "{7C55CBAC-5186-4208-888F-0BCE02308A98}",
     "Language": "SFX",
-    "Hash": "{B25F1150-DDDC-6A85-1FC3-101407AA74DC}",
+    "Hash": "{4BC7EFC4-DC8D-DF5B-5BDD-66C5A12BC1ED}",
     "ObjectPath": "\\SoundBanks\\Default Work Unit\\MainSoundBank",
     "ShortName": "MainSoundBank",
     "Path": "MainSoundBank.bnk",
@@ -48,6 +48,18 @@
       "CachePath": "15/{15E837B0-2159-FDED-526E-A24B07BABDBB}.wem"
      }
     ],
+    "Plugins": {
+     "ShareSets": [
+      {
+       "Id": "3164629247",
+       "Name": "Holy",
+       "ObjectPath": "\\Effects\\Factory Effects\\RoomVerb\\Cathedrals\\Holy",
+       "GUID": "{CC7B8638-C670-4AD5-B3FB-331EA81037F6}",
+       "LibName": "Wwise RoomVerb",
+       "LibId": "7733251"
+      }
+     ]
+    },
     "Events": [
      {
       "Id": "1896801622",
@@ -146,6 +158,75 @@
       ]
      }
     ],
+    "Busses": [
+     {
+      "Id": "1502772432",
+      "Name": "SFX Bus",
+      "ObjectPath": "\\Busses\\Default Work Unit\\Main Audio Bus\\SFX Bus",
+      "GUID": "{E901AF86-38FB-46EA-B16A-DDF987F9D27D}",
+      "AuxBusRefs": [
+       {
+        "Id": "2858851216",
+        "Name": "Reverb_AuxBus",
+        "ObjectPath": "\\Busses\\Default Work Unit\\Main Audio Bus\\Reverb_AuxBus",
+        "GUID": "{64009C03-8FCF-4415-9CF9-F5AC4444D726}"
+       }
+      ]
+     },
+     {
+      "Id": "2246998526",
+      "Name": "Main Audio Bus",
+      "ObjectPath": "\\Busses\\Default Work Unit\\Main Audio Bus",
+      "GUID": "{1514A4D8-1DA6-412A-A17E-75CA0C2149F3}"
+     },
+     {
+      "Id": "3127962312",
+      "Name": "Music Bus",
+      "ObjectPath": "\\Busses\\Default Work Unit\\Main Audio Bus\\Music Bus",
+      "GUID": "{698D2083-4775-48F4-99FC-21A2D5A77980}"
+     }
+    ],
+    "AuxBusses": [
+     {
+      "Id": "2858851216",
+      "Name": "Reverb_AuxBus",
+      "ObjectPath": "\\Busses\\Default Work Unit\\Main Audio Bus\\Reverb_AuxBus",
+      "GUID": "{64009C03-8FCF-4415-9CF9-F5AC4444D726}",
+      "PluginRefs": {
+       "ShareSets": [
+        {
+         "Id": "3164629247"
+        }
+       ]
+      }
+     }
+    ],
+    "GameParameters": [
+     {
+      "Id": "1006694123",
+      "Name": "Music_Volume",
+      "ObjectPath": "\\Game Parameters\\Default Work Unit\\Music_Volume",
+      "GUID": "{726A8A6A-0E92-42BC-8418-7A00AACCE545}"
+     },
+     {
+      "Id": "1564184899",
+      "Name": "SFX_Volume",
+      "ObjectPath": "\\Game Parameters\\Default Work Unit\\SFX_Volume",
+      "GUID": "{3FE5AF42-E8C6-41F5-B04A-C5159685C835}"
+     },
+     {
+      "Id": "4143275766",
+      "Name": "Reverb_Volume",
+      "ObjectPath": "\\Game Parameters\\Default Work Unit\\Reverb_Volume",
+      "GUID": "{63F7E98E-93FE-4364-8928-682BB81C9FE8}"
+     },
+     {
+      "Id": "4179668880",
+      "Name": "Master_Volume",
+      "ObjectPath": "\\Game Parameters\\Default Work Unit\\Master_Volume",
+      "GUID": "{644EB086-BB28-4074-9D7D-999E90030850}"
+     }
+    ],
     "StateGroups": [
      {
       "Id": "3086301423",
@@ -176,6 +257,6 @@
     ]
    }
   ],
-  "FileHash": "{6146F7B6-12F0-6882-6103-D817A4FE21A3}"
+  "FileHash": "{DD4B19FB-DF8F-6B2C-C2F6-22C19BB365BC}"
  }
 }

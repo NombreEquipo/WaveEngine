@@ -17,6 +17,7 @@ AudioSource::AudioSource(GameObject* containerGO)
     // Check if the base owner is valid before using it
     if (owner != nullptr) {
         AK::SoundEngine::RegisterGameObj(this->goID, owner->name.c_str());
+        
         Application::GetInstance().audio->audioSystem->RegisterAudioComponent(this);
     }
 }

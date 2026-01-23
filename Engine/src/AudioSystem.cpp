@@ -24,16 +24,17 @@
 #include <AK/Tools/Common/AkPlatformFuncs.h>
 #include <AK/SoundEngine/Common/AkTypes.h>
 #include "AkGeneratedSoundBanksResolver.h"
-
+#include <AK/Plugin/AkRoomVerbFXFactory.h>
 #include <windows.h>
 
 AudioEvent::AudioEvent() {
     playingID = 0L;
     eventCallback = (AkCallbackFunc)AudioSystem::EventCallBack;
+
 }
 
 AudioSystem::AudioSystem() {
-
+    currentListenerZone = nullptr;
 }
 
 AudioSystem::~AudioSystem() {
@@ -366,6 +367,7 @@ void AudioSystem::UnregisterReverbZone(ReverbZone* zone)
 void AudioSystem::ProcessReverbZones()
 {
     // Find the listener game object (first registered AudioComponent that is a listener)
+
     AkGameObjectID listenerID = AK_INVALID_GAME_OBJECT;
     std::shared_ptr<GameObject> listenerGO;
 
@@ -387,7 +389,11 @@ void AudioSystem::ProcessReverbZones()
     if (listenerGO) {
         Transform* lt = static_cast<Transform*>(listenerGO->GetComponent(ComponentType::TRANSFORM));
         if (lt) listenerPos = glm::vec3(lt->GetGlobalMatrix()[3]);
+
+        LOG_DEBUG("Listener Pos: %.2f, %.2f, %.2f", listenerPos.x, listenerPos.y, listenerPos.z);
     }
+
+    
 
     // Determine best (highest-priority) zone that contains the listener (for debug & consistent send)
     ReverbZone* listenerBestZone = nullptr;
@@ -395,6 +401,8 @@ void AudioSystem::ProcessReverbZones()
     for (ReverbZone* zone : reverbZones) {
         if (!zone || !zone->enabled) continue;
         if (zone->ContainsPoint(listenerPos)) {
+            LOG_DEBUG("Checking zone %s: Result=%d", zone->auxBusName.c_str(), zone->ContainsPoint(listenerPos));
+
             if (zone->priority > listenerBestPriority) {
                 listenerBestPriority = zone->priority;
                 listenerBestZone = zone;
@@ -457,6 +465,7 @@ void AudioSystem::ProcessReverbZones()
         for (ReverbZone* zone : reverbZones) {
             if (!zone || !zone->enabled) continue;
             if (zone->ContainsPoint(sourcePos)) {
+                LOG_DEBUG("Checking zone %s: Result=%d", zone->auxBusName.c_str(), zone->ContainsPoint(listenerPos));
                 if (zone->priority > bestPriority) {
                     bestPriority = zone->priority;
                     bestZone = zone;
@@ -518,7 +527,7 @@ void AudioSystem::SetGameObjectAuxSend(AkGameObjectID id, const wchar_t* auxBusN
     sends[0] = send;
 
     // Log before applying
-    if (enableDebugLogs) LOG_DEBUG("SetGameObjectAuxSend: applying aux send -> bus='%s' (id=%u) control=%.2f to GO id=%d", auxName.c_str(), (unsigned int)busId, controlValue, id);
+    /*if (enableDebugLogs)*/ LOG_DEBUG("SetGameObjectAuxSend: applying aux send -> bus='%s' (id=%u) control=%.2f to GO id=%d", auxName.c_str(), (unsigned int)busId, controlValue, id);
 
     // Apply send
     AK::SoundEngine::SetGameObjectAuxSendValues(id, sends, 1);

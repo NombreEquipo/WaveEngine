@@ -80,6 +80,7 @@ public:
 	// Register/unregister AudioComponent
 	inline void RegisterAudioComponent(AudioComponent* component) {
 		if (!component) return;
+		/*gameObjectIDs.push_back(component->goID);*/ //TODO--> POPULATE gameObjectIDs for Roomverb Distance to work!
 		audioComponents.push_back(component);
 	}
 	inline void UnregisterAudioComponent(AudioComponent* component) {
@@ -154,7 +155,7 @@ private:
     std::vector<AudioComponent*> audioComponents;
 
     // Add this member to track the current listener's reverb zone
-    ReverbZone* currentListenerZone = nullptr;
+    ReverbZone* currentListenerZone;
 
 	// Toggle to reduce log noise (default: false)
 	bool enableDebugLogs = false;

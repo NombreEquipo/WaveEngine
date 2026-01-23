@@ -7,6 +7,9 @@
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+
+
+
 ReverbZone::ReverbZone(GameObject* owner)
     : Component(owner, ComponentType::REVERBZONE)
 {
@@ -35,8 +38,15 @@ bool ReverbZone::ContainsPoint(const glm::vec3& worldPoint) const
     glm::vec3 zonePos = glm::vec3(worldMat[3]);
 
     if (shape == Shape::SPHERE) {
-        float d2 = glm::length(worldPoint - zonePos);
-        return d2 <= radius;
+        // matrix scale must be ignored for some reason(?
+        float actualRadius = radius;
+
+        float distance = glm::distance(worldPoint, zonePos);
+
+        // This will now show "Dist: X.XX | Actual Radius: 5.00"
+        //LOG_DEBUG("Dist: %.2f | Actual Radius: %.2f", distance, actualRadius);
+
+        return distance <= actualRadius;
     }
     else { // BOX: transform point into local space of the zone (remove rotation + translation)
         glm::mat4 inv = glm::inverse(worldMat);
@@ -76,9 +86,31 @@ void ReverbZone::OnEditor()
     const char* shapeNames[] = { "Sphere", "Box" };
     int shapeIndex = static_cast<int>(shape);
 
+    const char* presetNames[] = { "Cathedral", "Short Dark Hall", "Long Dark Hall",
+        "Bright Hall", "Small Hall", "Medium Hall", "Bright Chamber", "Dark Chamber",
+        "Concrete Venue 1", "Concrete Venue 2", "Night Club", "Warehouse",
+        "Small Church", "Medium Church", "Large Church" };
+
+    int presetIndex = static_cast<int>(preset);
+
     if (ImGui::Combo("Shape", &shapeIndex, shapeNames, IM_ARRAYSIZE(shapeNames))) {
         shape = static_cast<Shape>(shapeIndex);
     }
+
+    if (ImGui::Combo("Preset", &presetIndex, presetNames, IM_ARRAYSIZE(presetNames))) {
+        preset = static_cast<Preset>(presetIndex);
+    }
+
+    //switch (preset) {
+    //case Preset::CATHEDRAL:
+    //    break;
+    //case Preset:::
+    //    break;
+    //case Preset::CATHEDRAL:
+    //    break;
+    //case Preset::CATHEDRAL:
+    //    break;
+    //}
 
     if (shape == Shape::SPHERE) {
         ImGui::DragFloat("Radius", &radius, 0.1f, 0.0f, 10000.0f);
