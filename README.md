@@ -17,15 +17,18 @@ In latest version, we've developed in more depth the UI and added a Main Menu, w
 
 ## 🎏 Team Members
 
-- **Bernat Loza** — [GitHub: BerniF0x](https://github.com/BerniF0x) 
--Work done, Main Menu, Option Menu, testing
-<img src="https://github.com/bottzo/Motor2025/blob/UI---Ivan%2CBernat%2CMaria/Engine/Assets/ReadmePhotos/Bernat.png" width="100" alt="Bernat">
-- **Iván Álvarez** — [GitHub: Ivalpe](https://github.com/Ivalpe)
--Work done, Vsync, Release, Video, general fixes
-<img src="https://github.com/bottzo/Motor2025/blob/UI---Ivan%2CBernat%2CMaria/Engine/Assets/ReadmePhotos/Ivan.jpg" width="100" alt="Ivan">
-- **Maria Besora** — [GitHub: mariabeo](https://github.com/mariabeo)
--Work done, Main menu fade, Crosshair, extra toggles.
-<img src="https://github.com/bottzo/Motor2025/blob/UI---Ivan%2CBernat%2CMaria/Engine/Assets/ReadmePhotos/Maria.jpg" width="100" alt="Maria">
+- **Bernat Loza** — [GitHub: BerniF0x](https://github.com/BerniF0x)  
+  - Work done: Main Menu, Option Menu, testing  
+  <img src="https://github.com/bottzo/Motor2025/blob/UI---Ivan%2CBernat%2CMaria/Engine/Assets/ReadmePhotos/Bernat.png" width="100" alt="Bernat">
+
+- **Iván Álvarez** — [GitHub: Ivalpe](https://github.com/Ivalpe)  
+  - Work done: Vsync, Release, Video, general fixes  
+  <img src="https://github.com/bottzo/Motor2025/blob/UI---Ivan%2CBernat%2CMaria/Engine/Assets/ReadmePhotos/Ivan.jpg" width="100" alt="Ivan">
+
+- **Maria Besora** — [GitHub: mariabeo](https://github.com/mariabeo)  
+  - Work done: Main menu fade, Crosshair, extra toggles  
+  <img src="https://github.com/bottzo/Motor2025/blob/UI---Ivan%2CBernat%2CMaria/Engine/Assets/ReadmePhotos/Maria.jpg" width="100" alt="Maria">
+
 
 ---
 
