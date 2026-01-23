@@ -221,8 +221,6 @@ void Application::Stop()
     playState = PlayState::EDITING;
     time->Reset();
     time->Pause();
-
-    if (ui) ui->ResetUI();
 }
 
 void Application::Step()
@@ -258,7 +256,6 @@ bool Application::CleanUp()
     input.reset();
     window.reset();
     resources.reset();
-    
 
     delete selectionManager;
     selectionManager = nullptr;

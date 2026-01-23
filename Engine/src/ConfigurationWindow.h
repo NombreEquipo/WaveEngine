@@ -45,5 +45,4 @@ private:
     bool showOctree = false;
     bool showRaycast = false;
     bool showZBuffer = false;
-    bool vsyncActive = true;
 };
