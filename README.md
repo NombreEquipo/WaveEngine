@@ -159,6 +159,11 @@ To expose C++ objects to Lua, the system uses metatables and userdata. Transform
 
 The system includes validations to prevent crashes, verifying that pointers are valid before accessing objects. Lua errors are caught using pcall and reported without stopping engine execution.
 
+### **Script Editor**
+The Script Editor is an integrated window in the engine that allows editing Lua files directly without needing an external editor. It inherits from EditorWindow and uses ImGui to provide essential functionalities like syntax highlighting, line numbering, real-time error detection, and a tab system for working with multiple files simultaneously. It operates in two modes: preview mode (with full syntax highlighting but no direct editing) and edit mode (allows text modification but disables highlighting). Users can toggle between modes with a double-click or Control+H.
+
+The editor includes a complete file management system with draggable tabs, saving via Control+S and a search and replace with Control+F. It allow files to be opened from the Assets window with a double-click, and saved changes automatically trigger the hot reload system to reload scripts in use. The error detection displaying issues in a bottom panel and coloring error lines in red. To optimize performance with large files, it only renders visible lines on screen.
+
 ---
 
 ## 🎁 Prefab System (Extra Feature)
