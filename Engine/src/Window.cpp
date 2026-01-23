@@ -60,6 +60,8 @@ bool Window::Start()
         return false;
     }
 
+    SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+
     LOG_DEBUG("Window created successfully");
     LOG_CONSOLE("Window created: %dx%d with OpenGL", width, height);
 
