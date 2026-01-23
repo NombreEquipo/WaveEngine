@@ -34,7 +34,7 @@ Demo:Saüc.
 | Select | Left Mouse Button | |
 | Multiple select | Shift | Left Mouse Button |
 | Delete object | Backspace | |
-| Create Fireworks | 1 | ONLY WORKS WHILE PLAYING THE SCENE |
+| Create Fireworks | 1 |
 | Gizmo Action | Key 2 ||
 |------------|------------|------------|
 | Move | W | |
