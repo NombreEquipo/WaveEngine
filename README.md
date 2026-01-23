@@ -9,6 +9,8 @@ It integrates several external libraries such as Assimp (for 3D model loading), 
 In version 3.1, we developed a particle system for the engine, in it you can change the textura, colors, speed, direction and some more parameters, we also added that when you press the 1 key, a firework goes up to the sky.
 </p>
 
+[![Video Showcase](https://img.youtube.com/vi/XgEV2wdqKlk/maxresdefault.jpg)](https://www.youtube.com/watch?v=XgEV2wdqKlk) 
+
 ## 🧙‍♂️ Team Members
 
 - **Asier Ulloa** — [GitHub: AsiGamer29](https://github.com/AsiGamer29)  
@@ -41,6 +43,13 @@ Demo:Saüc.
 | Toggle Coordinate System | T | |
 
 ---
+## ✨ New Core Features
+- A particle system with a lot of features that you can customize.
+- Default particles to add directly to the scene.
+- Fireworks that you can create when you press 1 while playing the current scene.
+
+
+
 
 ## 🐠 User Interface
 
@@ -187,16 +196,6 @@ Includes the following menu options:
 ### **Custom File Formats**
 - Proprietary formats for models, textures and scenes
 - Metadata files storing import settings and dependencies
-
-## ✨ New Core Features
-- A particle system with a lot of features that you can customize.
-- Default particles to add directly to the scene.
-- Fireworks that you can create when you press 1 while playing the current scene.
-
-Insertar videos aquí
-<video src="path/to/video.mp4" width="320" height="240" controls></video>
-
-link al repo aquí
 
 <p align="center">
 <sub>© 2025 Wave Engine — Developed by Haosheng Li & Ana Alcaraz, Particle system by Asier Ulloa, Aniol López & Saüc pellejero — MIT License</sub>
