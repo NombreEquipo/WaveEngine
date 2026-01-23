@@ -45,12 +45,20 @@ Demo:Saüc.
 ---
 ## ✨ New Core Features
 - A particle system with a lot of features that you can customize.
+
 - Default particles to add directly to the scene.
+
+<p align="center">
+  <img src="particle.gif" alt="Fire particle showcase" width="500">
+</p> 
+
 - Fireworks that you can create when you press 1 while playing the current scene.
 
+<p align="center">
+  <img src="fireworks.gif" alt="Fire particle showcase" width="500">
+</p> 
 
-
-
+---
 ## 🐠 User Interface
 
 ### **Console**
