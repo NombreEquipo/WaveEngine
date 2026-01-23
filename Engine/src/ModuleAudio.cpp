@@ -19,6 +19,37 @@
 #include <vector>
 #include <unordered_set>
 #include <chrono>
+#include <string>
+
+static std::filesystem::path GetBankDirPath()
+{
+  
+    if (const char* env = std::getenv("MOTOR2025_WWISE_BANKS"))
+    {
+        std::filesystem::path p(env);
+        if (std::filesystem::exists(p)) return p;
+    }
+
+   
+    const char* base = SDL_GetBasePath(); 
+    if (base && base[0])
+    {
+        std::filesystem::path exeDir(base);
+
+        
+        std::filesystem::path candidate =
+            exeDir / ".." / ".." / ".." / ".." / "Audio" / "WwiseProject" / "MusicEngine" / "GeneratedSoundBanks" / "Windows";
+
+        candidate = candidate.lexically_normal();
+        if (std::filesystem::exists(candidate)) return candidate;
+    }
+
+    
+    std::filesystem::path fallback =
+        std::filesystem::path("..") / ".." / "Audio" / "WwiseProject" / "MusicEngine" / "GeneratedSoundBanks" / "Windows";
+    fallback = fallback.lexically_normal();
+    return fallback;
+}
 
 #define AUDIO_DEMO_30_PERCENT 0
 
@@ -422,16 +453,16 @@ bool ModuleAudio::InitWwise()
 
     std::printf("OK: Listener assigned (DefaultListenerGO)\n");
 
-    const std::filesystem::path bankDir =
-        R"(C:\Users\Arnau\OneDrive\Documentos\GitHub\Motor2025\Audio\WwiseProject\MusicEngine\GeneratedSoundBanks\Windows)";
+    const std::filesystem::path bankDir = GetBankDirPath();
 
     if (!std::filesystem::exists(bankDir))
     {
-        std::printf("ERROR: Bank directory does not exist\n");
+        std::printf("ERROR: Bank directory does not exist: %ls\n", bankDir.wstring().c_str());
         TerminateWwise();
         return false;
     }
-    std::printf("OK: Bank directory exists\n");
+    std::printf("OK: Bank directory exists: %ls\n", bankDir.wstring().c_str());
+
 
     if (!LoadBankFromMemory(bankDir / "Init.bnk", initBankId, initBankData))
     {
