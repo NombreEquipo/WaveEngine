@@ -261,13 +261,12 @@ All shader parameters are exposed through the Inspector interface:
 
 ## 🎬 Demo
 
-### Editor Functionality
-![Editor Demo](./docs/editor_demo.gif)
-> Real-time shader editing, material assignment, and parameter adjustment
+**Game Demo (1:20)**
+[Watch Video](docs/game_demo.mp4)
 
-### In-Game Rendering
-![Game Demo](./docs/game_demo.gif)
-> City scene with Blinn-Phong lighting, animated water, and transparent objects
+**Editor & Features**
+[Watch Editor Demo](docs/editor_demo.mp4)
+[Watch Extra Demo](docs/extra_demo.mp4)
 
 ---
 
