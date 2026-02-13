@@ -169,7 +169,7 @@ target_link_libraries(Engine PRIVATE Tracy::TracyClient)
 
 
 set(WWISE_SDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/External/Wwise/SDK")
-set(WWISE_SAMPLE_DIR "${WWISE_SDK_DIR}/samples/SoundEngine")
+#set(WWISE_SAMPLE_DIR "${WWISE_SDK_DIR}/samples/SoundEngine")
 set(WWISE_CONFIG_DIR $<$<CONFIG:Debug>:Debug>$<$<CONFIG:Release>:Release>$<$<CONFIG:Profile>:Profile>)
 set(WWISE_LIB_DIR "${WWISE_SDK_DIR}/x64_vc170/${WWISE_CONFIG_DIR}/lib")
 
@@ -182,17 +182,17 @@ target_compile_definitions(Engine PRIVATE
 
 target_include_directories(Engine PRIVATE BEFORE
     "${WWISE_SDK_DIR}/include"
-    "${WWISE_SAMPLE_DIR}"
-    "${WWISE_SAMPLE_DIR}/Common"
-    "${WWISE_SAMPLE_DIR}/Win32"
+    "${WWISE_SDK_DIR}"
+    "${WWISE_SDK_DIR}/include/Common"
+    "${WWISE_SDK_DIR}/include/Win32"
 )
 
 set(WWISE_IO_SOURCES
-    "${WWISE_SAMPLE_DIR}/Common/AkFileLocationBase.cpp"
-    "${WWISE_SAMPLE_DIR}/Common/AkFilePackage.cpp"
-    "${WWISE_SAMPLE_DIR}/Common/AkFilePackageLUT.cpp"
-    "${WWISE_SAMPLE_DIR}/Common/AkMultipleFileLocation.cpp"
-    "${WWISE_SAMPLE_DIR}/Win32/AkDefaultIOHookDeferred.cpp"
+    "${WWISE_SDK_DIR}/include/Common/AkFileLocationBase.cpp"
+    "${WWISE_SDK_DIR}/include/Common/AkFilePackage.cpp"
+    "${WWISE_SDK_DIR}/include/Common/AkFilePackageLUT.cpp"
+    "${WWISE_SDK_DIR}/include/Common/AkMultipleFileLocation.cpp"
+    "${WWISE_SDK_DIR}/include/Win32/AkDefaultIOHookDeferred.cpp"
 )
 
 set_source_files_properties(${WWISE_IO_SOURCES} PROPERTIES 
@@ -201,13 +201,12 @@ set_source_files_properties(${WWISE_IO_SOURCES} PROPERTIES
 
 target_sources(Engine PRIVATE ${WWISE_IO_SOURCES})
 
-
 target_link_libraries(Engine PRIVATE 
     "${WWISE_LIB_DIR}/AkSoundEngine.lib"
     "${WWISE_LIB_DIR}/AkMemoryMgr.lib"
     "${WWISE_LIB_DIR}/AkStreamMgr.lib"
     "${WWISE_LIB_DIR}/AkSpatialAudio.lib"
-    $<$<CONFIG:Debug,Profile>:"${WWISE_LIB_DIR}/CommunicationCentral.lib">
+    "${WWISE_SDK_DIR}/x64_vc170/${WWISE_CONFIG_DIR}/lib/CommunicationCentral.lib"
     "${WWISE_LIB_DIR}/AkRoomVerbFX.lib"
     ws2_32.lib 
     mswsock.lib 
@@ -215,7 +214,6 @@ target_link_libraries(Engine PRIVATE
     dsound.lib 
     dxguid.lib
 )
-
 
 
 

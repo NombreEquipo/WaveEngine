@@ -48,6 +48,10 @@ public:
 
     void SetSwitch(AudioSource* source, AkSwitchGroupID switchGroup, AkSwitchStateID switchState);
 
+    void SetMusicVolume(float volume);
+
+    void SetSFXVolume(float volume);
+
     //for switching bg music
     void SwitchBGM();
     float musicTimer = 0.0f;

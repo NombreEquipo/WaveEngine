@@ -102,7 +102,9 @@ void AudioSource::OnEditor() {
         ImGui::EndCombo();
     }
 
-    ImGui::SliderFloat("Volume", &volume, 0.0f, 100.0f);
+    //if (ImGui::SliderFloat("Volume", &volume, 0.0f, 100.0f)){
+    //    Application::GetInstance().audio.get()->audioSystem->SetMusicVolume(volume);
+    //}
     ImGui::Checkbox("Play On Awake", &playOnAwake);
 
     ImGui::Spacing();

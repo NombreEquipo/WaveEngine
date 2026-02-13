@@ -23,7 +23,7 @@
 #include <AK/SoundEngine/Common/AkStreamMgrModule.h> 
 #include <AK/Tools/Common/AkPlatformFuncs.h>
 #include <AK/SoundEngine/Common/AkTypes.h>
-#include "AkGeneratedSoundBanksResolver.h"
+#include <Common/AkGeneratedSoundBanksResolver.h>
 #include <AK/Plugin/AkRoomVerbFXFactory.h>
 #include <windows.h>
 
