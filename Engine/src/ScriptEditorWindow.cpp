@@ -21,6 +21,12 @@ ScriptEditorWindow::ScriptEditorWindow()
     colorError = ImVec4(1.0f, 0.3f, 0.3f, 1.0f);
     colorLineNumber = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
     colorBackground = ImVec4(0.15f, 0.15f, 0.15f, 1.0f);
+
+    auto lang = TextEditor::LanguageDefinition::Lua();
+    editor.SetLanguageDefinition(lang);
+    editor.SetPalette(TextEditor::GetDarkPalette());
+    editor.SetShowWhitespaces(false); // Removes whitespace indicators
+    editor.SetReadOnly(false);
 }
 
 ScriptEditorWindow::~ScriptEditorWindow()
@@ -124,6 +130,7 @@ void ScriptEditorWindow::Draw()
             DrawTextEditor();
 
             ScriptTab* tab = GetActiveTab();
+            
             if (tab && !tab->syntaxErrors.empty())
             {
                 DrawErrorPanel();
@@ -282,7 +289,10 @@ void ScriptEditorWindow::DrawTabs()
                 if (activeTabIndex != i)
                 {
                     activeTabIndex = i;
-                    ParseTextIntoLinesForTab(tab);
+                    //ParseTextIntoLinesForTab(tab);
+
+                    //Update text to edit
+                    editor.SetText(tab.originalContent);
                 }
                 ImGui::EndTabItem();
             }
@@ -471,11 +481,44 @@ void ScriptEditorWindow::DrawTextEditor()
         DrawColoredReadOnlyView(editorSize, lineNumberWidth);
     }
     else
-    {
-        DrawEditableView(editorSize, lineNumberWidth);
+    {   //Old text editor
+        //DrawEditableView(editorSize, lineNumberWidth);
+        //Show posible errors
+        if (showErrorPopup) {
+            ImGui::BeginChild("ErrorConsole", ImVec2(0, 60), true);
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
+
+            ImGui::BulletText("LUA ERROR:");
+            ImGui::SameLine();
+            if (ImGui::SmallButton("Clear")) {
+                showErrorPopup = false;
+                editor.SetErrorMarkers(TextEditor::ErrorMarkers());
+            }
+
+            ImGui::TextWrapped("%s", errorMessage.c_str());
+
+            ImGui::PopStyleColor();
+            ImGui::EndChild();
+            ImGui::Separator();
+        }
+        //New text editor
+        editor.Render("TextEditorInstance");
     }
 }
-
+int ScriptEditorWindow::ExtractLineFromError(const std::string& error) {
+    size_t firstColon = error.find(':');
+    if (firstColon != std::string::npos) {
+        size_t secondColon = error.find(':', firstColon + 1);
+        if (secondColon != std::string::npos) {
+            std::string lineStr = error.substr(firstColon + 1, secondColon - firstColon - 1);
+            try {
+                return std::stoi(lineStr);
+            }
+            catch (...) { return -1; }
+        }
+    }
+    return -1;
+}
 void ScriptEditorWindow::DrawColoredReadOnlyView(ImVec2 editorSize, float lineNumberWidth)
 {
     ScriptTab* tab = GetActiveTab();
@@ -957,6 +1000,8 @@ void ScriptEditorWindow::OpenScript(const std::string& scriptPath)
         {
             CheckSyntaxErrorsForTab(tab);
         }
+        editor.SetText(tab.originalContent);
+
     }
 }
 
@@ -989,7 +1034,6 @@ bool ScriptEditorWindow::LoadScriptIntoTab(ScriptTab& tab, const std::string& pa
     tab.textBuffer = new char[bufferSize];
     memset(tab.textBuffer, 0, bufferSize);
     strncpy_s(tab.textBuffer, bufferSize, content.c_str(), _TRUNCATE);
-
     return true;
 }
 
@@ -1003,6 +1047,48 @@ bool ScriptEditorWindow::SaveTab(int tabIndex)
     if (tabIndex < 0 || tabIndex >= static_cast<int>(openTabs.size()))
         return false;
 
+    std::string textToSave = editor.GetText();
+    lua_State* tempL = luaL_newstate();
+
+    //Check if script have errors
+    if (luaL_loadstring(tempL, textToSave.c_str()) != LUA_OK)
+    {
+        const char* err = lua_tostring(tempL, -1);
+        errorMessage = err ? err : "Unknown syntax error";
+        showErrorPopup = true;
+
+        LOG_CONSOLE("[LUA SYNTAX ERROR] %s", errorMessage.c_str());
+
+        int reportLine = ExtractLineFromError(errorMessage);
+        if (reportLine != -1) {
+            TextEditor::ErrorMarkers markers;
+
+            auto allLines = editor.GetTextLines();
+            int realErrorLine = reportLine;
+            int check = reportLine - 2;
+            while (check >= 0) {
+                std::string content = allLines[check];
+                content.erase(std::remove_if(content.begin(), content.end(), isspace), content.end());
+
+                if (!content.empty()) {
+                    realErrorLine = check + 1;
+                    break;
+                }
+                check--;
+            }
+
+            markers.insert(std::make_pair(realErrorLine, errorMessage));
+            editor.SetErrorMarkers(markers);
+        }
+
+        lua_close(tempL);
+    }
+    else {
+        showErrorPopup = false;
+        errorMessage.clear();
+        editor.SetErrorMarkers(TextEditor::ErrorMarkers()); // Clear previous markers
+    }
+
     ScriptTab& tab = openTabs[tabIndex];
 
     if (tab.filePath.empty() || !tab.textBuffer)
@@ -1011,10 +1097,11 @@ bool ScriptEditorWindow::SaveTab(int tabIndex)
     std::ofstream file(tab.filePath, std::ios::binary);
     if (!file.is_open()) return false;
 
-    file << tab.textBuffer;
+    // Change tab for editor
+    file << editor.GetText();
     file.close();
 
-    tab.originalContent = tab.textBuffer;
+    tab.originalContent = editor.GetText();
     tab.hasUnsavedChanges = false;
 
     LOG_CONSOLE("[ScriptEditor] Saved: %s", tab.filePath.c_str());

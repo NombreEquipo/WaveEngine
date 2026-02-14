@@ -6,6 +6,8 @@
 #include <vector>
 #include <unordered_set>
 
+#include "TextEditor.h" 
+
 extern "C" {
 #include <lua.h>
 #include <lualib.h>
@@ -133,6 +135,11 @@ private:
     bool LoadScriptIntoTab(ScriptTab& tab, const std::string& path);
     void MarkCurrentTabAsModified();
 
+    //Script text error
+    int ExtractLineFromError(const std::string& error);
+    bool showErrorPopup = false;
+    std::string errorMessage;
+
     // Syntax highlighting
     void InitializeLuaKeywords();
     ImVec4 GetColorForToken(TokenType type);
@@ -157,6 +164,8 @@ private:
 	size_t bufferSize = 1024 * 1024;  // 1MB for buffer
 
     // Editor settings
+    TextEditor editor;
+
     bool showLineNumbers = true;
     float fontSize = 16.0f;
     bool enableSyntaxHighlighting = true;

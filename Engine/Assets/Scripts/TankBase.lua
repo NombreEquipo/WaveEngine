@@ -6,7 +6,7 @@ public = {
     rotationSpeed = 90.0
 }
 
-function Start(self)
+function Start(self) 
     Engine.Log("=== Tank Base Rotation Controller Started ===")
     Engine.Log("Controls:")
     Engine.Log("  A/D = Rotate Left/Right")
@@ -17,9 +17,10 @@ function Update(self, dt)
     
     if rot == nil then
         Engine.Log("ERROR: Rotation is nil")
+
         return
     end
-    
+ 
     -- Obtener velocidad de rotación
     local rotationSpeed = self.public and self.public.rotationSpeed or 90.0
     
@@ -32,3 +33,9 @@ function Update(self, dt)
         self.transform:SetRotation(rot.x, rot.y + rotationSpeed * dt, rot.z)
     end
 end
+
+
+
+
+
+

@@ -88,6 +88,8 @@ bool Input::PreUpdate()
 		if (mouseButtons[i] == KEY_UP)
 			mouseButtons[i] = KEY_IDLE;
 	}
+	//For script text editor
+	SDL_StartTextInput(Application::GetInstance().window->GetWindow());
 
 	while (SDL_PollEvent(&event))
 	{
