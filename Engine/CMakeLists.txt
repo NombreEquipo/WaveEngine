@@ -144,6 +144,8 @@ set(SCRIPTING_SRC
     src/PrefabManager.cpp
     src/ResourcePrefab.h
     src/ResourcePrefab.cpp
+    src/TextEditor.h
+    src/TextEditor.cpp
 )
 
 source_group("Source\\Core" FILES ${CORE_SRC})
