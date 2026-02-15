@@ -203,5 +203,5 @@ struct EmitterInstance {
     void Burst(int count); // Explosion
 
     // Helper for gradients
-    glm::vec4 EvaluateGradient(float t, const std::vector<ColorKey>& gradient);
+    glm::vec4 EvaluateGradient(float t, std::vector<ColorKey>& gradient);
 };

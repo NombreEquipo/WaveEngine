@@ -246,16 +246,32 @@ void ComponentParticleSystem::OnEditor() {
                     key.time = 0.5f;
                     key.color = glm::vec4(1.0f);
                     spawner->colorGradient.push_back(key);
+
+                    std::sort(spawner->colorGradient.begin(), spawner->colorGradient.end(),
+                        [](const ColorKey& a, const ColorKey& b) { return a.time < b.time; });
                 }
+
+                bool gradientChanged = false;
 
                 for (int i = 0; i < spawner->colorGradient.size(); i++) {
                     ImGui::PushID(i + 100);
-                    ImGui::SliderFloat("Time", &spawner->colorGradient[i].time, 0.0f, 1.0f);
-                    ImGui::ColorEdit4("Key Color", &spawner->colorGradient[i].color.r);
-                    if (ImGui::Button("Remove Key")) {
+
+                    if (ImGui::SliderFloat("Time", &spawner->colorGradient[i].time, 0.0f, 1.0f)) {
+                        gradientChanged = true;
+                    }
+                    ImGui::ColorEdit4("Color", &spawner->colorGradient[i].color.r);
+
+                    if (ImGui::Button("Remove")) {
                         spawner->colorGradient.erase(spawner->colorGradient.begin() + i);
+                        ImGui::PopID();
+                        continue;
                     }
                     ImGui::PopID();
+                }
+
+                if (gradientChanged) {
+                    std::sort(spawner->colorGradient.begin(), spawner->colorGradient.end(),
+                        [](const ColorKey& a, const ColorKey& b) { return a.time < b.time; });
                 }
                 ImGui::TreePop();
             }

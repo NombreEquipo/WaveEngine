@@ -28,7 +28,7 @@ void ModuleEmitterSpawn::ResetDefaults() {
     // Interpolation
     sizeStart = 0.5f; sizeEnd = 0.0f;
     colorStart = glm::vec4(1.0f);
-    colorEnd = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
+    colorEnd = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
     colorGradient.clear();
 
     rotationSpeedMin = 0.0f; rotationSpeedMax = 0.0f;
@@ -226,7 +226,7 @@ void EmitterInstance::ResetValues() {
 }
 
 // Gradient Interpolation
-glm::vec4 EmitterInstance::EvaluateGradient(float t, const std::vector<ColorKey>& gradient) {
+glm::vec4 EmitterInstance::EvaluateGradient(float t, std::vector<ColorKey>& gradient) {
     if (gradient.empty()) return glm::vec4(1.0f);
     if (gradient.size() == 1) return gradient[0].color;
 
@@ -234,9 +234,17 @@ glm::vec4 EmitterInstance::EvaluateGradient(float t, const std::vector<ColorKey>
     t = glm::clamp(t, 0.0f, 1.0f);
 
     // Find which two keys we are between
+    // case 1 before the first key
+    if (t <= gradient.front().time) return gradient.front().color;
+
+    // Case 2 after the last key
+    if (t >= gradient.back().time) return gradient.back().color;
+
+    // Case 3 inmediate interpolation
     for (size_t i = 0; i < gradient.size() - 1; ++i) {
         if (t >= gradient[i].time && t <= gradient[i + 1].time) {
             float range = gradient[i + 1].time - gradient[i].time;
+            if (range <= 0.0001f) return gradient[i].color; // Avoid divisin by 0
             float localT = (t - gradient[i].time) / range;
             return glm::mix(gradient[i].color, gradient[i + 1].color, localT);
         }
@@ -253,6 +261,9 @@ void EmitterInstance::Update(float dt) {
         // Avoid calculation if we haven't moved or if it's the first frame
         if (dist > 0.001f && dist < 100.0f) { // Upper limit to avoid teleport artifacts
             int count = (int)(dist * emissionRateDistance);
+
+            // Limit the max particles by movement physics to avoid crash or saturing
+            if (count > 200) count = 200;
 
             // Interpolate positions to fill the gap
             glm::vec3 startPos = lastPosition;
@@ -274,13 +285,20 @@ void EmitterInstance::Update(float dt) {
     }
     lastPosition = ownerPosition;
 
+    float prevSystemTime = systemTime - dt; // Time before this frame
+
     for (auto& burst : bursts) {
         if (burst.cycles > 0 && burst.currentCycles >= burst.cycles) continue;
 
         float triggerTime = burst.time + (burst.repeatInterval * burst.currentCycles);
 
         // Small window to detect the correct frame
-        if (systemTime >= triggerTime && systemTime - dt < triggerTime) {
+        if (prevSystemTime <= triggerTime && systemTime > triggerTime) {
+            Burst(burst.count);
+            burst.currentCycles++;
+        }
+        // if the trigger is 0.0 and is the first real frame
+        else if (triggerTime == 0.0f && prevSystemTime <= 0.0f && systemTime > 0.0f) {
             Burst(burst.count);
             burst.currentCycles++;
         }
