@@ -19,7 +19,9 @@
 #include "TextureImporter.h"
 #include "ResourceMesh.h"     
 #include "ResourceTexture.h"   
+#ifndef WAVE_GAME
 #include "AssetsWindow.h"
+#endif
 
 FileSystem::FileSystem() : Module() {}
 FileSystem::~FileSystem() {}
@@ -130,11 +132,12 @@ bool FileSystem::Update()
 {
     if (Application::GetInstance().input->HasDroppedFile())
     {
+        bool assetsWindowWillHandle = false;
+
+#ifndef WAVE_GAME
         // Check if Assets Window is open and hovered
         ModuleEditor* editor = Application::GetInstance().editor.get();
         AssetsWindow* assetsWindow = editor ? editor->GetAssetsWindow() : nullptr;
-
-        bool assetsWindowWillHandle = false;
 
         if (assetsWindow && assetsWindow->IsOpen())
         {
@@ -145,6 +148,7 @@ bool FileSystem::Update()
                 LOG_CONSOLE("[FileSystem] Assets Window will handle the dropped file");
             }
         }
+#endif
 
         // Only process here if Assets Window won't handle it
         if (!assetsWindowWillHandle)

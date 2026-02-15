@@ -45,8 +45,13 @@ bool Window::Start()
     LOG_CONSOLE("SDL3 initialized - Version: %d.%d.%d", major, minor, patch);
 
     // Create window WITH OpenGL flag
+#ifdef WAVE_GAME
+    const char* windowTitle = "Wave Game";
+#else
+    const char* windowTitle = "Wave Engine";
+#endif
     window = SDL_CreateWindow(
-        "Wave Engine",
+        windowTitle,
         width,
         height,
         SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE

@@ -13,7 +13,9 @@ Application::Application() : isRunning(true), playState(PlayState::EDITING)
     renderer = std::make_shared<Renderer>();
     scene = std::make_shared<ModuleScene>();
     camera = std::make_shared<ModuleCamera>();
+#ifndef WAVE_GAME
     editor = std::make_shared<ModuleEditor>();
+#endif
     filesystem = std::make_shared<FileSystem>();
     time = std::make_shared<Time>();
     grid = std::make_shared<Grid>();
@@ -24,7 +26,9 @@ Application::Application() : isRunning(true), playState(PlayState::EDITING)
     AddModule(std::static_pointer_cast<Module>(renderContext));
     AddModule(std::static_pointer_cast<Module>(scene));
     AddModule(std::static_pointer_cast<Module>(camera));
+#ifndef WAVE_GAME
     AddModule(std::static_pointer_cast<Module>(editor));
+#endif
     AddModule(std::static_pointer_cast<Module>(resources));
     AddModule(std::static_pointer_cast<Module>(filesystem));
     AddModule(std::static_pointer_cast<Module>(time));
@@ -89,6 +93,25 @@ bool Application::Start()
         LOG_CONSOLE("Engine ready - All systems initialized");
     }
 
+#ifdef WAVE_GAME
+    // Load scene and start in play mode
+    if (result)
+    {
+        std::string scenePath = "../Scene/game_scene.json";
+        if (scene->LoadScene(scenePath))
+        {
+            LOG_CONSOLE("[Game] Loaded scene: %s", scenePath.c_str());
+        }
+        else
+        {
+            LOG_CONSOLE("[Game] WARNING: Could not load scene: %s", scenePath.c_str());
+        }
+        playState = PlayState::PLAYING;
+        time->Resume();
+        LOG_CONSOLE("[Game] Play state: PLAYING");
+    }
+#endif
+
     return true;
 }
 
@@ -141,10 +164,12 @@ bool Application::DoUpdate()
     //Iterates the module list and calls Update on each module
     bool result = true;
     for (const auto& module : moduleList) {
+#ifndef WAVE_GAME
         // Skip scene updates when in editing mode
         if (playState == PlayState::EDITING && module == scene) {
             continue;
         }
+#endif
 
         result = module.get()->Update();
         if (!result) {
@@ -232,7 +257,9 @@ bool Application::CleanUp()
     }
     moduleList.clear();
 
+#ifndef WAVE_GAME
     editor.reset();
+#endif
     camera.reset();
     scene.reset();
     renderer.reset();

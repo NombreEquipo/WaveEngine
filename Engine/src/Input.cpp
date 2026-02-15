@@ -2,9 +2,11 @@
 #include "Window.h"
 #include "Application.h"
 #include <iostream>
+#ifndef WAVE_GAME
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include <ImGuizmo.h>
+#endif
 #include "GameObject.h"
 #include "Transform.h"
 #include "ComponentMesh.h"
@@ -42,6 +44,7 @@ bool Input::Start()
 	return true;
 }
 
+#ifndef WAVE_GAME
 bool IsMouseOverSceneWindow()
 {
 	ModuleEditor* editor = Application::GetInstance().editor.get();
@@ -49,6 +52,7 @@ bool IsMouseOverSceneWindow()
 
 	return editor->IsMouseOverScene();
 }
+#endif
 
 bool Input::PreUpdate()
 {
@@ -85,7 +89,9 @@ bool Input::PreUpdate()
 
 	while (SDL_PollEvent(&event))
 	{
+#ifndef WAVE_GAME
 		ImGui_ImplSDL3_ProcessEvent(&event);
+#endif
 
 		switch (event.type)
 		{
@@ -107,6 +113,7 @@ bool Input::PreUpdate()
 		{
 			mouseButtons[event.button.button - 1] = KEY_DOWN;
 
+#ifndef WAVE_GAME
 			ComponentCamera* camera = Application::GetInstance().camera->GetEditorCamera();
 			if (!camera) break;
 
@@ -198,6 +205,7 @@ bool Input::PreUpdate()
 			{
 				camera->ResetPanInput();
 			}
+#endif
 			break;
 		}
 		case SDL_EVENT_MOUSE_BUTTON_UP:
@@ -212,6 +220,7 @@ bool Input::PreUpdate()
 			mouseX = static_cast<int>(event.motion.x / scale);
 			mouseY = static_cast<int>(event.motion.y / scale);
 
+#ifndef WAVE_GAME
 			float mouseXf = static_cast<float>(event.motion.x) / static_cast<float>(scale);
 			float mouseYf = static_cast<float>(event.motion.y) / static_cast<float>(scale);
 
@@ -242,6 +251,7 @@ bool Input::PreUpdate()
 					camera->HandleMouseInput(mouseXf, mouseYf);
 				}
 			}
+#endif
 			break;
 		}
 
@@ -268,6 +278,7 @@ bool Input::PreUpdate()
 
 		case SDL_EVENT_MOUSE_WHEEL:
 		{
+#ifndef WAVE_GAME
 			float mouseXf, mouseYf;
 			SDL_GetMouseState(&mouseXf, &mouseYf);
 			int scale = Application::GetInstance().window.get()->GetScale();
@@ -282,11 +293,13 @@ bool Input::PreUpdate()
 					camera->HandleScrollInput(static_cast<float>(event.wheel.y));
 				}
 			}
+#endif
 			break;
 		}
 		}
 	}
 
+#ifndef WAVE_GAME
 	// Camera movement with WASD
 	ComponentCamera* camera = Application::GetInstance().camera->GetEditorCamera();
 	if (!camera) return true;
@@ -416,6 +429,7 @@ bool Input::PreUpdate()
 			}
 		}
 	}
+#endif
 
 	return true;
 }

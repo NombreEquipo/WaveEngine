@@ -3,7 +3,6 @@
 #include "FileSystem.h"
 #include "GameObject.h"
 #include "Application.h"
-#include "ModuleEditor.h"
 #include "Transform.h"
 #include <float.h>
 #include <functional>

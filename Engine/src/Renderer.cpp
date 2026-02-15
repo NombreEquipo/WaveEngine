@@ -4,7 +4,9 @@
 #include "Transform.h"
 #include "ComponentMesh.h"
 #include "ComponentMaterial.h"
+#ifndef WAVE_GAME
 #include "ModuleEditor.h"
+#endif
 
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
@@ -105,11 +107,13 @@ bool Renderer::Start()
     outlineUniforms.view = glGetUniformLocation(outlineShader->GetProgramID(), "view");
     outlineUniforms.model = glGetUniformLocation(outlineShader->GetProgramID(), "model");
 
+#ifndef WAVE_GAME
 	// Create framebuffer (Scene window)
     CreateFramebuffer(framebufferWidth, framebufferHeight);
 
     // Create framebuffer (Game window)
     CreateGameFramebuffer(gameFramebufferWidth, gameFramebufferHeight);
+#endif
 
     return true;
 }
@@ -210,6 +214,49 @@ bool Renderer::Update()
 
     ZoneScopedN("RendererUpdate");
 
+#ifdef WAVE_GAME
+    // Render directly to screen
+    int windowWidth, windowHeight;
+    Application::GetInstance().window->GetWindowSize(windowWidth, windowHeight);
+    glViewport(0, 0, windowWidth, windowHeight);
+
+    glClearColor(clearColorR, clearColorG, clearColorB, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    ComponentCamera* sceneCamera = Application::GetInstance().camera->GetSceneCamera();
+    if (!sceneCamera)
+    {
+        // No camera = clear color only
+        LOG_DEBUG("[Game] No cameras rendering");
+        return true;
+    }
+
+    defaultShader->Use();
+
+    float aspectRatio = (windowWidth > 0 && windowHeight > 0)
+        ? (float)windowWidth / (float)windowHeight
+        : 1.0f;
+    sceneCamera->SetAspectRatio(aspectRatio);
+
+    GLuint shaderProgram = defaultShader->GetProgramID();
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE,
+        glm::value_ptr(sceneCamera->GetProjectionMatrix()));
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE,
+        glm::value_ptr(sceneCamera->GetViewMatrix()));
+
+    glActiveTexture(GL_TEXTURE0);
+    glUniform1i(defaultUniforms.texture1, 0);
+
+    GameObject* root = Application::GetInstance().scene->GetRoot();
+    if (root && root->GetChildren().size() > 0)
+    {
+        DrawScene(sceneCamera, sceneCamera, false);
+    }
+
+    defaultTexture->Unbind();
+
+#else
+    // Render to editor FBOs
     ModuleEditor* editor = Application::GetInstance().editor.get();
     ImVec2 viewportSize = editor->sceneViewportSize;
 
@@ -341,7 +388,7 @@ bool Renderer::Update()
         float gameAspectRatio = gameViewportSize.x / gameViewportSize.y;
         sceneCamera->SetAspectRatio(gameAspectRatio);
 
-        // Update camera matrices 
+        // Update camera matrices
         GLuint gameShaderProgram = defaultShader->GetProgramID();
         glUniformMatrix4fv(glGetUniformLocation(gameShaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(sceneCamera->GetProjectionMatrix()));
         glUniformMatrix4fv(glGetUniformLocation(gameShaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(sceneCamera->GetViewMatrix()));
@@ -358,6 +405,7 @@ bool Renderer::Update()
 
         UnbindFramebuffer();
     }
+#endif
 
     return true;
 }
@@ -952,6 +1000,7 @@ void Renderer::DrawGameObjectIterative(GameObject* gameObject,
         const std::vector<Component*>& meshComponents =
             currentObj->GetComponentsOfType(ComponentType::MESH);
 
+#ifndef WAVE_GAME
         ModuleEditor* editor = Application::GetInstance().editor.get();
         SelectionManager* selectionMgr = Application::GetInstance().selectionManager;
 
@@ -976,6 +1025,7 @@ void Renderer::DrawGameObjectIterative(GameObject* gameObject,
 
         bool showVertex = editor && editor->ShouldShowVertexNormals();
         bool showFace = editor && editor->ShouldShowFaceNormals();
+#endif
 
         for (Component* comp : meshComponents)
         {
@@ -986,11 +1036,13 @@ void Renderer::DrawGameObjectIterative(GameObject* gameObject,
                 const Mesh& mesh = meshComp->GetMesh();
                 DrawMesh(mesh);
 
+#ifndef WAVE_GAME
                 if (shouldDrawNormals)
                 {
                     if (showVertex) DrawVertexNormals(mesh, modelMatrix);
                     if (showFace) DrawFaceNormals(mesh, modelMatrix);
                 }
+#endif
             }
         }
 

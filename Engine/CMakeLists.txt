@@ -149,3 +149,19 @@ target_link_libraries(Engine PRIVATE imgui::imgui)
 target_link_libraries(Engine PRIVATE imguizmo::imguizmo)
 target_link_libraries(Engine PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(Engine PRIVATE Tracy::TracyClient)
+
+# Game (standalone)
+set(GAME_SRC ${CORE_SRC} ${RENDERING_SRC} ${UTILS_SRC} ${GAMEOBJECTS_SRC} ${COMPONENTS_SRC} ${LOADERS_SRC} ${IMPORTERS_SRC})
+
+add_executable(Game ${GAME_SRC})
+
+target_compile_definitions(Game PRIVATE WAVE_GAME)
+
+target_link_libraries(Game PRIVATE SDL3::SDL3)
+target_link_libraries(Game PRIVATE glad::glad)
+target_link_libraries(Game PRIVATE glm::glm)
+target_link_libraries(Game PRIVATE assimp::assimp)
+target_link_libraries(Game PRIVATE DevIL::IL)
+target_link_libraries(Game PRIVATE DevIL::ILU)
+target_link_libraries(Game PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(Game PRIVATE Tracy::TracyClient)
