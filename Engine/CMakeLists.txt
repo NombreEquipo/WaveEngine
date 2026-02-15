@@ -43,6 +43,11 @@ set(RENDERING_SRC
     src/Frustum.cpp 
 )
 
+set(VFX_SRC
+    src/ParticleSystem.h
+    src/ParticleSystem.cpp
+)
+
 set(UTILS_SRC 
     src/Globals.h 
     src/Log.cpp 
@@ -79,6 +84,8 @@ set(COMPONENTS_SRC
     src/ComponentCamera.h
     src/ComponentRotate.cpp
     src/ComponentRotate.h
+    src/ComponentParticleSystem.h
+    src/ComponentParticleSystem.cpp
 )
 
 set(LOADERS_SRC 
@@ -150,6 +157,7 @@ set(SCRIPTING_SRC
 
 source_group("Source\\Core" FILES ${CORE_SRC})
 source_group("Source\\Rendering" FILES ${RENDERING_SRC})
+source_group("Source\\Rendering\\VFX" FILES ${VFX_SRC})
 source_group("Source\\Utils" FILES ${UTILS_SRC})
 source_group("Source\\Utils\\Editor" FILES ${EDITOR_SRC})
 source_group("Source\\Game Objects" FILES ${GAMEOBJECTS_SRC})
@@ -158,7 +166,7 @@ source_group("Source\\Loaders" FILES ${LOADERS_SRC})
 source_group("Source\\Loaders\\Importers" FILES ${IMPORTERS_SRC})
 source_group("Scripting" FILES ${SCRIPTING_SRC})
 
-set(SRCS ${CORE_SRC} ${RENDERING_SRC} ${UTILS_SRC} ${EDITOR_SRC} ${GAMEOBJECTS_SRC} ${COMPONENTS_SRC} ${LOADERS_SRC} ${IMPORTERS_SRC} ${SCRIPTING_SRC})
+set(SRCS ${CORE_SRC} ${RENDERING_SRC} ${VFX_SRC} ${UTILS_SRC} ${EDITOR_SRC} ${GAMEOBJECTS_SRC} ${COMPONENTS_SRC} ${LOADERS_SRC} ${IMPORTERS_SRC} ${SCRIPTING_SRC})
 
 add_executable(Engine ${SRCS})
 

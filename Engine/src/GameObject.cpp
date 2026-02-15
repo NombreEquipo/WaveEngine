@@ -6,6 +6,7 @@
 #include "ComponentCamera.h"
 #include "ComponentRotate.h"
 #include "ComponentScript.h"
+#include "ComponentParticleSystem.h"
 #include <nlohmann/json.hpp>
 
 GameObject::GameObject(const std::string& name) : name(name), active(true), parent(nullptr) {
@@ -43,6 +44,7 @@ Component* GameObject::CreateComponent(ComponentType type) {
         }
         newComponent = new ComponentMaterial(this);
         break;
+		
     case ComponentType::CAMERA:
         if (GetComponent(ComponentType::CAMERA) != nullptr) {
             return GetComponent(ComponentType::CAMERA);
@@ -53,9 +55,15 @@ Component* GameObject::CreateComponent(ComponentType type) {
     case ComponentType::ROTATE:
         newComponent = new ComponentRotate(this);
         break;
+		
     case ComponentType::SCRIPT:
         newComponent = new ComponentScript(this);
         break;
+		
+    case ComponentType::PARTICLE:
+        newComponent = new ComponentParticleSystem(this);
+        break;
+		
     default:
         LOG_DEBUG("ERROR: Unknown component type requested for GameObject '%s'", name.c_str());
         LOG_CONSOLE("Failed to create component");
