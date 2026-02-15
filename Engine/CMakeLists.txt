@@ -27,11 +27,6 @@ set(CORE_SRC
     src/Window.h
 )
 
-set(PARTICLE_SYSTEM_SRC
-    src/ParticleSystem.h
-    src/ParticleSystem.cpp
-)
-
 set(RENDERING_SRC 
     src/Camera.h 
     src/Camera.cpp
@@ -45,6 +40,11 @@ set(RENDERING_SRC
     src/Shaders.cpp 
     src/Frustum.h 
     src/Frustum.cpp 
+)
+
+set(VFX_SRC
+    src/ParticleSystem.h
+    src/ParticleSystem.cpp
 )
 
 set(UTILS_SRC 
@@ -134,8 +134,8 @@ set(IMPORTERS_SRC
 )
 
 source_group("Source\\Core" FILES ${CORE_SRC})
-source_group("Source\\Core\\Particles" FILES ${PARTICLE_SYSTEM_SRC})
 source_group("Source\\Rendering" FILES ${RENDERING_SRC})
+source_group("Source\\Rendering\\VFX" FILES ${VFX_SRC})
 source_group("Source\\Utils" FILES ${UTILS_SRC})
 source_group("Source\\Utils\\Editor" FILES ${EDITOR_SRC})
 source_group("Source\\Game Objects" FILES ${GAMEOBJECTS_SRC})
@@ -143,7 +143,7 @@ source_group("Source\\Game Objects\\Components" FILES ${COMPONENTS_SRC})
 source_group("Source\\Loaders" FILES ${LOADERS_SRC})
 source_group("Source\\Loaders\\Importers" FILES ${IMPORTERS_SRC})
 
-set(SRCS ${CORE_SRC} ${RENDERING_SRC} ${UTILS_SRC} ${EDITOR_SRC} ${GAMEOBJECTS_SRC} ${COMPONENTS_SRC} ${LOADERS_SRC} ${IMPORTERS_SRC} ${PARTICLE_SYSTEM_SRC})
+set(SRCS ${CORE_SRC} ${RENDERING_SRC} ${UTILS_SRC} ${EDITOR_SRC} ${GAMEOBJECTS_SRC} ${COMPONENTS_SRC} ${LOADERS_SRC} ${IMPORTERS_SRC} ${VFX_SRC})
 
 add_executable(Engine ${SRCS})
 
