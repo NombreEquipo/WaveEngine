@@ -86,38 +86,13 @@ void InspectorWindow::Draw()
     DrawScriptComponent(selectedObject); 
 
  
-    ImGui::Spacing();
-    ImGui::Separator();
-    ImGui::Spacing();
-
-    DrawAddComponentButton(selectedObject);  
-
     DrawParticleComponent(selectedObject);
 
+    ImGui::Spacing();
     ImGui::Separator();
     ImGui::Spacing();
 
-    if (ImGui::Button("Add Component", ImVec2(ImGui::GetContentRegionAvail().x, 0.0f)))
-    {
-        ImGui::OpenPopup("AddComponentPopup");
-    }
-
-    if (ImGui::BeginPopup("AddComponentPopup"))
-    {
-        if (ImGui::MenuItem("Particle System"))
-        {
-            if (selectedObject->GetComponent(ComponentType::PARTICLE) == nullptr)
-            {
-                selectedObject->CreateComponent(ComponentType::PARTICLE);
-            }
-            else
-            {
-                LOG_CONSOLE("GameObject already has a Particle System");
-            }
-        }
-
-        ImGui::EndPopup();
-    }
+    DrawAddComponentButton(selectedObject);
 
     ImGui::End();
 }
@@ -1305,6 +1280,33 @@ void InspectorWindow::DrawAddComponentButton(GameObject* selectedObject)
         {
             ImGui::BeginTooltip();
             ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f), "Already has a Material component");
+            ImGui::EndTooltip();
+        }
+
+        // Particle Component
+        bool hasParticles = (selectedObject->GetComponent(ComponentType::PARTICLE) != nullptr);
+
+        if (hasParticles) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+
+        if (ImGui::Selectable("Particle System", false, hasParticles ? ImGuiSelectableFlags_Disabled : 0))
+        {
+            selectedObject->CreateComponent(ComponentType::PARTICLE);
+            LOG_CONSOLE("[Inspector] Particle System component added to: %s", selectedObject->GetName().c_str());
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (hasParticles) ImGui::PopStyleColor();
+
+        if (ImGui::IsItemHovered() && !hasParticles)
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Add a Particle System");
+            ImGui::EndTooltip();
+        }
+        else if (ImGui::IsItemHovered() && hasParticles)
+        {
+            ImGui::BeginTooltip();
+            ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f), "Already has a Particle System");
             ImGui::EndTooltip();
         }
 
