@@ -156,6 +156,17 @@ bool ModuleScene::Update()
     return true;
 }
 
+bool ModuleScene::FixedUpdate()
+{
+    // Update all GameObjects
+    if (root)
+    {
+        root->FixedUpdate();
+    }
+
+    return true;
+}
+
 bool ModuleScene::PostUpdate()
 {
     // Full rebuild only if explicitly requested

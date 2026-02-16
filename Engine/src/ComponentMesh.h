@@ -19,6 +19,9 @@ public:
     void Serialize(nlohmann::json& componentObj) const override;
     void Deserialize(const nlohmann::json& componentObj) override;
 
+    bool IsType(ComponentType type) override { return type == ComponentType::MESH; };
+    bool IsIncompatible(ComponentType type) override { return type == ComponentType::MESH /*|| type == ComponentType::SkinnedMeshRenderer*/; };
+
     // Load mesh from resource system by UID
     bool LoadMeshByUID(UID uid);
 

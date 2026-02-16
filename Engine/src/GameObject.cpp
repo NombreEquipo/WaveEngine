@@ -6,6 +6,7 @@
 #include "ComponentCamera.h"
 #include "ComponentRotate.h"
 #include "ComponentScript.h"
+#include "Rigidbody.h"
 #include "ComponentParticleSystem.h"
 #include <nlohmann/json.hpp>
 
@@ -14,6 +15,7 @@ GameObject::GameObject(const std::string& name) : name(name), active(true), pare
 }
 
 GameObject::~GameObject() {
+    
     components.clear();
     componentOwners.clear();
 
@@ -24,6 +26,7 @@ GameObject::~GameObject() {
 }
 
 Component* GameObject::CreateComponent(ComponentType type) {
+    
     Component* newComponent = nullptr;
 
     switch (type) {
@@ -32,6 +35,7 @@ Component* GameObject::CreateComponent(ComponentType type) {
             return GetComponent(ComponentType::TRANSFORM);
         }
         newComponent = new Transform(this);
+        if (newComponent) transform = (Transform*)newComponent;
         break;
 
     case ComponentType::MESH:
@@ -63,6 +67,9 @@ Component* GameObject::CreateComponent(ComponentType type) {
     case ComponentType::PARTICLE:
         newComponent = new ComponentParticleSystem(this);
         break;
+    case ComponentType::RIGIDBODY:
+        newComponent = new Rigidbody(this);
+        break;
 		
     default:
         LOG_DEBUG("ERROR: Unknown component type requested for GameObject '%s'", name.c_str());
@@ -80,7 +87,7 @@ Component* GameObject::CreateComponent(ComponentType type) {
 
 Component* GameObject::GetComponent(ComponentType type) const {
     for (auto* comp : components) {
-        if (comp->GetType() == type) {
+        if (comp->IsType(type)) {
             return comp;
         }
     }
@@ -90,11 +97,73 @@ Component* GameObject::GetComponent(ComponentType type) const {
 std::vector<Component*> GameObject::GetComponentsOfType(ComponentType type) const {
     std::vector<Component*> result;
     for (auto* comp : components) {
-        if (comp->GetType() == type) {
+        if (comp->IsType(type)) {
             result.push_back(comp);
         }
     }
     return result;
+}
+
+Component* GameObject::GetComponentInChildren(ComponentType type)
+{
+    Component* component = GetComponent(type);
+
+    if (component) return component;
+
+    for (GameObject* child : children)
+    {
+        if (child)
+        {
+            component = child->GetComponentInChildren(type);
+            if (component) return component;
+        }
+    }
+
+    return nullptr;
+}
+
+void GameObject::GetComponentsInChildren(ComponentType type, std::vector<Component*>& outList)
+{
+    for (Component* component : components)
+    {
+        if (component && component->IsType(type))
+        {
+            outList.push_back(component);
+        }
+    }
+
+    for (GameObject* child : children)
+    {
+        if (child) child->GetComponentsInChildren(type, outList);
+    }
+}
+
+Component* GameObject::GetComponentInParent(ComponentType type)
+{
+    Component* component = GetComponent(type);
+    if (component) return component;
+
+    if (parent != nullptr)
+    {
+        return parent->GetComponentInParent(type);
+    }
+
+    return nullptr;
+}
+
+void GameObject::GetComponentsInParent(ComponentType type, std::vector<Component*>& outList)
+{
+    std::vector<Component*> localComponents = GetComponentsOfType(type);
+
+    if (!localComponents.empty())
+    {
+        outList.insert(outList.end(), localComponents.begin(), localComponents.end());
+    }
+
+    if (parent != nullptr)
+    {
+        parent->GetComponentsInParent(type, outList);
+    }
 }
 
 void GameObject::AddChild(GameObject* child) {
@@ -175,6 +244,38 @@ void GameObject::Update() {
         // Verificar que el hijo todavía es válido y no está marcado para eliminación
         if (child && !child->IsMarkedForDeletion()) {
             child->Update();
+        }
+    }
+}
+
+void GameObject::FixedUpdate() {
+    // Si este GameObject está marcado para eliminación, no actualizar
+    if (markedForDeletion) {
+        return;
+    }
+
+    //if (!active) return;
+
+    for (auto* component : components) {
+        
+        if (component->IsActive()) {
+            component->FixedUpdate();
+        }
+
+        // Si durante el Update del componente se marcó para eliminación, detener
+        if (markedForDeletion) {
+            return;
+        }
+    }
+
+    // Crear copia de children para iterar de forma segura
+    std::vector<GameObject*> childrenCopy = children;
+
+    for (auto* child : childrenCopy) {
+        
+        // Verificar que el hijo todavía es válido y no está marcado para eliminación
+        if (child && !child->IsMarkedForDeletion()) {
+            child->FixedUpdate();
         }
     }
 }
@@ -260,6 +361,17 @@ GameObject* GameObject::Deserialize(const nlohmann::json& gameObjectObj, GameObj
             Deserialize(childObj, newObject);
         }
     }
-
     return newObject;
+}
+
+
+void GameObject::PublishGameObjectEvent(GameObjectEvent event, Component* newComponent)
+{
+    for (Component* component : components)
+    {
+        if (component)
+        {
+            component->OnGameObjectEvent(event, newComponent);
+        }
+    }
 }

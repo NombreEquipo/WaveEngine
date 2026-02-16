@@ -10,6 +10,7 @@
 #include "ComponentRotate.h"
 #include "ResourceTexture.h"
 #include "ComponentParticleSystem.h"
+#include "Rigidbody.h"
 #include "Log.h"
 #include "ComponentScript.h"
 #include <filesystem>
@@ -17,6 +18,7 @@
 InspectorWindow::InspectorWindow()
     : EditorWindow("Inspector")
 {
+
 }
 
 void InspectorWindow::Draw()
@@ -84,9 +86,8 @@ void InspectorWindow::Draw()
     DrawMaterialComponent(selectedObject);
     DrawRotateComponent(selectedObject);
     DrawScriptComponent(selectedObject); 
-
- 
     DrawParticleComponent(selectedObject);
+    DrawRigidodyComponent(selectedObject);
 
     ImGui::Spacing();
     ImGui::Separator();
@@ -813,6 +814,17 @@ void InspectorWindow::DrawParticleComponent(GameObject* selectedObject)
     }
 }
 
+void  InspectorWindow::DrawRigidodyComponent(GameObject* selectedObject)
+{
+    Rigidbody* rigidbody = static_cast<Rigidbody*>(selectedObject->GetComponent(ComponentType::RIGIDBODY));
+
+    if (rigidbody != nullptr)
+    {
+        // Delegate the ui to the component
+        rigidbody->OnEditor();
+    }
+}
+
 bool InspectorWindow::DrawGameObjectSection(GameObject* selectedObject)
 {
     bool objectDeleted = false;
@@ -1307,6 +1319,32 @@ void InspectorWindow::DrawAddComponentButton(GameObject* selectedObject)
         {
             ImGui::BeginTooltip();
             ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f), "Already has a Particle System");
+            ImGui::EndTooltip();
+        }
+
+        bool hasRigidbody = (selectedObject->GetComponent(ComponentType::PARTICLE) != nullptr);
+        
+        if (hasRigidbody) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+
+        if (ImGui::Selectable("Rigidbody", false, hasParticles ? ImGuiSelectableFlags_Disabled : 0))
+        {
+            selectedObject->CreateComponent(ComponentType::RIGIDBODY);
+            LOG_CONSOLE("[Inspector] Rigidbody component added to: %s", selectedObject->GetName().c_str());
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (hasRigidbody) ImGui::PopStyleColor();
+
+        if (ImGui::IsItemHovered() && !hasRigidbody)
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Add a Rigidbody");
+            ImGui::EndTooltip();
+        }
+        else if (ImGui::IsItemHovered() && hasRigidbody)
+        {
+            ImGui::BeginTooltip();
+            ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f), "Already has a Rigidbody");
             ImGui::EndTooltip();
         }
 

@@ -4,6 +4,8 @@
 
 class GameObject;
 
+enum class GameObjectEvent;
+
 enum class ComponentType {
     TRANSFORM,
     MESH,
@@ -12,6 +14,9 @@ enum class ComponentType {
     ROTATE,
     SCRIPT,
     PARTICLE,
+    RIGIDBODY,
+    COLLIDER,
+    JOINT,
     UNKNOWN
 };
 
@@ -23,6 +28,7 @@ public:
 
     virtual void Enable() {};
     virtual void Update() {};
+    virtual void FixedUpdate() {};
     virtual void Disable() {};
     virtual void OnEditor() {};
 
@@ -31,8 +37,13 @@ public:
     virtual void Deserialize(const nlohmann::json& componentObj) {};
 
     ComponentType GetType() const { return type; }
+    virtual bool IsType(ComponentType type) = 0;
+    virtual bool IsIncompatible(ComponentType type) = 0;
+
     bool IsActive() const { return active; }
     void SetActive(bool active) { this->active = active; }
+
+    virtual void OnGameObjectEvent(GameObjectEvent event, Component* component) {};
 
 public:
     GameObject* owner;

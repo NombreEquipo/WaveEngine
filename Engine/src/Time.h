@@ -16,6 +16,8 @@ public:
 	float GetTotalTime() const { return totalTime; }
 	float GetGameTime() const { return gameTime; }
 	float GetTimeScale() const { return timeScale; }
+	float GetFixedAlpha() const { return fixedAlpha; }
+	const float GetFixedDeltaTime() const { return fixedDeltaTime; }
 
 	void Pause() { isPaused = true; }
 	void Resume() { isPaused = false; }
@@ -32,6 +34,7 @@ public:
 private:
 	float deltaTime;
 	float gameDeltaTime;
+	float fixedDeltaTime;
 	float totalTime;
 	float gameTime;
 	float lastFrame;
@@ -39,6 +42,8 @@ private:
 	float timeScale;
 	bool shouldStepFrame;
 
+	float fixedAlpha;
+	float accumulator;
 	static Time* instance;
 	friend class Application;
 };

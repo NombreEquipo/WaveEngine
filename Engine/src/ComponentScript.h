@@ -48,6 +48,9 @@ public:
     ComponentScript(GameObject* owner);
     ~ComponentScript() override;
 
+    bool IsType(ComponentType type) override { return type == ComponentType::SCRIPT; };
+    bool IsIncompatible(ComponentType type) override { return false; };
+
     void Enable() override;
     void Update() override;
     void Disable() override;

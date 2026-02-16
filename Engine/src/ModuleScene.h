@@ -19,6 +19,7 @@ public:
     bool Awake() override;
     bool Start() override;
     bool Update() override;
+    bool FixedUpdate() override;
     bool PostUpdate() override;
     bool CleanUp() override;
 

@@ -14,6 +14,9 @@ public:
     void Update() override;
     void Draw(ComponentCamera* camera);
 
+    bool IsType(ComponentType type) override { return type == ComponentType::PARTICLE; };
+    bool IsIncompatible(ComponentType type) override { return false; };
+
     // Inspector UI for the module
     void OnEditor() override;
 

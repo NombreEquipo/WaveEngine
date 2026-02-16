@@ -16,6 +16,7 @@ find_package(imguizmo CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(Tracy CONFIG REQUIRED)
 find_package(Lua REQUIRED)
+find_package(unofficial-omniverse-physx-sdk CONFIG REQUIRED)
 
 set(CORE_SRC 
     src/Main.cpp 
@@ -46,6 +47,18 @@ set(RENDERING_SRC
 set(VFX_SRC
     src/ParticleSystem.h
     src/ParticleSystem.cpp
+)
+
+set(PHYSICS_SRC
+    src/ModulePhysics.h
+    src/ModulePhysics.cpp
+    src/Rigidbody.cpp
+    src/Rigidbody.h
+    src/Collider.cpp
+    src/Collider.h
+    src/Joint.cpp
+    src/Joint.h
+    src/PhysicsEventsListener.h
 )
 
 set(UTILS_SRC 
@@ -165,8 +178,9 @@ source_group("Source\\Game Objects\\Components" FILES ${COMPONENTS_SRC})
 source_group("Source\\Loaders" FILES ${LOADERS_SRC})
 source_group("Source\\Loaders\\Importers" FILES ${IMPORTERS_SRC})
 source_group("Scripting" FILES ${SCRIPTING_SRC})
+source_group("Source\\Physics" FILES ${PHYSICS_SRC})
 
-set(SRCS ${CORE_SRC} ${RENDERING_SRC} ${VFX_SRC} ${UTILS_SRC} ${EDITOR_SRC} ${GAMEOBJECTS_SRC} ${COMPONENTS_SRC} ${LOADERS_SRC} ${IMPORTERS_SRC} ${SCRIPTING_SRC})
+set(SRCS ${CORE_SRC} ${RENDERING_SRC} ${VFX_SRC} ${UTILS_SRC} ${EDITOR_SRC} ${GAMEOBJECTS_SRC} ${COMPONENTS_SRC} ${LOADERS_SRC} ${IMPORTERS_SRC} ${SCRIPTING_SRC} ${PHYSICS_SRC})
 
 add_executable(Engine ${SRCS})
 
@@ -180,6 +194,7 @@ target_link_libraries(Engine PRIVATE imgui::imgui)
 target_link_libraries(Engine PRIVATE imguizmo::imguizmo)
 target_link_libraries(Engine PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(Engine PRIVATE Tracy::TracyClient)
+target_link_libraries(Engine PRIVATE unofficial::omniverse-physx-sdk::sdk)
 target_link_libraries(Engine PRIVATE ${LUA_LIBRARIES})
 
 target_include_directories(Engine PRIVATE ${LUA_INCLUDE_DIR})

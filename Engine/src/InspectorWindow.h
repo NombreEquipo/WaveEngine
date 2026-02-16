@@ -36,6 +36,7 @@ private:
     void DrawScriptComponent(GameObject* selectedObject);
     void DrawAddComponentButton(GameObject* selectedObject);
     void DrawParticleComponent(GameObject* selectedObject);
+    void DrawRigidodyComponent(GameObject* selectedObject);
 	
     // Helper methods
     void GetAllGameObjects(GameObject* root, std::vector<GameObject*>& outObjects);

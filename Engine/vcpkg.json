@@ -21,6 +21,7 @@
     "nlohmann-json",
     "sdl3",
     "tracy",
-    "lua"
+    "lua",
+    "physx"
   ]
 }

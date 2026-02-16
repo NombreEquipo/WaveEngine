@@ -19,9 +19,11 @@ Application::Application() : isRunning(true), playState(PlayState::EDITING)
     grid = std::make_shared<Grid>();
     resources = std::make_shared<ModuleResources>();
     scripts = std::make_shared<ScriptManager>();  
+    physics = std::make_shared<ModulePhysics>();  
 
     AddModule(std::static_pointer_cast<Module>(window));
     AddModule(std::static_pointer_cast<Module>(input));
+    AddModule(std::static_pointer_cast<Module>(physics));
     AddModule(std::static_pointer_cast<Module>(renderContext));
     AddModule(std::static_pointer_cast<Module>(scene));
     AddModule(std::static_pointer_cast<Module>(camera));
@@ -32,6 +34,7 @@ Application::Application() : isRunning(true), playState(PlayState::EDITING)
     AddModule(std::static_pointer_cast<Module>(time));
     AddModule(std::static_pointer_cast<Module>(grid));
     AddModule(std::static_pointer_cast<Module>(renderer));
+
 
     selectionManager = new SelectionManager();
 }
@@ -120,6 +123,19 @@ bool Application::Update()
         ret = PostUpdate();
 
     return ret;
+}
+
+bool Application::FixedUpdate()
+{
+    bool result = true;
+    for (const auto& module : moduleList) {
+        result = module.get()->FixedUpdate();
+        if (!result) {
+            break;
+        }
+    }
+
+    return result;
 }
 
 bool Application::PreUpdate()
