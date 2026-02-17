@@ -37,6 +37,13 @@ private:
     void DrawAddComponentButton(GameObject* selectedObject);
     void DrawParticleComponent(GameObject* selectedObject);
     void DrawRigidodyComponent(GameObject* selectedObject);
+    void DrawBoxColliderComponent(GameObject* selectedObject);
+    void DrawSphereColliderComponent(GameObject* selectedObject);
+    void DrawCapsuleColliderComponent(GameObject* selectedObject);
+    void DrawPlaneColliderComponent(GameObject* selectedObject);
+    void DrawInfinitePlaneColliderComponent(GameObject* selectedObject);
+    void DrawMeshColliderComponent(GameObject* selectedObject);
+    void DrawConvexColliderComponent(GameObject* selectedObject);
 	
     // Helper methods
     void GetAllGameObjects(GameObject* root, std::vector<GameObject*>& outObjects);

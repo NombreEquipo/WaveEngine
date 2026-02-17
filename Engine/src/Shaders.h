@@ -15,6 +15,7 @@ public:
     bool CreateSingleColor();
     bool CreateDepthVisualization();
     bool CreateNoTexture(); 
+    bool CreateLinesShader(); 
 
     void Use() const;
     void Delete();

@@ -71,7 +71,6 @@ private:
     std::vector<Component*> components;
     std::vector<std::unique_ptr<Component>> componentOwners;
 
-
     bool markedForDeletion = false;
 
 };

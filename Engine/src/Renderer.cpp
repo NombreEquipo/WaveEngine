@@ -20,6 +20,7 @@ Renderer::Renderer()
 
 Renderer::~Renderer()
 {
+
 }
 
 bool Renderer::Start()
@@ -53,7 +54,7 @@ bool Renderer::Start()
     // Initialize line shader for debug visualization
     lineShader = make_unique<Shader>();
 
-    if (!lineShader->CreateSimpleColor())
+    if (!lineShader->CreateLinesShader())
     {
         LOG_DEBUG("ERROR: Failed to create line shader");
         LOG_CONSOLE("ERROR: Failed to compile line shader");
@@ -203,6 +204,7 @@ void Renderer::LoadTexture(const std::string& path)
 
 bool Renderer::PreUpdate()
 {
+    linesList.clear();
     return true;
 }
 
@@ -322,7 +324,9 @@ bool Renderer::Update()
         }
     }
 
+    DrawLinesList(camera);
     UnbindFramebuffer();
+
 
     // Game View //////////////
     ComponentCamera* sceneCamera = Application::GetInstance().camera->GetSceneCamera();
@@ -1187,6 +1191,60 @@ void Renderer::DrawFaceNormals(const Mesh& mesh, const glm::mat4& modelMatrix)
     defaultShader->Use();
 }
 
+void Renderer::DrawLinesList(const ComponentCamera* camera)
+{
+    if (linesList.empty() || !camera) return;
+
+    GLuint lineVAO, lineVBO;
+    glGenVertexArrays(1, &lineVAO);
+    glGenBuffers(1, &lineVBO);
+
+    glBindVertexArray(lineVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
+
+    std::vector<float> vertexData;
+    vertexData.reserve(linesList.size() * 2 * 7);
+
+    for (const auto& line : linesList)
+    {
+        // Punto A
+        vertexData.push_back(line.start.x); vertexData.push_back(line.start.y); vertexData.push_back(line.start.z);
+        vertexData.push_back(line.color.r); vertexData.push_back(line.color.g); vertexData.push_back(line.color.b); vertexData.push_back(line.color.a);
+
+        // Punto B
+        vertexData.push_back(line.end.x); vertexData.push_back(line.end.y); vertexData.push_back(line.end.z);
+        vertexData.push_back(line.color.r); vertexData.push_back(line.color.g); vertexData.push_back(line.color.b); vertexData.push_back(line.color.a);
+    }
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    lineShader->Use();
+    GLuint shaderProgram = lineShader->GetProgramID();
+
+    glBindVertexArray(lineVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
+    glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(float), vertexData.data(), GL_STREAM_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0);
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(3 * sizeof(float)));
+
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(camera->GetProjectionMatrix()));
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(camera->GetViewMatrix()));
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
+
+    glDrawArrays(GL_LINES, 0, (GLsizei)linesList.size() * 2);
+
+    glBindVertexArray(0);
+    glUseProgram(0);
+}
+
 void Renderer::SetDepthTest(bool enabled)
 {
     depthTestEnabled = enabled;
@@ -1411,6 +1469,65 @@ void Renderer::DrawRay(const glm::vec3& origin, const glm::vec3& direction,
 
     defaultShader->Use();
 }
+
+void Renderer::DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color)
+{
+    linesList.push_back({ start, end, color });
+}
+
+void Renderer::DrawSphere(const glm::vec3& center, float radius, const glm::vec4& color, int segments)
+{
+    float step = 2.0f * glm::pi<float>() / (float)segments;
+
+    for (int i = 0; i < segments; ++i)
+    {
+        float a1 = i * step;
+        float a2 = (i + 1) * step;
+
+        DrawLine(center + glm::vec3(radius * cos(a1), radius * sin(a1), 0),
+            center + glm::vec3(radius * cos(a2), radius * sin(a2), 0), color);
+        DrawLine(center + glm::vec3(radius * cos(a1), 0, radius * sin(a1)),
+            center + glm::vec3(radius * cos(a2), 0, radius * sin(a2)), color);
+        DrawLine(center + glm::vec3(0, radius * cos(a1), radius * sin(a1)),
+            center + glm::vec3(0, radius * cos(a2), radius * sin(a2)), color);
+    }
+}
+
+void Renderer::DrawArc(glm::vec3 center, glm::quat rotation, float r, int segments, glm::vec4 col, glm::vec3 axisA, glm::vec3 axisB)
+{
+    float angleStep = 3.14159f / segments;
+
+    for (int i = 0; i < segments; ++i)
+    {
+        float a1 = i * angleStep;
+        float a2 = (i + 1) * angleStep;
+
+        glm::vec3 p1 = center + (rotation * ((axisA * cos(a1) + axisB * sin(a1)) * r));
+        glm::vec3 p2 = center + (rotation * ((axisA * cos(a2) + axisB * sin(a2)) * r));
+
+        DrawLine(p1, p2, col);
+    }
+}
+
+void Renderer::DrawCircle(glm::vec3 center, glm::quat rotation, float r, int segments, glm::vec4 col, glm::vec3 axisA, glm::vec3 axisB)
+{
+    float angleStep = (2.0f * 3.14159f) / segments;
+
+    for (int i = 0; i < segments; ++i)
+    {
+        float angle1 = i * angleStep;
+        float angle2 = (i + 1) * angleStep;
+
+        glm::vec3 p1_local = (axisA * cos(angle1) + axisB * sin(angle1)) * r;
+        glm::vec3 p2_local = (axisA * cos(angle2) + axisB * sin(angle2)) * r;
+
+        glm::vec3 p1_world = center + (rotation * p1_local);
+        glm::vec3 p2_world = center + (rotation * p2_local);
+
+        DrawLine(p1_world, p2_world, col);
+    }
+}
+
 
 // Método para dibujar AABB de un GameObject
 void Renderer::DrawAABB(const glm::vec3& min, const glm::vec3& max, const glm::vec3& color)

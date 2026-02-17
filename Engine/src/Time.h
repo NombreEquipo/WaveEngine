@@ -22,7 +22,7 @@ public:
 	void Pause() { isPaused = true; }
 	void Resume() { isPaused = false; }
 	void Reset();
-	void SetTimeScale(float scale) { timeScale = scale > 0.0f ? scale : 1.0f; }
+	void SetTimeScale(float scale) { timeScale = scale > 0.0f ? scale : 0.0f; }
 	void StepFrame() { shouldStepFrame = true; }
 
 	bool IsPaused() const { return isPaused; }

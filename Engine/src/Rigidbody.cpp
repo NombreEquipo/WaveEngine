@@ -46,7 +46,7 @@ Rigidbody::~Rigidbody()
 
 void Rigidbody::FixedUpdate() 
 {
-    if (Application::GetInstance().time.get()->IsPaused() && actor)
+    if (!Application::GetInstance().time.get()->IsPaused() && actor)
     {
         lastPose = currentPose;
 
@@ -70,7 +70,7 @@ void Rigidbody::Update() {
     
     if (!actor) return;
 
-    if (!Application::GetInstance().time.get()->IsPaused())
+    if (Application::GetInstance().time.get()->IsPaused())
     {
         physx::PxTransform pose = actor->getGlobalPose();
 
@@ -79,8 +79,8 @@ void Rigidbody::Update() {
 
         isSyncingFromPhysics = true;
 
-        owner->transform->SetPosition(glm::vec3(pose.p.x, pose.p.y, pose.p.z));
-        owner->transform->SetRotationQuat(glm::quat(pose.q.w, pose.q.x, pose.q.y, pose.q.z));
+        owner->transform->SetGlobalPosition(glm::vec3(pose.p.x, pose.p.y, pose.p.z));
+        owner->transform->SetGlobalRotationQuat(glm::quat(pose.q.w, pose.q.x, pose.q.y, pose.q.z));
         isSyncingFromPhysics = false;
 
         return;
@@ -97,8 +97,8 @@ void Rigidbody::Update() {
     glm::quat visualRot = glm::slerp(q0, q1, alpha);
 
     isSyncingFromPhysics = true;
-    owner->transform->SetPosition(visualPos);
-    owner->transform->SetRotationQuat(visualRot);
+    owner->transform->SetGlobalPosition(visualPos);
+    owner->transform->SetGlobalRotationQuat(visualRot);
     isSyncingFromPhysics = false;
 }
 
@@ -165,8 +165,8 @@ void Rigidbody::CreateBody()
 
     physx::PxRigidActor* tempActor = nullptr;
 
-    glm::vec3 pos = trans->GetPosition();
-    glm::quat rot = trans->GetRotationQuat();
+    glm::vec3 pos = trans->GetGlobalPosition();
+    glm::quat rot = trans->GetGlobalRotationQuat();
     physx::PxTransform pxTransform(
         physx::PxVec3(pos.x, pos.y, pos.z),
         physx::PxQuat(rot.x, rot.y, rot.z, rot.w)
@@ -311,8 +311,8 @@ void Rigidbody::UpdateShapeLocalPose(physx::PxRigidActor* actor ,physx::PxShape*
     physx::PxTransform rbGlobalPose = actor->getGlobalPose();
 
     Transform* colTrans = col->owner->transform;
-    glm::vec3 colGlobalPos = colTrans->GetPosition();
-    glm::quat colGlobalRot = colTrans->GetRotationQuat();
+    glm::vec3 colGlobalPos = colTrans->GetGlobalPosition();
+    glm::quat colGlobalRot = colTrans->GetGlobalRotationQuat();
     glm::vec3 colGlobalScale = colTrans->GetScale();
 
     glm::vec3 offset = colGlobalRot * (col->GetCenter() * colGlobalScale);
@@ -591,8 +591,8 @@ void Rigidbody::SyncToTransform() {
         
     if (!actor || !owner->transform) return;
 
-    glm::vec3 pos = owner->transform->GetPosition();
-    glm::quat rot = owner->transform->GetRotation();
+    glm::vec3 pos = owner->transform->GetGlobalPosition();
+    glm::quat rot = owner->transform->GetGlobalRotationQuat();
 
     physx::PxTransform targetPose(
         physx::PxVec3(pos.x, pos.y, pos.z),

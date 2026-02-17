@@ -7,6 +7,19 @@
 #include "ComponentRotate.h"
 #include "ComponentScript.h"
 #include "Rigidbody.h"
+#include "BoxCollider.h"
+#include "SphereCollider.h"
+#include "CapsuleCollider.h"
+#include "MeshCollider.h"
+#include "ConvexCollider.h"
+#include "PlaneCollider.h"
+#include "InfinitePlaneCollider.h"
+#include "FixedJoint.h"
+#include "DistanceJoint.h"
+#include "PrismaticJoint.h"
+#include "SphericalJoint.h"
+#include "D6Joint.h"
+#include "HingeJoint.h"
 #include "ComponentParticleSystem.h"
 #include <nlohmann/json.hpp>
 
@@ -37,40 +50,72 @@ Component* GameObject::CreateComponent(ComponentType type) {
         newComponent = new Transform(this);
         if (newComponent) transform = (Transform*)newComponent;
         break;
-
     case ComponentType::MESH:
         newComponent = new ComponentMesh(this);
         break;
-
     case ComponentType::MATERIAL:
         if (GetComponent(ComponentType::MATERIAL) != nullptr) {
             return GetComponent(ComponentType::MATERIAL);
         }
         newComponent = new ComponentMaterial(this);
         break;
-		
     case ComponentType::CAMERA:
         if (GetComponent(ComponentType::CAMERA) != nullptr) {
             return GetComponent(ComponentType::CAMERA);
         }
         newComponent = new ComponentCamera(this);
         break;
-
     case ComponentType::ROTATE:
         newComponent = new ComponentRotate(this);
         break;
-		
     case ComponentType::SCRIPT:
         newComponent = new ComponentScript(this);
         break;
-		
     case ComponentType::PARTICLE:
         newComponent = new ComponentParticleSystem(this);
         break;
     case ComponentType::RIGIDBODY:
         newComponent = new Rigidbody(this);
         break;
-		
+    case ComponentType::BOX_COLLIDER:
+        newComponent = new BoxCollider(this);
+        break;
+    case ComponentType::SPHERE_COLLIDER:
+        newComponent = new SphereCollider(this);
+        break;
+    case ComponentType::CAPSULE_COLLIDER:
+        newComponent = new CapsuleCollider(this);
+        break;
+    case ComponentType::CONVEX_COLLIDER:
+        newComponent = new ConvexCollider(this);
+        break;
+    case ComponentType::MESH_COLLIDER:
+        newComponent = new MeshCollider(this);
+        break;
+    case ComponentType::PLANE_COLLIDER:
+        newComponent = new PlaneCollider(this);
+        break;
+    case ComponentType::INFINITE_PLANE_COLLIDER:
+        newComponent = new InfinitePlaneCollider(this);
+        break;
+    case ComponentType::FIXED_JOINT:
+        newComponent = new FixedJoint(this);
+        break;
+    case ComponentType::HINGE_JOINT:
+        newComponent = new HingeJoint(this);
+        break;
+    case ComponentType::SPHERICAL_JOINT:
+        newComponent = new SphericalJoint(this);
+        break;
+    case ComponentType::PRISMATIC_JOINT:
+        newComponent = new PrismaticJoint(this);
+        break;
+    case ComponentType::D6_JOINT:
+        newComponent = new D6Joint(this);
+        break;
+    case ComponentType::DISTANCE_JOINT:
+        newComponent = new DistanceJoint(this);
+        break;
     default:
         LOG_DEBUG("ERROR: Unknown component type requested for GameObject '%s'", name.c_str());
         LOG_CONSOLE("Failed to create component");

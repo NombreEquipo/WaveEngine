@@ -7,6 +7,7 @@ class GameObject;
 enum class GameObjectEvent;
 
 enum class ComponentType {
+
     TRANSFORM,
     MESH,
     MATERIAL,
@@ -16,7 +17,20 @@ enum class ComponentType {
     PARTICLE,
     RIGIDBODY,
     COLLIDER,
+    BOX_COLLIDER,
+    SPHERE_COLLIDER,
+    CAPSULE_COLLIDER,
+    PLANE_COLLIDER,
+    INFINITE_PLANE_COLLIDER,
+    MESH_COLLIDER,
+    CONVEX_COLLIDER,
     JOINT,
+    HINGE_JOINT,
+    DISTANCE_JOINT,
+    FIXED_JOINT,
+    D6_JOINT,
+    PRISMATIC_JOINT,
+    SPHERICAL_JOINT,
     UNKNOWN
 };
 

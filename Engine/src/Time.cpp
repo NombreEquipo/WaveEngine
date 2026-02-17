@@ -37,16 +37,16 @@ bool Time::PreUpdate()
 		//DELTA TIME
 		if (shouldStepFrame)
 		{
-			deltaTime = fixedDeltaTime;
+			gameDeltaTime = fixedDeltaTime;
 			shouldStepFrame = false;
 		}
 		else
 		{
-			deltaTime *= timeScale;
+			gameDeltaTime = deltaTime * timeScale;
 		}
 
 		//FIXED DELTA TIME
-		accumulator += deltaTime;
+		accumulator += gameDeltaTime;
 
 		while (accumulator >= fixedDeltaTime)
 		{
@@ -59,7 +59,7 @@ bool Time::PreUpdate()
 	}
 	else
 	{
-		deltaTime = 0.0f;
+		gameDeltaTime = 0.0f;
 		fixedAlpha = 1.0f;
 	}
 
@@ -78,6 +78,7 @@ void Time::Reset()
 	lastFrame = SDL_GetTicks() / 1000.0f;
 	totalTime = 0.0f;
 	gameTime = 0.0f;
+	gameDeltaTime = 0.0f;
 	deltaTime = 0.0f;
 	accumulator = 0.0f;
 	isPaused = false;

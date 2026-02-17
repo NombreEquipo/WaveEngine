@@ -11,6 +11,13 @@
 #include "ResourceTexture.h"
 #include "ComponentParticleSystem.h"
 #include "Rigidbody.h"
+#include "BoxCollider.h"
+#include "SphereCollider.h"
+#include "CapsuleCollider.h"
+#include "MeshCollider.h"
+#include "ConvexCollider.h"
+#include "PlaneCollider.h"
+#include "InfinitePlaneCollider.h"
 #include "Log.h"
 #include "ComponentScript.h"
 #include <filesystem>
@@ -88,6 +95,13 @@ void InspectorWindow::Draw()
     DrawScriptComponent(selectedObject); 
     DrawParticleComponent(selectedObject);
     DrawRigidodyComponent(selectedObject);
+    DrawBoxColliderComponent(selectedObject);
+    DrawSphereColliderComponent(selectedObject);
+    DrawCapsuleColliderComponent(selectedObject);
+    DrawPlaneColliderComponent(selectedObject);
+    DrawInfinitePlaneColliderComponent(selectedObject);
+    DrawMeshColliderComponent(selectedObject);
+    DrawConvexColliderComponent(selectedObject);
 
     ImGui::Spacing();
     ImGui::Separator();
@@ -825,6 +839,81 @@ void  InspectorWindow::DrawRigidodyComponent(GameObject* selectedObject)
     }
 }
 
+void  InspectorWindow::DrawBoxColliderComponent(GameObject* selectedObject)
+{
+    BoxCollider* boxCollider = static_cast<BoxCollider*>(selectedObject->GetComponent(ComponentType::BOX_COLLIDER));
+
+    if (boxCollider != nullptr)
+    {
+        // Delegate the ui to the component
+        boxCollider->OnEditor();
+    }
+}
+
+void  InspectorWindow::DrawSphereColliderComponent(GameObject* selectedObject)
+{
+    SphereCollider* Collider = static_cast<SphereCollider*>(selectedObject->GetComponent(ComponentType::SPHERE_COLLIDER));
+
+    if (Collider != nullptr)
+    {
+        // Delegate the ui to the component
+        Collider->OnEditor();
+    }
+}
+
+void  InspectorWindow::DrawCapsuleColliderComponent(GameObject* selectedObject)
+{
+    CapsuleCollider* Collider = static_cast<CapsuleCollider*>(selectedObject->GetComponent(ComponentType::CAPSULE_COLLIDER));
+
+    if (Collider != nullptr)
+    {
+        // Delegate the ui to the component
+        Collider->OnEditor();
+    }
+}
+
+void  InspectorWindow::DrawPlaneColliderComponent(GameObject* selectedObject)
+{
+    PlaneCollider* Collider = static_cast<PlaneCollider*>(selectedObject->GetComponent(ComponentType::PLANE_COLLIDER));
+
+    if (Collider != nullptr)
+    {
+        // Delegate the ui to the component
+        Collider->OnEditor();
+    }
+}
+void  InspectorWindow::DrawInfinitePlaneColliderComponent(GameObject* selectedObject)
+{
+    InfinitePlaneCollider* Collider = static_cast<InfinitePlaneCollider*>(selectedObject->GetComponent(ComponentType::INFINITE_PLANE_COLLIDER));
+
+    if (Collider != nullptr)
+    {
+        // Delegate the ui to the component
+        Collider->OnEditor();
+    }
+}
+void  InspectorWindow::DrawMeshColliderComponent(GameObject* selectedObject)
+{
+    MeshCollider* Collider = static_cast<MeshCollider*>(selectedObject->GetComponent(ComponentType::MESH_COLLIDER));
+
+    if (Collider != nullptr)
+    {
+        // Delegate the ui to the component
+        Collider->OnEditor();
+    }
+}
+void  InspectorWindow::DrawConvexColliderComponent(GameObject* selectedObject)
+{
+    ConvexCollider* Collider = static_cast<ConvexCollider*>(selectedObject->GetComponent(ComponentType::CONVEX_COLLIDER));
+
+    if (Collider != nullptr)
+    {
+        // Delegate the ui to the component
+        Collider->OnEditor();
+    }
+}
+
+
 bool InspectorWindow::DrawGameObjectSection(GameObject* selectedObject)
 {
     bool objectDeleted = false;
@@ -1322,7 +1411,7 @@ void InspectorWindow::DrawAddComponentButton(GameObject* selectedObject)
             ImGui::EndTooltip();
         }
 
-        bool hasRigidbody = (selectedObject->GetComponent(ComponentType::PARTICLE) != nullptr);
+        bool hasRigidbody = (selectedObject->GetComponent(ComponentType::RIGIDBODY) != nullptr);
         
         if (hasRigidbody) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
 
@@ -1345,6 +1434,189 @@ void InspectorWindow::DrawAddComponentButton(GameObject* selectedObject)
         {
             ImGui::BeginTooltip();
             ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f), "Already has a Rigidbody");
+            ImGui::EndTooltip();
+        }
+
+
+        if (ImGui::Selectable("Box Collider", false))
+        {
+            selectedObject->CreateComponent(ComponentType::BOX_COLLIDER);
+            LOG_CONSOLE("[Inspector] Box Collider component added to: %s", selectedObject->GetName().c_str());
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (ImGui::IsItemHovered() )
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Add a Box Collider");
+            ImGui::EndTooltip();
+        }
+        
+        if (ImGui::Selectable("Sphere Collider", false))
+        {
+            selectedObject->CreateComponent(ComponentType::SPHERE_COLLIDER);
+            LOG_CONSOLE("[Inspector] Sphere Collider component added to: %s", selectedObject->GetName().c_str());
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (ImGui::IsItemHovered() )
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Add a Sphere Collider");
+            ImGui::EndTooltip();
+        }
+        
+        if (ImGui::Selectable("Capsule Collider", false))
+        {
+            selectedObject->CreateComponent(ComponentType::CAPSULE_COLLIDER);
+            LOG_CONSOLE("[Inspector] Capsule Collider component added to: %s", selectedObject->GetName().c_str());
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (ImGui::IsItemHovered() )
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Add a Capsule Collider");
+            ImGui::EndTooltip();
+        }
+        
+        if (ImGui::Selectable("Plane Collider", false))
+        {
+            selectedObject->CreateComponent(ComponentType::PLANE_COLLIDER);
+            LOG_CONSOLE("[Inspector] Plane Collider component added to: %s", selectedObject->GetName().c_str());
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (ImGui::IsItemHovered() )
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Add a Plane Collider");
+            ImGui::EndTooltip();
+        }
+        
+        if (ImGui::Selectable("Infinite Plane Collider", false))
+        {
+            selectedObject->CreateComponent(ComponentType::INFINITE_PLANE_COLLIDER);
+            LOG_CONSOLE("[Inspector] Infinite Plane Collider component added to: %s", selectedObject->GetName().c_str());
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (ImGui::IsItemHovered() )
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Add a Infinite Plane Collider");
+            ImGui::EndTooltip();
+        }
+        
+        if (ImGui::Selectable("Mesh Collider", false))
+        {
+            selectedObject->CreateComponent(ComponentType::MESH_COLLIDER);
+            LOG_CONSOLE("[Inspector] Mesh Collider component added to: %s", selectedObject->GetName().c_str());
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (ImGui::IsItemHovered() )
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Add a Mesh Collider");
+            ImGui::EndTooltip();
+        }
+        
+        if (ImGui::Selectable("Convex Collider", false))
+        {
+            selectedObject->CreateComponent(ComponentType::CONVEX_COLLIDER);
+            LOG_CONSOLE("[Inspector] Convex Collider component added to: %s", selectedObject->GetName().c_str());
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (ImGui::IsItemHovered() )
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Add a Convex Collider");
+            ImGui::EndTooltip();
+        }
+        
+        if (ImGui::Selectable("Fixed Joint", false))
+        {
+            selectedObject->CreateComponent(ComponentType::FIXED_JOINT);
+            LOG_CONSOLE("[Inspector] Fixed Joint component added to: %s", selectedObject->GetName().c_str());
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (ImGui::IsItemHovered() )
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Add a Fixed Joint");
+            ImGui::EndTooltip();
+        }
+        
+        if (ImGui::Selectable("Distance Joint", false))
+        {
+            selectedObject->CreateComponent(ComponentType::DISTANCE_JOINT);
+            LOG_CONSOLE("[Inspector] Distance Joint component added to: %s", selectedObject->GetName().c_str());
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (ImGui::IsItemHovered() )
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Add a Distance Joint");
+            ImGui::EndTooltip();
+        }
+        
+        if (ImGui::Selectable("Hinge Joint", false))
+        {
+            selectedObject->CreateComponent(ComponentType::HINGE_JOINT);
+            LOG_CONSOLE("[Inspector] Hinge Joint component added to: %s", selectedObject->GetName().c_str());
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (ImGui::IsItemHovered() )
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Add a Hinge Joint");
+            ImGui::EndTooltip();
+        }
+        
+        if (ImGui::Selectable("Spherical Joint", false))
+        {
+            selectedObject->CreateComponent(ComponentType::SPHERICAL_JOINT);
+            LOG_CONSOLE("[Inspector] Spherical Joint component added to: %s", selectedObject->GetName().c_str());
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (ImGui::IsItemHovered() )
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Add a Spherical Joint");
+            ImGui::EndTooltip();
+        }
+        
+        if (ImGui::Selectable("Prismatic Joint", false))
+        {
+            selectedObject->CreateComponent(ComponentType::PRISMATIC_JOINT);
+            LOG_CONSOLE("[Inspector] Prismatic Joint component added to: %s", selectedObject->GetName().c_str());
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (ImGui::IsItemHovered() )
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Add a Prismatic Joint");
+            ImGui::EndTooltip();
+        }
+        
+        if (ImGui::Selectable("D6 Joint", false))
+        {
+            selectedObject->CreateComponent(ComponentType::D6_JOINT);
+            LOG_CONSOLE("[Inspector] D6 Joint component added to: %s", selectedObject->GetName().c_str());
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (ImGui::IsItemHovered() )
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Add a D6 Joint");
             ImGui::EndTooltip();
         }
 

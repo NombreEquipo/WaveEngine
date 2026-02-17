@@ -56,9 +56,37 @@ set(PHYSICS_SRC
     src/Rigidbody.h
     src/Collider.cpp
     src/Collider.h
+    src/BoxCollider.cpp
+    src/BoxCollider.h
+    src/SphereCollider.h
+    src/SphereCollider.cpp
+    src/CapsuleCollider.h
+    src/CapsuleCollider.cpp
+    src/ConvexCollider.h
+    src/ConvexCollider.cpp
+    src/InfinitePlaneCollider.h
+    src/InfinitePlaneCollider.cpp
+    src/PlaneCollider.cpp
+    src/PlaneCollider.h
+    src/MeshCollider.h
+    src/MeshCollider.cpp
     src/Joint.cpp
     src/Joint.h
+    src/SphericalJoint.cpp
+    src/SphericalJoint.h
+    src/PrismaticJoint.cpp
+    src/PrismaticJoint.h
+    src/HingeJoint.cpp
+    src/HingeJoint.h
+    src/FixedJoint.cpp
+    src/FixedJoint.h
+    src/DistanceJoint.cpp
+    src/DistanceJoint.h
+    src/D6Joint.cpp
+    src/D6Joint.h
     src/PhysicsEventsListener.h
+    src/PhysicsCooker.h
+    src/PhysicsCooker.cpp
 )
 
 set(UTILS_SRC 
