@@ -678,8 +678,6 @@ void AssetsWindow::DrawExpandableAssetItem(AssetEntry& asset, std::string& pathP
         float smallIconSize = iconSize * 0.7f;
         float itemWidth = smallIconSize + 15.0f;
 
-        LOG_DEBUG("[DrawExpandableAsset] FBX: %s has %zu submeshes", asset.name.c_str(), asset.subMeshes.size());
-
         ImGui::Dummy(ImVec2(0, 0));
 
         // Calculate indentation for submeshes
@@ -713,13 +711,9 @@ void AssetsWindow::DrawExpandableAssetItem(AssetEntry& asset, std::string& pathP
             {
                 float remainingWidth = startX + windowContentWidth - currentX;
 
-                LOG_DEBUG("[DrawExpandableAsset] Mesh %zu: currentX: %.2f, remaining: %.2f",
-                    i, currentX, remainingWidth);
-
                 if (remainingWidth < itemWidth)
                 {
-                    // New line with indentation
-                    LOG_DEBUG("[DrawExpandableAsset] Mesh %zu: NUEVA LINEA", i);
+
                     ImGui::NewLine();
                     ImGui::SetCursorPosX(startX);
                     currentX = startX;

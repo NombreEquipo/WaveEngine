@@ -40,6 +40,8 @@ set(RENDERING_SRC
     src/Shaders.cpp 
     src/Frustum.h 
     src/Frustum.cpp 
+    src/UI.h
+    src/UI.cpp 
 )
 
 set(UTILS_SRC 
@@ -152,17 +154,18 @@ target_link_libraries(Engine PRIVATE Tracy::TracyClient)
 
 
 
+set(NOESIS_SDK_DIR "${CMAKE_SOURCE_DIR}/External/NoesisGUI")
 
-set(NOESIS_SDK_DIR "${CMAKE_SOURCE_DIR}/external/NoesisGUI")
-
-# Definir archivos del renderizador (Ajusta la ruta según donde esté el SDK)
-set(NOESIS_RENDERER_SRC 
-    "${NOESIS_SDK_DIR}/Src/Packages/Render/GLRenderDevice/GLRenderDevice.cpp"
+set(NOESIS_SOURCES
+    "${NOESIS_SDK_DIR}/Src/Packages/Render/GLRenderDevice/Src/GLRenderDevice.cpp"
 )
 
-# Añadir a la compilación
-target_sources(Engine PRIVATE ${NOESIS_RENDERER_SRC})
-target_include_directories(Engine PRIVATE "${NOESIS_SDK_DIR}/Include")
+target_sources(Engine PRIVATE ${NOESIS_SOURCES})
+
+target_include_directories(Engine PRIVATE 
+    "${NOESIS_SDK_DIR}/Include"
+    "${NOESIS_SDK_DIR}/Src/Packages/Render/GLRenderDevice/Include"
+)
 
 if(WIN32)
     set(NOESIS_LIB "${NOESIS_SDK_DIR}/Lib/windows_x86_64/Noesis.lib")
@@ -170,7 +173,6 @@ if(WIN32)
     
     target_link_libraries(Engine PRIVATE ${NOESIS_LIB})
     
-    # Copia automática de la DLL al generar el .exe
     add_custom_command(TARGET Engine POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${NOESIS_DLL}"
