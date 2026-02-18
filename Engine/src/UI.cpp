@@ -1,18 +1,10 @@
-﻿
-#ifndef NS_APP_FRAMEWORK_EXPORTS
-    #define NS_APP_FRAMEWORK_EXPORTS
-#endif
-#ifndef NS_APP_FRAMEWORK
-    #define NS_APP_FRAMEWORK
-#endif
-
-#define NS_BUILD_RENDERER_GL
-
-#include "UI.h"
+﻿#include "UI.h"
 
 #include "NoesisPCH.h"
 #include "NsCore/Noesis.h"
-
+#include "NsApp/LocalFontProvider.h"
+#include "NsApp/LocalXamlProvider.h"
+#include "NsApp/LocalTextureProvider.h"
 
 UI::UI()
 {
@@ -35,6 +27,10 @@ bool UI::Start()
     });
 
     Noesis::GUI::Init();
+
+    Noesis::GUI::SetXamlProvider(Noesis::MakePtr<NoesisApp::LocalXamlProvider>("."));
+    Noesis::GUI::SetFontProvider(Noesis::MakePtr<NoesisApp::LocalFontProvider>("."));
+    Noesis::GUI::SetTextureProvider(Noesis::MakePtr<NoesisApp::LocalTextureProvider>("."));
 
     return true;
 }

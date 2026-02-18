@@ -153,26 +153,48 @@ target_link_libraries(Engine PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(Engine PRIVATE Tracy::TracyClient)
 
 
-
+# ---- NoesisGUI ----
 set(NOESIS_SDK_DIR "${CMAKE_SOURCE_DIR}/External/NoesisGUI")
 
-set(NOESIS_SOURCES
+set(NOESIS_APP_SOURCES
+    "${NOESIS_SDK_DIR}/Src/Packages/App/Providers/Src/LocalFontProvider.cpp"
+    "${NOESIS_SDK_DIR}/Src/Packages/App/Providers/Src/LocalXamlProvider.cpp"
+    "${NOESIS_SDK_DIR}/Src/Packages/App/Providers/Src/LocalTextureProvider.cpp"
+    "${NOESIS_SDK_DIR}/Src/Packages/App/Providers/Src/FileTextureProvider.cpp"
+    "${NOESIS_SDK_DIR}/Src/Packages/App/Providers/Src/Find.cpp"
+    "${NOESIS_SDK_DIR}/Src/Packages/App/Providers/Src/FileSystemWatcher.cpp"
+)
+
+set(NOESIS_RENDER_SOURCES
     "${NOESIS_SDK_DIR}/Src/Packages/Render/GLRenderDevice/Src/GLRenderDevice.cpp"
 )
 
-target_sources(Engine PRIVATE ${NOESIS_SOURCES})
+target_sources(Engine PRIVATE
+    ${NOESIS_APP_SOURCES}
+    ${NOESIS_RENDER_SOURCES}
+)
 
-target_include_directories(Engine PRIVATE 
+target_include_directories(Engine PRIVATE
     "${NOESIS_SDK_DIR}/Include"
+    "${NOESIS_SDK_DIR}/Src/Packages/App/Providers/Include"
+    "${NOESIS_SDK_DIR}/Src/Packages/App/Providers/Src"
     "${NOESIS_SDK_DIR}/Src/Packages/Render/GLRenderDevice/Include"
+    "${NOESIS_SDK_DIR}/Src/Packages/Render/GLRenderDevice/Src"
+)
+
+# Anular macros de DLL export para compilar los Providers estáticamente
+target_compile_definitions(Engine PRIVATE
+    NS_APP_PROVIDERS_API=
+    NS_APP_FRAMEWORK_API=
+    NS_APP_INTERACTIVITY_API=
 )
 
 if(WIN32)
     set(NOESIS_LIB "${NOESIS_SDK_DIR}/Lib/windows_x86_64/Noesis.lib")
     set(NOESIS_DLL "${NOESIS_SDK_DIR}/Bin/windows_x86_64/Noesis.dll")
-    
+
     target_link_libraries(Engine PRIVATE ${NOESIS_LIB})
-    
+
     add_custom_command(TARGET Engine POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${NOESIS_DLL}"
