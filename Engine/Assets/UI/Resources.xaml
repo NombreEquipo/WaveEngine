@@ -43,7 +43,7 @@
     <Style TargetType="{x:Type Button}">
         <Setter Property="OverridesDefaultStyle" Value="True"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-        <Setter Property="FontFamily" Value="Assets/Fonts/AeroMatics.ttf"/>
+        <Setter Property="FontFamily" Value="/AeroMatics.ttf#Aero Matics"/>
         <Setter Property="FontSize" Value="48"/>
         <Setter Property="Template">
             <Setter.Value>

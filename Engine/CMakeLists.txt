@@ -156,40 +156,49 @@ target_link_libraries(Engine PRIVATE Tracy::TracyClient)
 # ---- NoesisGUI ----
 set(NOESIS_SDK_DIR "${CMAKE_SOURCE_DIR}/External/NoesisGUI")
 
-set(NOESIS_APP_SOURCES
-    "${NOESIS_SDK_DIR}/Src/Packages/App/Providers/Src/LocalFontProvider.cpp"
-    "${NOESIS_SDK_DIR}/Src/Packages/App/Providers/Src/LocalXamlProvider.cpp"
-    "${NOESIS_SDK_DIR}/Src/Packages/App/Providers/Src/LocalTextureProvider.cpp"
-    "${NOESIS_SDK_DIR}/Src/Packages/App/Providers/Src/FileTextureProvider.cpp"
-    "${NOESIS_SDK_DIR}/Src/Packages/App/Providers/Src/Find.cpp"
-    "${NOESIS_SDK_DIR}/Src/Packages/App/Providers/Src/FileSystemWatcher.cpp"
+# --- Sources: glob por paquete completo ---
+file(GLOB NOESIS_APP_PROVIDERS_SOURCES
+    "${NOESIS_SDK_DIR}/Src/Packages/App/Providers/Src/*.cpp"
 )
-
-set(NOESIS_RENDER_SOURCES
-    "${NOESIS_SDK_DIR}/Src/Packages/Render/GLRenderDevice/Src/GLRenderDevice.cpp"
-    
+file(GLOB NOESIS_RENDER_SOURCES
+    "${NOESIS_SDK_DIR}/Src/Packages/Render/GLRenderDevice/Src/*.cpp"
+)
+file(GLOB NOESIS_INTERACTIVITY_SOURCES
+    "${NOESIS_SDK_DIR}/Src/Packages/App/Interactivity/Src/*.cpp"
+)
+file(GLOB NOESIS_MEDIAELEMENT_SOURCES
+    "${NOESIS_SDK_DIR}/Src/Packages/App/MediaElement/Src/*.cpp"
 )
 
 target_sources(Engine PRIVATE
-    ${NOESIS_APP_SOURCES}
+    ${NOESIS_APP_PROVIDERS_SOURCES}
     ${NOESIS_RENDER_SOURCES}
+    ${NOESIS_INTERACTIVITY_SOURCES}
+    ${NOESIS_MEDIAELEMENT_SOURCES}
 )
 
+# --- Includes: todos los paquetes de golpe ---
+file(GLOB NOESIS_PACKAGE_INCLUDE_DIRS
+    LIST_DIRECTORIES true
+    "${NOESIS_SDK_DIR}/Src/Packages/*/Include"
+    "${NOESIS_SDK_DIR}/Src/Packages/*/*/Include"
+    "${NOESIS_SDK_DIR}/Src/Packages/*/Src"
+    "${NOESIS_SDK_DIR}/Src/Packages/*/*/Src"
+)
 target_include_directories(Engine PRIVATE
     "${NOESIS_SDK_DIR}/Include"
-    "${NOESIS_SDK_DIR}/Src/Packages/App/Providers/Include"
-    "${NOESIS_SDK_DIR}/Src/Packages/App/Providers/Src"
-    "${NOESIS_SDK_DIR}/Src/Packages/Render/GLRenderDevice/Include"
-    "${NOESIS_SDK_DIR}/Src/Packages/Render/GLRenderDevice/Src"
+    ${NOESIS_PACKAGE_INCLUDE_DIRS}
 )
 
-# Anular macros de DLL export para compilar los Providers est�ticamente
+# --- Macros de compilación estática ---
 target_compile_definitions(Engine PRIVATE
     NS_APP_PROVIDERS_API=
     NS_APP_FRAMEWORK_API=
     NS_APP_INTERACTIVITY_API=
     NS_RENDER_GLRENDERDEVICE_API=
+    NS_APP_MEDIAELEMENT_API=
 )
+
 if(MSVC)
     target_compile_options(Engine PRIVATE /FS)
 endif()

@@ -1,13 +1,28 @@
 ﻿#include "UI.h"
+#include "Application.h"
+#include "Time.h"
+
 #include "NoesisPCH.h"
 #include "NsCore/Noesis.h"
+#include <NsCore/RegisterComponent.h>
+#include <NsCore/Package.h>
+
 #include "NsApp/LocalFontProvider.h"
 #include "NsApp/LocalXamlProvider.h"
 #include "NsApp/LocalTextureProvider.h"
+#include <NsApp/EventTrigger.h>
+#include <NsApp/GoToStateAction.h>
+#include <NsApp/InvokeCommandAction.h>
+#include <NsApp/Interaction.h>
+
 #include "NsGui/IView.h"
 #include "NsGui/FrameworkElement.h"
 #include "NsGui/IntegrationAPI.h"  
 #include "GLRenderDevice.h" 
+
+extern "C" void NsRegisterReflectionAppInteractivity();
+extern "C" void NsInitPackageAppInteractivity();
+extern "C" void NsShutdownPackageAppInteractivity();
 
 UI::UI() { LOG_DEBUG("UI Constructor"); }
 UI::~UI() {}
@@ -25,13 +40,17 @@ bool UI::Start()
     Noesis::GUI::SetLicense(NS_LICENSE_NAME, NS_LICENSE_KEY);
     Noesis::GUI::Init();
 
-    Noesis::GUI::SetXamlProvider(Noesis::MakePtr<NoesisApp::LocalXamlProvider>("."));
-    Noesis::GUI::SetFontProvider(Noesis::MakePtr<NoesisApp::LocalFontProvider>("."));
-    Noesis::GUI::SetTextureProvider(Noesis::MakePtr<NoesisApp::LocalTextureProvider>("."));
+    NsRegisterReflectionAppInteractivity();
+    NsInitPackageAppInteractivity();
+
+    Noesis::GUI::SetXamlProvider(Noesis::MakePtr<NoesisApp::LocalXamlProvider>("../Assets/UI"));
+    Noesis::GUI::SetFontProvider(Noesis::MakePtr<NoesisApp::LocalFontProvider>("../Assets/Fonts"));
+    Noesis::GUI::SetTextureProvider(Noesis::MakePtr<NoesisApp::LocalTextureProvider>("../Assets/UI/Textures"));
+
 
     // --- Cargar el XAML ---
     Noesis::Ptr<Noesis::FrameworkElement> xaml =
-        Noesis::GUI::LoadXaml<Noesis::FrameworkElement>("Assets/UI/MainHUD.xaml");
+        Noesis::GUI::LoadXaml<Noesis::FrameworkElement>("MainHUD.xaml");
 
     if (!xaml)
     {
@@ -51,23 +70,11 @@ bool UI::Start()
     return true;
 }
 
-bool UI::PreUpdate()
-{
-    return true;
-}
-
-bool UI::Update()
-{
-    
-
-    return true;
-}
 
 bool UI::PostUpdate()
 {
     if (!m_view) return true;
-    m_view->Update(0.0);
-
+    m_view->Update(Application::GetInstance().time->GetTotalTime());
 
     // Render offscreen
     m_view->GetRenderer()->UpdateRenderTree();
@@ -84,7 +91,8 @@ bool UI::CleanUp()
         m_view->GetRenderer()->Shutdown();
         m_view.Reset();
     }
-
+    
+    NsShutdownPackageAppInteractivity();
     Noesis::GUI::Shutdown();
     return true;
 }
