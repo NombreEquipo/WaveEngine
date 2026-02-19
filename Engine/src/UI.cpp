@@ -102,3 +102,11 @@ void UI::OnResize(uint32_t width, uint32_t height)
     if (m_view)
         m_view->SetSize(width, height);
 }
+
+void UI::SetMousePoistion(int x, int y)
+{
+    if (m_view)
+    {
+        m_view->MouseMove(x, y);
+    }
+}

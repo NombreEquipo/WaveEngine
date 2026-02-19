@@ -1,5 +1,6 @@
 #include "Input.h"
 #include "Window.h"
+#include "UI.h"
 #include "Application.h"
 #include <iostream>
 #include "imgui.h"
@@ -211,6 +212,8 @@ bool Input::PreUpdate()
 			mouseMotionY = static_cast<int>(event.motion.yrel / scale);
 			mouseX = static_cast<int>(event.motion.x / scale);
 			mouseY = static_cast<int>(event.motion.y / scale);
+
+			Application::GetInstance().ui.get()->SetMousePoistion(mouseX, mouseY);
 
 			float mouseXf = static_cast<float>(event.motion.x) / static_cast<float>(scale);
 			float mouseYf = static_cast<float>(event.motion.y) / static_cast<float>(scale);

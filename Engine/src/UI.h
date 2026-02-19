@@ -15,6 +15,8 @@ public:
     bool CleanUp() override;
 
     void OnResize(uint32_t width, uint32_t height);
+    void SetMousePoistion(int x, int y);
+    
 
 private:
     Noesis::Ptr<Noesis::IView> m_view;
