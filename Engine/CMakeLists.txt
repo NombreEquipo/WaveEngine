@@ -83,15 +83,15 @@ set(COMPONENTS_SRC
     src/Transform.h
     src/ComponentCamera.cpp
     src/ComponentCamera.h
-    src/ComponentRotate.cpp
-    src/ComponentRotate.h
+    #src/ComponentRotate.cpp
+    #src/ComponentRotate.h
     src/AudioComponent.h
     src/AudioSource.h
     src/AudioSource.cpp
     src/AudioListener.h
     src/AudioListener.cpp
-    src/ComponentMove.h
-    src/ComponentMove.cpp
+    #src/ComponentMove.h
+    #src/ComponentMove.cpp
     src/ReverbZone.h
     src/ReverbZone.cpp
 )

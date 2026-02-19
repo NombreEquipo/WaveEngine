@@ -25,7 +25,7 @@
                 },
                 {
                     "active": true,
-                    "aspectRatio": 0.832335352897644,
+                    "aspectRatio": 0.796407163143158,
                     "farPlane": 500.0,
                     "fov": 56.0,
                     "frustumCullingEnabled": false,
@@ -125,15 +125,6 @@
                                                             "playOnAwake": true,
                                                             "type": 6,
                                                             "volume": 80.0
-                                                        },
-                                                        {
-                                                            "active": true,
-                                                            "dirX": 1.0,
-                                                            "dirY": 0.0,
-                                                            "dirZ": 0.0,
-                                                            "distance": 146.3000030517578,
-                                                            "speed": 15.0,
-                                                            "type": 8
                                                         },
                                                         {
                                                             "active": true,

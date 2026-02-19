@@ -13,7 +13,7 @@ enum class ComponentType {
     LISTENER,
     AUDIOSOURCE,
     REVERBZONE,
-    MOVE,
+    //MOVE,
     UNKNOWN
 };
 

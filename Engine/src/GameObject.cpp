@@ -4,11 +4,11 @@
 #include "ComponentMesh.h"
 #include "ComponentMaterial.h"
 #include "ComponentCamera.h"
-#include "ComponentRotate.h"
+//#include "ComponentRotate.h"
 #include "AudioComponent.h"
 #include "AudioSource.h"
 #include "AudioListener.h"
-#include "ComponentMove.h"
+//#include "ComponentMove.h"
 #include "ReverbZone.h"
 #include <nlohmann/json.hpp>
 
@@ -60,12 +60,12 @@ Component* GameObject::CreateComponent(ComponentType type) {
         newComponent = new ComponentCamera(this);
         break;
 
-    case ComponentType::ROTATE:
-        newComponent = new ComponentRotate(this);
-        break;
-    case ComponentType::MOVE:
-        newComponent = new ComponentMove(this);
-        break;
+    //case ComponentType::ROTATE:
+    //    newComponent = new ComponentRotate(this);
+    //    break;
+    //case ComponentType::MOVE:
+    //    newComponent = new ComponentMove(this);
+    //    break;
     case ComponentType::REVERBZONE:
         newComponent = new ReverbZone(this);
         break;

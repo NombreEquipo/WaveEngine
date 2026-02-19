@@ -9,7 +9,7 @@ Component::Component(GameObject* owner, ComponentType type) : owner(owner), type
 	case ComponentType::CAMERA: name = "Camera"; break;
     case ComponentType::AUDIOSOURCE: name = "AudioSource"; break;
     case ComponentType::LISTENER: name = "Listener"; break;
-    case ComponentType::MOVE: name = "Move"; break;
+    //case ComponentType::MOVE: name = "Move"; break;
     case ComponentType::REVERBZONE: name = "ReverbZone"; break;
     default: name = "Unknown Component";
     }

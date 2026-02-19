@@ -33,10 +33,10 @@ private:
     void DrawCameraComponent(GameObject* selectedObject);
     void DrawMeshComponent(GameObject* selectedObject);
     void DrawMaterialComponent(GameObject* selectedObject);
-    void DrawRotateComponent(GameObject* selectedObject);
+    //void DrawRotateComponent(GameObject* selectedObject);
     void DrawAudioSourceComponent(GameObject* selectedObject);
     void DrawAudioListenerComponent(GameObject* selectedObject);
-    void DrawMoveComponent(GameObject* selectedObject);
+    //void DrawMoveComponent(GameObject* selectedObject);
     void DrawReverbZoneComponent(GameObject* selectedObject); 
 
     // Helper methods

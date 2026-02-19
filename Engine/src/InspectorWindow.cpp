@@ -94,10 +94,10 @@ void InspectorWindow::Draw()
             selectedObject->CreateComponent(ComponentType::REVERBZONE);
             LOG_CONSOLE("Added ReverbZone to %s", selectedObject->GetName().c_str());
         }
-        if (ImGui::MenuItem("Move Component")) {
-            selectedObject->CreateComponent(ComponentType::MOVE);
-            LOG_CONSOLE("Added MoveComponent to %s", selectedObject->GetName().c_str());
-        }
+        //if (ImGui::MenuItem("Move Component")) {
+        //    selectedObject->CreateComponent(ComponentType::MOVE);
+        //    LOG_CONSOLE("Added MoveComponent to %s", selectedObject->GetName().c_str());
+        //}
         ImGui::EndPopup();
     }
     ImGui::Spacing();
@@ -110,11 +110,11 @@ void InspectorWindow::Draw()
     DrawCameraComponent(selectedObject);
     DrawMeshComponent(selectedObject);
     DrawMaterialComponent(selectedObject);
-    DrawRotateComponent(selectedObject);
+    //DrawRotateComponent(selectedObject);
     DrawAudioSourceComponent(selectedObject);
     DrawAudioListenerComponent(selectedObject);
     DrawReverbZoneComponent(selectedObject);
-    DrawMoveComponent(selectedObject);
+    //DrawMoveComponent(selectedObject);
 
     ImGui::End();
 }
@@ -806,35 +806,35 @@ void InspectorWindow::DrawMaterialComponent(GameObject* selectedObject)
     }
 }
 
-void InspectorWindow::DrawRotateComponent(GameObject* selectedObject)
-{
-    ComponentRotate* rotateComp = static_cast<ComponentRotate*>(selectedObject->GetComponent(ComponentType::ROTATE));
-
-    if (rotateComp == nullptr) return;
-
-    if (ImGui::CollapsingHeader("Auto Rotate", ImGuiTreeNodeFlags_DefaultOpen))
-    {
-        bool active = rotateComp->IsActive();
-        if (ImGui::Checkbox("Enable Auto Rotation", &active))
-        {
-            rotateComp->SetActive(active);
-        }
-
-        rotateComp->OnEditor();
-    }
-}
-
-void InspectorWindow::DrawMoveComponent(GameObject* selectedObject)
-{
-    ComponentRotate* moveComp = static_cast<ComponentRotate*>(selectedObject->GetComponent(ComponentType::MOVE));
-
-    if (moveComp == nullptr) return;
-
-    if (ImGui::CollapsingHeader("Move Component", ImGuiTreeNodeFlags_DefaultOpen))
-    {
-        moveComp->OnEditor();
-    }
-}
+//void InspectorWindow::DrawRotateComponent(GameObject* selectedObject)
+//{
+//    ComponentRotate* rotateComp = static_cast<ComponentRotate*>(selectedObject->GetComponent(ComponentType::ROTATE));
+//
+//    if (rotateComp == nullptr) return;
+//
+//    if (ImGui::CollapsingHeader("Auto Rotate", ImGuiTreeNodeFlags_DefaultOpen))
+//    {
+//        bool active = rotateComp->IsActive();
+//        if (ImGui::Checkbox("Enable Auto Rotation", &active))
+//        {
+//            rotateComp->SetActive(active);
+//        }
+//
+//        rotateComp->OnEditor();
+//    }
+//}
+//
+//void InspectorWindow::DrawMoveComponent(GameObject* selectedObject)
+//{
+//    ComponentRotate* moveComp = static_cast<ComponentRotate*>(selectedObject->GetComponent(ComponentType::MOVE));
+//
+//    if (moveComp == nullptr) return;
+//
+//    if (ImGui::CollapsingHeader("Move Component", ImGuiTreeNodeFlags_DefaultOpen))
+//    {
+//        moveComp->OnEditor();
+//    }
+//}
 
 
 bool InspectorWindow::DrawGameObjectSection(GameObject* selectedObject)

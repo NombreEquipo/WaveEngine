@@ -39,25 +39,25 @@ void ComponentMove::Update() {
 }
 
 void ComponentMove::OnEditor() {
-    if (ImGui::CollapsingHeader("Auto Movement", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::DragFloat("Speed", &speed, 0.1f);
-        ImGui::DragFloat("Max Distance", &distance, 0.1f);
-        ImGui::DragFloat3("Direction", &direction.x, 0.1f);
-    }
+    //if (ImGui::CollapsingHeader("Auto Movement", ImGuiTreeNodeFlags_DefaultOpen)) {
+    //    ImGui::DragFloat("Speed", &speed, 0.0f);
+    //    ImGui::DragFloat("Max Distance", &distance, 0.1f);
+    //    ImGui::DragFloat3("Direction", &direction.x, 0.1f);
+    //}
 }
 
 void ComponentMove::Serialize(nlohmann::json& componentObj) const {
-    componentObj["speed"] = speed;
-    componentObj["distance"] = distance;
-    componentObj["dirX"] = direction.x;
-    componentObj["dirY"] = direction.y;
-    componentObj["dirZ"] = direction.z;
+    //componentObj["speed"] = speed;
+    //componentObj["distance"] = distance;
+    //componentObj["dirX"] = direction.x;
+    //componentObj["dirY"] = direction.y;
+    //componentObj["dirZ"] = direction.z;
 }
 
 void ComponentMove::Deserialize(const nlohmann::json& componentObj) {
-    speed = componentObj.value("speed", 2.0f);
-    distance = componentObj.value("distance", 5.0f);
-    direction.x = componentObj.value("dirX", 0.0f);
-    direction.y = componentObj.value("dirY", 0.0f);
-    direction.z = componentObj.value("dirZ", 1.0f);
+    //speed = componentObj.value("speed", 2.0f);
+    //distance = componentObj.value("distance", 5.0f);
+    //direction.x = componentObj.value("dirX", 0.0f);
+    //direction.y = componentObj.value("dirY", 0.0f);
+    //direction.z = componentObj.value("dirZ", 1.0f);
 }
