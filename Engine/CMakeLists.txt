@@ -17,6 +17,7 @@ find_package(nlohmann_json CONFIG REQUIRED)
 find_package(Tracy CONFIG REQUIRED)
 find_package(Lua REQUIRED)
 find_package(unofficial-omniverse-physx-sdk CONFIG REQUIRED)
+find_package(recastnavigation CONFIG REQUIRED)
 
 set(CORE_SRC 
     src/Main.cpp 
@@ -200,6 +201,13 @@ set(SCRIPTING_SRC
     src/TextEditor.cpp
 )
 
+set(NAVIGATION_SRC
+    src/NavMeshManager.cpp
+    src/NavMeshManager.h
+    src/ComponentNavigation.cpp
+    src/ComponentNavigation.h
+)
+
 source_group("Source\\Core" FILES ${CORE_SRC})
 source_group("Source\\Rendering" FILES ${RENDERING_SRC})
 source_group("Source\\Rendering\\VFX" FILES ${VFX_SRC})
@@ -211,8 +219,9 @@ source_group("Source\\Loaders" FILES ${LOADERS_SRC})
 source_group("Source\\Loaders\\Importers" FILES ${IMPORTERS_SRC})
 source_group("Scripting" FILES ${SCRIPTING_SRC})
 source_group("Source\\Physics" FILES ${PHYSICS_SRC})
+source_group("Source\\Navigation" FILES ${NAVIGATION_SRC})
 
-set(SRCS ${CORE_SRC} ${RENDERING_SRC} ${VFX_SRC} ${UTILS_SRC} ${EDITOR_SRC} ${GAMEOBJECTS_SRC} ${COMPONENTS_SRC} ${LOADERS_SRC} ${IMPORTERS_SRC} ${SCRIPTING_SRC} ${PHYSICS_SRC})
+set(SRCS ${CORE_SRC} ${RENDERING_SRC} ${VFX_SRC} ${UTILS_SRC} ${EDITOR_SRC} ${GAMEOBJECTS_SRC} ${COMPONENTS_SRC} ${LOADERS_SRC} ${IMPORTERS_SRC} ${SCRIPTING_SRC} ${PHYSICS_SRC} ${NAVIGATION_SRC})
 
 add_executable(Engine ${SRCS})
 
@@ -227,6 +236,9 @@ target_link_libraries(Engine PRIVATE imguizmo::imguizmo)
 target_link_libraries(Engine PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(Engine PRIVATE Tracy::TracyClient)
 target_link_libraries(Engine PRIVATE unofficial::omniverse-physx-sdk::sdk)
+target_link_libraries(Engine PRIVATE RecastNavigation::Recast)
+target_link_libraries(Engine PRIVATE RecastNavigation::Detour)
+target_link_libraries(Engine PRIVATE RecastNavigation::DetourCrowd)
 target_link_libraries(Engine PRIVATE ${LUA_LIBRARIES})
 
 target_include_directories(Engine PRIVATE ${LUA_INCLUDE_DIR})

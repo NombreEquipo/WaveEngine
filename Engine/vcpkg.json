@@ -22,6 +22,7 @@
     "sdl3",
     "tracy",
     "lua",
-    "physx"
+    "physx",
+    "recastnavigation"
   ]
 }

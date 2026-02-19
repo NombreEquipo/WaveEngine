@@ -1,4 +1,3 @@
-#include "NavMeshManager.h"
 #include "Application.h"
 #include "ModuleScene.h"
 #include "GameObject.h"
@@ -6,10 +5,7 @@
 #include "Transform.h"
 #include "FileSystem.h"
 #include "Log.h"
-#include "Recast/Include/Recast.h"
-#include "Detour/Include/DetourNavMesh.h"
-#include "Detour/Include/DetourNavMeshQuery.h"
-#include "Recast/Include/RecastAlloc.h"
+#include "NavMeshManager.h"
 
 ModuleNavMesh::ModuleNavMesh() : Module() {
     name = "ModuleNavMesh";
@@ -21,6 +17,11 @@ ModuleNavMesh::~ModuleNavMesh() {
 
 bool ModuleNavMesh::Start() {
     LOG_CONSOLE("NavMesh Manager Started");
+    return true;
+}
+
+bool ModuleNavMesh::Update() {
+    DrawDebug(); // Llamamos a la función de dibujo
     return true;
 }
 

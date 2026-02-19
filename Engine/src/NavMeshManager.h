@@ -1,15 +1,16 @@
 #pragma once
 
 #include "Module.h" 
-#include "Recast/Include/Recast.h"
-#include "Detour/Include/DetourNavMesh.h"
-#include "Detour/Include/DetourNavMeshQuery.h"
+#include "Recast.h"
+#include "DetourNavMesh.h"
 
 #include "Transform.h"
 #include "ComponentMesh.h"
 
 #include <vector>
 #include <glm/glm.hpp>
+
+#include "DetourNavMeshQuery.h"
 
 class ModuleNavMesh : public Module
 {
@@ -18,6 +19,7 @@ public:
     virtual ~ModuleNavMesh();
 
     bool Start() override;
+    bool Update() override;
     bool CleanUp() override;
 
     void Bake(GameObject* obj);
