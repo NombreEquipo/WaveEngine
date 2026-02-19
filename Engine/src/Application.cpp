@@ -22,9 +22,12 @@ Application::Application() : isRunning(true), playState(PlayState::EDITING)
     time = std::make_shared<Time>();
     grid = std::make_shared<Grid>();
     resources = std::make_shared<ModuleResources>();
+    scripts = std::make_shared<ScriptManager>();  
+    physics = std::make_shared<ModulePhysics>();  
 
     AddModule(std::static_pointer_cast<Module>(window));
     AddModule(std::static_pointer_cast<Module>(input));
+    AddModule(std::static_pointer_cast<Module>(physics));
     AddModule(std::static_pointer_cast<Module>(renderContext));
     AddModule(std::static_pointer_cast<Module>(scene));
     AddModule(std::static_pointer_cast<Module>(camera));
@@ -32,14 +35,15 @@ Application::Application() : isRunning(true), playState(PlayState::EDITING)
     AddModule(std::static_pointer_cast<Module>(editor));
 #endif
     AddModule(std::static_pointer_cast<Module>(resources));
+    AddModule(std::static_pointer_cast<Module>(scripts));  
     AddModule(std::static_pointer_cast<Module>(filesystem));
     AddModule(std::static_pointer_cast<Module>(time));
     AddModule(std::static_pointer_cast<Module>(grid));
     AddModule(std::static_pointer_cast<Module>(renderer));
 
+
     selectionManager = new SelectionManager();
 }
-
 Application& Application::GetInstance()
 {
     static Application instance;
@@ -147,6 +151,19 @@ bool Application::Update()
     return ret;
 }
 
+bool Application::FixedUpdate()
+{
+    bool result = true;
+    for (const auto& module : moduleList) {
+        result = module.get()->FixedUpdate();
+        if (!result) {
+            break;
+        }
+    }
+
+    return result;
+}
+
 bool Application::PreUpdate()
 {
     //Iterates the module list and calls PreUpdate on each module
@@ -227,6 +244,16 @@ void Application::Pause()
 
 void Application::Stop()
 {
+    // Procesar operaciones pendientes de scripts ANTES de restaurar
+    if (scripts) {
+        scripts->PostUpdate(); // Ejecuta pendingOperations y pendingDestroy
+    }
+
+    // Limpiar objetos marcados para eliminación
+    if (scene) {
+        scene->CleanupMarkedObjects(scene->GetRoot());
+    }
+
     // Restore
     if (playState != PlayState::EDITING) {
         LOG_CONSOLE("Restoring initial scene state...");
@@ -252,12 +279,14 @@ bool Application::CleanUp()
     LOG_CONSOLE("Cleaning up modules...");
 
     bool result = true;
-    for (const auto& module : moduleList) {
-        result = module.get()->CleanUp();
+
+    for (auto it = moduleList.rbegin(); it != moduleList.rend(); ++it) {
+        result = (*it)->CleanUp();
         if (!result) {
-            break;
+            LOG_DEBUG("ERROR: Module failed CleanUp: %s", (*it)->name.c_str());
         }
     }
+
     moduleList.clear();
 
 #ifndef WAVE_GAME
@@ -266,13 +295,15 @@ bool Application::CleanUp()
     camera.reset();
     scene.reset();
     renderer.reset();
-    renderContext.reset();
     grid.reset();
     time.reset();
     filesystem.reset();
+    scripts.reset();
+    resources.reset();
+    renderContext.reset();
+    physics.reset();
     input.reset();
     window.reset();
-    resources.reset();
 
     delete selectionManager;
     selectionManager = nullptr;
