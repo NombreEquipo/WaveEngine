@@ -249,4 +249,4 @@ target_link_libraries(Game PRIVATE Tracy::TracyClient)
 target_link_libraries(Game PRIVATE unofficial::omniverse-physx-sdk::sdk)
 target_link_libraries(Game PRIVATE ${LUA_LIBRARIES})
 
-target_include_directories(Game PRIVATE ${LUA_INCLUDE_DIR})
+#target_include_directories(Game PRIVATE ${LUA_INCLUDE_DIR})

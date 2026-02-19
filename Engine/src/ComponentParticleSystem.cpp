@@ -104,6 +104,8 @@ void ComponentParticleSystem::Draw(ComponentCamera* camera) {
 }
 
 void ComponentParticleSystem::OnEditor() {
+
+    #ifndef WAVE_GAME
     if (ImGui::CollapsingHeader("Particle System", ImGuiTreeNodeFlags_DefaultOpen)) {
         // Control buttons
         ImGui::Checkbox("Active", &active);
@@ -323,6 +325,7 @@ void ComponentParticleSystem::OnEditor() {
         ImGui::Separator();
         ImGui::TextColored(ImVec4(0, 1, 1, 1), "Particles Alive: %d", (int)emitter->particles.size());
     }
+    #endif 
 }
 
 void ComponentParticleSystem::SetTexture(const std::string& path) {

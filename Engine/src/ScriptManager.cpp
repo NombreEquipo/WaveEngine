@@ -18,8 +18,10 @@
 #include "ModuleCamera.h"   
 #include <SDL3/SDL_scancode.h>
 #include "GameWindow.h"
+#ifndef WAVE_GAME
 #include "EditorWindow.h"
 #include "ModuleEditor.h"
+#endif
 #include "ConsoleWindow.h"
 
 #include <filesystem>
@@ -97,12 +99,14 @@ bool ScriptManager::LoadScript(const std::string& filepath) {
         LOG_CONSOLE("[ScriptManager] ERROR: Script not found: %s", filepath.c_str());
 
         // Activar flash de error
+        #ifndef WAVE_GAME
         Application& app = Application::GetInstance();
         if (app.editor && app.editor->GetConsoleWindow()) {
             app.editor->GetConsoleWindow()->FlashError();
         }
 
         return false;
+        #endif 
     }
 
     int result = luaL_dofile(L, filepath.c_str());
@@ -112,12 +116,13 @@ bool ScriptManager::LoadScript(const std::string& filepath) {
         LOG_CONSOLE("[ScriptManager] ERROR: %s", error);
         lua_pop(L, 1);
 
+        #ifndef WAVE_GAME
         // Activar flash de error
         Application& app = Application::GetInstance();
         if (app.editor && app.editor->GetConsoleWindow()) {
             app.editor->GetConsoleWindow()->FlashError();
         }
-
+        #endif // !1
         return false;
     }
 
@@ -137,11 +142,13 @@ void ScriptManager::CallGlobalStart() {
             LOG_CONSOLE("[ScriptManager] ERROR in Start(): %s", error);
             lua_pop(L, 1);
 
+            #ifndef WAVE_GAME
             // Activar flash de error
             auto& app = Application::GetInstance();
             if (app.editor && app.editor->GetConsoleWindow()) {
                 app.editor->GetConsoleWindow()->FlashError();
             }
+            #endif
         }
     }
     else {
@@ -159,12 +166,13 @@ void ScriptManager::CallGlobalUpdate(float deltaTime) {
             const char* error = lua_tostring(L, -1);
             LOG_CONSOLE("[ScriptManager] ERROR in Update(): %s", error);
             lua_pop(L, 1);
-
+            #ifndef WAVE_GAME
             // Activar flash de error
             auto& app = Application::GetInstance();
             if (app.editor && app.editor->GetConsoleWindow()) {
                 app.editor->GetConsoleWindow()->FlashError();
             }
+            #endif // !1
         }
     }
     else {
@@ -226,6 +234,7 @@ static int Lua_Input_GetMousePosition(lua_State* L) {
     int rawX, rawY;
     Input::GetMousePosition(rawX, rawY);
 
+    #ifndef WAVE_GAME
     auto& app = Application::GetInstance();
 
     // Get the Game window directly
@@ -247,7 +256,7 @@ static int Lua_Input_GetMousePosition(lua_State* L) {
             return 2;
         }
     }
-
+    #endif
     // If not in game window, return nil
     lua_pushnil(L);
     lua_pushnil(L);
@@ -268,14 +277,14 @@ static int Lua_Camera_GetScreenToWorldPlane(lua_State* L) {
     // Get Game window dimensions
     int screenWidth = 800;
     int screenHeight = 600;
-
+    #ifndef WAVE_GAME
     GameWindow* gameWindow = app.editor->GetGameWindow();
     if (gameWindow) {
         ImVec2 viewportSize = gameWindow->GetViewportSize();
         screenWidth = static_cast<int>(viewportSize.x);
         screenHeight = static_cast<int>(viewportSize.y);
     }
-
+    #endif
     ComponentCamera* camera = nullptr;
     
     if (app.GetPlayState() == Application::PlayState::PLAYING) {
@@ -1142,6 +1151,8 @@ void ScriptManager::RegisterPrefabAPI() {
 }
 
 static GameWindow* GetGameWindow() {
+    #ifndef WAVE_GAME
     GameWindow* window = Application::GetInstance().editor->GetGameWindow();
     return window;
+    #endif // !1
 }
