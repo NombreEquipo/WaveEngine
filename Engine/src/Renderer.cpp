@@ -354,9 +354,13 @@ bool Renderer::Update()
             DrawScene(sceneCamera, sceneCamera, false);
         }
 
-        defaultTexture->Unbind();
+            defaultTexture->Unbind();
 
-        UnbindFramebuffer();
+            // Render NoesisUI on top of GameScene
+            Application::GetInstance().ui->RenderToGameFramebuffer(
+                (int)gameViewportSize.x, (int)gameViewportSize.y);
+
+            UnbindFramebuffer();
     }
 
     return true;
