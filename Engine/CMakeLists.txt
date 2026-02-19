@@ -129,6 +129,8 @@ set(COMPONENTS_SRC
     src/ComponentRotate.h
     src/ComponentParticleSystem.h
     src/ComponentParticleSystem.cpp
+    src/ComponentCanvas.h
+    src/ComponentCanvas.cpp
 )
 
 set(LOADERS_SRC 

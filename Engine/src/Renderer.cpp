@@ -3,6 +3,7 @@
 #include "GameObject.h"
 #include "Transform.h"
 #include "ComponentMesh.h"
+#include "ComponentCanvas.h"
 #include "ComponentMaterial.h"
 #include "ModuleEditor.h"
 #include "ResourceShader.h"
@@ -369,18 +370,19 @@ bool Renderer::Update()
         glActiveTexture(GL_TEXTURE0);
         glUniform1i(defaultUniforms.texture1, 0);
 
-            if (root != nullptr && root->GetChildren().size() > 0)
+        if (root != nullptr && root->GetChildren().size() > 0)
         {
             DrawScene(sceneCamera, sceneCamera, false);
         }
 
-            defaultTexture->Unbind();
+        defaultTexture->Unbind();
 
-            // Render NoesisUI on top of GameScene
-            Application::GetInstance().ui->RenderToGameFramebuffer(
-                (int)gameViewportSize.x, (int)gameViewportSize.y);
+        for (ComponentCanvas* canvas : Application::GetInstance().ui->GetCanvas())
+        {
+            canvas->RenderToTexture();
+        }
 
-            UnbindFramebuffer();
+        UnbindFramebuffer();
     }
 
     return true;
