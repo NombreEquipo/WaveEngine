@@ -1,6 +1,8 @@
 ﻿#include "UI.h"
 #include "Application.h"
 #include "Time.h"
+#include "ModuleEditor.h"
+#include "imgui.h"
 
 #include "NoesisPCH.h"
 #include "NsCore/Noesis.h"
@@ -91,10 +93,17 @@ void UI::OnResize(uint32_t width, uint32_t height)
 
 void UI::SetMousePoistion(int x, int y)
 {
-    if (m_view)
-    {
-        m_view->MouseMove(x, y);
-    }
+	if (m_view)
+	{
+		ModuleEditor* editor = Application::GetInstance().editor.get();
+		if (editor)
+		{
+			ImVec2 gameViewportPos = editor->gameViewportPos;
+			int relativeX = x - static_cast<int>(gameViewportPos.x);
+			int relativeY = y - static_cast<int>(gameViewportPos.y);
+			m_view->MouseMove(relativeX, relativeY);
+		}
+	}
 }
 
 void UI::RenderToGameFramebuffer(int width, int height)
