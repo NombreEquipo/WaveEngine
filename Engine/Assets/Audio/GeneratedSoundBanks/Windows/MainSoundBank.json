@@ -10,7 +10,7 @@
     "Type": "User",
     "GUID": "{7C55CBAC-5186-4208-888F-0BCE02308A98}",
     "Language": "SFX",
-    "Hash": "{879D7A59-2275-B938-E23E-859A65148D87}",
+    "Hash": "{B140332C-1FCD-E4DB-37F9-7BAE7A5A66E2}",
     "ObjectPath": "\\SoundBanks\\Default Work Unit\\MainSoundBank",
     "ShortName": "MainSoundBank",
     "Path": "MainSoundBank.bnk",
@@ -24,6 +24,14 @@
       "CachePath": "DF/{DF60B5D6-E183-80D8-F9F9-17969D1694ED}.wem"
      },
      {
+      "Id": "63924214",
+      "Language": "SFX",
+      "Streaming": "false",
+      "Location": "Memory",
+      "ShortName": "Lookin' Fresh (Hotlantis)_stereo.wav",
+      "CachePath": "EE/{EEBA906F-9817-9DC0-E2C0-B8D58079B757}.wem"
+     },
+     {
       "Id": "146790378",
       "Language": "SFX",
       "Streaming": "false",
@@ -32,12 +40,28 @@
       "CachePath": "44/{4423CA7D-EAEC-F92E-6D77-5A4C31819A68}.wem"
      },
      {
+      "Id": "335686779",
+      "Language": "SFX",
+      "Streaming": "false",
+      "Location": "Memory",
+      "ShortName": "tenna talking.wav",
+      "CachePath": "3A/{3A4D06D9-395A-5903-26CE-370498E6703B}.wem"
+     },
+     {
       "Id": "352851221",
       "Language": "SFX",
       "Streaming": "false",
       "Location": "Memory",
       "ShortName": "coffeeShop.wav",
       "CachePath": "2B/{2B154332-6CDB-A031-4D10-CA2E596ED15D}.wem"
+     },
+     {
+      "Id": "397602422",
+      "Language": "SFX",
+      "Streaming": "false",
+      "Location": "Memory",
+      "ShortName": "sans talking.wav",
+      "CachePath": "E4/{E450C7D6-9FBA-64F4-3E37-49018B425729}.wem"
      },
      {
       "Id": "516869498",
@@ -54,6 +78,22 @@
       "Location": "Memory",
       "ShortName": "mansionAmbience.wav",
       "CachePath": "EA/{EABADB62-DAC5-87D8-AD5F-5D59E3617E1C}.wem"
+     },
+     {
+      "Id": "997234372",
+      "Language": "SFX",
+      "Streaming": "false",
+      "Location": "Memory",
+      "ShortName": "big man talking.wav",
+      "CachePath": "0E/{0E8963D8-B4A7-938D-CFBE-BCFDDAFF4B39}.wem"
+     },
+     {
+      "Id": "1051818920",
+      "Language": "SFX",
+      "Streaming": "false",
+      "Location": "Memory",
+      "ShortName": "Lookin' Fresh (Shrimp Kicks)_stereo.wav",
+      "CachePath": "D9/{D9640CFF-5305-D424-6B0B-03D6AC8E899D}.wem"
      }
     ],
     "Plugins": {
@@ -126,14 +166,41 @@
     },
     "Events": [
      {
+      "Id": "822131113",
+      "Name": "Play_ACTalkingSFX",
+      "ObjectPath": "\\Events\\Default Work Unit\\Play_ACTalkingSFX",
+      "GUID": "{2408F51F-9869-4000-BE1D-F416FC96603E}",
+      "MaxAttenuation": "20",
+      "DurationType": "Infinite",
+      "MediaRefs": [
+       {
+        "Id": "60684799"
+       }
+      ]
+     },
+     {
       "Id": "278617630",
       "Name": "Play_Ambience",
       "ObjectPath": "\\Events\\Default Work Unit\\Play_Ambience",
       "GUID": "{D8092CF2-62B7-4F0B-B962-689E720F0947}",
+      "MaxAttenuation": "20",
       "DurationType": "Infinite",
       "MediaRefs": [
        {
         "Id": "994023216"
+       }
+      ]
+     },
+     {
+      "Id": "1527952419",
+      "Name": "Play_BigManTalkingSFX",
+      "ObjectPath": "\\Events\\Default Work Unit\\Play_BigManTalkingSFX",
+      "GUID": "{9CD2CCFE-FDBA-4F9B-AA7D-2C5F60B35903}",
+      "MaxAttenuation": "20",
+      "DurationType": "Infinite",
+      "MediaRefs": [
+       {
+        "Id": "997234372"
        }
       ]
      },
@@ -186,10 +253,59 @@
       ]
      },
      {
+      "Id": "111646406",
+      "Name": "Play_LookinFresh",
+      "ObjectPath": "\\Events\\Default Work Unit\\Play_LookinFresh",
+      "GUID": "{07EE1789-027B-4146-8C7E-47FC4E87AA00}",
+      "DurationType": "Infinite",
+      "SwitchContainers": [
+       {
+        "SwitchValue": {
+         "GroupType": "State",
+         "GroupId": "3086301423",
+         "Id": "931153941",
+         "GUID": "{234D10A0-6799-4EF8-8F4E-A9C817848F9C}"
+        },
+        "MediaRefs": [
+         {
+          "Id": "63924214"
+         }
+        ]
+       },
+       {
+        "SwitchValue": {
+         "GroupType": "State",
+         "GroupId": "3086301423",
+         "Id": "1814469713",
+         "GUID": "{B4515133-463C-4D09-8EF9-F32B7B62A759}"
+        },
+        "MediaRefs": [
+         {
+          "Id": "1051818920"
+         }
+        ]
+       },
+       {
+        "SwitchValue": {
+         "GroupType": "State",
+         "GroupId": "3086301423",
+         "Id": "0",
+         "GUID": "{212BF06F-B611-45DB-82D2-933EE818AAFE}"
+        },
+        "MediaRefs": [
+         {
+          "Id": "63924214"
+         }
+        ]
+       }
+      ]
+     },
+     {
       "Id": "111273809",
       "Name": "Play_RadioStatic",
       "ObjectPath": "\\Events\\Default Work Unit\\Play_RadioStatic",
       "GUID": "{3551EEE5-E060-46CA-9383-5F51686E58F0}",
+      "MaxAttenuation": "20",
       "DurationType": "Infinite",
       "MediaRefs": [
        {
@@ -198,14 +314,28 @@
       ]
      },
      {
-      "Id": "1277677597",
-      "Name": "Play_TalkingSFX",
-      "ObjectPath": "\\Events\\Default Work Unit\\Play_TalkingSFX",
-      "GUID": "{2408F51F-9869-4000-BE1D-F416FC96603E}",
+      "Id": "3021003768",
+      "Name": "Play_SansTalkingSFX",
+      "ObjectPath": "\\Events\\Default Work Unit\\Play_SansTalkingSFX",
+      "GUID": "{A08F0DC8-4B98-48D7-86CD-7A2BD10BF58E}",
+      "MaxAttenuation": "20",
       "DurationType": "Infinite",
       "MediaRefs": [
        {
-        "Id": "60684799"
+        "Id": "397602422"
+       }
+      ]
+     },
+     {
+      "Id": "3711469543",
+      "Name": "Play_TennaTalkingSFX",
+      "ObjectPath": "\\Events\\Default Work Unit\\Play_TennaTalkingSFX",
+      "GUID": "{B940BB59-F169-47D8-A29E-CD694FB17130}",
+      "MaxAttenuation": "20",
+      "DurationType": "Infinite",
+      "MediaRefs": [
+       {
+        "Id": "335686779"
        }
       ]
      }
@@ -398,6 +528,6 @@
     ]
    }
   ],
-  "FileHash": "{DBD18FB5-E1E8-B827-5603-823D2591BAB2}"
+  "FileHash": "{512B066E-3CB8-7E53-D51B-641A4DE0AF88}"
  }
 }

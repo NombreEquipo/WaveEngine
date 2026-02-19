@@ -25,7 +25,7 @@
                 },
                 {
                     "active": true,
-                    "aspectRatio": 1.2814371585845947,
+                    "aspectRatio": 0.832335352897644,
                     "farPlane": 500.0,
                     "fov": 56.0,
                     "frustumCullingEnabled": false,
@@ -62,9 +62,9 @@
                                                         {
                                                             "active": true,
                                                             "position": [
-                                                                -6.5655975341796875,
-                                                                0.47717154026031494,
-                                                                9.18735408782959
+                                                                -6.565601348876953,
+                                                                0.47716954350471497,
+                                                                9.187352180480957
                                                             ],
                                                             "rotation": [
                                                                 1.3277772268338595e-06,
@@ -121,7 +121,7 @@
                                                         },
                                                         {
                                                             "active": true,
-                                                            "eventName": "play_TalkingSFX",
+                                                            "eventName": "Play_ACTalkingSFX",
                                                             "playOnAwake": true,
                                                             "type": 6,
                                                             "volume": 80.0

@@ -86,8 +86,10 @@ bool ModuleAudio::CleanUp() {
 }
 
 void ModuleAudio::PlayAudio(AudioSource* source, AkUniqueID event) {
-    if (source != nullptr)
+    if (source != nullptr) {
+        
         audioSystem->PlayEvent(event, source->goID);
+    }
     else
         LOG_CONSOLE(__FILE__, __LINE__, "There is no component Audio Source to play");
 }

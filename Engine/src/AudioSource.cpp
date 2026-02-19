@@ -49,7 +49,7 @@ void AudioSource::SetTransform() {
             worldUp.x, worldUp.y, worldUp.z
         );
 
-        AK::SoundEngine::SetRTPCValue("ObjectVolume", (AkRtpcValue)volume, goID);
+        //K::SoundEngine::SetRTPCValue("ObjectVolume", (AkRtpcValue)volume, goID);
         AK::SoundEngine::SetRTPCValue(AK::GAME_PARAMETERS::AUDIOSOURCE_VOLUME, (AkRtpcValue)(volume), goID);
         AK::SoundEngine::SetPosition(this->goID, soundPos);
     }
@@ -91,10 +91,25 @@ void AudioSource::OnEditor() {
     auto& events = Application::GetInstance().audio->audioSystem->eventNames;
 
     if (ImGui::BeginCombo("Wwise Event", eventName.c_str())) {
-        for (const auto& name : events) {
+        for (const string& name : events) {
             bool isSelected = (eventName == name);
             if (ImGui::Selectable(name.c_str(), isSelected)) {
+
+                if (eventName != name) {  // Stop playing the event if you switch to another  
+                    AK::SoundEngine::StopAll(goID);
+                    
+                    std::wstring wideName(name.begin(), name.end());
+                    AkUniqueID eventID = AK::SoundEngine::GetIDFromString(wideName.c_str());
+
+                    if (eventID == AK_INVALID_UNIQUE_ID) {
+                        LOG_CONSOLE("Wwise Error: Event name '%s' not found!", name.c_str());
+                    }
+                    else {
+                        Application::GetInstance().audio->PlayAudio(this, eventID);
+                    }
+                }
                 eventName = name;
+                
             }
             if (isSelected) {
                 ImGui::SetItemDefaultFocus();
