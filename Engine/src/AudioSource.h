@@ -12,6 +12,8 @@ public:
     //override from AudioComponent
     void SetTransform() override;
 
+    //void SetVolume(); 
+
     ComponentType GetType() const override { return ComponentType::AUDIOSOURCE; }
 
     void Serialize(nlohmann::json& componentObj) const override;

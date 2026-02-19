@@ -50,6 +50,7 @@ void AudioSource::SetTransform() {
         );
 
         AK::SoundEngine::SetRTPCValue("ObjectVolume", (AkRtpcValue)volume, goID);
+        AK::SoundEngine::SetRTPCValue(AK::GAME_PARAMETERS::AUDIOSOURCE_VOLUME, (AkRtpcValue)(volume), goID);
         AK::SoundEngine::SetPosition(this->goID, soundPos);
     }
 }
@@ -102,9 +103,12 @@ void AudioSource::OnEditor() {
         ImGui::EndCombo();
     }
 
-    //if (ImGui::SliderFloat("Volume", &volume, 0.0f, 100.0f)){
-    //    Application::GetInstance().audio.get()->audioSystem->SetMusicVolume(volume);
-    //}
+    if (ImGui::SliderFloat("Volume", &volume, 0.0f, 100.0f)){
+        //Application::GetInstance().audio.get()->audioSystem->SetMusicVolume(volume);
+        AK::SoundEngine::SetRTPCValue(AK::GAME_PARAMETERS::AUDIOSOURCE_VOLUME, (AkRtpcValue)(volume), goID);
+
+    }
+
     ImGui::Checkbox("Play On Awake", &playOnAwake);
 
     ImGui::Spacing();
@@ -134,20 +138,3 @@ void AudioSource::OnEditor() {
         }
     }
 }
-
-//void AudioSource::PlayEvent(char const* eventName)
-//{
-//    if (eventName == nullptr || strlen(eventName) == 0) return;
-//    AK::SoundEngine::PostEvent(eventName, this->goID);
-//}
-//
-//void AudioSource::PlayEvent(AkUniqueID eventID)
-//{
-//    AK::SoundEngine::PostEvent(eventID, this->goID);
-//}
-//
-//void AudioSource::StopEvent(char const* eventName)
-//{
-//    if (eventName == nullptr || strlen(eventName) == 0) return;
-//    AK::SoundEngine::ExecuteActionOnEvent(eventName, AK::SoundEngine::AkActionOnEventType_Stop, this->goID);
-//}

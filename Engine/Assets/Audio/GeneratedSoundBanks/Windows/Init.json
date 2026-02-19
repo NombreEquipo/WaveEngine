@@ -10,7 +10,7 @@
     "Type": "User",
     "GUID": "{701ECBBD-9C7B-4030-8CDB-749EE5D1C7B9}",
     "Language": "SFX",
-    "Hash": "{18353A7D-8196-82F2-7804-71C19027D51B}",
+    "Hash": "{8741DCDC-0B70-7579-3ACC-18333821BB91}",
     "ObjectPath": "Init",
     "ShortName": "Init",
     "Path": "Init.bnk",
@@ -298,6 +298,12 @@
       "Name": "Reverb_Volume",
       "ObjectPath": "\\Game Parameters\\Default Work Unit\\Reverb_Volume",
       "GUID": "{63F7E98E-93FE-4364-8928-682BB81C9FE8}"
+     },
+     {
+      "Id": "4155247583",
+      "Name": "AudioSource_Volume",
+      "ObjectPath": "\\Game Parameters\\Default Work Unit\\AudioSource_Volume",
+      "GUID": "{A30BDFA3-9206-4E32-9A4C-DFA8F02724A5}"
      },
      {
       "Id": "4160247818",
@@ -819,6 +825,6 @@
     ]
    }
   ],
-  "FileHash": "{23D45FAA-D43D-D8DE-A728-829EDEDBC411}"
+  "FileHash": "{D1CE659E-8AE2-4451-3D08-AD4FBD8E81E7}"
  }
 }

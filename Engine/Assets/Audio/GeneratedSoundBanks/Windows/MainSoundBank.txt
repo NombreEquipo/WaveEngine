@@ -16,6 +16,7 @@ Game Parameter	ID	Name			Wwise Object Path	Notes
 	1006694123	Music_Volume			\Default Work Unit\Music_Volume	
 	1564184899	SFX_Volume			\Default Work Unit\SFX_Volume	
 	4143275766	Reverb_Volume			\Default Work Unit\Reverb_Volume	
+	4155247583	AudioSource_Volume			\Default Work Unit\AudioSource_Volume	
 	4179668880	Master_Volume			\Default Work Unit\Master_Volume	
 
 Audio Bus	ID	Name			Wwise Object Path	Notes
@@ -44,9 +45,9 @@ Effect plug-ins	ID	Name	Type				Notes
 	3442768367	Hall_Large_Dark	Wwise RoomVerb			
 
 In Memory Audio	ID	Name	Audio source file		Wwise Object Path	Notes	Data Size
-	60684799	animalCrossingTalking	.cache\DF\{DF60B5D6-E183-80D8-F9F9-17969D1694ED}.wem		\Containers\Default Work Unit\animalCrossingTalking		1764096
-	146790378	radio-static	.cache\44\{4423CA7D-EAEC-F92E-6D77-5A4C31819A68}.wem		\Containers\Default Work Unit\radio-static		1428576
+	60684799	animalCrossingTalking	.cache\DF\{DF60B5D6-E183-80D8-F9F9-17969D1694ED}.wem		\Containers\Default Work Unit\Objects\animalCrossingTalking		1764096
+	146790378	radio-static	.cache\44\{4423CA7D-EAEC-F92E-6D77-5A4C31819A68}.wem		\Containers\Default Work Unit\Objects\radio-static		1428576
 	352851221	coffeeShop	.cache\2B\{2B154332-6CDB-A031-4D10-CA2E596ED15D}.wem		\Containers\Default Work Unit\CPMusic_Switch\coffeeShop\coffeeShop		558934
 	516869498	Charlies Here - Pizza Parlor _ Club Penguin OST	.cache\12\{12D22832-71FA-5C42-6CAD-FFA7A59033CD}.wem		\Containers\Default Work Unit\CPMusic_Switch\pizzaParlor\Charlies Here - Pizza Parlor _ Club Penguin OST		29114464
-	994023216	mansionAmbience	.cache\EA\{EABADB62-DAC5-87D8-AD5F-5D59E3617E1C}.wem		\Containers\Default Work Unit\mansionAmbience		9346668
+	994023216	mansionAmbience	.cache\EA\{EABADB62-DAC5-87D8-AD5F-5D59E3617E1C}.wem		\Containers\Default Work Unit\Objects\mansionAmbience		9346668
 

@@ -168,8 +168,38 @@ target_link_libraries(Engine PRIVATE Tracy::TracyClient)
 
 
 
+# ============= WWISE AUTO-DOWNLOAD =============
 set(WWISE_SDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/External/Wwise/SDK")
-#set(WWISE_SAMPLE_DIR "${WWISE_SDK_DIR}/samples/SoundEngine")
+
+# Check if Wwise libs exist (check soundengine file as indicator)
+if(NOT EXISTS "${WWISE_SDK_DIR}/x64_vc170/Debug/lib/AkSoundEngine.lib")
+    message(STATUS "Wwise SDK not found. Downloading...")
+    
+    file(DOWNLOAD 
+        "https://dl.dropboxusercontent.com/scl/fi/92fdn4rhlc3eim2a5p0ox/wwise_sdk.zip?rlkey=nob090idq4yw0h6v2ehpa7j6t&dl=1"
+        "${CMAKE_BINARY_DIR}/wwise_sdk.zip"
+        SHOW_PROGRESS
+        STATUS DOWNLOAD_STATUS
+    )
+    
+    list(GET DOWNLOAD_STATUS 0 STATUS_CODE)
+    if(NOT STATUS_CODE EQUAL 0)
+        message(FATAL_ERROR "Failed to download Wwise SDK. Please download manually from: [https://dl.dropboxusercontent.com/scl/fi/92fdn4rhlc3eim2a5p0ox/wwise_sdk.zip?rlkey=nob090idq4yw0h6v2ehpa7j6t&dl=1]")
+    endif()
+    
+    message(STATUS "Extracting Wwise SDK...")
+
+    file(ARCHIVE_EXTRACT 
+        INPUT "${CMAKE_BINARY_DIR}/wwise_sdk.zip"
+        DESTINATION "${WWISE_SDK_DIR}"
+    )
+    
+    message(STATUS "✓ Wwise SDK installed!")
+endif()
+
+# ============= END WWISE AUTO-DOWNLOAD =============
+
+
 set(WWISE_CONFIG_DIR $<$<CONFIG:Debug>:Debug>$<$<CONFIG:Release>:Release>$<$<CONFIG:Profile>:Profile>)
 set(WWISE_LIB_DIR "${WWISE_SDK_DIR}/x64_vc170/${WWISE_CONFIG_DIR}/lib")
 

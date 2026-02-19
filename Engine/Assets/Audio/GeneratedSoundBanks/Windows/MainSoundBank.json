@@ -10,7 +10,7 @@
     "Type": "User",
     "GUID": "{7C55CBAC-5186-4208-888F-0BCE02308A98}",
     "Language": "SFX",
-    "Hash": "{24CA5066-01CB-DE73-25BA-154C015628FD}",
+    "Hash": "{879D7A59-2275-B938-E23E-859A65148D87}",
     "ObjectPath": "\\SoundBanks\\Default Work Unit\\MainSoundBank",
     "ShortName": "MainSoundBank",
     "Path": "MainSoundBank.bnk",
@@ -130,7 +130,6 @@
       "Name": "Play_Ambience",
       "ObjectPath": "\\Events\\Default Work Unit\\Play_Ambience",
       "GUID": "{D8092CF2-62B7-4F0B-B962-689E720F0947}",
-      "MaxAttenuation": "20",
       "DurationType": "Infinite",
       "MediaRefs": [
        {
@@ -191,7 +190,6 @@
       "Name": "Play_RadioStatic",
       "ObjectPath": "\\Events\\Default Work Unit\\Play_RadioStatic",
       "GUID": "{3551EEE5-E060-46CA-9383-5F51686E58F0}",
-      "MaxAttenuation": "15",
       "DurationType": "Infinite",
       "MediaRefs": [
        {
@@ -204,7 +202,6 @@
       "Name": "Play_TalkingSFX",
       "ObjectPath": "\\Events\\Default Work Unit\\Play_TalkingSFX",
       "GUID": "{2408F51F-9869-4000-BE1D-F416FC96603E}",
-      "MaxAttenuation": "20",
       "DurationType": "Infinite",
       "MediaRefs": [
        {
@@ -359,6 +356,12 @@
       "GUID": "{63F7E98E-93FE-4364-8928-682BB81C9FE8}"
      },
      {
+      "Id": "4155247583",
+      "Name": "AudioSource_Volume",
+      "ObjectPath": "\\Game Parameters\\Default Work Unit\\AudioSource_Volume",
+      "GUID": "{A30BDFA3-9206-4E32-9A4C-DFA8F02724A5}"
+     },
+     {
       "Id": "4179668880",
       "Name": "Master_Volume",
       "ObjectPath": "\\Game Parameters\\Default Work Unit\\Master_Volume",
@@ -395,6 +398,6 @@
     ]
    }
   ],
-  "FileHash": "{DE3050AA-7E5C-7435-D86F-DEF66F2B087E}"
+  "FileHash": "{DBD18FB5-E1E8-B827-5603-823D2591BAB2}"
  }
 }

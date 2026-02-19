@@ -346,7 +346,6 @@ void ConfigurationWindow::DrawCameraSettings()
 
 void ConfigurationWindow::DrawAudioVolumeSettings() {
     
-    /*ImGui::Begin("Audio Volume");*/
     
     ImGui::Text("Audio Volume Settings");
     ImGui::Spacing();
