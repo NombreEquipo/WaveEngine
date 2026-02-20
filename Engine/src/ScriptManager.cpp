@@ -241,9 +241,11 @@ static int Lua_Input_GetMousePosition(lua_State* L) {
     GameWindow* gameWindow = app.editor->GetGameWindow();
 
     if (gameWindow) {
+
+
         ImVec2 viewportPos = gameWindow->GetViewportPos();
         ImVec2 viewportSize = gameWindow->GetViewportSize();
-
+        
         // Convert to viewport-relative coordinates
         int relativeX = rawX - static_cast<int>(viewportPos.x);
         int relativeY = rawY - static_cast<int>(viewportPos.y);
@@ -256,7 +258,12 @@ static int Lua_Input_GetMousePosition(lua_State* L) {
             return 2;
         }
     }
+    #else 
+        lua_pushnumber(L, static_cast<lua_Number>(rawX));
+        lua_pushnumber(L, static_cast<lua_Number>(rawY));
+        return 2;
     #endif
+
     // If not in game window, return nil
     lua_pushnil(L);
     lua_pushnil(L);
@@ -277,6 +284,7 @@ static int Lua_Camera_GetScreenToWorldPlane(lua_State* L) {
     // Get Game window dimensions
     int screenWidth = 800;
     int screenHeight = 600;
+
     #ifndef WAVE_GAME
     GameWindow* gameWindow = app.editor->GetGameWindow();
     if (gameWindow) {
@@ -284,9 +292,14 @@ static int Lua_Camera_GetScreenToWorldPlane(lua_State* L) {
         screenWidth = static_cast<int>(viewportSize.x);
         screenHeight = static_cast<int>(viewportSize.y);
     }
+    #else 
+    
+    app.window->GetWindowSize(screenWidth, screenHeight);
+
     #endif
     ComponentCamera* camera = nullptr;
-    
+
+
     if (app.GetPlayState() == Application::PlayState::PLAYING) {
         // En Play mode: usar la cámara de escena (ya cacheada)
         camera = app.camera->GetSceneCamera();
