@@ -54,7 +54,7 @@ void ModuleAudio::SwitchBGM() {
     // Accumulate time (dt is in seconds)
     musicTimer += Application::GetInstance().time.get()->GetRealDeltaTime();
 
-    if (musicTimer >= 30.0f) //switch every 30 sec
+    if (musicTimer >= 15.0f) //switch every 30 sec
     {
         musicTimer = 0.0f; //reset timer
         music1 = !music1; 

@@ -80,31 +80,15 @@ void InspectorWindow::Draw()
         return;
     }
 
-    ImGui::Spacing();
-    if (ImGui::Button("Add Component", ImVec2(-1, 0))) {
-        ImGui::OpenPopup("AddComponentPopup");
-    }
+    //ImGui::Spacing();
+    //if (ImGui::Button("Add Component", ImVec2(-1, 0))) {
+    //    ImGui::OpenPopup("AddComponentPopup");
+    //}
 
-    if (ImGui::BeginPopup("AddComponentPopup")) {
-        if (ImGui::MenuItem("Audio Source")) {
-            selectedObject->CreateComponent(ComponentType::AUDIOSOURCE);
-            LOG_CONSOLE("Added AudioSource to %s", selectedObject->GetName().c_str());
-        }
-        if (ImGui::MenuItem("Audio Listener")) {
-            selectedObject->CreateComponent(ComponentType::LISTENER);
-            LOG_CONSOLE("Added AudioListener to %s", selectedObject->GetName().c_str());
-        }
-        if (ImGui::MenuItem("Reverb Zone")) {
-            selectedObject->CreateComponent(ComponentType::REVERBZONE);
-            LOG_CONSOLE("Added ReverbZone to %s", selectedObject->GetName().c_str());
-        }
-        //if (ImGui::MenuItem("Move Component")) {
-        //    selectedObject->CreateComponent(ComponentType::MOVE);
-        //    LOG_CONSOLE("Added MoveComponent to %s", selectedObject->GetName().c_str());
-        //}
-        ImGui::EndPopup();
-    }
-    ImGui::Spacing();
+    //if (ImGui::BeginPopup("AddComponentPopup")) {
+    //    
+    //}
+    //ImGui::Spacing();
 
     ImGui::Separator();
     DrawGizmoSettings();
@@ -116,21 +100,16 @@ void InspectorWindow::Draw()
     DrawMaterialComponent(selectedObject);
     DrawRotateComponent(selectedObject);
     DrawScriptComponent(selectedObject); 
-
- 
     DrawParticleComponent(selectedObject);
+    DrawAudioSourceComponent(selectedObject);
+    DrawAudioListenerComponent(selectedObject);
+    DrawReverbZoneComponent(selectedObject);
 
     ImGui::Spacing();
     ImGui::Separator();
     ImGui::Spacing();
 
     DrawAddComponentButton(selectedObject);
-
-
-    DrawAudioSourceComponent(selectedObject);
-    DrawAudioListenerComponent(selectedObject);
-    DrawReverbZoneComponent(selectedObject);
-
 
 
     ImGui::End();
@@ -841,8 +820,6 @@ void InspectorWindow::DrawRotateComponent(GameObject* selectedObject)
     }
 }
 
-
-
 void InspectorWindow::DrawParticleComponent(GameObject* selectedObject)
 {
     ComponentParticleSystem* particleComp = static_cast<ComponentParticleSystem*>(selectedObject->GetComponent(ComponentType::PARTICLE));
@@ -853,6 +830,35 @@ void InspectorWindow::DrawParticleComponent(GameObject* selectedObject)
         particleComp->OnEditor();
     }
 }
+
+void InspectorWindow::DrawAudioSourceComponent(GameObject* selectedObject) {
+    AudioSource* source = static_cast<AudioSource*>(selectedObject->GetComponent(ComponentType::AUDIOSOURCE));
+    if (!source) return;
+
+    if (ImGui::CollapsingHeader("Audio Source", ImGuiTreeNodeFlags_DefaultOpen)) {
+        source->OnEditor();
+    }
+}
+
+void InspectorWindow::DrawAudioListenerComponent(GameObject* selectedObject) {
+    AudioListener* listener = static_cast<AudioListener*>(selectedObject->GetComponent(ComponentType::LISTENER));
+    if (!listener) return;
+
+    if (ImGui::CollapsingHeader("Audio Listener", ImGuiTreeNodeFlags_DefaultOpen)) {
+        listener->OnEditor();
+    }
+}
+
+void InspectorWindow::DrawReverbZoneComponent(GameObject* selectedObject)
+{
+    ReverbZone* zone = static_cast<ReverbZone*>(selectedObject->GetComponent(ComponentType::REVERBZONE));
+    if (!zone) return;
+
+    if (ImGui::CollapsingHeader("Reverb Zone", ImGuiTreeNodeFlags_DefaultOpen)) {
+        zone->OnEditor();
+    }
+}
+
 
 bool InspectorWindow::DrawGameObjectSection(GameObject* selectedObject)
 {
@@ -931,33 +937,6 @@ bool InspectorWindow::DrawGameObjectSection(GameObject* selectedObject)
     return objectDeleted;
 }
 
-void InspectorWindow::DrawAudioSourceComponent(GameObject* selectedObject) {
-    AudioSource* source = static_cast<AudioSource*>(selectedObject->GetComponent(ComponentType::AUDIOSOURCE));
-    if (!source) return;
-
-    if (ImGui::CollapsingHeader("Audio Source", ImGuiTreeNodeFlags_DefaultOpen)) {
-        source->OnEditor(); 
-    }
-}
-
-void InspectorWindow::DrawAudioListenerComponent(GameObject* selectedObject) {
-    AudioListener* listener = static_cast<AudioListener*>(selectedObject->GetComponent(ComponentType::LISTENER));
-    if (!listener) return;
-
-    if (ImGui::CollapsingHeader("Audio Listener", ImGuiTreeNodeFlags_DefaultOpen)) {
-        listener->OnEditor(); 
-    }
-}
-
-void InspectorWindow::DrawReverbZoneComponent(GameObject* selectedObject)
-{
-    ReverbZone* zone = static_cast<ReverbZone*>(selectedObject->GetComponent(ComponentType::REVERBZONE));
-    if (!zone) return;
-
-    if (ImGui::CollapsingHeader("Reverb Zone", ImGuiTreeNodeFlags_DefaultOpen)) {
-        zone->OnEditor();
-    }
-}
 
 void InspectorWindow::GetAllGameObjects(GameObject* root, std::vector<GameObject*>& outObjects)
 {
@@ -1352,6 +1331,7 @@ void InspectorWindow::DrawAddComponentButton(GameObject* selectedObject)
             ImGui::EndTooltip();
         }
 
+
         // Particle Component
         bool hasParticles = (selectedObject->GetComponent(ComponentType::PARTICLE) != nullptr);
 
@@ -1378,6 +1358,65 @@ void InspectorWindow::DrawAddComponentButton(GameObject* selectedObject)
             ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f), "Already has a Particle System");
             ImGui::EndTooltip();
         }
+
+        //Audio Source Component --> 0 to multiple per object
+        if (ImGui::Selectable("Audio Source"))
+        {
+            selectedObject->CreateComponent(ComponentType::AUDIOSOURCE);
+
+            LOG_CONSOLE("[Inspector] AudioSource component added to: %s", selectedObject->GetName().c_str());
+            ImGui::CloseCurrentPopup(); // disappear automatically after selecting an option
+        }
+
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Add an Audio Source");
+            ImGui::EndTooltip();
+        }
+
+        //Audio Listener Component --> 0 to max 1 per object
+        bool hasListener = (selectedObject->GetComponent(ComponentType::LISTENER) != nullptr);
+
+        if (hasListener) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+
+        if (ImGui::Selectable("Audio Listener", false, hasListener ? ImGuiSelectableFlags_Disabled : 0))
+        {
+            selectedObject->CreateComponent(ComponentType::LISTENER);
+            LOG_CONSOLE("[Inspector] Audio Listener component added to: %s", selectedObject->GetName().c_str());
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (hasListener) ImGui::PopStyleColor();
+
+        if (ImGui::IsItemHovered() && !hasListener)
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Add an Audio Listener");
+            ImGui::EndTooltip();
+        }
+        else if (ImGui::IsItemHovered() && hasListener)
+        {
+            ImGui::BeginTooltip();
+            ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f), "Already has an Audio Listener");
+            ImGui::EndTooltip();
+        }
+
+        //Reverb Zone Component
+        if (ImGui::Selectable("Reverb Zone")) {
+            selectedObject->CreateComponent(ComponentType::REVERBZONE);
+            LOG_CONSOLE("[Inspector] ReverbZone component added to: %s", selectedObject->GetName().c_str());
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Add a Reverb Zone");
+            ImGui::EndTooltip();
+        }
+
+        
 
         ImGui::EndPopup();
     }

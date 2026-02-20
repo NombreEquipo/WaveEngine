@@ -2,6 +2,366 @@
     "gameObjects": [
         {
             "active": true,
+            "children": [],
+            "components": [
+                {
+                    "active": true,
+                    "position": [
+                        0.0,
+                        1.5,
+                        10.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "type": 0
+                },
+                {
+                    "active": true,
+                    "aspectRatio": 1.044910192489624,
+                    "farPlane": 500.0,
+                    "fov": 45.0,
+                    "frustumCullingEnabled": false,
+                    "nearPlane": 0.10000000149011612,
+                    "type": 3
+                },
+                {
+                    "active": true,
+                    "isDefault": true,
+                    "type": 7
+                }
+            ],
+            "name": "Camera"
+        },
+        {
+            "active": true,
+            "children": [
+                {
+                    "active": true,
+                    "children": [
+                        {
+                            "active": true,
+                            "children": [
+                                {
+                                    "active": true,
+                                    "children": [
+                                        {
+                                            "active": true,
+                                            "children": [],
+                                            "components": [
+                                                {
+                                                    "active": true,
+                                                    "position": [
+                                                        0.0,
+                                                        0.11668646335601807,
+                                                        0.0
+                                                    ],
+                                                    "rotation": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "scale": [
+                                                        1.0,
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "type": 0
+                                                }
+                                            ],
+                                            "name": "Barrel_end"
+                                        }
+                                    ],
+                                    "components": [
+                                        {
+                                            "active": true,
+                                            "position": [
+                                                0.0,
+                                                0.1420130580663681,
+                                                0.0
+                                            ],
+                                            "rotation": [
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "scale": [
+                                                1.0,
+                                                1.0,
+                                                1.0
+                                            ],
+                                            "type": 0
+                                        }
+                                    ],
+                                    "name": "Barrel"
+                                }
+                            ],
+                            "components": [
+                                {
+                                    "active": true,
+                                    "position": [
+                                        0.0,
+                                        0.0,
+                                        0.0037314968649297953
+                                    ],
+                                    "rotation": [
+                                        90.00000762939453,
+                                        -0.0,
+                                        0.0
+                                    ],
+                                    "scale": [
+                                        1.0,
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "type": 0
+                                }
+                            ],
+                            "name": "Base"
+                        }
+                    ],
+                    "components": [
+                        {
+                            "active": true,
+                            "position": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": [
+                                -90.00000762939453,
+                                0.0,
+                                0.0
+                            ],
+                            "scale": [
+                                100.0,
+                                100.0,
+                                100.0
+                            ],
+                            "type": 0
+                        }
+                    ],
+                    "name": "ArmTank"
+                },
+                {
+                    "active": true,
+                    "children": [],
+                    "components": [
+                        {
+                            "active": true,
+                            "position": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": [
+                                -90.00000762939453,
+                                0.0,
+                                0.0
+                            ],
+                            "scale": [
+                                100.0,
+                                100.0,
+                                100.0
+                            ],
+                            "type": 0
+                        },
+                        {
+                            "active": true,
+                            "meshUID": 9512063698528752154,
+                            "type": 1
+                        },
+                        {
+                            "active": true,
+                            "ambientColor": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                1.0
+                            ],
+                            "diffuseColor": [
+                                0.800000011920929,
+                                0.800000011920929,
+                                0.800000011920929,
+                                1.0
+                            ],
+                            "emissiveColor": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                1.0
+                            ],
+                            "hasMaterialProperties": true,
+                            "metallic": 0.0,
+                            "opacity": 1.0,
+                            "roughness": 0.5,
+                            "shininess": 32.0,
+                            "specularColor": [
+                                0.800000011920929,
+                                0.800000011920929,
+                                0.800000011920929,
+                                1.0
+                            ],
+                            "type": 2,
+                            "useCheckerboard": false
+                        },
+                        {
+                            "active": true,
+                            "publicVariables": [
+                                {
+                                    "name": "rotationSpeed",
+                                    "type": 0,
+                                    "value": 90.0
+                                }
+                            ],
+                            "scriptUID": 15427873266771621026,
+                            "type": 5
+                        }
+                    ],
+                    "name": "Barrel.001"
+                },
+                {
+                    "active": true,
+                    "children": [],
+                    "components": [
+                        {
+                            "active": true,
+                            "position": [
+                                0.0,
+                                20.0,
+                                0.0
+                            ],
+                            "rotation": [
+                                90.0,
+                                0.0,
+                                0.0
+                            ],
+                            "scale": [
+                                100.0,
+                                100.0,
+                                100.0
+                            ],
+                            "type": 0
+                        },
+                        {
+                            "active": true,
+                            "meshUID": 15087573513466604540,
+                            "type": 1
+                        },
+                        {
+                            "active": true,
+                            "ambientColor": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                1.0
+                            ],
+                            "diffuseColor": [
+                                0.800000011920929,
+                                0.800000011920929,
+                                0.800000011920929,
+                                1.0
+                            ],
+                            "emissiveColor": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                1.0
+                            ],
+                            "hasMaterialProperties": true,
+                            "metallic": 0.0,
+                            "opacity": 1.0,
+                            "roughness": 0.5,
+                            "shininess": 32.0,
+                            "specularColor": [
+                                0.800000011920929,
+                                0.800000011920929,
+                                0.800000011920929,
+                                1.0
+                            ],
+                            "type": 2,
+                            "useCheckerboard": false
+                        },
+                        {
+                            "active": true,
+                            "publicVariables": [
+                                {
+                                    "name": "moveSpeed",
+                                    "type": 0,
+                                    "value": 5.0
+                                }
+                            ],
+                            "scriptUID": 12243044760248823429,
+                            "type": 5
+                        }
+                    ],
+                    "name": "Base.001"
+                }
+            ],
+            "components": [
+                {
+                    "active": true,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "scale": [
+                        0.005647331941872835,
+                        0.005647331941872835,
+                        0.005647331941872835
+                    ],
+                    "type": 0
+                },
+                {
+                    "active": true,
+                    "publicVariables": [
+                        {
+                            "name": "bulletPrefab",
+                            "type": 1,
+                            "value": "Bullet.prefab"
+                        },
+                        {
+                            "name": "spawnHeight",
+                            "type": 0,
+                            "value": 1.7999999523162842
+                        },
+                        {
+                            "name": "bulletScale",
+                            "type": 0,
+                            "value": 6.0
+                        },
+                        {
+                            "name": "barrelLength",
+                            "type": 0,
+                            "value": 3.0
+                        },
+                        {
+                            "name": "fireRate",
+                            "type": 0,
+                            "value": 0.5
+                        }
+                    ],
+                    "scriptUID": 10639298904791973334,
+                    "type": 5
+                }
+            ],
+            "name": "Tank"
+        },
+        {
+            "active": true,
             "children": [
                 {
                     "active": true,
@@ -926,13 +1286,13 @@
                                                 {
                                                     "active": true,
                                                     "position": [
-                                                        -20.831323623657227,
+                                                        -20.831327438354492,
                                                         -27.426488876342773,
-                                                        0.0
+                                                        0.08168134838342667
                                                     ],
                                                     "rotation": [
                                                         0.0,
-                                                        -0.0,
+                                                        7.765026168431422e-19,
                                                         179.99998474121094
                                                     ],
                                                     "scale": [
@@ -2260,6 +2620,220 @@
                                     "children": [
                                         {
                                             "active": true,
+                                            "children": [],
+                                            "components": [
+                                                {
+                                                    "active": true,
+                                                    "position": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "rotation": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "scale": [
+                                                        1.0,
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "type": 0
+                                                }
+                                            ],
+                                            "name": "Camera001"
+                                        }
+                                    ],
+                                    "components": [
+                                        {
+                                            "active": true,
+                                            "position": [
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "rotation": [
+                                                73.00001525878906,
+                                                -1.7075473124350538e-06,
+                                                -141.0
+                                            ],
+                                            "scale": [
+                                                1.0,
+                                                0.9999999403953552,
+                                                0.9999999403953552
+                                            ],
+                                            "type": 0
+                                        }
+                                    ],
+                                    "name": "Camera001_$AssimpFbx$_Rotation"
+                                }
+                            ],
+                            "components": [
+                                {
+                                    "active": true,
+                                    "position": [
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "rotation": [
+                                        -90.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "scale": [
+                                        1.0,
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "type": 0
+                                }
+                            ],
+                            "name": "Camera001_$AssimpFbx$_PreRotation"
+                        }
+                    ],
+                    "components": [
+                        {
+                            "active": true,
+                            "position": [
+                                -78.31243133544922,
+                                45.251216888427734,
+                                -97.03111267089844
+                            ],
+                            "rotation": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "scale": [
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "type": 0
+                        }
+                    ],
+                    "name": "Camera001_$AssimpFbx$_Translation"
+                },
+                {
+                    "active": true,
+                    "children": [
+                        {
+                            "active": true,
+                            "children": [
+                                {
+                                    "active": true,
+                                    "children": [
+                                        {
+                                            "active": true,
+                                            "children": [],
+                                            "components": [
+                                                {
+                                                    "active": true,
+                                                    "position": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "rotation": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "scale": [
+                                                        1.0,
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "type": 0
+                                                }
+                                            ],
+                                            "name": "Camera001.Target"
+                                        }
+                                    ],
+                                    "components": [
+                                        {
+                                            "active": true,
+                                            "position": [
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "rotation": [
+                                                73.00001525878906,
+                                                -3.4150946248701075e-06,
+                                                -140.99998474121094
+                                            ],
+                                            "scale": [
+                                                1.0,
+                                                0.9999999403953552,
+                                                1.0
+                                            ],
+                                            "type": 0
+                                        }
+                                    ],
+                                    "name": "Camera001.Target_$AssimpFbx$_Rotation"
+                                }
+                            ],
+                            "components": [
+                                {
+                                    "active": true,
+                                    "position": [
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "rotation": [
+                                        -90.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "scale": [
+                                        1.0,
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "type": 0
+                                }
+                            ],
+                            "name": "Camera001.Target_$AssimpFbx$_PreRotation"
+                        }
+                    ],
+                    "components": [
+                        {
+                            "active": true,
+                            "position": [
+                                -28.13262176513672,
+                                20.873329162597656,
+                                -35.064212799072266
+                            ],
+                            "rotation": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "scale": [
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "type": 0
+                        }
+                    ],
+                    "name": "Camera001.Target_$AssimpFbx$_Translation"
+                },
+                {
+                    "active": true,
+                    "children": [
+                        {
+                            "active": true,
+                            "children": [
+                                {
+                                    "active": true,
+                                    "children": [
+                                        {
+                                            "active": true,
                                             "children": [
                                                 {
                                                     "active": true,
@@ -2505,348 +3079,14 @@
                         0.0
                     ],
                     "scale": [
-                        0.051620494574308395,
-                        0.051620494574308395,
-                        0.051620494574308395
+                        0.052000001072883606,
+                        0.052000001072883606,
+                        0.052000001072883606
                     ],
                     "type": 0
                 }
             ],
             "name": "Street"
-        },
-        {
-            "active": true,
-            "children": [
-                {
-                    "active": true,
-                    "children": [
-                        {
-                            "active": true,
-                            "children": [
-                                {
-                                    "active": true,
-                                    "children": [
-                                        {
-                                            "active": true,
-                                            "children": [],
-                                            "components": [
-                                                {
-                                                    "active": true,
-                                                    "position": [
-                                                        0.0,
-                                                        0.11668646335601807,
-                                                        0.0
-                                                    ],
-                                                    "rotation": [
-                                                        0.0,
-                                                        0.0,
-                                                        0.0
-                                                    ],
-                                                    "scale": [
-                                                        1.0,
-                                                        1.0,
-                                                        1.0
-                                                    ],
-                                                    "type": 0
-                                                }
-                                            ],
-                                            "name": "Barrel_end"
-                                        }
-                                    ],
-                                    "components": [
-                                        {
-                                            "active": true,
-                                            "position": [
-                                                0.0,
-                                                0.1420130580663681,
-                                                0.0
-                                            ],
-                                            "rotation": [
-                                                0.0,
-                                                0.0,
-                                                0.0
-                                            ],
-                                            "scale": [
-                                                1.0,
-                                                1.0,
-                                                1.0
-                                            ],
-                                            "type": 0
-                                        }
-                                    ],
-                                    "name": "Barrel"
-                                }
-                            ],
-                            "components": [
-                                {
-                                    "active": true,
-                                    "position": [
-                                        0.0,
-                                        0.0,
-                                        0.0037314968649297953
-                                    ],
-                                    "rotation": [
-                                        90.00000762939453,
-                                        -0.0,
-                                        0.0
-                                    ],
-                                    "scale": [
-                                        1.0,
-                                        1.0,
-                                        1.0
-                                    ],
-                                    "type": 0
-                                }
-                            ],
-                            "name": "Base"
-                        }
-                    ],
-                    "components": [
-                        {
-                            "active": true,
-                            "position": [
-                                0.0,
-                                0.0,
-                                0.0
-                            ],
-                            "rotation": [
-                                -90.00000762939453,
-                                0.0,
-                                0.0
-                            ],
-                            "scale": [
-                                100.0,
-                                100.0,
-                                100.0
-                            ],
-                            "type": 0
-                        }
-                    ],
-                    "name": "ArmTank"
-                },
-                {
-                    "active": true,
-                    "children": [
-                        {
-                            "active": true,
-                            "children": [],
-                            "components": [
-                                {
-                                    "active": true,
-                                    "position": [
-                                        0.0,
-                                        0.10000000149011612,
-                                        0.4399999976158142
-                                    ],
-                                    "rotation": [
-                                        85.9000015258789,
-                                        0.0,
-                                        180.0
-                                    ],
-                                    "scale": [
-                                        1.0,
-                                        1.0,
-                                        1.0
-                                    ],
-                                    "type": 0
-                                },
-                                {
-                                    "active": true,
-                                    "aspectRatio": 0.6412037014961243,
-                                    "farPlane": 500.0,
-                                    "fov": 45.0,
-                                    "frustumCullingEnabled": false,
-                                    "nearPlane": 0.10000000149011612,
-                                    "type": 3
-                                },
-                                {
-                                    "active": true,
-                                    "isDefault": true,
-                                    "type": 7
-                                }
-                            ],
-                            "name": "Camera"
-                        }
-                    ],
-                    "components": [
-                        {
-                            "active": true,
-                            "position": [
-                                0.0,
-                                7.62939453125e-06,
-                                0.0
-                            ],
-                            "rotation": [
-                                -90.00000762939453,
-                                0.0,
-                                0.0
-                            ],
-                            "scale": [
-                                100.0,
-                                99.99993133544922,
-                                99.99993133544922
-                            ],
-                            "type": 0
-                        },
-                        {
-                            "active": true,
-                            "meshUID": 9512063698528752154,
-                            "type": 1
-                        },
-                        {
-                            "active": true,
-                            "ambientColor": [
-                                0.0,
-                                0.0,
-                                0.0,
-                                1.0
-                            ],
-                            "diffuseColor": [
-                                0.800000011920929,
-                                0.800000011920929,
-                                0.800000011920929,
-                                1.0
-                            ],
-                            "emissiveColor": [
-                                0.0,
-                                0.0,
-                                0.0,
-                                1.0
-                            ],
-                            "hasMaterialProperties": true,
-                            "metallic": 0.0,
-                            "opacity": 1.0,
-                            "roughness": 0.5,
-                            "shininess": 32.0,
-                            "specularColor": [
-                                0.800000011920929,
-                                0.800000011920929,
-                                0.800000011920929,
-                                1.0
-                            ],
-                            "type": 2,
-                            "useCheckerboard": false
-                        },
-                        {
-                            "active": true,
-                            "publicVariables": [
-                                {
-                                    "name": "rotationSpeed",
-                                    "type": 0,
-                                    "value": 90.0
-                                }
-                            ],
-                            "scriptUID": 15427873266771621026,
-                            "type": 5
-                        }
-                    ],
-                    "name": "Barrel.001"
-                },
-                {
-                    "active": true,
-                    "children": [],
-                    "components": [
-                        {
-                            "active": true,
-                            "position": [
-                                0.0,
-                                7.62939453125e-06,
-                                -1.3193098311603535e-06
-                            ],
-                            "rotation": [
-                                -90.00000762939453,
-                                0.0,
-                                0.0
-                            ],
-                            "scale": [
-                                100.0,
-                                99.99993133544922,
-                                99.99993133544922
-                            ],
-                            "type": 0
-                        },
-                        {
-                            "active": true,
-                            "meshUID": 15087573513466604540,
-                            "type": 1
-                        },
-                        {
-                            "active": true,
-                            "ambientColor": [
-                                0.0,
-                                0.0,
-                                0.0,
-                                1.0
-                            ],
-                            "diffuseColor": [
-                                0.800000011920929,
-                                0.800000011920929,
-                                0.800000011920929,
-                                1.0
-                            ],
-                            "emissiveColor": [
-                                0.0,
-                                0.0,
-                                0.0,
-                                1.0
-                            ],
-                            "hasMaterialProperties": true,
-                            "metallic": 0.0,
-                            "opacity": 1.0,
-                            "roughness": 0.5,
-                            "shininess": 32.0,
-                            "specularColor": [
-                                0.800000011920929,
-                                0.800000011920929,
-                                0.800000011920929,
-                                1.0
-                            ],
-                            "type": 2,
-                            "useCheckerboard": false
-                        },
-                        {
-                            "active": true,
-                            "scriptUID": 0,
-                            "type": 5
-                        }
-                    ],
-                    "name": "Base.001"
-                }
-            ],
-            "components": [
-                {
-                    "active": true,
-                    "position": [
-                        0.0,
-                        0.0017455443739891052,
-                        0.0
-                    ],
-                    "rotation": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "scale": [
-                        0.005647331941872835,
-                        0.005647331941872835,
-                        0.005647331941872835
-                    ],
-                    "type": 0
-                },
-                {
-                    "active": true,
-                    "publicVariables": [
-                        {
-                            "name": "moveSpeed",
-                            "type": 0,
-                            "value": 5.0
-                        }
-                    ],
-                    "scriptUID": 12243044760248823429,
-                    "type": 5
-                }
-            ],
-            "name": "Tank_0_1"
         }
     ],
     "version": 1
