@@ -15,6 +15,8 @@ public:
     //void SetVolume(); 
 
     ComponentType GetType() const override { return ComponentType::AUDIOSOURCE; }
+    bool IsType(ComponentType type) override { return type == ComponentType::AUDIOSOURCE; };
+    bool IsIncompatible(ComponentType type) override { return false; };
 
     void Serialize(nlohmann::json& componentObj) const override;
     void Deserialize(const nlohmann::json& componentObj) override;

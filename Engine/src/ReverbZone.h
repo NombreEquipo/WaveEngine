@@ -25,8 +25,11 @@ public:
     virtual ~ReverbZone();
 
     std::string GetBusNameFromID(AkUniqueID id) const;
+   
     AkUniqueID GetIDFromBusName(const std::string& name) const;
    
+    bool IsType(ComponentType type) override { return type == ComponentType::REVERBZONE; };
+    bool IsIncompatible(ComponentType type) override { return false; };
 
     // point test in world space
     bool ContainsPoint(const glm::vec3& worldPoint) const;
@@ -38,14 +41,14 @@ public:
 
 public:
     Shape shape = Shape::SPHERE;
-    int presetIndex = 1; // Set to cathedral by default
-    float radius = 1.0f;                // sphere radius (world units)
-    glm::vec3 extents = glm::vec3(5.0f); // box half-extents (local)
+    int presetIndex = 1;
+    float radius = 1.0f;
+    glm::vec3 extents = glm::vec3(5.0f);
 
-    std::string auxBusName = "Reverb_Cathedral"; // Wwise Aux Bus name
+    std::string auxBusName = "Reverb_Cathedral";
     AkUniqueID auxBusID = AK::AUX_BUSSES::REVERB_CATHEDRAL;
     //std::string reverbPresetName = "Cathedral";
-    float wetLevel = 1.0f;              // 0.0 - 1.0
-    int priority = 0;                   // higher priority wins when overlapping
+    float wetLevel = 1.0f;
+    int priority = 0;
     bool enabled = true;
 };
