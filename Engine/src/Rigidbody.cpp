@@ -765,6 +765,7 @@ void Rigidbody::OnGameObjectEvent(GameObjectEvent event, Component* component)
 
 void Rigidbody::OnEditor()
 {
+#ifndef WAVE_GAME
     const char* bodyTypes[] = { "Static", "Dynamic", "Kinematic" };
     int currentType = (int)this->type;
     ImGui::Text("Body Type:");
@@ -899,4 +900,5 @@ void Rigidbody::OnEditor()
         ImGui::Text("Velocity:");
         ImGui::Text("X:%.2f | Y:%.2f | Z:%.2f", vel.x, vel.y, vel.z);
     }
+#endif
 }

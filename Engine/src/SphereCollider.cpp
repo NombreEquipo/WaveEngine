@@ -29,6 +29,7 @@ void SphereCollider::Update()
 
 void SphereCollider::OnEditor()
 {
+#ifndef WAVE_GAME
     OnEditorBase();
 
     ImGui::Separator();
@@ -39,6 +40,7 @@ void SphereCollider::OnEditor()
     {
         SetRadius(r);
     }
+#endif
 }
 
 //void SphereCollider::Save(Config& config)

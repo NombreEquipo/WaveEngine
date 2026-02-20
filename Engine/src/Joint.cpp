@@ -198,7 +198,7 @@ void Joint::SyncFrames()
 
 void Joint::OnEditorBase()
 {
-#ifndef WAVE_GAME
+    #ifndef WAVE_GAME
     ImGui::Text("Connections:");
     ImGui::Separator();
 
@@ -313,7 +313,7 @@ void Joint::OnEditorBase()
 
         ImGui::TreePop();
     }
-#endif
+    #endif
 }
 
 void Joint::OnGameObjectEvent(GameObjectEvent event, Component* component)

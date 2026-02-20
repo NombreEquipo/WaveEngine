@@ -92,6 +92,7 @@ void SphericalJoint::SetConeLimit(float angle) {
 //}
 
 void SphericalJoint::OnEditor() {
+#ifndef WAVE_GAME
     OnEditorBase();
 
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth;
@@ -108,6 +109,7 @@ void SphericalJoint::OnEditor() {
 
         ImGui::TreePop();
     }
+#endif
 }
 
 void SphericalJoint::DrawDebug() {

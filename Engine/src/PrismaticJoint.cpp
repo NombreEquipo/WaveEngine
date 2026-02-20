@@ -154,6 +154,7 @@ void PrismaticJoint::SetMaxLimit(float m) {
 //}
 
 void PrismaticJoint::OnEditor() {
+#ifndef WAVE_GAME
     OnEditorBase();
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth;
 
@@ -171,6 +172,7 @@ void PrismaticJoint::OnEditor() {
         if (ImGui::IsItemDeactivatedAfterEdit()) RefreshJoint();
         ImGui::TreePop();
     }
+#endif 
 }
 
 void PrismaticJoint::DrawDebug() {

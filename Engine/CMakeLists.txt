@@ -160,6 +160,8 @@ set(EDITOR_SRC
     src/ShaderEditorWindow.cpp
     src/ScriptEditorWindow.h
     src/ScriptEditorWindow.cpp
+    src/TextEditor.h
+    src/TextEditor.cpp
 )
 
 set(IMPORTERS_SRC 
@@ -196,8 +198,6 @@ set(SCRIPTING_SRC
     src/PrefabManager.cpp
     src/ResourcePrefab.h
     src/ResourcePrefab.cpp
-    src/TextEditor.h
-    src/TextEditor.cpp
 )
 
 source_group("Source\\Core" FILES ${CORE_SRC})
@@ -249,4 +249,4 @@ target_link_libraries(Game PRIVATE Tracy::TracyClient)
 target_link_libraries(Game PRIVATE unofficial::omniverse-physx-sdk::sdk)
 target_link_libraries(Game PRIVATE ${LUA_LIBRARIES})
 
-#target_include_directories(Game PRIVATE ${LUA_INCLUDE_DIR})
+target_include_directories(Game PRIVATE ${LUA_INCLUDE_DIR})

@@ -77,6 +77,7 @@ void MeshCollider::CookMesh() {
 }
 
 void MeshCollider::OnEditor() {
+#ifndef WAVE_GAME
     OnEditorBase();
     ImGui::Separator();
 
@@ -93,6 +94,7 @@ void MeshCollider::OnEditor() {
         CookMesh();
         if (attachedRigidbody) attachedRigidbody->CreateBody();
     }
+#endif
 }
 
 //

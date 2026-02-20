@@ -30,6 +30,7 @@ void PlaneCollider::Update()
 
 void PlaneCollider::OnEditor()
 {
+#ifndef WAVE_GAME
     OnEditorBase();
     ImGui::Separator();
 
@@ -39,6 +40,7 @@ void PlaneCollider::OnEditor()
     {
         SetSize(s);
     }
+#endif
 }
 //
 //void PlaneCollider::Save(Config& config)
