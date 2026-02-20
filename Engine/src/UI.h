@@ -1,24 +1,29 @@
 ﻿#pragma once
 #include "Module.h"
 #include <cstdint>
+#include <vector>
 #include "NsCore/Ptr.h"
-#include "NsGui/IView.h"
-#include "ComponentCanvas.h"
+#include "NsRender/RenderDevice.h"
+
+class ComponentCanvas;
 
 class UI : public Module
 {
 public:
     UI();
     ~UI();
-
     bool Start() override;
     bool CleanUp() override;
-
     void OnResize(uint32_t width, uint32_t height);
     void SetMousePoistion(int x, int y);
-    std::vector<ComponentCanvas*> GetCanvas() { return canvas; };
+    std::vector<ComponentCanvas*> GetCanvas() { return canvas; }
+    Noesis::Ptr<Noesis::RenderDevice> GetRenderDevice() { return renderDevice; }
+    void RegisterCanvas(ComponentCanvas* c) { canvas.push_back(c); }
+    void UnregisterCanvas(ComponentCanvas* c) {
+        canvas.erase(std::remove(canvas.begin(), canvas.end(), c), canvas.end());
+    }
 
 private:
-    
+    Noesis::Ptr<Noesis::RenderDevice> renderDevice;
     std::vector<ComponentCanvas*> canvas;
 };

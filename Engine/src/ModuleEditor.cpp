@@ -412,6 +412,20 @@ void ModuleEditor::ShowMenuBar()
 
             ImGui::Separator();
 
+            if (ImGui::BeginMenu("UI"))
+            {
+                if (ImGui::MenuItem("Create Canvas"))
+                {
+                    GameObject* canvasGO = new GameObject("Canvas");
+                    canvasGO->CreateComponent(ComponentType::CANVAS);
+                    Application::GetInstance().scene->GetRoot()->AddChild(canvasGO);
+                    LOG_CONSOLE("Canvas GameObject created");
+				}
+                ImGui::EndMenu();
+            }
+ 
+            ImGui::Separator();
+
             if (ImGui::MenuItem("Add Auto Rotate Component"))
             {
                 GameObject* selected = Application::GetInstance().selectionManager->GetSelectedObject();

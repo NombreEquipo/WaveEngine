@@ -6,6 +6,7 @@
 #include "ComponentCamera.h"
 #include "ComponentRotate.h"
 #include "ComponentScript.h"
+#include "ComponentCanvas.h"
 #include "Rigidbody.h"
 #include "BoxCollider.h"
 #include "SphereCollider.h"
@@ -118,6 +119,9 @@ Component* GameObject::CreateComponent(ComponentType type) {
     case ComponentType::DISTANCE_JOINT:
         newComponent = new DistanceJoint(this);
         break;
+    case ComponentType::CANVAS:
+        newComponent = new ComponentCanvas(this);
+	    break;
     default:
         LOG_DEBUG("ERROR: Unknown component type requested for GameObject '%s'", name.c_str());
         LOG_CONSOLE("Failed to create component");

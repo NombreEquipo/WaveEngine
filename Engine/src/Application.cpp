@@ -34,9 +34,8 @@ Application::Application() : isRunning(true), playState(PlayState::EDITING)
     AddModule(std::static_pointer_cast<Module>(filesystem));
     AddModule(std::static_pointer_cast<Module>(time));
     AddModule(std::static_pointer_cast<Module>(grid));
-    AddModule(std::static_pointer_cast<Module>(renderer));
     AddModule(std::static_pointer_cast<Module>(ui));
-
+    AddModule(std::static_pointer_cast<Module>(renderer));
 
     selectionManager = new SelectionManager();
 }

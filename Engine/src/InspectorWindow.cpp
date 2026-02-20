@@ -8,6 +8,7 @@
 #include "ComponentMaterial.h"
 #include "ComponentCamera.h"
 #include "ComponentRotate.h"
+#include "ComponentCanvas.h"
 #include "ResourceTexture.h"
 #include "ComponentParticleSystem.h"
 #include "Rigidbody.h"
@@ -102,6 +103,7 @@ void InspectorWindow::Draw()
     DrawInfinitePlaneColliderComponent(selectedObject);
     DrawMeshColliderComponent(selectedObject);
     DrawConvexColliderComponent(selectedObject);
+    DrawCanvasComponent(selectedObject);
 
     ImGui::Spacing();
     ImGui::Separator();
@@ -685,6 +687,57 @@ void  InspectorWindow::DrawConvexColliderComponent(GameObject* selectedObject)
     }
 }
 
+void InspectorWindow::DrawCanvasComponent(GameObject* selectedObject)
+{
+    ComponentCanvas* canvasComp = static_cast<ComponentCanvas*>(selectedObject->GetComponent(ComponentType::CANVAS));
+
+    if (canvasComp == nullptr) return;
+
+    if (ImGui::CollapsingHeader("Canvas", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        ImGui::Text("XAML File:");
+        ImGui::Spacing();
+
+        static char xamlPath[256] = "";
+
+        if (ImGui::InputText("##XAMLPath", xamlPath, sizeof(xamlPath)))
+        {
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Load XAML"))
+        {
+            if (strlen(xamlPath) > 0)
+            {
+                std::string path = xamlPath;
+                if (path.find(".xaml") == std::string::npos)
+                    path += ".xaml";
+
+                if (canvasComp->LoadXAML(path.c_str()))
+                    LOG_CONSOLE("[Inspector] XAML loaded: %s", path.c_str());
+                else
+                    LOG_CONSOLE("[Inspector] Failed to load XAML: %s", path.c_str());
+            }
+        }
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        unsigned int texID = canvasComp->GetTextureID();
+        if (texID != 0)
+        {
+            ImGui::Text("Preview:");
+            ImGui::Image((ImTextureID)(uintptr_t)texID, ImVec2(256, 144));
+        }
+        else
+        {
+            ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f), "No XAML loaded");
+        }
+    }
+}
+
 
 bool InspectorWindow::DrawGameObjectSection(GameObject* selectedObject)
 {
@@ -1085,6 +1138,35 @@ void InspectorWindow::DrawAddComponentButton(GameObject* selectedObject)
         {
             ImGui::BeginTooltip();
             ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f), "Already has a Camera component");
+            ImGui::EndTooltip();
+        }
+
+        // Canvas Component
+        bool hasCanvas = (selectedObject->GetComponent(ComponentType::CANVAS) != nullptr);
+        if (hasCanvas)
+        {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+        }
+        if (ImGui::Selectable("Canvas", false, hasCanvas ? ImGuiSelectableFlags_Disabled : 0))
+        {
+            selectedObject->CreateComponent(ComponentType::CANVAS);
+            LOG_CONSOLE("[Inspector] Canvas component added to: %s", selectedObject->GetName().c_str());
+            ImGui::CloseCurrentPopup();
+        }
+        if (hasCanvas)
+        {
+            ImGui::PopStyleColor();
+        }
+        if (ImGui::IsItemHovered() && !hasCanvas)
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Add a Canvas to this GameObject");
+            ImGui::EndTooltip();
+        }
+        else if (ImGui::IsItemHovered() && hasCanvas)
+        {
+            ImGui::BeginTooltip();
+            ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f), "Already has a Canvas component");
             ImGui::EndTooltip();
         }
 
