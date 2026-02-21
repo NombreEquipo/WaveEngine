@@ -175,6 +175,10 @@ set(EDITOR_SRC
     src/ImportSettingsWindow.cpp 
     src/ShaderEditorWindow.h
     src/ShaderEditorWindow.cpp
+    src/Editorcommand.h
+    src/Commandhistory.h
+    src/Transformcommand.cpp
+    src/Transformcommand.h
 )
 
 set(IMPORTERS_SRC 

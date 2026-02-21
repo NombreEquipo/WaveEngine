@@ -22,6 +22,8 @@
 #include "AudioSource.h"
 #include "AudioListener.h"
 #include "ReverbZone.h"
+#include "TransformCommand.h"
+#include "ModuleEditor.h"
 
 #include "Log.h"
 #include "ComponentScript.h"
@@ -224,58 +226,81 @@ void InspectorWindow::DrawTransformComponent(GameObject* selectedObject)
         glm::vec3 rotation = transform->GetRotation();
         glm::vec3 scale = transform->GetScale();
 
+        static glm::vec3 posBeforeEdit, rotBeforeEdit, scaleBeforeEdit;
+        static bool snapshotTaken = false;
+
         bool transformChanged = false;
-        bool wasEditing = false;
+        bool editFinished = false;
+
+        auto CaptureSnapshotIfNeeded = [&]()
+            {
+                if (ImGui::IsItemActivated())
+                {
+                    posBeforeEdit = transform->GetPosition();
+                    rotBeforeEdit = transform->GetRotation();
+                    scaleBeforeEdit = transform->GetScale();
+                    snapshotTaken = true;
+                }
+            };
 
         ImGui::Text("Position");
         ImGui::PushItemWidth(80);
         ImGui::Text("X"); ImGui::SameLine(20);
         if (ImGui::DragFloat("##PosX", &position.x, 0.1f)) transformChanged = true;
-        if (ImGui::IsItemDeactivatedAfterEdit()) wasEditing = true;
+        CaptureSnapshotIfNeeded();
+        if (ImGui::IsItemDeactivatedAfterEdit()) editFinished = true;
 
         ImGui::SameLine(120);
         ImGui::Text("Y"); ImGui::SameLine(130);
         if (ImGui::DragFloat("##PosY", &position.y, 0.1f)) transformChanged = true;
-        if (ImGui::IsItemDeactivatedAfterEdit()) wasEditing = true;
+        CaptureSnapshotIfNeeded();
+        if (ImGui::IsItemDeactivatedAfterEdit()) editFinished = true;
 
         ImGui::SameLine(230);
         ImGui::Text("Z"); ImGui::SameLine(240);
         if (ImGui::DragFloat("##PosZ", &position.z, 0.1f)) transformChanged = true;
-        if (ImGui::IsItemDeactivatedAfterEdit()) wasEditing = true;
+        CaptureSnapshotIfNeeded();
+        if (ImGui::IsItemDeactivatedAfterEdit()) editFinished = true;
 
         ImGui::Spacing();
 
         ImGui::Text("Rotation");
         ImGui::Text("X"); ImGui::SameLine(20);
         if (ImGui::DragFloat("##RotX", &rotation.x, 0.1f)) transformChanged = true;
-        if (ImGui::IsItemDeactivatedAfterEdit()) wasEditing = true;
+        CaptureSnapshotIfNeeded();
+        if (ImGui::IsItemDeactivatedAfterEdit()) editFinished = true;
 
         ImGui::SameLine(120);
         ImGui::Text("Y"); ImGui::SameLine(130);
         if (ImGui::DragFloat("##RotY", &rotation.y, 0.1f)) transformChanged = true;
-        if (ImGui::IsItemDeactivatedAfterEdit()) wasEditing = true;
+        CaptureSnapshotIfNeeded();
+        if (ImGui::IsItemDeactivatedAfterEdit()) editFinished = true;
 
         ImGui::SameLine(230);
         ImGui::Text("Z"); ImGui::SameLine(240);
         if (ImGui::DragFloat("##RotZ", &rotation.z, 0.1f)) transformChanged = true;
-        if (ImGui::IsItemDeactivatedAfterEdit()) wasEditing = true;
+        CaptureSnapshotIfNeeded();
+        if (ImGui::IsItemDeactivatedAfterEdit()) editFinished = true;
 
         ImGui::Spacing();
 
         ImGui::Text("Scale");
         ImGui::Text("X"); ImGui::SameLine(20);
         if (ImGui::DragFloat("##ScaleX", &scale.x, 0.1f)) transformChanged = true;
-        if (ImGui::IsItemDeactivatedAfterEdit()) wasEditing = true;
+        CaptureSnapshotIfNeeded();
+        if (ImGui::IsItemDeactivatedAfterEdit()) editFinished = true;
 
         ImGui::SameLine(120);
         ImGui::Text("Y"); ImGui::SameLine(130);
         if (ImGui::DragFloat("##ScaleY", &scale.y, 0.1f)) transformChanged = true;
-        if (ImGui::IsItemDeactivatedAfterEdit()) wasEditing = true;
+        CaptureSnapshotIfNeeded();
+        if (ImGui::IsItemDeactivatedAfterEdit()) editFinished = true;
 
         ImGui::SameLine(230);
         ImGui::Text("Z"); ImGui::SameLine(240);
         if (ImGui::DragFloat("##ScaleZ", &scale.z, 0.1f)) transformChanged = true;
-        if (ImGui::IsItemDeactivatedAfterEdit()) wasEditing = true;
+        CaptureSnapshotIfNeeded();
+        if (ImGui::IsItemDeactivatedAfterEdit()) editFinished = true;
 
         ImGui::PopItemWidth();
 
@@ -286,19 +311,30 @@ void InspectorWindow::DrawTransformComponent(GameObject* selectedObject)
             transform->SetScale(scale);
         }
 
-        if (wasEditing)
+        if (editFinished && snapshotTaken)
         {
+            CommandHistory* history = Application::GetInstance().editor->GetCommandHistory();
+            history->ExecuteCommand(std::make_unique<TransformCommand>(
+                selectedObject,
+                posBeforeEdit, rotBeforeEdit, scaleBeforeEdit,
+                transform->GetPosition(), transform->GetRotation(), transform->GetScale()
+            ));
+
             Application::GetInstance().scene->MarkOctreeForRebuild();
             LOG_DEBUG("Octree rebuild requested after editing transform");
+            snapshotTaken = false;
         }
 
         ImGui::Spacing();
 
         if (ImGui::Button("Reset Transform"))
         {
-            transform->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
-            transform->SetRotation(glm::vec3(0.0f, 0.0f, 0.0f));
-            transform->SetScale(glm::vec3(1.0f, 1.0f, 1.0f));
+            CommandHistory* history = Application::GetInstance().editor->GetCommandHistory();
+            history->ExecuteCommand(std::make_unique<TransformCommand>(
+                selectedObject,
+                transform->GetPosition(), transform->GetRotation(), transform->GetScale(),
+                glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.0f)
+            ));
 
             // Rebuild después de reset
             Application::GetInstance().scene->MarkOctreeForRebuild();

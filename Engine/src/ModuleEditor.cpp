@@ -81,6 +81,7 @@ bool ModuleEditor::Start()
     gameWindow = std::make_unique<GameWindow>();
     assetsWindow = std::make_unique<AssetsWindow>();
     shaderEditorWindow = std::make_unique<ShaderEditorWindow>();
+    commandHistory = std::make_unique<CommandHistory>();
 
     LOG_CONSOLE("Editor initialized");
 
@@ -159,6 +160,7 @@ bool ModuleEditor::Update()
 
 
     HandleDeleteKey();
+    HandleUndoRedo();
 
     if (sceneWindow)
     {
@@ -947,4 +949,16 @@ std::string ModuleEditor::OpenLoadFile(const std::string& defaultPath)
     }
 
     return ""; // User cancelled
+}
+
+void ModuleEditor::HandleUndoRedo()
+{
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.WantTextInput) return;
+
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Z, false))
+        commandHistory->Undo();
+
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Y, false))
+        commandHistory->Redo();
 }
