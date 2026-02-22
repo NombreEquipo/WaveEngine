@@ -240,6 +240,11 @@ void ModuleEditor::ShowMenuBar()
     {
         if (ImGui::BeginMenu("File"))
         {
+            if (ImGui::MenuItem("New Scene"))
+            {
+                Application::GetInstance().scene->NewScene();
+            }
+
             if (ImGui::MenuItem("Save Scene"))
             {
                 std::string filepath = OpenSaveFile("../Scene/scene.json");
