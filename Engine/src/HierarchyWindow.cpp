@@ -60,6 +60,17 @@ void HierarchyWindow::Draw()
         ImGui::TextDisabled("No scene loaded");
     }
 
+    // Context menu for creating empty GameObject
+    if (ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
+    {
+        if (ImGui::MenuItem("Create Empty"))
+        {
+            GameObject* empty = Application::GetInstance().scene->CreateGameObject("GameObject");
+            Application::GetInstance().selectionManager->SetSelectedObject(empty);
+        }
+        ImGui::EndPopup();
+    }
+
     ImGui::End();
 }
 

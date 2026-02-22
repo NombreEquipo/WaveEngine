@@ -29,6 +29,40 @@
 #include "Log.h"
 #include "ComponentScript.h"
 #include <filesystem>
+#include <nlohmann/json.hpp>
+
+static nlohmann::json copiedComponentData;
+static ComponentType copiedComponentType = static_cast<ComponentType>(-1);
+
+static void DrawComponentContextMenu(Component* component, bool canRemove = true)
+{
+    if (ImGui::BeginPopupContextItem())
+    {
+        if (ImGui::MenuItem("Copy Component Values"))
+        {
+            copiedComponentData.clear();
+            component->Serialize(copiedComponentData);
+            copiedComponentType = component->GetType();
+        }
+
+        bool canPaste = (copiedComponentType == component->GetType() && !copiedComponentData.empty());
+        if (ImGui::MenuItem("Paste Component Values", nullptr, false, canPaste))
+        {
+            component->Deserialize(copiedComponentData);
+        }
+
+        if (canRemove)
+        {
+            ImGui::Separator();
+            if (ImGui::MenuItem("Remove Component"))
+            {
+                component->markedForRemoval = true;
+            }
+        }
+
+        ImGui::EndPopup();
+    }
+}
 
 InspectorWindow::InspectorWindow()
     : EditorWindow("Inspector")
@@ -224,7 +258,9 @@ void InspectorWindow::DrawTransformComponent(GameObject* selectedObject)
 
     if (transform == nullptr) return;
 
-    if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
+    bool open = ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen);
+    DrawComponentContextMenu(transform, false);
+    if (open)
     {
         glm::vec3 position = transform->GetPosition();
         glm::vec3 rotation = transform->GetRotation();
@@ -360,9 +396,10 @@ void InspectorWindow::DrawCameraComponent(GameObject* selectedObject)
 
     if (cameraComp == nullptr) return;
 
-    if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
+    bool open = ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen);
+    DrawComponentContextMenu(cameraComp);
+    if (open)
     {
-        cameraComp->DrawRemoveComponentPopup();
         ImGui::Text("Camera Settings");
         ImGui::Separator();
 
@@ -495,9 +532,10 @@ void InspectorWindow::DrawMeshComponent(GameObject* selectedObject)
 
     if (meshComp == nullptr) return;
 
-    if (ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen))
+    bool open = ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen);
+    DrawComponentContextMenu(meshComp);
+    if (open)
     {
-        meshComp->DrawRemoveComponentPopup();
         ImGui::Text("Mesh:");
         ImGui::SameLine();
 
@@ -627,10 +665,11 @@ void InspectorWindow::DrawMeshComponent(GameObject* selectedObject)
 void InspectorWindow::DrawMaterialComponent(GameObject* selectedObject)
 {
     ComponentMaterial* materialComp = static_cast<ComponentMaterial*>(selectedObject->GetComponent(ComponentType::MATERIAL));
-
     if (materialComp == nullptr) return;
 
-    materialComp->OnEditor();
+    bool open = ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen);
+    DrawComponentContextMenu(materialComp);
+    if (open) materialComp->OnEditor();
 }
 
 void InspectorWindow::DrawRotateComponent(GameObject* selectedObject)
@@ -639,9 +678,10 @@ void InspectorWindow::DrawRotateComponent(GameObject* selectedObject)
 
     if (rotateComp == nullptr) return;
 
-    if (ImGui::CollapsingHeader("Auto Rotate", ImGuiTreeNodeFlags_DefaultOpen))
+    bool open = ImGui::CollapsingHeader("Auto Rotate", ImGuiTreeNodeFlags_DefaultOpen);
+    DrawComponentContextMenu(rotateComp);
+    if (open)
     {
-        rotateComp->DrawRemoveComponentPopup();
         bool active = rotateComp->IsActive();
         if (ImGui::Checkbox("Enable Auto Rotation", &active))
         {
@@ -655,12 +695,11 @@ void InspectorWindow::DrawRotateComponent(GameObject* selectedObject)
 void InspectorWindow::DrawParticleComponent(GameObject* selectedObject)
 {
     ComponentParticleSystem* particleComp = static_cast<ComponentParticleSystem*>(selectedObject->GetComponent(ComponentType::PARTICLE));
+    if (particleComp == nullptr) return;
 
-    if (particleComp != nullptr)
-    {
-        // Delegate the ui to the component
-        particleComp->OnEditor();
-    }
+    bool open = ImGui::CollapsingHeader("Particle System", ImGuiTreeNodeFlags_DefaultOpen);
+    DrawComponentContextMenu(particleComp);
+    if (open) particleComp->OnEditor();
 }
 
 void  InspectorWindow::DrawRigidodyComponent(GameObject* selectedObject)
@@ -669,8 +708,9 @@ void  InspectorWindow::DrawRigidodyComponent(GameObject* selectedObject)
 
     if (rigidbody != nullptr)
     {
-        // Delegate the ui to the component
-        rigidbody->OnEditor();
+        bool open = ImGui::CollapsingHeader("Rigidbody", ImGuiTreeNodeFlags_DefaultOpen);
+        DrawComponentContextMenu(rigidbody);
+        if (open) rigidbody->OnEditor();
     }
 }
 
@@ -680,8 +720,9 @@ void  InspectorWindow::DrawBoxColliderComponent(GameObject* selectedObject)
 
     if (boxCollider != nullptr)
     {
-        // Delegate the ui to the component
-        boxCollider->OnEditor();
+        bool open = ImGui::CollapsingHeader("Box Collider", ImGuiTreeNodeFlags_DefaultOpen);
+        DrawComponentContextMenu(boxCollider);
+        if (open) boxCollider->OnEditor();
     }
 }
 
@@ -691,8 +732,9 @@ void  InspectorWindow::DrawSphereColliderComponent(GameObject* selectedObject)
 
     if (Collider != nullptr)
     {
-        // Delegate the ui to the component
-        Collider->OnEditor();
+        bool open = ImGui::CollapsingHeader("Sphere Collider", ImGuiTreeNodeFlags_DefaultOpen);
+        DrawComponentContextMenu(Collider);
+        if (open) Collider->OnEditor();
     }
 }
 
@@ -702,8 +744,9 @@ void  InspectorWindow::DrawCapsuleColliderComponent(GameObject* selectedObject)
 
     if (Collider != nullptr)
     {
-        // Delegate the ui to the component
-        Collider->OnEditor();
+        bool open = ImGui::CollapsingHeader("Capsule Collider", ImGuiTreeNodeFlags_DefaultOpen);
+        DrawComponentContextMenu(Collider);
+        if (open) Collider->OnEditor();
     }
 }
 
@@ -713,8 +756,9 @@ void  InspectorWindow::DrawPlaneColliderComponent(GameObject* selectedObject)
 
     if (Collider != nullptr)
     {
-        // Delegate the ui to the component
-        Collider->OnEditor();
+        bool open = ImGui::CollapsingHeader("Plane Collider", ImGuiTreeNodeFlags_DefaultOpen);
+        DrawComponentContextMenu(Collider);
+        if (open) Collider->OnEditor();
     }
 }
 void  InspectorWindow::DrawInfinitePlaneColliderComponent(GameObject* selectedObject)
@@ -723,8 +767,9 @@ void  InspectorWindow::DrawInfinitePlaneColliderComponent(GameObject* selectedOb
 
     if (Collider != nullptr)
     {
-        // Delegate the ui to the component
-        Collider->OnEditor();
+        bool open = ImGui::CollapsingHeader("Infinite Plane Collider", ImGuiTreeNodeFlags_DefaultOpen);
+        DrawComponentContextMenu(Collider);
+        if (open) Collider->OnEditor();
     }
 }
 void  InspectorWindow::DrawMeshColliderComponent(GameObject* selectedObject)
@@ -733,8 +778,9 @@ void  InspectorWindow::DrawMeshColliderComponent(GameObject* selectedObject)
 
     if (Collider != nullptr)
     {
-        // Delegate the ui to the component
-        Collider->OnEditor();
+        bool open = ImGui::CollapsingHeader("Mesh Collider", ImGuiTreeNodeFlags_DefaultOpen);
+        DrawComponentContextMenu(Collider);
+        if (open) Collider->OnEditor();
     }
 }
 void  InspectorWindow::DrawConvexColliderComponent(GameObject* selectedObject)
@@ -743,8 +789,9 @@ void  InspectorWindow::DrawConvexColliderComponent(GameObject* selectedObject)
 
     if (Collider != nullptr)
     {
-        // Delegate the ui to the component
-        Collider->OnEditor();
+        bool open = ImGui::CollapsingHeader("Convex Collider", ImGuiTreeNodeFlags_DefaultOpen);
+        DrawComponentContextMenu(Collider);
+        if (open) Collider->OnEditor();
     }
 }
 
@@ -752,20 +799,20 @@ void InspectorWindow::DrawAudioSourceComponent(GameObject* selectedObject) {
     AudioSource* source = static_cast<AudioSource*>(selectedObject->GetComponent(ComponentType::AUDIOSOURCE));
     if (!source) return;
 
-    if (ImGui::CollapsingHeader("Audio Source", ImGuiTreeNodeFlags_DefaultOpen)) {
-        source->DrawRemoveComponentPopup();
+    bool open = ImGui::CollapsingHeader("Audio Source", ImGuiTreeNodeFlags_DefaultOpen);
+    DrawComponentContextMenu(source);
+    if (open) {
         source->OnEditor();
     }
-
-    
 }
 
 void InspectorWindow::DrawAudioListenerComponent(GameObject* selectedObject) {
     AudioListener* listener = static_cast<AudioListener*>(selectedObject->GetComponent(ComponentType::LISTENER));
     if (!listener) return;
 
-    if (ImGui::CollapsingHeader("Audio Listener", ImGuiTreeNodeFlags_DefaultOpen)) {
-        listener->DrawRemoveComponentPopup();
+    bool open = ImGui::CollapsingHeader("Audio Listener", ImGuiTreeNodeFlags_DefaultOpen);
+    DrawComponentContextMenu(listener);
+    if (open) {
         listener->OnEditor();
     }
 }
@@ -775,12 +822,12 @@ void InspectorWindow::DrawReverbZoneComponent(GameObject* selectedObject)
     ReverbZone* zone = static_cast<ReverbZone*>(selectedObject->GetComponent(ComponentType::REVERBZONE));
     if (!zone) return;
 
-    if (ImGui::CollapsingHeader("Reverb Zone", ImGuiTreeNodeFlags_DefaultOpen)) {
-        zone->DrawRemoveComponentPopup();
+    bool open = ImGui::CollapsingHeader("Reverb Zone", ImGuiTreeNodeFlags_DefaultOpen);
+    DrawComponentContextMenu(zone);
+    if (open) {
         zone->OnEditor();
     }
 }
-
 
 bool InspectorWindow::DrawGameObjectSection(GameObject* selectedObject)
 {
@@ -898,7 +945,9 @@ void InspectorWindow::DrawScriptComponent(GameObject* selectedObject)
 
     if (scriptComp == nullptr) return;
 
-    if (ImGui::CollapsingHeader("Script", ImGuiTreeNodeFlags_DefaultOpen))
+    bool open = ImGui::CollapsingHeader("Script", ImGuiTreeNodeFlags_DefaultOpen);
+    DrawComponentContextMenu(scriptComp);
+    if (open)
     {
         ImGui::Indent();
 
@@ -1305,7 +1354,7 @@ void InspectorWindow::DrawAddComponentButton(GameObject* selectedObject)
         
         if (hasRigidbody) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
 
-        if (ImGui::Selectable("Rigidbody", false, hasParticles ? ImGuiSelectableFlags_Disabled : 0))
+        if (ImGui::Selectable("Rigidbody", false, hasRigidbody ? ImGuiSelectableFlags_Disabled : 0))
         {
             Component* newComp = selectedObject->CreateComponent(ComponentType::RIGIDBODY);
             if (newComp)

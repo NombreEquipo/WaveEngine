@@ -392,6 +392,7 @@ void ModuleEditor::ShowMenuBar()
 
         if (ImGui::BeginMenu("GameObject"))
         {
+
             if (ImGui::BeginMenu("Create Primitive"))
             {
                 if (ImGui::MenuItem("Cube"))
@@ -417,6 +418,14 @@ void ModuleEditor::ShowMenuBar()
                 ImGui::EndMenu();
             }
 
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Create Empty"))
+            {
+                GameObject* empty = Application::GetInstance().scene->CreateGameObject("GameObject");
+                Application::GetInstance().selectionManager->SetSelectedObject(empty);
+            }
+            
             ImGui::Separator();
 
             if (ImGui::MenuItem("Add Auto Rotate Component"))
