@@ -105,6 +105,8 @@ void ComponentParticleSystem::Draw(ComponentCamera* camera) {
 
 void ComponentParticleSystem::OnEditor() {
     if (ImGui::CollapsingHeader("Particle System", ImGuiTreeNodeFlags_DefaultOpen)) {
+
+        DrawRemoveComponentPopup();
         // Control buttons
         ImGui::Checkbox("Active", &active);
         ImGui::SameLine();
