@@ -48,6 +48,7 @@ public:
     GameObject* GetParent() const { return parent; }
     const std::vector<GameObject*>& GetChildren() const { return children; }
     const std::vector<Component*>& GetComponents() const { return components; }
+    GameObject* FindChild(const std::string& findName);
 
     void MarkForDeletion() { markedForDeletion = true; }
     bool IsMarkedForDeletion() const { return markedForDeletion; }

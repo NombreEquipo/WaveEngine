@@ -443,6 +443,16 @@ Resource* ModuleResources::RequestResource(UID uid) {
     return nullptr;
 }
 
+const Resource* ModuleResources::PeekResource(UID uid)
+{
+    auto it = resources.find(uid);
+    if (it != resources.end())
+    {
+        return it->second;
+    }
+    return nullptr;
+}
+
 void ModuleResources::ReleaseResource(UID uid) {
     auto it = resources.find(uid);
 

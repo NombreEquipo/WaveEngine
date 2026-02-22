@@ -144,6 +144,8 @@ set(COMPONENTS_SRC
     src/AudioListener.cpp
     src/ReverbZone.h
     src/ReverbZone.cpp
+    src/ComponentAnimation.h
+    src/ComponentAnimation.cpp
 )
 
 set(LOADERS_SRC 
@@ -337,4 +339,4 @@ target_link_libraries(Engine PRIVATE
     dinput8.lib 
     dsound.lib 
     dxguid.lib
-)
+) 

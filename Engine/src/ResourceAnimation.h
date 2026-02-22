@@ -12,6 +12,7 @@ struct Channel
 };
 
 struct Animation {
+    
     double duration = 0.0;
     double ticksPerSecond = 0.0;
     std::vector<Channel> channels;

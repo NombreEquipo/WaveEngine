@@ -46,14 +46,15 @@ enum class DragDropAssetType
     MESH,           // Mesh individual
     TEXTURE,        // Texture (PNG, JPG, DDS, etc)
     SCRIPT,         // Lua script
-    PREFAB
+    PREFAB,
+    ANIMATION
 };
 
 // Payload para drag & drop interno
 struct DragDropPayload
 {
     std::string assetPath;
-    unsigned long long assetUID;
+    UID assetUID;
     DragDropAssetType assetType;
 };
 

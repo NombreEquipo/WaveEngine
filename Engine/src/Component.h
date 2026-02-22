@@ -34,7 +34,8 @@ enum class ComponentType {
     LISTENER,
     AUDIOSOURCE,
     REVERBZONE,
-    UNKNOWN
+    ANIMATION,
+    UNKNOWN,
 };
 
 class Component {

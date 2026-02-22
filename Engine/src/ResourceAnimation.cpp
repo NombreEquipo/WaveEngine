@@ -35,11 +35,9 @@ bool ResourceAnimation::LoadInMemory() {
 
     if (animation.IsValid())
     {
-        animation.duration = animation.duration;
-        animation.ticksPerSecond = animation.ticksPerSecond;
-        animation.channels = animation.channels;
-
+        this->animation = animation;
         loadedInMemory = true;
+        return true;
     }
     else
     {

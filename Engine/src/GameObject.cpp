@@ -22,6 +22,7 @@
 #include "HingeJoint.h"
 #include "ComponentParticleSystem.h"
 #include "ComponentRotate.h"
+#include "ComponentAnimation.h"
 #include "AudioComponent.h"
 #include "AudioSource.h"
 #include "AudioListener.h"
@@ -47,13 +48,19 @@ GameObject::~GameObject() {
 
 Component* GameObject::CreateComponent(ComponentType type) {
     
+    for (Component* component : components)
+    {
+        if (component->IsIncompatible(type))
+        {
+            LOG_CONSOLE("Could not add component: Conflict with component %s", component->name.c_str());
+            return nullptr;
+        }
+    }
+
     Component* newComponent = nullptr;
 
     switch (type) {
     case ComponentType::TRANSFORM:
-        if (GetComponent(ComponentType::TRANSFORM) != nullptr) {
-            return GetComponent(ComponentType::TRANSFORM);
-        }
         newComponent = new Transform(this);
         if (newComponent) transform = (Transform*)newComponent;
         break;
@@ -61,9 +68,6 @@ Component* GameObject::CreateComponent(ComponentType type) {
         newComponent = new ComponentMesh(this);
         break;
     case ComponentType::MATERIAL:
-        if (GetComponent(ComponentType::MATERIAL) != nullptr) {
-            return GetComponent(ComponentType::MATERIAL);
-        }
         newComponent = new ComponentMaterial(this);
         break;
     case ComponentType::AUDIOSOURCE:
@@ -73,9 +77,6 @@ Component* GameObject::CreateComponent(ComponentType type) {
         newComponent = new AudioListener(this);
         break;
     case ComponentType::CAMERA:
-        if (GetComponent(ComponentType::CAMERA) != nullptr) {
-            return GetComponent(ComponentType::CAMERA);
-        }
         newComponent = new ComponentCamera(this);
         break;
     case ComponentType::ROTATE:
@@ -131,6 +132,9 @@ Component* GameObject::CreateComponent(ComponentType type) {
         break;
     case ComponentType::DISTANCE_JOINT:
         newComponent = new DistanceJoint(this);
+        break;
+    case ComponentType::ANIMATION:
+        newComponent = new ComponentAnimation(this);
         break;
     default:
         LOG_DEBUG("ERROR: Unknown component type requested for GameObject '%s'", name.c_str());
@@ -277,6 +281,26 @@ int GameObject::GetChildIndex(GameObject* child) const {
         return static_cast<int>(std::distance(children.begin(), it));
     }
     return -1;
+}
+
+GameObject* GameObject::FindChild(const std::string& nameToFind)
+{
+    if (name == nameToFind)
+    {
+        return this;
+    }
+
+    for (GameObject* child : children)
+    {
+        GameObject* found = child->FindChild(nameToFind);
+
+        if (found != nullptr)
+        {
+            return found;
+        }
+    }
+
+    return nullptr;
 }
 
 void GameObject::Update() {

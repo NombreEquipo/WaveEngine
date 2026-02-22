@@ -83,6 +83,8 @@ public:
     // Release resource (decrement ref count)
     void ReleaseResource(UID uid);
 
+    const Resource* PeekResource(UID uid);
+
     // Get resource without incrementing reference count
     const Resource* GetResourceDirect(UID uid) const {
         auto it = resources.find(uid);

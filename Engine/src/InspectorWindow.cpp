@@ -1,4 +1,6 @@
 ﻿#include "InspectorWindow.h"
+#include "AssetsWindow.h"
+
 #include <imgui.h>
 #include "Application.h"
 #include "GameObject.h"
@@ -8,6 +10,7 @@
 #include "ComponentMaterial.h"
 #include "ComponentCamera.h"
 #include "ComponentRotate.h"
+#include "ComponentAnimation.h"
 #include "ResourceTexture.h"
 #include "ComponentParticleSystem.h"
 #include "Rigidbody.h"
@@ -121,6 +124,7 @@ void InspectorWindow::Draw()
     DrawAudioSourceComponent(selectedObject);
     DrawAudioListenerComponent(selectedObject);
     DrawReverbZoneComponent(selectedObject);
+    DrawAnimationComponent(selectedObject);
 
     ImGui::Spacing();
     ImGui::Separator();
@@ -729,6 +733,120 @@ void InspectorWindow::DrawReverbZoneComponent(GameObject* selectedObject)
 
     if (ImGui::CollapsingHeader("Reverb Zone", ImGuiTreeNodeFlags_DefaultOpen)) {
         zone->OnEditor();
+    }
+}
+
+void InspectorWindow::DrawAnimationComponent(GameObject* selectedObject)
+{
+    ComponentAnimation* animation = static_cast<ComponentAnimation*>(selectedObject->GetComponent(ComponentType::ANIMATION));
+    if (!animation) return;
+
+    if (ImGui::CollapsingHeader("Animation", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Separator();
+        ImGui::Text("Library:");
+
+        int i = 0;
+        for (auto it = animation->animationsLibrary.begin(); it != animation->animationsLibrary.end(); )
+        {
+            ImGui::PushID(it->first.c_str());
+
+            bool deleteRequested = false;
+
+            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_SpanAvailWidth;
+
+            bool isNodeOpen = ImGui::TreeNodeEx(it->first.c_str(), flags);
+
+            ImGui::SameLine();
+
+            float buttonWidth = 20.0f;
+            float availableWidth = ImGui::GetContentRegionAvail().x;
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + availableWidth - buttonWidth);
+
+            if (ImGui::SmallButton("X"))
+            {
+                deleteRequested = true;
+            }
+
+            if (isNodeOpen)
+            {
+                if (!deleteRequested)
+                {
+                    ImGui::Unindent();
+                    ImGui::Text("UID: %d", it->second.uid);
+
+
+                    ImGui::Text("Speed");
+                    ImGui::SameLine();
+                    float speed = it->second.speed;
+                    if (ImGui::InputFloat("##Speed", &speed))
+                    {
+                        animation->SetAnimationSpeed(it->first, speed);
+                    }
+
+                    ImGui::Text("Loop");
+                    ImGui::SameLine();
+                    bool loop = it->second.loop;
+                    if (ImGui::Checkbox("##Loop", &loop))
+                    {
+                        animation->SetAnimationLoop(it->first, loop);
+                    }
+
+                    if (ImGui::Button("Play", ImVec2(-1, 0)))
+                    {
+                        animation->Play(it->first, 0.5f);
+                    }
+                    ImGui::Indent();
+                }
+
+                ImGui::TreePop();
+            }
+
+            ImGui::PopID();
+
+            if (deleteRequested)
+            {
+                auto nextIt = it;
+                ++nextIt;
+
+                animation->RemoveAnimation(it->first);
+
+                it = nextIt;
+            }
+            else
+            {
+                ++it;
+            }
+            i++;
+        }
+
+        if (i == 0)
+        {
+            ImGui::SameLine();
+            ImGui::Text("empty");
+        }
+
+        ImGui::Separator();
+
+        static char nameBuffer[64] = "New Animation";
+        int availableWidth = ImGui::GetContentRegionAvail().x;
+
+        ImGui::InputText(" ", nameBuffer, 64);
+        ImGui::Button("Drop animation", ImVec2(availableWidth, 20));
+        if (ImGui::BeginDragDropTarget())
+        {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_ITEM"))
+            {
+                DragDropPayload* dropData = (DragDropPayload*)payload->Data;
+                UID droppedUID = dropData->assetUID;
+
+                const Resource* res = Application::GetInstance().resources->PeekResource(droppedUID);
+                if (res && res->GetType() == Resource::Type::ANIMATION)
+                {
+                    animation->AddAnimation(nameBuffer, droppedUID);
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
     }
 }
 
@@ -1497,7 +1615,31 @@ void InspectorWindow::DrawAddComponentButton(GameObject* selectedObject)
             ImGui::EndTooltip();
         }
 
-        
+        bool hasAnimation = (selectedObject->GetComponent(ComponentType::ANIMATION) != nullptr);
+
+        if (hasAnimation) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+
+        if (ImGui::Selectable("Animation", false, hasAnimation ? ImGuiSelectableFlags_Disabled : 0))
+        {
+            selectedObject->CreateComponent(ComponentType::ANIMATION);
+            LOG_CONSOLE("[Inspector] Animation component added to: %s", selectedObject->GetName().c_str());
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (hasAnimation) ImGui::PopStyleColor();
+
+        if (ImGui::IsItemHovered() && !hasAnimation)
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Add an Animation");
+            ImGui::EndTooltip();
+        }
+        else if (ImGui::IsItemHovered() && hasAnimation)
+        {
+            ImGui::BeginTooltip();
+            ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f), "Already has an Animation");
+            ImGui::EndTooltip();
+        }
 
         ImGui::EndPopup();
     }
