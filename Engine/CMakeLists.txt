@@ -179,6 +179,13 @@ set(EDITOR_SRC
     src/Commandhistory.h
     src/Transformcommand.cpp
     src/Transformcommand.h
+    src/Deletecommand.h
+    src/Createcommand.h
+    src/Createcommand.cpp
+    src/Deletecommand.cpp
+    src/Compositecommand.h
+    src/Transformcommand.h
+    src/Reparentcommand.h
 )
 
 set(IMPORTERS_SRC 

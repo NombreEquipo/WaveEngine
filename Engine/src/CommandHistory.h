@@ -16,6 +16,13 @@ public:
         while (!m_RedoStack.empty()) m_RedoStack.pop();
     }
 
+    void PushWithoutExecute(std::unique_ptr<EditorCommand> command)
+    {
+        m_UndoStack.push(std::move(command));
+        while (!m_RedoStack.empty())
+            m_RedoStack.pop();
+    }
+
     void Undo()
     {
         if (m_UndoStack.empty()) return;

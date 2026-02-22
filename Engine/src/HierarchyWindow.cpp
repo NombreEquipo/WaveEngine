@@ -7,6 +7,9 @@
 #include "ModuleScene.h"
 #include "Log.h"
 #include "ResourcePrefab.h"
+#include "ReparentCommand.h"
+#include "ModuleEditor.h"
+
 HierarchyWindow::HierarchyWindow()
     : EditorWindow("Hierarchy")
 {
@@ -37,7 +40,10 @@ void HierarchyWindow::Draw()
                     GameObject* draggedObject = *(GameObject**)payload->Data;
                     if (draggedObject != root)
                     {
-                        draggedObject->SetParent(root);
+                        int newIndex = static_cast<int>(root->GetChildren().size());
+                        Application::GetInstance().editor->GetCommandHistory()->ExecuteCommand(
+                            std::make_unique<ReparentCommand>(draggedObject, root, newIndex)
+                        );
                     }
                 }
                 else
@@ -235,8 +241,9 @@ void HierarchyWindow::DrawGameObjectNode(GameObject* gameObject, int childIndex)
                     GameObject* parent = gameObject->GetParent();
                     if (parent)
                     {
-                        parent->InsertChildAt(draggedObject, childIndex);
-                        LOG_DEBUG("Inserted '%s' before '%s'", draggedObject->GetName().c_str(), gameObject->GetName().c_str());
+                        Application::GetInstance().editor->GetCommandHistory()->ExecuteCommand(
+                            std::make_unique<ReparentCommand>(draggedObject, parent, childIndex)
+                        );
                     }
                 }
                 else if (dropPos == DropPosition::AFTER)
@@ -244,14 +251,17 @@ void HierarchyWindow::DrawGameObjectNode(GameObject* gameObject, int childIndex)
                     GameObject* parent = gameObject->GetParent();
                     if (parent)
                     {
-                        parent->InsertChildAt(draggedObject, childIndex + 1);
-                        LOG_DEBUG("Inserted '%s' after '%s'", draggedObject->GetName().c_str(), gameObject->GetName().c_str());
+                        Application::GetInstance().editor->GetCommandHistory()->ExecuteCommand(
+                            std::make_unique<ReparentCommand>(draggedObject, parent, childIndex + 1)
+                        );
                     }
                 }
                 else if (dropPos == DropPosition::ON)
                 {
-                    draggedObject->SetParent(gameObject);
-                    LOG_DEBUG("Reparented '%s' to '%s'", draggedObject->GetName().c_str(), gameObject->GetName().c_str());
+                    int newIndex = static_cast<int>(gameObject->GetChildren().size());
+                    Application::GetInstance().editor->GetCommandHistory()->ExecuteCommand(
+                        std::make_unique<ReparentCommand>(draggedObject, gameObject, newIndex)
+                    );
                 }
                 else
                 {
