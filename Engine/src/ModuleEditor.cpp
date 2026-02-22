@@ -175,8 +175,6 @@ bool ModuleEditor::Update()
             if (editorCamera)
             {
                 editorCamera->SetAspectRatio(sceneAspect);
-                LOG_DEBUG("Updated camera aspect ratio to %.3f (viewport: %.0fx%.0f)",
-                    sceneAspect, sceneViewportSize.x, sceneViewportSize.y);
             }
         }
     }
