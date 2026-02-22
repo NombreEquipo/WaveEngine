@@ -24,6 +24,7 @@ public:
     ~GameObject();
 
     Component* CreateComponent(ComponentType type);
+    void RemoveComponent(Component* comp);
 
     Component* GetComponent(ComponentType type) const;
     std::vector<Component*> GetComponentsOfType(ComponentType type) const;

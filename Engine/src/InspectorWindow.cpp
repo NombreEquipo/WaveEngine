@@ -89,16 +89,6 @@ void InspectorWindow::Draw()
         return;
     }
 
-    //ImGui::Spacing();
-    //if (ImGui::Button("Add Component", ImVec2(-1, 0))) {
-    //    ImGui::OpenPopup("AddComponentPopup");
-    //}
-
-    //if (ImGui::BeginPopup("AddComponentPopup")) {
-    //    
-    //}
-    //ImGui::Spacing();
-
     ImGui::Separator();
     DrawGizmoSettings();
     ImGui::Separator();
@@ -128,6 +118,13 @@ void InspectorWindow::Draw()
 
     DrawAddComponentButton(selectedObject);
 
+    //handle components removal in inspector
+    std::vector<Component*> componentsToRemove;
+    for (Component* comp : selectedObject->GetComponents()) {
+        if (comp->markedForRemoval) componentsToRemove.push_back(comp);
+    }
+    for (Component* comp : componentsToRemove)  selectedObject->RemoveComponent(comp);
+    
 
     ImGui::End();
 }
@@ -322,6 +319,7 @@ void InspectorWindow::DrawCameraComponent(GameObject* selectedObject)
 
     if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
     {
+        cameraComp->DrawRemoveComponentPopup();
         ImGui::Text("Camera Settings");
         ImGui::Separator();
 
@@ -456,6 +454,7 @@ void InspectorWindow::DrawMeshComponent(GameObject* selectedObject)
 
     if (ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen))
     {
+        meshComp->DrawRemoveComponentPopup();
         ImGui::Text("Mesh:");
         ImGui::SameLine();
 
@@ -599,6 +598,7 @@ void InspectorWindow::DrawRotateComponent(GameObject* selectedObject)
 
     if (ImGui::CollapsingHeader("Auto Rotate", ImGuiTreeNodeFlags_DefaultOpen))
     {
+        rotateComp->DrawRemoveComponentPopup();
         bool active = rotateComp->IsActive();
         if (ImGui::Checkbox("Enable Auto Rotation", &active))
         {
@@ -704,13 +704,17 @@ void  InspectorWindow::DrawConvexColliderComponent(GameObject* selectedObject)
         Collider->OnEditor();
     }
 }
+
 void InspectorWindow::DrawAudioSourceComponent(GameObject* selectedObject) {
     AudioSource* source = static_cast<AudioSource*>(selectedObject->GetComponent(ComponentType::AUDIOSOURCE));
     if (!source) return;
 
     if (ImGui::CollapsingHeader("Audio Source", ImGuiTreeNodeFlags_DefaultOpen)) {
+        source->DrawRemoveComponentPopup();
         source->OnEditor();
     }
+
+    
 }
 
 void InspectorWindow::DrawAudioListenerComponent(GameObject* selectedObject) {
@@ -718,6 +722,7 @@ void InspectorWindow::DrawAudioListenerComponent(GameObject* selectedObject) {
     if (!listener) return;
 
     if (ImGui::CollapsingHeader("Audio Listener", ImGuiTreeNodeFlags_DefaultOpen)) {
+        listener->DrawRemoveComponentPopup();
         listener->OnEditor();
     }
 }
@@ -728,6 +733,7 @@ void InspectorWindow::DrawReverbZoneComponent(GameObject* selectedObject)
     if (!zone) return;
 
     if (ImGui::CollapsingHeader("Reverb Zone", ImGuiTreeNodeFlags_DefaultOpen)) {
+        zone->DrawRemoveComponentPopup();
         zone->OnEditor();
     }
 }
@@ -1502,3 +1508,4 @@ void InspectorWindow::DrawAddComponentButton(GameObject* selectedObject)
         ImGui::EndPopup();
     }
 }
+

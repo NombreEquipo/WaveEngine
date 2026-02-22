@@ -36,6 +36,7 @@ private:
     void DrawRotateComponent(GameObject* selectedObject);
     void DrawScriptComponent(GameObject* selectedObject);
     void DrawAddComponentButton(GameObject* selectedObject);
+    
     void DrawParticleComponent(GameObject* selectedObject);
     void DrawRigidodyComponent(GameObject* selectedObject);
     void DrawBoxColliderComponent(GameObject* selectedObject);
@@ -50,10 +51,14 @@ private:
     void DrawReverbZoneComponent(GameObject* selectedObject); 
 
     // Helper methods
+    // Helper methods
     void GetAllGameObjects(GameObject* root, std::vector<GameObject*>& outObjects);
     bool IsDescendantOf(GameObject* potentialDescendant, GameObject* potentialAncestor);
 
     AudioSystem* audioSystem;
+
+
+    
 
     // Gizmo state
     ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::TRANSLATE;
@@ -62,5 +67,7 @@ private:
     // Normals visualization
     bool showVertexNormals = false;
     bool showFaceNormals = false;
+
+    Component* componentToRemove = nullptr;
 
 };

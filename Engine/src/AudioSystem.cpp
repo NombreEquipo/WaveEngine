@@ -592,12 +592,14 @@ void AudioSystem::EventCallBack(AkCallbackType in_eType, AkEventCallbackInfo* in
     if (pEvent && in_eType == AkCallbackType::AK_EndOfEvent)
     {
         pEvent->playingID = 0L; 
+        
     }
 }
 
 void AudioSystem::DiscoverEvents() {
     // Clear existing names to avoid duplicates
     eventNames.clear();
+    
     std::string path = "..\\Assets\\Audio\\GeneratedSoundBanks\\Windows\\MainSoundBank.json";
 
     std::ifstream file(path);

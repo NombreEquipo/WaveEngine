@@ -39,6 +39,7 @@ void ComponentMaterial::OnEditor()
 {
     if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen))
     {
+        DrawRemoveComponentPopup();
         // Unified Shader Selector
         std::string currentSelection = "Standard";
         if (shaderUID != 0) {
