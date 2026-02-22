@@ -1,5 +1,5 @@
 #pragma once
-#include "ModuleLoader.h"
+#include "ResourceMesh.h"
 
 class Primitives
 {

@@ -9,6 +9,7 @@
 #include "Component.h"
 #include "Transform.h"
 #include "ComponentMesh.h"
+#include "ComponentSkinnedMesh.h"
 #include "ComponentMaterial.h"
 
 #include "ResourceModel.h"
@@ -209,15 +210,21 @@ GameObject* ModelImporter::ProcessNode(aiNode* node, const aiScene* scene, const
 
         if (meshUID != 0)
         {
-            ComponentMesh* meshComponent = static_cast<ComponentMesh*>(
-                gameObject->CreateComponent(ComponentType::MESH));
+            Component* newComp = nullptr;
 
-            if (meshComponent)
+            if (aiMesh->HasBones())
             {
-                if (!meshComponent->LoadMeshByUID(meshUID))
-                {
-                    LOG_CONSOLE("ERROR: Failed to load mesh with UID: %llu", meshUID);
-                }
+                newComp = gameObject->CreateComponent(ComponentType::SKINNED_MESH);
+            }
+            else
+            {
+                newComp = gameObject->CreateComponent(ComponentType::MESH);
+            }
+
+            if (newComp)
+            {
+                ComponentMesh* meshRenderer = static_cast<ComponentMesh*>(newComp);
+                meshRenderer->LoadMeshByUID(meshUID);
             }
         }
 
@@ -480,7 +487,7 @@ bool ModelImporter::SaveToCustomFormat(const Model& model, const std::string& fi
             file.write(reinterpret_cast<const char*>(msgpackData.data()), msgpackData.size());
             file.close();
 
-            LOG_CONSOLE("[ModelImporter] Guardado modelo binario (MsgPack): %s (%zu bytes)", fullPath.c_str(), msgpackData.size());
+            LOG_CONSOLE("[ModelImporter] Guardado modelo binario: %s", fullPath.c_str());
             return true;
         }
         catch (const nlohmann::json::exception& e)
@@ -515,7 +522,7 @@ Model ModelImporter::LoadFromCustomFormat(const std::string& filename)
             try
             {
                 model.modelJson = nlohmann::json::from_msgpack(msgpackData);
-                LOG_CONSOLE("[ModelImporter] Modelo binario cargado (MsgPack): %s (%zu bytes)", fullPath.c_str(), size);
+                LOG_CONSOLE("[ModelImporter] Modelo binario cargado: %s", fullPath.c_str());
             }
             catch (const nlohmann::json::parse_error& e)
             {

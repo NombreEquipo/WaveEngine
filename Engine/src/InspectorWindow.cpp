@@ -7,6 +7,7 @@
 #include "SelectionManager.h"
 #include "Transform.h"
 #include "ComponentMesh.h"
+#include "ComponentSkinnedMesh.h"
 #include "ComponentMaterial.h"
 #include "ComponentCamera.h"
 #include "ComponentRotate.h"
@@ -109,6 +110,7 @@ void InspectorWindow::Draw()
     DrawTransformComponent(selectedObject);
     DrawCameraComponent(selectedObject);
     DrawMeshComponent(selectedObject);
+    DrawSkinnedMeshComponent(selectedObject);
     DrawMaterialComponent(selectedObject);
     DrawRotateComponent(selectedObject);
     DrawScriptComponent(selectedObject); 
@@ -455,8 +457,7 @@ void InspectorWindow::DrawCameraComponent(GameObject* selectedObject)
 void InspectorWindow::DrawMeshComponent(GameObject* selectedObject)
 {
     ComponentMesh* meshComp = static_cast<ComponentMesh*>(selectedObject->GetComponent(ComponentType::MESH));
-
-    if (meshComp == nullptr) return;
+    if (meshComp == nullptr || meshComp->IsType(ComponentType::SKINNED_MESH)) return;
 
     if (ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen))
     {
@@ -566,6 +567,147 @@ void InspectorWindow::DrawMeshComponent(GameObject* selectedObject)
             ImGui::Text("Vertices: %d", (int)mesh.vertices.size());
             ImGui::Text("Indices: %d", (int)mesh.indices.size());
             ImGui::Text("Triangles: %d", (int)mesh.indices.size() / 3);
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            ImGui::Text("Normals Visualization:");
+
+            if (ImGui::Checkbox("Show Vertex Normals", &showVertexNormals))
+            {
+                LOG_DEBUG("Vertex normals visualization: %s", showVertexNormals ? "ON" : "OFF");
+            }
+
+            if (ImGui::Checkbox("Show Face Normals", &showFaceNormals))
+            {
+                LOG_DEBUG("Face normals visualization: %s", showFaceNormals ? "ON" : "OFF");
+            }
+        }
+    }
+}
+
+void InspectorWindow::DrawSkinnedMeshComponent(GameObject* selectedObject)
+{
+    ComponentSkinnedMesh* meshComp = static_cast<ComponentSkinnedMesh*>(selectedObject->GetComponent(ComponentType::SKINNED_MESH));
+    if (meshComp == nullptr) return;
+
+    if (ImGui::CollapsingHeader("Skinned Mesh", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        ImGui::Text("Mesh:");
+        ImGui::SameLine();
+
+        // Mesh display
+        std::string currentMeshName = "None";
+        if (meshComp->HasMesh() && meshComp->IsUsingResourceMesh())
+        {
+            UID currentUID = meshComp->GetMeshUID();
+            ModuleResources* resources = Application::GetInstance().resources.get();
+            const Resource* res = resources->GetResourceDirect(currentUID);
+            if (res)
+            {
+                currentMeshName = std::string(res->GetAssetFile());
+                // Filename
+                size_t lastSlash = currentMeshName.find_last_of("/\\");
+                if (lastSlash != std::string::npos)
+                    currentMeshName = currentMeshName.substr(lastSlash + 1);
+            }
+            else
+            {
+                //Show UID
+                currentMeshName = "UID " + std::to_string(currentUID);
+            }
+        }
+        else if (meshComp->HasMesh() && meshComp->IsUsingDirectMesh())
+        {
+            currentMeshName = "[Primitive]";
+        }
+
+        ImGui::SetNextItemWidth(-1);
+        if (ImGui::BeginCombo("##MeshSelector", currentMeshName.c_str()))
+        {
+			// Get mesh resources
+            ModuleResources* resources = Application::GetInstance().resources.get();
+            const std::map<UID, Resource*>& allResources = resources->GetAllResources();
+
+            for (const auto& pair : allResources)
+            {
+                const Resource* res = pair.second;
+                if (res->GetType() == Resource::MESH)
+                {
+                    std::string meshName = res->GetAssetFile();
+
+                    // Filename
+                    size_t lastSlash = meshName.find_last_of("/\\");
+                    if (lastSlash != std::string::npos) meshName = meshName.substr(lastSlash + 1);
+
+                    UID meshUID = res->GetUID();
+                    bool isSelected = (meshComp->IsUsingResourceMesh() && meshComp->GetMeshUID() == meshUID);
+
+                    std::string displayName = meshName;
+                    if (res->IsLoadedToMemory())
+                    {
+                        displayName += " [Loaded]";
+                    }
+
+                    if (ImGui::Selectable(displayName.c_str(), isSelected))
+                    {
+                        if (meshComp->LoadMeshByUID(meshUID))
+                        {
+                            LOG_DEBUG("Assigned mesh '%s' (UID %llu) to GameObject '%s'",
+                                meshName.c_str(), meshUID, selectedObject->GetName().c_str());
+                            LOG_CONSOLE("Mesh '%s' assigned to '%s'",
+                                meshName.c_str(), selectedObject->GetName().c_str());
+                        }
+                        else
+                        {
+                            LOG_CONSOLE("Failed to load mesh '%s' (UID %llu)", meshName.c_str(), meshUID);
+                        }
+                    }
+
+                    if (isSelected)
+                    {
+						ImGui::SetItemDefaultFocus(); // Highlight selected item
+                    }
+
+                    // Show tooltip with UID and path
+                    if (ImGui::IsItemHovered())
+                    {
+                        ImGui::BeginTooltip();
+                        ImGui::Text("UID: %llu", meshUID);
+                        ImGui::Text("Path: %s", res->GetAssetFile());
+                        if (res->IsLoadedToMemory())
+                        {
+                            ImGui::TextColored(ImVec4(0.3f, 1.0f, 0.3f, 1.0f), "Loaded in memory");
+                        }
+                        ImGui::EndTooltip();
+                    }
+                }
+            }
+
+            ImGui::EndCombo();
+        }
+
+        if (meshComp->HasMesh())
+        {
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            const Mesh& mesh = meshComp->GetMesh();
+
+            ImGui::Text("Mesh Statistics:");
+            ImGui::Text("Vertices: %d", (int)mesh.vertices.size());
+            ImGui::Text("Indices: %d", (int)mesh.indices.size());
+            ImGui::Text("Triangles: %d", (int)mesh.indices.size() / 3);
+            ImGui::Text("Linked bones: %d / %d", meshComp->GetLinkedBonesNum(), (int)mesh.bones.size());
+
+            if (ImGui::Button("Link Bones"))
+            {
+                meshComp->LinkBones();
+            }
+
+
 
             ImGui::Spacing();
             ImGui::Separator();

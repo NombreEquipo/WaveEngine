@@ -2,6 +2,7 @@
 #include "Component.h"
 #include "Transform.h"
 #include "ComponentMesh.h"
+#include "ComponentSkinnedMesh.h"
 #include "ComponentMaterial.h"
 #include "ComponentCamera.h"
 #include "ComponentRotate.h"
@@ -66,6 +67,9 @@ Component* GameObject::CreateComponent(ComponentType type) {
         break;
     case ComponentType::MESH:
         newComponent = new ComponentMesh(this);
+        break;
+    case ComponentType::SKINNED_MESH:
+        newComponent = new ComponentSkinnedMesh(this);
         break;
     case ComponentType::MATERIAL:
         newComponent = new ComponentMaterial(this);

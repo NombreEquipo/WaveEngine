@@ -1,32 +1,31 @@
 #pragma once
 
 #include "Component.h"
-#include "ModuleLoader.h"  
 #include "ModuleResources.h"  
+#include "ResourceMesh.h"
 #include <glm/glm.hpp>
 
 class ComponentMesh : public Component {
 public:
     // Constructor and destructor
-    ComponentMesh(GameObject* owner);
+    ComponentMesh(GameObject* owner, ComponentType type = ComponentType::MESH);
     ~ComponentMesh();
 
     // Component lifecycle
-    void Update() override;
-    void OnEditor() override;
+    void Update() override { cachedBones = false; }
 
     // Serialization
     void Serialize(nlohmann::json& componentObj) const override;
     void Deserialize(const nlohmann::json& componentObj) override;
 
-    bool IsType(ComponentType type) override { return type == ComponentType::MESH; };
-    bool IsIncompatible(ComponentType type) override { return type == ComponentType::MESH /*|| type == ComponentType::SkinnedMeshRenderer*/; };
+    virtual bool IsType(ComponentType type) override { return type == ComponentType::MESH; };
+    virtual bool IsIncompatible(ComponentType type) override { return type == ComponentType::MESH || type == ComponentType::SKINNED_MESH; };
 
     // Load mesh from resource system by UID
     bool LoadMeshByUID(UID uid);
 
     // Set mesh data directly (for primitives that don't use resource system)
-    void SetMesh(const Mesh& meshData);
+    virtual void SetMesh(const Mesh& meshData);
 
     // Accessors for mesh
     const Mesh& GetMesh() const;
@@ -88,16 +87,23 @@ public:
     // World space AABB (transformed by GameObject's global matrix)
     void GetWorldAABB(glm::vec3& outMin, glm::vec3& outMax) const;
 
-private:
+    //SKINNING
+    virtual void UpdateSkinningMatrices() {}
+    virtual void UpdateDynamicAABB() {}
+    virtual bool HasSkinning() const { return false; }
+    virtual const std::vector<glm::mat4>& GetBoneMatrices() const { static std::vector<glm::mat4> empty; return empty; }
+
+protected:
 
     UID meshUID = 0;
     // Release current mesh resource
     void ReleaseCurrentMesh();
 
-private:
-
     // Direct mesh (for primitives)
     Mesh directMesh;                        // Direct mesh data (for primitives)
     bool hasDirectMesh;                     // True if using direct mesh instead of resource
     std::string primitiveType;              // Type of primitive for serialization
+
+    //ANIMATION
+    bool cachedBones = false;   
 };

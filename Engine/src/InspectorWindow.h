@@ -33,6 +33,7 @@ private:
     void DrawTransformComponent(GameObject* selectedObject);
     void DrawCameraComponent(GameObject* selectedObject);
     void DrawMeshComponent(GameObject* selectedObject);
+    void DrawSkinnedMeshComponent(GameObject* selectedObject);
     void DrawMaterialComponent(GameObject* selectedObject);
     void DrawRotateComponent(GameObject* selectedObject);
     void DrawScriptComponent(GameObject* selectedObject);

@@ -10,6 +10,7 @@ enum class ComponentType {
 
     TRANSFORM,
     MESH,
+    SKINNED_MESH,
     MATERIAL,
     CAMERA,
     ROTATE,

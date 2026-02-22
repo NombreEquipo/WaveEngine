@@ -62,6 +62,10 @@ public:
     void DrawVertexNormals(const Mesh& mesh, const glm::mat4& modelMatrix);
     void DrawFaceNormals(const Mesh& mesh, const glm::mat4& modelMatrix);
 
+    void CreateSkinningSSBOs(unsigned int& ssboGlobal, unsigned int& ssboOffset, const std::vector<glm::mat4>& offsets);
+    void UploadGlobalMatricesToGPU(unsigned int ssbo, const std::vector<glm::mat4>& globalMatrices);
+    void DeleteSSBO(unsigned int& ssbo);
+
     // Shader access
     Shader* GetDefaultShader() const { return defaultShader.get(); }
     Shader* GetWaterShader() const { return waterShader.get(); }
@@ -186,4 +190,7 @@ private:
 
     std::vector<RenderLine> linesList;
  
+    //SHADERS
+    unsigned int uboMatrices;
+    unsigned int ssboBones;
 };

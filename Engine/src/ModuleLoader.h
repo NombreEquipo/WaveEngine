@@ -14,33 +14,6 @@ struct aiMesh;
 struct aiMaterial;
 struct MetaFile;
 
-// Vertex data structure
-struct Vertex {
-    glm::vec3 position;
-    glm::vec3 normal;
-    glm::vec2 texCoords;
-};
-
-// Texture information
-struct TextureInfo {
-    unsigned int id = 0;
-    std::string type;  // e.g., "diffuse", "specular", "normal"
-    std::string path;
-};
-
-// Mesh container with vertex data and OpenGL buffer IDs
-struct Mesh {
-    std::vector<Vertex> vertices;
-    std::vector<unsigned int> indices;
-    std::vector<TextureInfo> textures;
-
-    // OpenGL buffer IDs 
-    unsigned int VAO = 0;
-    unsigned int VBO = 0;
-    unsigned int EBO = 0;
-
-    bool IsValid() const { return VAO != 0; }
-};
 
 // FBX/Model loading and management
 class ModuleLoader : public Module

@@ -43,7 +43,11 @@ set(RENDERING_SRC
     src/Shader.h 
     src/Shader.cpp 
     src/Frustum.h 
-    src/Frustum.cpp 
+    src/Frustum.cpp
+    src/ComponentMesh.h
+    src/ComponentMesh.cpp
+    src/ComponentSkinnedMesh.h
+    src/ComponentSkinnedMesh.cpp
 )
 
 set(VFX_SRC
@@ -127,8 +131,6 @@ set(COMPONENTS_SRC
     src/Component.cpp
     src/ComponentMaterial.cpp
     src/ComponentMaterial.h
-    src/ComponentMesh.h
-    src/ComponentMesh.cpp
     src/Transform.cpp
     src/Transform.h
     src/ComponentCamera.cpp

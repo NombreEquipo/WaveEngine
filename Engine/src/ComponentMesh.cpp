@@ -7,11 +7,12 @@
 #include "Log.h"
 #include <glad/glad.h>
 #include "Application.h"
-ComponentMesh::ComponentMesh(GameObject* owner)
-    : Component(owner, ComponentType::MESH),
+ComponentMesh::ComponentMesh(GameObject* owner, ComponentType type)
+    : Component(owner, type),
     meshUID(0),
     hasDirectMesh(false)
 {
+    name = "Mesh";
 }
 
 ComponentMesh::~ComponentMesh()
@@ -24,14 +25,6 @@ ComponentMesh::~ComponentMesh()
         glDeleteBuffers(1, &directMesh.VBO);
         glDeleteBuffers(1, &directMesh.EBO);
     }
-}
-
-void ComponentMesh::Update()
-{
-}
-
-void ComponentMesh::OnEditor()
-{
 }
 
 void ComponentMesh::ReleaseCurrentMesh()

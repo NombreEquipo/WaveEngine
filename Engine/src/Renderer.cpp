@@ -1201,6 +1201,41 @@ void Renderer::DrawVertexNormals(const Mesh& mesh, const glm::mat4& modelMatrix)
     defaultShader->Use();
 }
 
+void Renderer::CreateSkinningSSBOs(unsigned int& ssboGlobal, unsigned int& ssboOffset, const std::vector<glm::mat4>& offsets)
+{
+    size_t numBones = offsets.size();
+
+    if (ssboOffset == 0) glGenBuffers(1, &ssboOffset);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboOffset);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, numBones * sizeof(glm::mat4), offsets.data(), GL_STATIC_DRAW);
+
+    if (ssboGlobal == 0) glGenBuffers(1, &ssboGlobal);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboGlobal);
+
+    glBufferData(GL_SHADER_STORAGE_BUFFER, numBones * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
+
+void Renderer::UploadGlobalMatricesToGPU(unsigned int ssbo, const std::vector<glm::mat4>& globalMatrices)
+{
+    if (ssbo == 0) return;
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, globalMatrices.size() * sizeof(glm::mat4), globalMatrices.data());
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
+
+void Renderer::DeleteSSBO(unsigned int& ssbo)
+{
+    if (ssbo != 0)
+    {
+        glDeleteBuffers(1, &ssbo);
+        ssbo = 0;
+    }
+}
+
 void Renderer::DrawFaceNormals(const Mesh& mesh, const glm::mat4& modelMatrix)
 {
     if (!mesh.IsValid() || mesh.vertices.empty() || mesh.indices.empty())
