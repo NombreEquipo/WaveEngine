@@ -1119,26 +1119,30 @@ void Renderer::DrawGameObjectIterative(GameObject* gameObject,
             ComponentCamera* editorCamera = Application::GetInstance().camera->GetActiveCamera();
             if (renderCamera == editorCamera)
             {
-                Component* reverbCompBase = currentObj->GetComponent(ComponentType::REVERBZONE);
-                if (reverbCompBase != nullptr)
-                {
-                    ReverbZone* zone = static_cast<ReverbZone*>(reverbCompBase);
-                    if (zone->enabled)
-                    {
-                        
-                        glm::vec3 worldCenter = glm::vec3(modelMatrix[3]);
+                for (const auto& comp : currentObj->GetComponents()) {
+                    if (comp->GetType() == ComponentType::REVERBZONE) {
+                        ReverbZone* zone = static_cast<ReverbZone*>(comp);
+                        if (zone != nullptr)
+                        {
+                            if (zone->enabled)
+                            {
+                                glm::vec3 worldCenter = glm::vec3(modelMatrix[3]);
 
-                        if (zone->shape == ReverbZone::Shape::SPHERE)
-                        {
-                            DrawReverbSphere(worldCenter, zone->radius, glm::vec3(1.0f, 0.4f, 0.8f));
-                        }
-                        else 
-                        {
-                            
-                            DrawReverbBox(modelMatrix, zone->extents, glm::vec3(1.0f, 0.4f, 0.8f));
+                                if (zone->shape == ReverbZone::Shape::SPHERE)
+                                {
+                                    DrawReverbSphere(worldCenter, zone->radius, glm::vec3(0.4f, 0.4f, 0.8f));
+                                }
+                                else
+                                {
+
+                                    DrawReverbBox(modelMatrix, zone->extents, glm::vec3(0.4f, 0.4f, 0.8f));
+                                }
+                            }
                         }
                     }
                 }
+                
+                
             }
         }
 
@@ -1844,7 +1848,7 @@ void Renderer::DrawReverbSphere(const glm::vec3& center, float radius, const glm
     if (colorLoc == -1) colorLoc = glGetUniformLocation(program, "tintColor");
     if (colorLoc != -1) glUniform3fv(colorLoc, 1, glm::value_ptr(color));
 
-    glLineWidth(2.0f);
+    glLineWidth(0.5f);
     glDrawArrays(GL_LINES, 0, (GLsizei)(verts.size() / 3));
     glLineWidth(1.0f);
 
@@ -1922,10 +1926,12 @@ void Renderer::DrawReverbBox(const glm::mat4& modelMatrix, const glm::vec3& exte
     glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
 
     GLint colorLoc = glGetUniformLocation(program, "color");
-    if (colorLoc == -1) colorLoc = glGetUniformLocation(program, "tintColor");
-    if (colorLoc != -1) glUniform3fv(colorLoc, 1, glm::value_ptr(color));
+    if (colorLoc == -1) 
+        colorLoc = glGetUniformLocation(program, "tintColor");
+    if (colorLoc != -1)
+        glUniform3fv(colorLoc, 1, glm::value_ptr(color));
 
-    glLineWidth(2.0f);
+    glLineWidth(0.5f);
     glDrawArrays(GL_LINES, 0, (GLsizei)(verts.size() / 3));
     glLineWidth(1.0f);
 
