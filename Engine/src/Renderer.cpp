@@ -1125,26 +1125,30 @@ void Renderer::DrawGameObjectIterative(GameObject* gameObject,
             ComponentCamera* editorCamera = Application::GetInstance().camera->GetActiveCamera();
             if (renderCamera == editorCamera)
             {
-                Component* reverbCompBase = currentObj->GetComponent(ComponentType::REVERBZONE);
-                if (reverbCompBase != nullptr)
-                {
-                    ReverbZone* zone = static_cast<ReverbZone*>(reverbCompBase);
-                    if (zone->enabled)
-                    {
-                        
-                        glm::vec3 worldCenter = glm::vec3(modelMatrix[3]);
+                for (const auto& comp : currentObj->GetComponents()) {
+                    if (comp->GetType() == ComponentType::REVERBZONE) {
+                        ReverbZone* zone = static_cast<ReverbZone*>(comp);
+                        if (zone != nullptr)
+                        {
+                            if (zone->enabled)
+                            {
+                                glm::vec3 worldCenter = glm::vec3(modelMatrix[3]);
 
-                        if (zone->shape == ReverbZone::Shape::SPHERE)
-                        {
-                            DrawReverbSphere(worldCenter, zone->radius, glm::vec3(1.0f, 0.4f, 0.8f));
-                        }
-                        else 
-                        {
-                            
-                            DrawReverbBox(modelMatrix, zone->extents, glm::vec3(1.0f, 0.4f, 0.8f));
+                                if (zone->shape == ReverbZone::Shape::SPHERE)
+                                {
+                                    DrawReverbSphere(worldCenter, zone->radius, glm::vec4(0.2f, 0.4f, 0.5f, 1.0f));
+                                }
+                                else
+                                {
+
+                                    DrawReverbBox(modelMatrix, zone->extents, glm::vec4(0.2f, 0.5f, 0.4f, 1.0f));
+                                }
+                            }
                         }
                     }
                 }
+                
+                
             }
         }
 
@@ -1228,7 +1232,7 @@ void Renderer::DrawVertexNormals(const Mesh& mesh, const glm::mat4& modelMatrix)
     glUniformMatrix4fv(glGetUniformLocation(lineShader->GetProgramID(), "model"),
         1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
 
-    lineShader->SetVec3("tintColor", glm::vec3(0.0f, 0.5f, 1.0f));
+    lineShader->SetVec4("tintColor", glm::vec4(0.0f, 0.f, 1.0f, 1.0f));
     glDrawArrays(GL_LINES, 0, lineVertices.size() / 3);
 
     glBindVertexArray(0);
@@ -1293,7 +1297,7 @@ void Renderer::DrawFaceNormals(const Mesh& mesh, const glm::mat4& modelMatrix)
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(camera->GetViewMatrix()));
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
 
-    lineShader->SetVec3("tintColor", glm::vec3(0.0f, 1.0f, 0.5f));
+    lineShader->SetVec4("tintColor", glm::vec4(0.0f, 1.0f, 0.2f, 1.0f));
 
     glDrawArrays(GL_LINES, 0, lineVertices.size() / 3);
 
@@ -1785,7 +1789,7 @@ void Renderer::BindGameFramebuffer()
     glViewport(0, 0, gameFramebufferWidth, gameFramebufferHeight);
 }
 
-void Renderer::DrawReverbSphere(const glm::vec3& center, float radius, const glm::vec3& color, int segments)
+void Renderer::DrawReverbSphere(const glm::vec3& center, float radius, const glm::vec4& color, int segments)
 {
     if (segments < 4) segments = 4;
 
@@ -1847,10 +1851,13 @@ void Renderer::DrawReverbSphere(const glm::vec3& center, float radius, const glm
 
     // set color uniform (some shaders use 'color' or 'tintColor')
     GLint colorLoc = glGetUniformLocation(program, "color");
-    if (colorLoc == -1) colorLoc = glGetUniformLocation(program, "tintColor");
-    if (colorLoc != -1) glUniform3fv(colorLoc, 1, glm::value_ptr(color));
 
-    glLineWidth(2.0f);
+    if (colorLoc == -1) colorLoc = glGetUniformLocation(program, "tintColor");
+    if (colorLoc != -1) glUniform4fv(colorLoc, 1, glm::value_ptr(color));
+    lineShader->SetVec4("tintColor", color);
+
+
+    glLineWidth(0.5f);
     glDrawArrays(GL_LINES, 0, (GLsizei)(verts.size() / 3));
     glLineWidth(1.0f);
 
@@ -1862,7 +1869,7 @@ void Renderer::DrawReverbSphere(const glm::vec3& center, float radius, const glm
     defaultShader->Use();
 }
 
-void Renderer::DrawReverbBox(const glm::mat4& modelMatrix, const glm::vec3& extents, const glm::vec3& color)
+void Renderer::DrawReverbBox(const glm::mat4& modelMatrix, const glm::vec3& extents, const glm::vec4& color)
 {
     // Build 8 local corners
     glm::vec3 localCorners[8] = {
@@ -1927,11 +1934,15 @@ void Renderer::DrawReverbBox(const glm::mat4& modelMatrix, const glm::vec3& exte
     glUniformMatrix4fv(glGetUniformLocation(program, "view"), 1, GL_FALSE, glm::value_ptr(camera->GetViewMatrix()));
     glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
 
-    GLint colorLoc = glGetUniformLocation(program, "color");
-    if (colorLoc == -1) colorLoc = glGetUniformLocation(program, "tintColor");
-    if (colorLoc != -1) glUniform3fv(colorLoc, 1, glm::value_ptr(color));
+    //GLint colorLoc = glGetUniformLocation(program, "color");
+    //if (colorLoc == -1) 
+    //    colorLoc = glGetUniformLocation(program, "tintColor");
+    //if (colorLoc != -1)
+    //    glUniform4fv(colorLoc, 1, glm::value_ptr(color));
 
-    glLineWidth(2.0f);
+    lineShader->SetVec4("tintColor", color);
+
+    glLineWidth(0.5f);
     glDrawArrays(GL_LINES, 0, (GLsizei)(verts.size() / 3));
     glLineWidth(1.0f);
 

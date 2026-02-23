@@ -212,7 +212,19 @@ void InspectorWindow::Draw()
     std::vector<Component*> componentsToRemove;
     for (Component* comp : selectedObject->GetComponents())
     {
-        if (comp->markedForRemoval) componentsToRemove.push_back(comp);
+        if (comp->markedForRemoval) {
+            componentsToRemove.push_back(comp);
+            if (comp->GetType() == ComponentType::AUDIOSOURCE) {
+                AudioSource* source = static_cast<AudioSource*>(comp);
+
+                std::wstring wideName(source->eventName.begin(), source->eventName.end());
+                AkUniqueID eventID = AK::SoundEngine::GetIDFromString(wideName.c_str());
+
+                if (eventID != AK_INVALID_UNIQUE_ID) {
+                    Application::GetInstance().audio->StopAudio(source, eventID);
+                }
+            }
+        }
     }
     for (Component* comp : componentsToRemove)
     {
@@ -1256,15 +1268,21 @@ void InspectorWindow::DrawCanvasComponent(GameObject* selectedObject)
         }
     }
 }
-
 void InspectorWindow::DrawAudioSourceComponent(GameObject* selectedObject) {
-    AudioSource* source = static_cast<AudioSource*>(selectedObject->GetComponent(ComponentType::AUDIOSOURCE));
-    if (!source) return;
 
-    bool open = ImGui::CollapsingHeader("Audio Source", ImGuiTreeNodeFlags_DefaultOpen);
-    DrawComponentContextMenu(source);
-    if (open) {
-        source->OnEditor();
+    for(const auto& comp: selectedObject->GetComponents()) {
+        if (comp->GetType() == ComponentType::AUDIOSOURCE) {
+            
+            AudioSource* source = static_cast<AudioSource*>(comp);
+            std::string popupID = source->name + "ComponentPopup##" + std::to_string((uintptr_t)comp);
+            ImGui::PushID(popupID.c_str());
+            bool open = ImGui::CollapsingHeader(source->name.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+            DrawComponentContextMenu(source);
+            if (open) {
+                source->OnEditor();
+            }
+            ImGui::PopID();
+        }
     }
 }
 
@@ -1281,13 +1299,19 @@ void InspectorWindow::DrawAudioListenerComponent(GameObject* selectedObject) {
 
 void InspectorWindow::DrawReverbZoneComponent(GameObject* selectedObject)
 {
-    ReverbZone* zone = static_cast<ReverbZone*>(selectedObject->GetComponent(ComponentType::REVERBZONE));
-    if (!zone) return;
+    for (const auto& comp : selectedObject->GetComponents()) {
+        if (comp->GetType() == ComponentType::REVERBZONE) {
 
-    bool open = ImGui::CollapsingHeader("Reverb Zone", ImGuiTreeNodeFlags_DefaultOpen);
-    DrawComponentContextMenu(zone);
-    if (open) {
-        zone->OnEditor();
+            ReverbZone* zone = static_cast<ReverbZone*>(comp);
+            std::string popupID = zone->name + "ComponentPopup##" + std::to_string((uintptr_t)comp);
+            ImGui::PushID(popupID.c_str());
+            bool open = ImGui::CollapsingHeader(zone->name.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+            DrawComponentContextMenu(zone);
+            if (open) {
+                zone->OnEditor();
+            }
+            ImGui::PopID();
+        }
     }
 }
 
