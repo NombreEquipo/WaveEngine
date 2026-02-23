@@ -7,7 +7,7 @@
 #include "ModuleEditor.h"
 #include "ResourceShader.h"
 #include "ComponentParticleSystem.h"
-#include "ReverbZone.h"
+#include "CameraLens.h"
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <stack>
@@ -131,6 +131,18 @@ bool Renderer::Start()
     return true;
 }
 
+bool Renderer::PreUpdate()
+{
+    bool ret = true;
+
+    stencilList.clear();
+    linesList.clear();
+    normalsList.clear();
+    meshLinesList.clear();
+
+    return ret;
+}
+
 void Renderer::LoadMesh(Mesh& mesh)
 {
     // Create and configure VAO
@@ -223,9 +235,31 @@ bool Renderer::PreUpdate()
     return true;
 }
 
-bool Renderer::Update()
+bool Renderer::PostUpdate()
 {
+    bool ret = true;
 
+    for (CameraLens* camera : activeCameras)
+    {
+        DrawScene(camera);
+    }
+
+    int width = 0;
+    int height = 0;
+
+    Application::GetInstance().window->GetWindowSize(width, height);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, width, height);
+
+    glDisable(GL_SCISSOR_TEST);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+}
+
+bool Renderer::PostUpdate()
+{
     ZoneScopedN("RendererUpdate");
 
     ModuleEditor* editor = Application::GetInstance().editor.get();
@@ -380,6 +414,126 @@ bool Renderer::Update()
     }
 
     return true;
+}
+
+bool Renderer::RenderScene(CameraLens* camera)
+{
+    if (!camera) return false;
+
+    //BIND FRAMEBUFFER
+    if (camera->fboID != 0)
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, camera->fboID);
+        glViewport(0, 0, camera->textureWidth, camera->textureHeight);
+    }
+    else
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        int width, height;
+        Application::GetInstance().window.get()->GetWindowSize(width, height);
+        glViewport(0, 0, width, height);
+    }
+
+    //CLEAN BUFFERS
+    glDisable(GL_SCISSOR_TEST);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    glClearStencil(0);
+
+    //UPDATE CAM MATRIX
+    
+    UpdateViewMatrix(camera->GetViewMatrix());
+    UpdateProjectionMatrix(camera->GetProjectionMatrix());
+
+    //CLEAN LIST AND BUILD NEWS
+    opaqueList.clear();
+    transparentList.clear();
+
+    BuildRenderLists(camera);
+
+    //CONFIG OPENGL
+    glUseProgram(shaderProgram);
+    glEnable(GL_STENCIL_TEST);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
+    //RENDER OPAQUES
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
+    glEnable(GL_CULL_FACE);
+    DrawRenderList(opaqueList, camera);
+
+    //RENDER TRANSPARENT
+    glEnable(GL_BLEND);
+    glDepthMask(GL_FALSE);
+    DrawRenderList(transparentList, camera);
+
+    //RENDER DEBUG
+    if (camera->GetDebugCamera())
+    {
+        DrawStencilList(camera);
+        DrawNormalsList(camera);
+        DrawLinesList(camera);
+        DrawMeshLinesList(camera);
+    }
+
+    //RESET STATES
+    glDisable(GL_STENCIL_TEST);
+    glStencilMask(0xFF);
+    glStencilFunc(GL_ALWAYS, 0, 0xFF);
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
+    glEnable(GL_CULL_FACE);
+
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glUseProgram(0);
+
+    //UNBINF FRAMEBUFFER
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    return true;
+}
+
+void Renderer::BuildRenderLists(const CameraLens* camera)
+{
+    for (ComponentMesh* mesh : meshes)
+    {
+        if (!mesh->owner->IsActive()) continue;
+
+        Mesh resMesh = mesh->GetMesh();
+        if (!resMesh.IsValid()) continue;
+
+        glm::mat4 globalModelMatrix = mesh->owner->transform->GetGlobalMatrix();
+
+        mesh->UpdateDynamicAABB();
+        AABB globalAABB;
+        globalAABB.max = mesh->GetAABBMax();
+        globalAABB.min = mesh->GetAABBMin();
+
+        if (camera->GetFrustum()->InFrustum(globalAABB))
+        {
+            mesh->UpdateSkinningMatrices();
+
+            RenderObject renderObject = { mesh, globalModelMatrix };
+
+            glm::vec3 aabbCenter = (globalAABB.min + globalAABB.max) * 0.5f;
+            float distanceToCamera = glm::distance(aabbCenter, camera->position);
+
+            //if (mesh->GetTransparent())
+            //{
+            //    transparentList.emplace(distanceToCamera, renderObject);
+            //}
+            //else
+            //{
+                  opaqueList.emplace(distanceToCamera, renderObject);
+            //}
+
+            //if (mesh->drawNormals) normalsList.push_back(renderObject);
+            //if (mesh->drawMesh) meshLinesList.push_back(renderObject);
+        }
+    }
 }
 
 bool Renderer::CleanUp()
@@ -1359,6 +1513,7 @@ void Renderer::DrawLinesList(const ComponentCamera* camera)
     glUseProgram(0);
 }
 
+
 void Renderer::SetDepthTest(bool enabled)
 {
     depthTestEnabled = enabled;
@@ -1784,4 +1939,16 @@ void Renderer::BindGameFramebuffer()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, gameFbo);
     glViewport(0, 0, gameFramebufferWidth, gameFramebufferHeight);
+}
+
+void Renderer::UpdateProjectionMatrix(glm::mat4 pm) {
+    glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(pm));
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+void Renderer::UpdateViewMatrix(glm::mat4 vm) {
+    glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(vm));
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }

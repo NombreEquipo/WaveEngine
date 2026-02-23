@@ -102,10 +102,7 @@ void OctreeNode::CollectIntersections(std::vector<GameObject*>& objects_out, con
 template<>
 inline void OctreeNode::CollectIntersections(std::vector<GameObject*>& objects_out, const Frustum& frustum) const
 {
-    // Test if this node's AABB intersects with frustum
-    FrustumTestResult result = frustum.ContainsAABB(box_min, box_max);
-
-    if (result == FRUSTUM_OUT)
+    if (frustum.InFrustum(box_min, box_max))
     {
         return; // Node completely outside frustum, skip
     }

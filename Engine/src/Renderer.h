@@ -5,10 +5,14 @@
 #include "Texture.h"
 #include "Frustum.h"
 #include <memory>
+#include <map>
+#include <vector>
 #include "Primitives.h"
 #include "ComponentCamera.h"
 
 class GameObject;
+class ComponentMesh;
+class CameraLens;
 
 // Transparent objects must be sorted and rendered back-to-front
 struct TransparentObject
@@ -23,6 +27,12 @@ struct TransparentObject
 
 class Renderer : public Module
 {
+    struct RenderObject
+    {
+        ComponentMesh* mesh;
+        glm::mat4 globalModelMatrix;
+    };
+
     struct RenderLine {
         glm::vec3 start;
         glm::vec3 end;
@@ -34,9 +44,9 @@ public:
     ~Renderer();
 
     bool Start() override;
-    bool Update() override;
-    bool CleanUp() override;
     bool PreUpdate() override;
+    bool PostUpdate() override;
+    bool CleanUp() override;
 
     Texture* GetDefaultTexture() const { return defaultTexture.get(); }
 
@@ -48,6 +58,7 @@ public:
 
     // Scene rendering
     void DrawScene();
+    bool RenderScene(CameraLens* renderCamera);
     void DrawScene(ComponentCamera* renderCamera, ComponentCamera* cullingCamera, bool drawEditorFeatures = true);
 
     // Transparency handling
@@ -118,6 +129,10 @@ public:
     void DrawCircle(glm::vec3 center, glm::quat rotation, float r, int segments, glm::vec4 col, glm::vec3 axisA, glm::vec3 axisB);
     void DrawSphere(const glm::vec3& center, float radius, const glm::vec4& color, int segments = 16);
 
+    // Cameras
+    void UpdateProjectionMatrix(glm::mat4 projectionMatrix);
+    void UpdateViewMatrix(glm::mat4 viewMatrix);
+
 private:
     // Internal rendering methods
     void DrawGameObjectIterative(GameObject* gameObject,
@@ -127,6 +142,14 @@ private:
     void DrawGameObjectWithStencil(GameObject* gameObject);
     void DrawLinesList(const ComponentCamera* camera);
     void ApplyRenderSettings();
+
+    // Draw Functions
+    void DrawRenderList(const std::multimap<float, RenderObject>& map, const CameraLens* camera);
+    void DrawLinesList(const CameraLens* camera);
+    void DrawStencilList(const CameraLens* camera);
+    void DrawNormalsList(const CameraLens* camera);
+    void DrawMeshLinesList(const CameraLens* camera);
+    void BuildRenderLists(const CameraLens* camera);
 
     //Checkers
     bool IsGameObjectAndParentsActive(GameObject* gameObject) const;
@@ -188,9 +211,19 @@ private:
         const glm::vec3& color);
     void DrawAllAABBs(GameObject* gameObject);
 
-    std::vector<RenderLine> linesList;
  
     //SHADERS
     unsigned int uboMatrices;
     unsigned int ssboBones;
+
+    //LISTS
+    std::vector<ComponentMesh*> meshes;
+    std::vector<CameraLens*> activeCameras;
+
+    std::multimap<float, RenderObject> opaqueList;
+    std::multimap<float, RenderObject> transparentList;
+    std::vector<RenderObject> stencilList;
+    std::vector<RenderObject> normalsList;
+    std::vector<RenderObject> meshLinesList;
+    std::vector<RenderLine> linesList;
 };

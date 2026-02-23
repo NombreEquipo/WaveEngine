@@ -43,11 +43,13 @@ set(RENDERING_SRC
     src/Shader.h 
     src/Shader.cpp 
     src/Frustum.h 
-    src/Frustum.cpp
+    src/AABB.h 
     src/ComponentMesh.h
     src/ComponentMesh.cpp
     src/ComponentSkinnedMesh.h
     src/ComponentSkinnedMesh.cpp
+    src/CameraLens.h
+    src/CameraLens.cpp
 )
 
 set(VFX_SRC

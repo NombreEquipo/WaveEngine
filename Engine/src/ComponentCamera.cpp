@@ -86,7 +86,7 @@ void ComponentCamera::UpdateProjectionMatrix()
 void ComponentCamera::UpdateFrustum()
 {
     glm::mat4 viewProj = projectionMatrix * viewMatrix;
-    frustum.ExtractFromMatrix(viewProj);
+    frustum.Update(viewProj);
 }
 
 glm::vec3 ComponentCamera::GetPosition() const

@@ -5,6 +5,8 @@
 #include "ResourceMesh.h"
 #include <glm/glm.hpp>
 
+class ComponentMaterial;
+
 class ComponentMesh : public Component {
 public:
     // Constructor and destructor
@@ -93,6 +95,9 @@ public:
     virtual bool HasSkinning() const { return false; }
     virtual const std::vector<glm::mat4>& GetBoneMatrices() const { static std::vector<glm::mat4> empty; return empty; }
 
+private:
+    void OnGameObjectEvent(GameObjectEvent event, Component* component);
+
 protected:
 
     UID meshUID = 0;
@@ -102,7 +107,10 @@ protected:
     // Direct mesh (for primitives)
     Mesh directMesh;                        // Direct mesh data (for primitives)
     bool hasDirectMesh;                     // True if using direct mesh instead of resource
-    std::string primitiveType;              // Type of primitive for serialization
+    std::string primitiveType;       
+    
+    //MATERIAL
+    ComponentMaterial* attachedMaterial;
 
     //ANIMATION
     bool cachedBones = false;   

@@ -1,4 +1,5 @@
 ﻿#include "ComponentMesh.h"
+#include "ComponentMaterial.h"
 #include "GameObject.h"
 #include "Application.h"
 #include "ModuleResources.h"
@@ -12,11 +13,13 @@ ComponentMesh::ComponentMesh(GameObject* owner, ComponentType type)
     meshUID(0),
     hasDirectMesh(false)
 {
+    attachedMaterial = (ComponentMaterial*)owner->GetComponent(ComponentType::MATERIAL);
     name = "Mesh";
 }
 
 ComponentMesh::~ComponentMesh()
 {
+    attachedMaterial = nullptr;
     ReleaseCurrentMesh();
 
     // Clean up direct mesh GPU resources if present
@@ -341,5 +344,20 @@ void ComponentMesh::Deserialize(const nlohmann::json& componentObj)
         }
 
         SetMesh(recreatedMesh);
+    }
+}
+
+void ComponentMesh::OnGameObjectEvent(GameObjectEvent event, Component* component)
+{
+    switch (event)
+    {
+    case GameObjectEvent::COMPONENT_ADDED:
+        if (component->IsType(ComponentType::MATERIAL))
+            attachedMaterial = (ComponentMaterial*)component;
+        break;
+    case GameObjectEvent::COMPONENT_REMOVED:
+        if (component->IsType(ComponentType::MATERIAL))
+            attachedMaterial = nullptr;
+        break;
     }
 }
