@@ -152,3 +152,14 @@ void ConvexCollider::OnGameObjectEvent(GameObjectEvent event, Component* compone
 
     Collider::OnGameObjectEvent(event, component);
 }
+
+void ConvexCollider::Serialize(nlohmann::json& componentObj) const
+{
+    Collider::Serialize(componentObj);
+}
+
+void ConvexCollider::Deserialize(const nlohmann::json& componentObj)
+{
+    Collider::Deserialize(componentObj);
+    CookMesh();
+}

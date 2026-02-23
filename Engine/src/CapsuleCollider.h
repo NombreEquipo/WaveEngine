@@ -24,6 +24,9 @@ public:
    
     void DebugShape();
 
+    void Serialize(nlohmann::json& componentObj) const override;
+    void Deserialize(const nlohmann::json& componentObj) override;
+
 private:
     float radius = 0.5f;
     float height = 1.0f;

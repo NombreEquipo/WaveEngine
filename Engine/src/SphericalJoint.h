@@ -18,6 +18,9 @@ public:
     void OnEditor() override;
     void DrawDebug() override;
 
+    void Serialize(nlohmann::json& componentObj) const override;
+    void Deserialize(const nlohmann::json& componentObj) override;
+
 private:
     float limitAngle = 45.0f;
     bool limitsEnabled = false;

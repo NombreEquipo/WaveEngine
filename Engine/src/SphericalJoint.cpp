@@ -160,3 +160,17 @@ void SphericalJoint::DrawDebug() {
 
     render->DrawLine(pRef, pRef + glm::vec3(bXA.x, bXA.y, bXA.z) * radius, glm::vec4(1, 1, 1, 1));
 }
+
+void SphericalJoint::Serialize(nlohmann::json& componentObj) const {
+    Joint::Serialize(componentObj);
+    componentObj["limitsEnabled"] = limitsEnabled;
+    componentObj["limitAngle"] = limitAngle;
+}
+
+void SphericalJoint::Deserialize(const nlohmann::json& componentObj) {
+    Joint::Deserialize(componentObj);
+    if (componentObj.contains("limitsEnabled"))
+        EnableLimits(componentObj["limitsEnabled"].get<bool>());
+    if (componentObj.contains("limitAngle"))
+        SetConeLimit(componentObj["limitAngle"].get<float>());
+}

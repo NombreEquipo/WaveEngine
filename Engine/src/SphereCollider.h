@@ -22,4 +22,7 @@ public:
     void SetRadius(float radius);
 
     void DebugShape();
+
+    void Serialize(nlohmann::json& componentObj) const override;
+    void Deserialize(const nlohmann::json& componentObj) override;
 };
