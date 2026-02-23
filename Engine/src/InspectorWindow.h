@@ -5,6 +5,8 @@
 #include <ImGuizmo.h>
 #include <vector>
 #include "AudioSystem.h"
+#include <unordered_map>
+#include <nlohmann/json.hpp>
 
 class GameObject;
 
@@ -68,8 +70,9 @@ private:
 
     AudioSystem* audioSystem;
 
-
-    
+    //QOL
+    bool m_WasAnyItemActive = false;
+    std::unordered_map<Component*, nlohmann::json> m_ComponentSnapshots;
 
     // Gizmo state
     ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::TRANSLATE;
