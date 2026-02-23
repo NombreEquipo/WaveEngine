@@ -105,6 +105,14 @@ void ModuleNavMesh::Bake(GameObject* obj)
 
     rcRasterizeTriangles(&ctx, &allVertices[0], nVerts, &tris[0], &areas[0], nTris, *hf, cfg.walkableClimb);
 
+    if (bakedGroundData != nullptr) {
+        rcFreeHeightField(bakedGroundData); 
+    }
+
+    bakedGroundData = hf;
+
+    lastBakedObject = obj;
+
     LOG_CONSOLE("NavMesh Bake exitoso: %s. Vertices finales: %d", obj->GetName().c_str(), nVerts);
 
 }
@@ -139,8 +147,9 @@ rcConfig ModuleNavMesh::CreateDefaultConfig(const float* minBounds, const float*
 }
 
 void ModuleNavMesh::DrawDebug() {
-   if (bakedGroundData == nullptr) return;
+    if (bakedGroundData == nullptr) return;
 
+    // --- TU CÓDIGO ACTUAL DE LAS LÍNEAS VERDES ---
     for (int y = 0; y < bakedGroundData->height; ++y) {
         for (int x = 0; x < bakedGroundData->width; ++x) {
 
@@ -155,11 +164,38 @@ void ModuleNavMesh::DrawDebug() {
                     glm::vec3 p1 = { fx, fy, fz };
                     glm::vec3 p2 = { fx + bakedGroundData->cs, fy, fz + bakedGroundData->cs };
 
+                    glm::vec4 navColor = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f); 
+
+                    Application::GetInstance().renderer->DrawLine(p1, glm::vec3(p2.x, p1.y, p1.z), navColor);
+                    Application::GetInstance().renderer->DrawLine(glm::vec3(p2.x, p1.y, p1.z), glm::vec3(p2.x, p1.y, p2.z), navColor);
+                    Application::GetInstance().renderer->DrawLine(glm::vec3(p2.x, p1.y, p2.z), glm::vec3(p1.x, p1.y, p2.z), navColor);
+                    Application::GetInstance().renderer->DrawLine(glm::vec3(p1.x, p1.y, p2.z), p1, navColor);
                 }
                 span = span->next;
             }
         }
     }
+    // ---------------------------------------------
+
+    // --- NUEVO: CÓDIGO PARA DIBUJAR LA CAJA DEL OBJETO BAKEADO ---
+    if (lastBakedObject != nullptr && lastBakedObject->IsActive()) {
+        
+        ComponentMesh* meshComp = static_cast<ComponentMesh*>(lastBakedObject->GetComponent(ComponentType::MESH));
+        
+        if (meshComp != nullptr && meshComp->HasMesh()) {
+            glm::vec3 worldMin, worldMax;
+            
+            // Asumiendo que tu ComponentMesh tiene esta función. 
+            // Cámbiala por la forma en la que obtengas la AABB en tu motor si se llama distinto.
+            meshComp->GetWorldAABB(worldMin, worldMax);
+
+            // Naranja para diferenciarlo del verde del suelo y de la selección normal
+            glm::vec3 bakedHighlightColor = glm::vec3(1.0f, 0.5f, 0.0f);
+
+            Application::GetInstance().renderer->DrawAABB(worldMin, worldMax, bakedHighlightColor);
+        }
+    }
+    // -------------------------------------------------------------
 }
 
 bool ModuleNavMesh::CleanUp() {

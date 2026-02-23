@@ -39,4 +39,6 @@ private:
     dtNavMeshQuery* m_navQuery = nullptr;
 
     rcHeightfield* bakedGroundData = nullptr;
+
+    GameObject* lastBakedObject = nullptr;
 };
