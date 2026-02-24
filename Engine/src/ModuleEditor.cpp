@@ -497,6 +497,8 @@ void ModuleEditor::ShowMenuBar()
         ImGui::PushItemWidth(80);
         ImGui::DragFloat("Position", &sceneWindow.get()->positionSnap, 0.1f);
         ImGui::SameLine();
+        ImGui::Checkbox("Center On Paste", &centerOnPaste);
+        ImGui::SameLine();
         ImGui::DragFloat("Rotation", &sceneWindow.get()->rotationSnap, 0.1f);
         ImGui::SameLine();
         ImGui::DragFloat("Scale", &sceneWindow.get()->scaleSnap, 0.1f);
@@ -560,6 +562,7 @@ void ModuleEditor::ShowPlayToolbar()
 
     if (ImGui::Button("Play", ImVec2(40, 0))) {
         commandHistory->Clear();
+        ObjectsCopy.clear();
         app.Play();
         // Focus the Game window when entering play mode
         if (gameWindow && gameWindow->IsOpen()) {
@@ -1043,25 +1046,97 @@ void ModuleEditor::HandleCopyPaste()
 {
     ImGuiIO& io = ImGui::GetIO();
     if (io.WantTextInput) return;
-
+    
+    //copy (ctrl c)
     if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_C, false))
         ObjectsCopy = Application::GetInstance().selectionManager->GetFilteredObjects();
 
+    //paste (ctrl v)
     if ((io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_V, false)) && !ObjectsCopy.empty())
     {
         GameObject* root = Application::GetInstance().scene->GetRoot();
         Application::GetInstance().selectionManager->ClearSelection();
 
+        //center pos option
+        glm::vec3 centerPos(0.0f);
+        if (centerOnPaste)
+        {
+            ComponentCamera* editorCam = Application::GetInstance().camera->GetEditorCamera();
+            if (editorCam)
+            {
+                glm::vec3 camPos = editorCam->GetPosition();
+                glm::vec3 camForward = editorCam->GetFront();
+                centerPos = camPos + camForward * 10.0f;
+            }
+        }
+
+        auto composite = std::make_unique<CompositeCommand>();
+
         for (GameObject* obj : ObjectsCopy)
         {
             GameObject* clonedObject = CloneGameObject(obj);
+
+            if (centerOnPaste)
+                clonedObject->transform->SetPosition(centerPos);
+
             root->AddChild(clonedObject);
             Application::GetInstance().selectionManager->AddToSelection(clonedObject);
+            composite->AddCommand(std::make_unique<CreateCommand>(clonedObject));
         }
 
+        commandHistory->PushWithoutExecute(std::move(composite));
         Application::GetInstance().scene->RebuildOctree();
     }
+
+    //cut (ctrl x)
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_X, false))
+    {
+        std::vector<GameObject*> toCut =
+            Application::GetInstance().selectionManager->GetFilteredObjects();
+
+        if (!toCut.empty())
+        {
+            ObjectsCopy = toCut;
+
+            Application::GetInstance().selectionManager->ClearSelection();
+
+            auto composite = std::make_unique<CompositeCommand>();
+            for (GameObject* obj : toCut)
+            {
+                if (obj && obj != Application::GetInstance().scene->GetRoot() && obj->GetParent())
+                    composite->AddCommand(std::make_unique<DeleteCommand>(obj));
+            }
+            commandHistory->ExecuteCommand(std::move(composite));
+        }
+    }
+
+    //duplicate (ctrl d)
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_D, false))
+    {
+        std::vector<GameObject*> toClone =
+            Application::GetInstance().selectionManager->GetFilteredObjects();
+
+        if (!toClone.empty())
+        {
+            GameObject* root = Application::GetInstance().scene->GetRoot();
+            Application::GetInstance().selectionManager->ClearSelection();
+
+            auto composite = std::make_unique<CompositeCommand>();
+
+            for (GameObject* obj : toClone)
+            {
+                GameObject* cloned = CloneGameObject(obj);
+                root->AddChild(cloned);
+                Application::GetInstance().selectionManager->AddToSelection(cloned);
+                composite->AddCommand(std::make_unique<CreateCommand>(cloned));
+            }
+
+            commandHistory->PushWithoutExecute(std::move(composite));
+            Application::GetInstance().scene->RebuildOctree();
+        }
+    }
 }
+
 GameObject* ModuleEditor::CloneGameObject(GameObject* original)
 {
     std::string name = original->GetName() + "_copy";
