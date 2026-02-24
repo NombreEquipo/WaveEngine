@@ -218,8 +218,6 @@ set(SCRIPTING_SRC
 )
 
 
-
-
 source_group("Source\\Core" FILES ${CORE_SRC})
 source_group("Source\\Rendering" FILES ${RENDERING_SRC})
 source_group("Source\\Rendering\\VFX" FILES ${VFX_SRC})
@@ -250,9 +248,6 @@ target_link_libraries(Engine PRIVATE Tracy::TracyClient)
 target_link_libraries(Engine PRIVATE unofficial::omniverse-physx-sdk::sdk)
 target_link_libraries(Engine PRIVATE ${LUA_LIBRARIES})
 target_include_directories(Engine PRIVATE ${LUA_INCLUDE_DIR})
-
-
-
 
 # ============= WWISE AUTO-DOWNLOAD =============
 set(WWISE_SDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/External/Wwise/SDK")
@@ -334,7 +329,7 @@ target_link_libraries(Engine PRIVATE
 target_include_directories(Engine PRIVATE ${LUA_INCLUDE_DIR})
 
 # Game (standalone)
-set(GAME_SRC ${CORE_SRC} ${RENDERING_SRC} ${UTILS_SRC} ${GAMEOBJECTS_SRC} ${COMPONENTS_SRC} ${LOADERS_SRC} ${IMPORTERS_SRC} ${SCRIPTING_SRC} ${PHYSICS_SRC} ${VFX_SRC})
+set(GAME_SRC ${CORE_SRC} ${RENDERING_SRC} ${UTILS_SRC} ${GAMEOBJECTS_SRC} ${COMPONENTS_SRC} ${LOADERS_SRC} ${IMPORTERS_SRC} ${SCRIPTING_SRC} ${PHYSICS_SRC} ${VFX_SRC} ${AUDIO_SRC} )
 
 add_executable(Game ${GAME_SRC})
 
@@ -351,4 +346,35 @@ target_link_libraries(Game PRIVATE Tracy::TracyClient)
 target_link_libraries(Game PRIVATE unofficial::omniverse-physx-sdk::sdk)
 target_link_libraries(Game PRIVATE ${LUA_LIBRARIES})
 
+
 target_include_directories(Game PRIVATE ${LUA_INCLUDE_DIR})
+
+target_sources(Game PRIVATE ${WWISE_IO_SOURCES})
+
+target_link_libraries(Game PRIVATE 
+    "${WWISE_LIB_DIR}/AkSoundEngine.lib"
+    "${WWISE_LIB_DIR}/AkMemoryMgr.lib"
+    "${WWISE_LIB_DIR}/AkStreamMgr.lib"
+    "${WWISE_LIB_DIR}/AkSpatialAudio.lib"
+    "${WWISE_SDK_DIR}/x64_vc170/${WWISE_CONFIG_DIR}/lib/CommunicationCentral.lib"
+    "${WWISE_LIB_DIR}/AkRoomVerbFX.lib"
+    ws2_32.lib 
+    mswsock.lib 
+    dinput8.lib 
+    dsound.lib 
+    dxguid.lib
+)
+
+target_compile_definitions(Game PRIVATE 
+    AK_WIN 
+    WIN32 
+    $<$<CONFIG:Debug>:_DEBUG>
+    $<$<CONFIG:Release>:AK_OPTIMIZED>
+)
+
+target_include_directories(Game PRIVATE BEFORE
+    "${WWISE_SDK_DIR}/include"
+    "${WWISE_SDK_DIR}"
+    "${WWISE_SDK_DIR}/include/Common"
+    "${WWISE_SDK_DIR}/include/Win32"
+)

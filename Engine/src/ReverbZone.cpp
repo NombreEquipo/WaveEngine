@@ -3,7 +3,10 @@
 #include "Application.h"
 #include "AudioSystem.h"
 #include "Log.h"
-#include <imgui.h>
+#ifndef WAVE_GAME
+    #include <imgui.h>
+#endif 
+
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <algorithm>
@@ -153,6 +156,8 @@ void ReverbZone::Deserialize(const nlohmann::json& componentObj)
 
 void ReverbZone::OnEditor()
 {
+#ifndef WAVE_GAME
+
     const char* shapeNames[] = { "Sphere", "Box" };
     int shapeIndex = static_cast<int>(shape);
 
@@ -202,4 +207,7 @@ void ReverbZone::OnEditor()
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("Higher priority wins when multiple zones overlap");
 
     ImGui::Checkbox("Enabled", &enabled);
+
+
+#endif 
 }
