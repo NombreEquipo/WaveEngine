@@ -103,8 +103,6 @@ private:
     // About window state
     bool showAbout = false;
 
-
-
     // Window states
     EditorWindowType currentWindow = EditorWindowType::NONE;
     bool isMouseOverSceneViewport = false;
@@ -124,4 +122,9 @@ private:
     // QOL
     std::unique_ptr<CommandHistory> commandHistory;
     void HandleUndoRedo();
+
+    void HandleCopyPaste();
+    GameObject* CloneGameObject(GameObject* original);
+    std::vector<GameObject*> ObjectsCopy;
+    bool ischild = false;
 };

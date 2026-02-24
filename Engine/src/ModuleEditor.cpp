@@ -162,9 +162,9 @@ bool ModuleEditor::Update()
         DrawAboutWindow();
     }
 
-
     HandleDeleteKey();
     HandleUndoRedo();
+    HandleCopyPaste();
 
     if (sceneWindow)
     {
@@ -1029,4 +1029,73 @@ void ModuleEditor::HandleUndoRedo()
 
     if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Y, false))
         commandHistory->Redo();
+}
+
+void ModuleEditor::HandleCopyPaste()
+{
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.WantTextInput) return;
+
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_C, false))
+        ObjectsCopy = Application::GetInstance().selectionManager->GetFilteredObjects();
+
+    if ((io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_V, false)) && !ObjectsCopy.empty())
+    {
+        GameObject* root = Application::GetInstance().scene->GetRoot();
+        Application::GetInstance().selectionManager->ClearSelection();
+
+        for (GameObject* obj : ObjectsCopy)
+        {
+            GameObject* clonedObject = CloneGameObject(obj);
+            root->AddChild(clonedObject);
+            Application::GetInstance().selectionManager->AddToSelection(clonedObject);
+        }
+
+        Application::GetInstance().scene->RebuildOctree();
+    }
+}
+GameObject* ModuleEditor::CloneGameObject(GameObject* original)
+{
+    std::string name = original->GetName() + "_copy";
+    GameObject* clone = new GameObject(name.c_str());
+
+    Transform* originalTransform =
+        (Transform*)original->GetComponent(ComponentType::TRANSFORM);
+   
+    clone->transform->SetGlobalPosition(originalTransform->GetGlobalPosition());
+    clone->transform->SetGlobalScale(originalTransform->GetGlobalScale());
+    clone->transform->SetGlobalRotation(originalTransform->GetGlobalRotation());
+
+    if (original->GetComponent(ComponentType::MESH))
+    {
+        ComponentMesh* originalMesh =
+            (ComponentMesh*)original->GetComponent(ComponentType::MESH);
+
+        ComponentMesh* newMesh =
+            (ComponentMesh*)clone->CreateComponent(ComponentType::MESH);
+
+        newMesh->SetMesh(originalMesh->GetMesh());
+        newMesh->SetPrimitiveType(name);
+    }
+
+    if (original->GetComponent(ComponentType::MATERIAL))
+    {
+        ComponentMaterial* originalMaterial =
+            (ComponentMaterial*)original->GetComponent(ComponentType::MATERIAL);
+
+        ComponentMaterial* newMaterial =
+            (ComponentMaterial*)clone->CreateComponent(ComponentType::MATERIAL);
+
+        newMaterial->CreateCheckerboardTexture();
+        newMaterial->LoadTextureByUID(originalMaterial->GetTextureUID());
+    }
+
+    for (GameObject* child : original->GetChildren())
+    {
+        ischild = true;
+        GameObject* childClone = CloneGameObject(child);
+        clone->AddChild(childClone);
+    }
+
+    return clone;
 }

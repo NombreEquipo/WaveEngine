@@ -304,7 +304,7 @@ void SceneWindow::DrawGizmo()
 {
     // First check if the gizmo was being used in the previous frame
     bool wasUsingGizmo = isGizmoActive;
-    std::vector<GameObject*> selectedObjects = Application::GetInstance().selectionManager->GetSelectedObjects();
+    std::vector<GameObject*> selectedObjects = Application::GetInstance().selectionManager->GetFilteredObjects();
 
     //GameObject* selectedObject = Application::GetInstance().selectionManager->GetSelectedObject();
     if (selectedObjects.empty())
@@ -318,11 +318,7 @@ void SceneWindow::DrawGizmo()
         }
         return;
     }
-    else if (!selectedObjects[0]->GetChildren().empty())
-    {
-        selectedObjects.clear();
-        selectedObjects.push_back(Application::GetInstance().selectionManager->GetSelectedObject());
-    }
+
     ComponentCamera* camera = Application::GetInstance().camera->GetActiveCamera();
     if (!camera)
     {
