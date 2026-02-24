@@ -113,6 +113,8 @@ public:
     void DrawArc(glm::vec3 center, glm::quat rotation, float r, int segments, glm::vec4 col, glm::vec3 axisA, glm::vec3 axisB);
     void DrawCircle(glm::vec3 center, glm::quat rotation, float r, int segments, glm::vec4 col, glm::vec3 axisA, glm::vec3 axisB);
     void DrawSphere(const glm::vec3& center, float radius, const glm::vec4& color, int segments = 16);
+    void DrawAABB(const glm::vec3& min, const glm::vec3& max,
+        const glm::vec3& color);
 
 private:
     // Internal rendering methods
@@ -180,8 +182,6 @@ private:
 
     void DrawRay(const glm::vec3& origin, const glm::vec3& direction,
         float length, const glm::vec3& color);
-    void DrawAABB(const glm::vec3& min, const glm::vec3& max,
-        const glm::vec3& color);
     void DrawAllAABBs(GameObject* gameObject);
 
     std::vector<RenderLine> linesList;
