@@ -3,6 +3,13 @@
 
 class NavMeshManager;
 
+enum class NavType
+{
+    SURFACE,
+    AGENT,
+    OBSTACLE
+};
+
 class ComponentNavigation : public Component {
 public:
     ComponentNavigation(GameObject* owner);
@@ -12,4 +19,5 @@ public:
     bool IsIncompatible(ComponentType type) override { return false; }
 
     bool isStatic = true;
+    NavType type = NavType::SURFACE;
 };

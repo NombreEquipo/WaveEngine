@@ -6,6 +6,7 @@
 #include "FileSystem.h"
 #include "Log.h"
 #include "NavMeshManager.h"
+#include "ComponentNavigation.h"
 
 ModuleNavMesh::ModuleNavMesh() : Module() {
     name = "ModuleNavMesh";
@@ -79,7 +80,23 @@ void ModuleNavMesh::Bake(GameObject* obj)
         LOG_CONSOLE("NavMesh Error: No geometry found to bake!");
         return;
     }
-       
+    
+
+    ComponentNavigation* navComp = static_cast<ComponentNavigation*>(obj->GetComponent(ComponentType::NAVIGATION));
+
+    
+    if (navComp && navComp->type == NavType::OBSTACLE) {
+        navObstacles.push_back(obj);
+
+        NavMeshData obstacleData;
+        obstacleData.heightfield = nullptr;
+        obstacleData.owner = obj;
+        navMeshes.push_back(obstacleData);
+
+        LOG_CONSOLE("Obstacle registered: %s", obj->GetName().c_str());
+        return;
+    }
+
     // min, max AABB
     float bmin[3], bmax[3];
     CalculateAABB(allVertices, bmin, bmax);
@@ -157,8 +174,6 @@ void ModuleNavMesh::DrawDebug() {
         {
             for (int x = 0; x < hf->width; ++x)
             {
-                float fx = hf->bmin[0] + x * hf->cs;
-                float fz = hf->bmin[2] + y * hf->cs;
 
                 const rcSpan* span = hf->spans[x + y * hf->width];
 
@@ -166,17 +181,27 @@ void ModuleNavMesh::DrawDebug() {
                 {
                     if (span->area == RC_WALKABLE_AREA)
                     {
-                        float fy = hf->bmin[1] + (span->smax) * hf->ch;
+                        float fx = hf->bmin[0] + x * hf->cs;
+                        float fz = hf->bmin[2] + y * hf->cs;
+                        float fy = hf->bmin[1] + span->smax * hf->ch;
 
-                        glm::vec3 p1 = { fx, fy, fz };
-                        glm::vec3 p2 = { fx + hf->cs, fy, fz + hf->cs };
+                        glm::vec3 quadMin = { fx, fy, fz };
+                        glm::vec3 quadMax = { fx + hf->cs, fy, fz + hf->cs };
 
-                        glm::vec4 navColor = glm::vec4(0, 1, 0, 1);
+                        if (!IsBlockedByObstacle(quadMin, quadMax))
+                        {
+                            glm::vec4 navColor = glm::vec4(0, 1, 0, 1);
 
-                        Application::GetInstance().renderer->DrawLine(p1, glm::vec3(p2.x, p1.y, p1.z), navColor);
-                        Application::GetInstance().renderer->DrawLine(glm::vec3(p2.x, p1.y, p1.z), glm::vec3(p2.x, p1.y, p2.z), navColor);
-                        Application::GetInstance().renderer->DrawLine(glm::vec3(p2.x, p1.y, p2.z), glm::vec3(p1.x, p1.y, p2.z), navColor);
-                        Application::GetInstance().renderer->DrawLine(glm::vec3(p1.x, p1.y, p2.z), p1, navColor);
+                            glm::vec3 p1 = quadMin;
+                            glm::vec3 p2 = { quadMax.x, fy, quadMin.z };
+                            glm::vec3 p3 = quadMax;
+                            glm::vec3 p4 = { quadMin.x, fy, quadMax.z };
+
+                            Application::GetInstance().renderer->DrawLine(p1, p2, navColor);
+                            Application::GetInstance().renderer->DrawLine(p2, p3, navColor);
+                            Application::GetInstance().renderer->DrawLine(p3, p4, navColor);
+                            Application::GetInstance().renderer->DrawLine(p4, p1, navColor);
+                        }
                     }
                     span = span->next;
                 }
@@ -208,6 +233,51 @@ void ModuleNavMesh::DrawDebug() {
         }
     }
 
+}
+
+bool ModuleNavMesh::IsBlockedByObstacle(const glm::vec3& min, const glm::vec3& max)
+{
+    for (auto* obs : navObstacles)
+    {
+        if (!obs->IsActive()) continue;
+
+        ComponentMesh* meshComp = static_cast<ComponentMesh*>(obs->GetComponent(ComponentType::MESH));
+        if (!meshComp || !meshComp->HasMesh()) continue;
+
+        glm::vec3 obsMin, obsMax;
+        meshComp->GetWorldAABB(obsMin, obsMax);
+
+        // AABB check
+        if ((min.x <= obsMax.x && max.x >= obsMin.x) &&
+            (min.y <= obsMax.y && max.y >= obsMin.y) &&
+            (min.z <= obsMax.z && max.z >= obsMin.z))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+void ModuleNavMesh::RemoveNavMesh(GameObject* obj)
+{
+    if (!obj) return;
+
+    for (auto it = navMeshes.begin(); it != navMeshes.end(); ++it)
+    {
+        if (it->owner == obj)
+        {
+            if (it->heightfield) rcFreeHeightField(it->heightfield);
+            if (it->navMesh) dtFreeNavMesh(it->navMesh);
+            if (it->navQuery) dtFreeNavMeshQuery(it->navQuery);
+
+            navMeshes.erase(it);
+
+            LOG_CONSOLE("NavMesh removed for object: %s", obj->GetName().c_str());
+            return; 
+        }
+    }
+
+    LOG_CONSOLE("NavMesh not found for object: %s", obj->GetName().c_str());
 }
 
 bool ModuleNavMesh::CleanUp() {

@@ -24,6 +24,7 @@ public:
 
     void Bake(GameObject* obj);
     void DrawDebug();
+    void RemoveNavMesh(GameObject* obj);
 
 
 private:
@@ -34,13 +35,10 @@ private:
     rcConfig CreateDefaultConfig(const float* minBounds, const float* maxBounds);
     void CalculateAABB(const std::vector<float>& verts, float* minBounds, float* maxBounds);
 
+
+    bool IsBlockedByObstacle(const glm::vec3& min, const glm::vec3& max);
+
     rcPolyMesh* m_polyMesh = nullptr;
- /*   dtNavMesh* m_navMesh = nullptr;
-    dtNavMeshQuery* m_navQuery = nullptr;
-
-    rcHeightfield* bakedGroundData = nullptr;
-
-    GameObject* lastBakedObject = nullptr;*/
 
     struct NavMeshData
     {
@@ -51,4 +49,5 @@ private:
     };
 
     std::vector<NavMeshData> navMeshes;
+    std::vector<GameObject*> navObstacles;
 };

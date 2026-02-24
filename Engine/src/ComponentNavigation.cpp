@@ -17,13 +17,35 @@ void ComponentNavigation::OnEditor()
     {
         ImGui::Checkbox("Navigation Static", &isStatic);
 
+        //Select Type
+        const char* items[] = { "Surface", "Agent", "Obstacle" };
+     
+        int currentType = static_cast<int>(type);
+        if (ImGui::Combo("Nav Type", &currentType, items, IM_ARRAYSIZE(items)))
+        {
+            type = static_cast<NavType>(currentType);
+        }
+
         ImGui::Spacing();
 
-        if (ImGui::Button("Bake World NavMesh", ImVec2(-1, 30)))
+        if (ImGui::Button("Bake NavMesh", ImVec2(-1, 30)))
         {
-            if (Application::GetInstance().navMesh) {
-                Application::GetInstance().navMesh->Bake(this->owner);
-            }
+            Application::GetInstance().navMesh->Bake(this->owner);
+         
         }
+
+        ImGui::Spacing();
+
+        if (ImGui::Button("Clear NavMesh", ImVec2(-1, 30)))
+        {
+
+            if (Application::GetInstance().navMesh)
+            {
+                Application::GetInstance().navMesh->RemoveNavMesh(owner);
+            }
+
+          
+        }
+
     }
 }
