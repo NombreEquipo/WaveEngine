@@ -31,6 +31,9 @@ enum class ComponentType {
     D6_JOINT,
     PRISMATIC_JOINT,
     SPHERICAL_JOINT,
+    LISTENER,
+    AUDIOSOURCE,
+    REVERBZONE,
     UNKNOWN
 };
 
