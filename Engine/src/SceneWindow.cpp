@@ -417,9 +417,17 @@ void SceneWindow::DrawGizmo()
         nullptr,
         snapEnabled ? snapValues : nullptr
     );
-
+ 
     // Update the flag indicating whether the gizmo is being used
     isGizmoActive = ImGuizmo::IsUsing();
+
+    if (!wasUsingGizmo && isGizmoActive)
+    {
+        originalScales.clear();
+        for (auto* t : transforms)
+            originalScales.push_back(t->GetScale());
+    }
+
     if (!wasUsingGizmo && isGizmoActive)
     {
         gizmoSnapshotPos = transforms[0]->GetPosition();
@@ -435,28 +443,40 @@ void SceneWindow::DrawGizmo()
     {
         if (ImGuizmo::IsUsing())
         {
-            glm::mat4 originalGlobal = transforms[cnt]->GetGlobalMatrix();
-            glm::mat4 newGlobal =originalPivotMatrix *deltaMatrix *glm::inverse(originalPivotMatrix) * originalGlobal;
-
-            GameObject* parent = selectedObjects[cnt]->GetParent();
-
-            if (parent)
+            if (currentOp == ImGuizmo::SCALE)
             {
-                Transform* parentTransform = static_cast<Transform*>(parent->GetComponent(ComponentType::TRANSFORM));
-                if (parentTransform)
-                    newGlobal = glm::inverse(parentTransform->GetGlobalMatrix()) * newGlobal;
+                glm::vec3 deltaScale;
+                deltaScale.x = glm::length(glm::vec3(deltaMatrix[0]));
+                deltaScale.y = glm::length(glm::vec3(deltaMatrix[1]));
+                deltaScale.z = glm::length(glm::vec3(deltaMatrix[2]));
+                
+                glm::vec3 newScale = originalScales[cnt] * deltaScale;
+
+                transforms[cnt]->SetScale(newScale);
             }
+            else
+            {
+                glm::mat4 originalGlobal = transforms[cnt]->GetGlobalMatrix();
+                glm::mat4 newGlobal = originalPivotMatrix * deltaMatrix * glm::inverse(originalPivotMatrix) * originalGlobal;
 
-            glm::vec3 position, scale, skew;
-            glm::vec4 perspective;
-            glm::quat rotation;
+                GameObject* parent = selectedObjects[cnt]->GetParent();
 
-            glm::decompose(newGlobal, scale, rotation, position, skew, perspective);
+                if (parent)
+                {
+                    Transform* parentTransform = static_cast<Transform*>(parent->GetComponent(ComponentType::TRANSFORM));
+                    if (parentTransform)
+                        newGlobal = glm::inverse(parentTransform->GetGlobalMatrix()) * newGlobal;
+                }
 
-            transforms[cnt]->SetPosition(position);
-            transforms[cnt]->SetRotationQuat(rotation);
-            //TODO ARREGLAR LAS TRANSFORMACIONES DE ESCALA
-            transforms[cnt]->SetScale(scale);
+                glm::vec3 position, scale, skew;
+                glm::vec4 perspective;
+                glm::quat rotation;
+
+                glm::decompose(newGlobal, scale, rotation, position, skew, perspective);
+
+                transforms[cnt]->SetPosition(position);
+                transforms[cnt]->SetRotationQuat(rotation);
+            }
         }
         else if (wasUsingGizmo)
         {

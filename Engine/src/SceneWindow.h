@@ -1,5 +1,5 @@
 #pragma once
-
+#include <vector>
 #include "EditorWindow.h"
 #include <imgui.h>
 #include <ImGuizmo.h>
@@ -49,4 +49,6 @@ private:
     glm::vec3 gizmoSnapshotPos;
     glm::vec3 gizmoSnapshotRot;
     glm::vec3 gizmoSnapshotScale;
+
+    std::vector<glm::vec3> originalScales;
 };
