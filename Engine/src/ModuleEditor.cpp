@@ -493,6 +493,14 @@ void ModuleEditor::ShowMenuBar()
             }
             ImGui::EndMenu();
         }
+        ImGui::Checkbox("Snap", &sceneWindow.get()->snapEnabled);
+        ImGui::PushItemWidth(80);
+        ImGui::DragFloat("Position", &sceneWindow.get()->positionSnap, 0.1f);
+        ImGui::SameLine();
+        ImGui::DragFloat("Rotation", &sceneWindow.get()->rotationSnap, 0.1f);
+        ImGui::SameLine();
+        ImGui::DragFloat("Scale", &sceneWindow.get()->scaleSnap, 0.1f);
+        ImGui::PopItemWidth();
 
         ImGui::EndMenuBar();
     }

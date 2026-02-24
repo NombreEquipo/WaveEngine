@@ -23,6 +23,11 @@ public:
 
     bool IsGizmoBeingUsed() const { return isGizmoActive; }
 
+    bool snapEnabled = true;
+    float positionSnap = 1.0f;
+    float rotationSnap = 15.0f;
+    float scaleSnap = 0.1f;
+
 private:
     void HandleGizmoInput();
     void DrawGizmo();

@@ -384,12 +384,38 @@ void SceneWindow::DrawGizmo()
     ImGuizmo::OPERATION currentOp = inspectorWindow->GetCurrentGizmoOperation();
     ImGuizmo::MODE currentMode = inspectorWindow->GetCurrentGizmoMode();
 
+    float snapValues[3];
+
+    if (snapEnabled)
+    {
+        if (currentOp == ImGuizmo::TRANSLATE)
+        {
+            snapValues[0] = positionSnap;
+            snapValues[1] = positionSnap;
+            snapValues[2] = positionSnap;
+        }
+        else if (currentOp == ImGuizmo::ROTATE)
+        {
+            snapValues[0] = rotationSnap;
+            snapValues[1] = rotationSnap;
+            snapValues[2] = rotationSnap;
+        }
+        else if (currentOp == ImGuizmo::SCALE)
+        {
+            snapValues[0] = scaleSnap;
+            snapValues[1] = scaleSnap;
+            snapValues[2] = scaleSnap;
+        }
+    }
+
     ImGuizmo::Manipulate(
         glm::value_ptr(viewMatrix),
         glm::value_ptr(projectionMatrix),
         currentOp,
         currentMode,
-        glm::value_ptr(gizmoMatrix)
+        glm::value_ptr(gizmoMatrix),
+        nullptr,
+        snapEnabled ? snapValues : nullptr
     );
 
     // Update the flag indicating whether the gizmo is being used
