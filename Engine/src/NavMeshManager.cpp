@@ -26,29 +26,23 @@ bool ModuleNavMesh::Update() {
     return true;
 }
 
-void ModuleNavMesh::RecollectGeometry(GameObject* obj, std::vector<float>& vertices) 
+void ModuleNavMesh::RecollectGeometry(GameObject* obj, std::vector<float>& vertices, std::vector<int>& indices)
 {
     if (obj == nullptr || !obj->IsActive()) return;
 
     ComponentMesh* mesh = (ComponentMesh*)obj->GetComponent(ComponentType::MESH);
+    if (mesh != nullptr && mesh->HasMesh())
+        ExtractVertices(mesh, vertices, indices);
 
-    if (mesh != nullptr && mesh->HasMesh()) {
-        ExtractVertices(mesh, vertices);
-    }
-
-    for (GameObject* child : obj->GetChildren()) {
-        RecollectGeometry(child, vertices);
-    }
+    for (GameObject* child : obj->GetChildren())
+        RecollectGeometry(child, vertices, indices);
 }
 
-void ModuleNavMesh::ExtractVertices(ComponentMesh* mesh, std::vector<float>& vertices) {
-
+void ModuleNavMesh::ExtractVertices(ComponentMesh* mesh, std::vector<float>& vertices, std::vector<int>& indices)
+{
     if (mesh == nullptr || !mesh->HasMesh()) return;
 
-    //Local mesh points
     const Mesh& meshData = mesh->GetMesh();
-
-    //Know the actual position of the mesh
     GameObject* owner = mesh->owner;
     if (!owner) return;
 
@@ -56,81 +50,78 @@ void ModuleNavMesh::ExtractVertices(ComponentMesh* mesh, std::vector<float>& ver
     if (!trans) return;
 
     glm::mat4 globalMat = trans->GetGlobalMatrix();
-    
-    //Traverse each vertex of the mesh to determine its position
-    for (const auto& vertex : meshData.vertices) {
 
+    // Offset para que los índices apunten correctamente al buffer global
+    int vertexOffset = vertices.size() / 3;
+
+    for (const auto& vertex : meshData.vertices)
+    {
         glm::vec4 worldPos = globalMat * glm::vec4(vertex.position.x, vertex.position.y, vertex.position.z, 1.0f);
-
         vertices.push_back(worldPos.x);
         vertices.push_back(worldPos.y);
         vertices.push_back(worldPos.z);
     }
+
+    // Usar los índices reales del mesh
+    for (unsigned int idx : meshData.indices)
+        indices.push_back(vertexOffset + (int)idx);
 }
 
 void ModuleNavMesh::Bake(GameObject* obj)
 {
+    RemoveNavMesh(obj);
+    navObstacles.erase(std::remove(navObstacles.begin(), navObstacles.end(), obj), navObstacles.end());
+
     std::vector<float> allVertices;
+    std::vector<int>   allIndices;
 
-    if (obj != nullptr) {
-        RecollectGeometry(obj, allVertices);
-    }
+    if (obj != nullptr)
+        RecollectGeometry(obj, allVertices, allIndices);
 
-    if (allVertices.empty()) {
+    if (allVertices.empty() || allIndices.empty()) {
         LOG_CONSOLE("NavMesh Error: No geometry found to bake!");
         return;
     }
-    
 
     ComponentNavigation* navComp = static_cast<ComponentNavigation*>(obj->GetComponent(ComponentType::NAVIGATION));
 
-    
     if (navComp && navComp->type == NavType::OBSTACLE) {
         navObstacles.push_back(obj);
-
         NavMeshData obstacleData;
         obstacleData.heightfield = nullptr;
         obstacleData.owner = obj;
         navMeshes.push_back(obstacleData);
-
         LOG_CONSOLE("Obstacle registered: %s", obj->GetName().c_str());
         return;
     }
 
-    // min, max AABB
     float bmin[3], bmax[3];
     CalculateAABB(allVertices, bmin, bmax);
 
-    //Recast Configuration
     rcConfig cfg = CreateDefaultConfig(bmin, bmax);
     rcContext ctx;
 
-    // Create Height Map
     rcHeightfield* hf = rcAllocHeightfield();
     if (!rcCreateHeightfield(&ctx, *hf, cfg.width, cfg.height, cfg.bmin, cfg.bmax, cfg.cs, cfg.ch)) {
         LOG_CONSOLE("NavMesh Error: Could not create heightfield.");
         return;
     }
 
-    // Convert triangles to ground
     int nVerts = allVertices.size() / 3;
-    std::vector<int> tris(nVerts);
-    for (int i = 0; i < nVerts; ++i) tris[i] = i;
+    int nTris = allIndices.size() / 3;
 
-    int nTris = nVerts / 3;
     std::vector<unsigned char> areas(nTris, RC_WALKABLE_AREA);
 
-    rcRasterizeTriangles(&ctx, &allVertices[0], nVerts, &tris[0], &areas[0], nTris, *hf, cfg.walkableClimb);
+    rcRasterizeTriangles(&ctx, allVertices.data(), nVerts,
+        allIndices.data(), areas.data(), nTris,
+        *hf, cfg.walkableClimb);
 
     NavMeshData newMesh;
     newMesh.heightfield = hf;
     newMesh.owner = obj;
-
     navMeshes.push_back(newMesh);
 
-
-    LOG_CONSOLE("NavMesh Bake exitoso: %s. Vertices finales: %d", obj->GetName().c_str(), nVerts);
-
+    LOG_CONSOLE("NavMesh Bake exitoso: %s. Vertices: %d Triangulos: %d", obj->GetName().c_str(), nVerts, nTris);
 }
 
 void ModuleNavMesh::CalculateAABB(const std::vector<float>& verts, float* minBounds, float* maxBounds) {
@@ -164,7 +155,6 @@ rcConfig ModuleNavMesh::CreateDefaultConfig(const float* minBounds, const float*
 
 void ModuleNavMesh::DrawDebug() {
 
-    // --- TU CÓDIGO ACTUAL DE LAS LÍNEAS VERDES ---
     for (auto& meshData : navMeshes)
     {
         rcHeightfield* hf = meshData.heightfield;
@@ -174,6 +164,38 @@ void ModuleNavMesh::DrawDebug() {
         {
             for (int x = 0; x < hf->width; ++x)
             {
+                auto GetCornerHeight = [&](int cx, int cy, unsigned short refSmax) -> float
+                    {
+                        // Las 4 celdas que comparten esta esquina
+                        int offsets[4][2] = { {cx - 1, cy - 1}, {cx, cy - 1}, {cx - 1, cy}, {cx, cy} };
+
+                        float totalHeight = 0.0f;
+                        int   count = 0;
+
+                        for (auto& off : offsets)
+                        {
+                            int nx = glm::clamp(off[0], 0, hf->width - 1);
+                            int ny = glm::clamp(off[1], 0, hf->height - 1);
+
+                            const rcSpan* s = hf->spans[nx + ny * hf->width];
+                            const rcSpan* best = nullptr;
+                            int bestDiff = INT_MAX;
+
+                            while (s) {
+                                int diff = abs((int)s->smax - (int)refSmax);
+                                if (diff < bestDiff) { bestDiff = diff; best = s; }
+                                s = s->next;
+                            }
+
+                            if (best) {
+                                totalHeight += hf->bmin[1] + best->smax * hf->ch;
+                                ++count;
+                            }
+                        }
+
+                        return count > 0 ? totalHeight / count
+                            : hf->bmin[1] + refSmax * hf->ch;
+                    };
 
                 const rcSpan* span = hf->spans[x + y * hf->width];
 
@@ -190,12 +212,12 @@ void ModuleNavMesh::DrawDebug() {
 
                         if (!IsBlockedByObstacle(quadMin, quadMax))
                         {
-                            glm::vec4 navColor = glm::vec4(0, 1, 0, 1);
+                            glm::vec4 navColor = { 0, 1, 0, 1 };
 
-                            glm::vec3 p1 = quadMin;
-                            glm::vec3 p2 = { quadMax.x, fy, quadMin.z };
-                            glm::vec3 p3 = quadMax;
-                            glm::vec3 p4 = { quadMin.x, fy, quadMax.z };
+                            glm::vec3 p1 = { fx,          GetCornerHeight(x,   y,   span->smax), fz };
+                            glm::vec3 p2 = { fx + hf->cs, GetCornerHeight(x + 1, y,   span->smax), fz };
+                            glm::vec3 p3 = { fx + hf->cs, GetCornerHeight(x + 1, y + 1, span->smax), fz + hf->cs };
+                            glm::vec3 p4 = { fx,          GetCornerHeight(x,   y + 1, span->smax), fz + hf->cs };
 
                             Application::GetInstance().renderer->DrawLine(p1, p2, navColor);
                             Application::GetInstance().renderer->DrawLine(p2, p3, navColor);
@@ -208,31 +230,18 @@ void ModuleNavMesh::DrawDebug() {
             }
         }
 
-
-        // ---------------------------------------------
-
-        // --- NUEVO: CÓDIGO PARA DIBUJAR LA CAJA DEL OBJETO BAKEADO ---
-
-        // -------------------------------------------------------------
-
         if (meshData.owner && meshData.owner->IsActive()) {
             ComponentMesh* meshComp = static_cast<ComponentMesh*>(meshData.owner->GetComponent(ComponentType::MESH));
 
             if (meshComp != nullptr && meshComp->HasMesh()) {
                 glm::vec3 worldMin, worldMax;
-
-                // Asumiendo que tu ComponentMesh tiene esta función. 
-                // Cámbiala por la forma en la que obtengas la AABB en tu motor si se llama distinto.
                 meshComp->GetWorldAABB(worldMin, worldMax);
 
-                // Naranja para diferenciarlo del verde del suelo y de la selección normal
                 glm::vec3 bakedHighlightColor = glm::vec3(1.0f, 0.5f, 0.0f);
-
                 Application::GetInstance().renderer->DrawAABB(worldMin, worldMax, bakedHighlightColor);
             }
         }
     }
-
 }
 
 bool ModuleNavMesh::IsBlockedByObstacle(const glm::vec3& min, const glm::vec3& max)

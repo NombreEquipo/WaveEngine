@@ -12,6 +12,8 @@
 
 #include "DetourNavMeshQuery.h"
 
+#include <algorithm>
+
 class ModuleNavMesh : public Module
 {
 public:
@@ -29,8 +31,8 @@ public:
 
 private:
 
-    void RecollectGeometry(GameObject* obj, std::vector<float>& vertices);
-    void ExtractVertices(ComponentMesh* mesh, std::vector<float>& vertices);
+    void RecollectGeometry(GameObject* obj, std::vector<float>& vertices, std::vector<int>& indices);
+    void ExtractVertices(ComponentMesh* mesh, std::vector<float>& vertices, std::vector<int>& indices);
 
     rcConfig CreateDefaultConfig(const float* minBounds, const float* maxBounds);
     void CalculateAABB(const std::vector<float>& verts, float* minBounds, float* maxBounds);
