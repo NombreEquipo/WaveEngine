@@ -384,10 +384,8 @@ void ModuleEditor::ShowMenuBar()
                         LOG_CONSOLE("Auto save disabled");
                     }
                 }
-
                 ImGui::EndMenu();
             }
-
             ImGui::EndMenu();
         }
 
@@ -413,13 +411,11 @@ void ModuleEditor::ShowMenuBar()
 
                 ComponentCamera* sceneCamera = static_cast<ComponentCamera*>(cameraGO->CreateComponent(ComponentType::CAMERA));
             }
-
             ImGui::EndMenu();
         }
 
         if (ImGui::BeginMenu("GameObject"))
         {
-
             if (ImGui::BeginMenu("Create Primitive"))
             {
                 if (ImGui::MenuItem("Cube"))
@@ -495,13 +491,13 @@ void ModuleEditor::ShowMenuBar()
         }
         ImGui::Checkbox("Snap", &sceneWindow.get()->snapEnabled);
         ImGui::PushItemWidth(80);
-        ImGui::DragFloat("Position", &sceneWindow.get()->positionSnap, 0.1f);
+        ImGui::DragFloat("Position", &sceneWindow.get()->positionSnap, 0.1f, 0.0f, 100.0f, "%.3fx");
+        ImGui::SameLine();
+        ImGui::DragFloat("Rotation", &sceneWindow.get()->rotationSnap, 0.1f, 0.0f, 100.0f, "%.3fx");
+        ImGui::SameLine();
+        ImGui::DragFloat("Scale", &sceneWindow.get()->scaleSnap, 0.1f, 0.0f, 100.0f, "%.3fx");
         ImGui::SameLine();
         ImGui::Checkbox("Center On Paste", &centerOnPaste);
-        ImGui::SameLine();
-        ImGui::DragFloat("Rotation", &sceneWindow.get()->rotationSnap, 0.1f);
-        ImGui::SameLine();
-        ImGui::DragFloat("Scale", &sceneWindow.get()->scaleSnap, 0.1f);
         ImGui::PopItemWidth();
 
         ImGui::EndMenuBar();
