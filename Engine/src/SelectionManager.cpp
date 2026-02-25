@@ -4,6 +4,10 @@
 
 void SelectionManager::SetSelectedObject(GameObject* obj)
 {
+	for (GameObject* oldObj : selectedObjects)
+	{
+		if (oldObj) oldObj->SetSelected(false);
+	}
 	selectedObjects.clear();
 
 	if (obj != nullptr)
@@ -33,8 +37,9 @@ void SelectionManager::RemoveFromSelection(GameObject* obj)
 	auto it = std::find(selectedObjects.begin(), selectedObjects.end(), obj);
 	if (it != selectedObjects.end())
 	{
+		obj->SetSelected(false);
 		selectedObjects.erase(it);
-		LOG_DEBUG("Removed from selection: %s (total: %d)", obj->GetName().c_str(), static_cast<int>(selectedObjects.size()));
+		LOG_DEBUG("Removed from selection: %s", obj->GetName().c_str());
 	}
 }
 
