@@ -3,6 +3,7 @@
 #include <string>
 #include <memory>
 #include <nlohmann/json.hpp>
+#include "Globals.h"
 
 class Component;
 class Transform;
@@ -18,10 +19,13 @@ enum class GameObjectEvent {
     MESH_CHANGED
 };
 
+
 class GameObject {
 public:
     GameObject(const std::string& name = "GameObject");
     ~GameObject();
+
+    const UID GetUID() { return objectUID; };
 
     Component* CreateComponent(ComponentType type);
 
@@ -49,6 +53,10 @@ public:
     const std::vector<GameObject*>& GetChildren() const { return children; }
     const std::vector<Component*>& GetComponents() const { return components; }
     GameObject* FindChild(const std::string& findName);
+    GameObject* FindChild(const UID uid);
+
+    void SetSelected(bool b) { isSelected = b; };
+    bool IsSelected() { return isSelected; };
 
     void MarkForDeletion() { markedForDeletion = true; }
     bool IsMarkedForDeletion() const { return markedForDeletion; }
@@ -58,11 +66,13 @@ public:
     // Serialization
     void Serialize(nlohmann::json& gameObjectArray) const;
     static GameObject* Deserialize(const nlohmann::json& gameObjectObj, GameObject* parent = nullptr);
+    void SolveReferences();
 
     //INTERNAL EVENTS
     void PublishGameObjectEvent(GameObjectEvent event, Component* component = nullptr);
 
 public:
+    UID objectUID;
     std::string name;
     bool active = true;
     Transform* transform = nullptr;
@@ -76,5 +86,6 @@ private:
 
     bool markedForDeletion = false;
     bool isCleaning = false;
+    bool isSelected = false;
 
 };

@@ -6,8 +6,8 @@
 #include <fstream>
 #include <sstream>
 #include <filesystem>
+#include "Globals.h"
 
-typedef unsigned long long UID;
 
 enum class AssetType {
     UNKNOWN = 0,
@@ -77,7 +77,6 @@ struct MetaFile {
     std::map<std::string, UID> meshes;
     std::map<std::string, UID> animations;
 
-    static UID GenerateUID();
     static AssetType GetAssetType(const std::string& extension);
 
     bool Save(const std::string& metaFilePath) const;

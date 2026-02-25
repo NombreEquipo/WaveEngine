@@ -20,6 +20,7 @@
 #include "EditorPreferences.h"
 #include "ResourcePrefab.h"
 #include "PrefabManager.h"
+#include "Globals.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -2722,7 +2723,7 @@ void AssetsWindow::CreateNewScript(const std::string& scriptName)
 
     // Crear archivo .meta
     MetaFile meta;
-    meta.uid = MetaFile::GenerateUID();
+    meta.uid = GenerateUID();
     meta.type = AssetType::SCRIPT_LUA;
     meta.originalPath = scriptPath.string();
     meta.fileHash = MetaFileManager::GetFileHash(scriptPath.string());
@@ -2889,7 +2890,7 @@ bool AssetsWindow::CreatePrefabFromGameObject(GameObject* obj, const std::string
 
     // Create .meta file
     MetaFile meta;
-    meta.uid = MetaFile::GenerateUID();
+    meta.uid = GenerateUID();
     meta.type = AssetType::PREFAB;
     meta.originalPath = prefabPath;
     meta.fileHash = MetaFileManager::GetFileHash(prefabPath);

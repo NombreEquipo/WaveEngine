@@ -1,6 +1,7 @@
 #pragma once
 #include "Component.h"
 #include "ResourceAnimation.h"
+#include "EventListener.h"
 #include <map>
 #include <string>
 #include <vector>
@@ -42,7 +43,7 @@ struct AnimationData {
     bool loop = true;
 };
 
-class ComponentAnimation : public Component
+class ComponentAnimation : public Component, public EventListener
 {
 public:
     ComponentAnimation(GameObject* owner);
@@ -69,7 +70,10 @@ public:
     void SetAnimationSpeed(const std::string& name, float newSpeed);
     void SetAnimationLoop(const std::string& name, bool loop);
 
-    //void OnEvent(const Event& event) override;
+    void Serialize(nlohmann::json& componentObj) const override;
+    void Deserialize(const nlohmann::json& componentObj) override;
+
+    void OnEvent(const Event& event) override;
     //void OnResourceLost(UID resourceUID) override;
 
 private:

@@ -10,11 +10,13 @@
 ComponentAnimation::ComponentAnimation(GameObject* owner) : Component(owner, ComponentType::ANIMATION)
 {
     name = "Animation";
+    Application::GetInstance().events->Subscribe(Event::Type::GameObjectDestroyed, this);
 }
 
 ComponentAnimation::~ComponentAnimation()
 {
     UnloadAnimation(currentAnimation);
+    Application::GetInstance().events->UnsubscribeAll(this);
 }
 
 void ComponentAnimation::AddAnimation(const std::string& name, UID uid)
@@ -309,38 +311,50 @@ const Channel* ComponentAnimation::FindChannel(const ResourceAnimation* anim, co
     return nullptr;
 }
 
-//void Animation::Save(Config& componentNode)
-//{
-//    for (const auto& [name, data] : animationsLibrary)
-//    {
-//        Config animationNode = componentNode.AddChild("Animation");
-//        animationNode.SetString("name", name);
-//        animationNode.SetUInt("UID", data.uid);
-//        animationNode.SetBool("loop", data.loop);
-//        animationNode.SetFloat("speed", data.speed);
-//    }
-//}
-//
-//void Animation::Load(Config& componentNode)
-//{
-//    Config animationNode = componentNode.GetChild("Animation");
-//    while (animationNode.IsValid())
-//    {
-//        UID animationUID = animationNode.GetUInt("UID");
-//        if (animationUID != 0)
-//        {
-//            std::string animationName = animationNode.GetString("name");
-//            const Resource* resource = Engine::GetInstance().moduleResources->PeekResource(animationUID);
-//            if (resource)
-//            {
-//                AddAnimation(animationName, animationUID, resource->GetName());
-//                animationsLibrary[animationName].loop = animationNode.GetBool("loop");
-//                animationsLibrary[animationName].speed = animationNode.GetFloat("speed");
-//            }
-//        }
-//        animationNode = animationNode.GetNextSibling("Animation");
-//    }
-//}
+void ComponentAnimation::Serialize(nlohmann::json& componentObj) const
+{
+    nlohmann::json animationsArray = nlohmann::json::array();
+
+    for (const auto& [name, data] : animationsLibrary)
+    {
+        nlohmann::json animNode;
+        animNode["name"] = name;
+        animNode["UID"] = data.uid;
+        animNode["loop"] = data.loop;
+        animNode["speed"] = data.speed;
+
+        animationsArray.push_back(animNode);
+    }
+}
+
+void ComponentAnimation::Deserialize(const nlohmann::json& componentObj)
+{
+    if (componentObj.contains("Animations") && componentObj["Animations"].is_array())
+    {
+        animationsLibrary.clear();
+
+        for (const auto& animNode : componentObj["Animations"])
+        {
+            UID animationUID = animNode["UID"].get<UID>();
+
+            if (animationUID != 0)
+            {
+                std::string animationName = animNode["name"].get<std::string>();
+
+                const Resource* resource = Application::GetInstance().resources->PeekResource(animationUID);
+
+                if (resource)
+                {
+                    AddAnimation(animationName, animationUID);
+
+                    animationsLibrary[animationName].loop = animNode["loop"].get<bool>();
+                    animationsLibrary[animationName].speed = animNode["speed"].get<float>();
+                }
+            }
+        }
+    }
+}
+
 
 void ComponentAnimation::DrawSkeleton()
 {
@@ -387,4 +401,29 @@ void ComponentAnimation::CaptureSnapshot()
         }
     }
     isBlending = true;
+}
+
+void ComponentAnimation::OnEvent(const Event& event)
+{
+    switch (event.type)
+    {
+    case Event::Type::GameObjectDestroyed:
+    {
+        if (skeletonCache.empty()) return;
+
+        GameObject* deletedGO = event.data.gameObject.gameObject;
+
+        for (auto& link : skeletonCache)
+        {
+            if (link.transform && link.transform->owner == deletedGO)
+            {
+                link.transform = nullptr;
+            }
+        }
+        break;
+    }
+
+    default:
+        break;
+    }
 }

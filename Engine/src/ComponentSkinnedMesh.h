@@ -2,11 +2,12 @@
 
 #include "Component.h"
 #include "ComponentMesh.h"
+#include "EventListener.h"
 #include "ModuleLoader.h"  
 #include "ModuleResources.h"  
 #include <glm/glm.hpp>
 
-class ComponentSkinnedMesh : public ComponentMesh {
+class ComponentSkinnedMesh : public ComponentMesh , public EventListener{
 public:
     // Constructor and destructor
     ComponentSkinnedMesh(GameObject* owner);
@@ -27,6 +28,8 @@ public:
     unsigned int GetSSBOGlobal() const { return ssboGlobalMatrices; }
     unsigned int GetSSBOOffset() const { return ssboOffsetMatrices; }
     int GetLinkedBonesNum() const { return boneGameObjects.size(); }
+
+    void OnEvent(const Event& event);
 
 protected:
 

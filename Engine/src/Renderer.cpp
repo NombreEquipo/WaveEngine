@@ -130,6 +130,23 @@ bool Renderer::Start()
         LOG_CONSOLE("ERROR: Failed to compile depth shader");
         return false;
     }
+    else
+    {
+        LOG_DEBUG("depth shader created successfully - Program ID: %d", depthShader->GetProgramID());
+        LOG_CONSOLE("depth shader compiled successfully");
+    }
+
+    pickingShader = make_unique<Shader>();
+    if (!pickingShader->CreatePickingShader()) {
+        LOG_DEBUG("ERROR: Failed to create picking shader");
+        LOG_CONSOLE("ERROR: Failed to compile picking shader");
+    }
+    else
+    {
+        LOG_DEBUG("picking shader created successfully - Program ID: %d", pickingShader->GetProgramID());
+        LOG_CONSOLE("picking shader compiled successfully");
+    }
+
 
     glGenBuffers(1, &ssboBones);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboBones);
@@ -471,7 +488,7 @@ void Renderer::DrawRenderList(const std::multimap<float, RenderObject>& map, con
 
         if (meshComp->GetDrawNormals()) normalsList.push_back(renderObject);
         if (meshComp->GetDrawMesh()) meshLinesList.push_back(renderObject);
-        if (meshComp->GetDrawStencil()) {
+        if (meshComp->owner->IsSelected()) {
             stencilList.push_back(renderObject);
             glStencilFunc(GL_ALWAYS, 1, 0xFF);
             glStencilMask(0xFF);
@@ -673,43 +690,6 @@ bool Renderer::CleanUp()
         glDeleteBuffers(1, &normalLinesVBO);
     }
 
-    // Clean up Scene framebuffer
-    if (sceneTexture != 0)
-    {
-        glDeleteTextures(1, &sceneTexture);
-        sceneTexture = 0;
-    }
-
-    if (rbo != 0)
-    {
-        glDeleteRenderbuffers(1, &rbo);
-        rbo = 0;
-    }
-
-    if (fbo != 0)
-    {
-        glDeleteFramebuffers(1, &fbo);
-        fbo = 0;
-    }
-
-    // Clean up Game framebuffer
-    if (gameTexture != 0)
-    {
-        glDeleteTextures(1, &gameTexture);
-        gameTexture = 0;
-    }
-
-    if (gameRbo != 0)
-    {
-        glDeleteRenderbuffers(1, &gameRbo);
-        gameRbo = 0;
-    }
-
-    if (gameFbo != 0)
-    {
-        glDeleteFramebuffers(1, &gameFbo);
-        gameFbo = 0;
-    }
 
     LOG_DEBUG("Renderer cleaned up successfully");
     LOG_CONSOLE("Renderer shutdown complete");
@@ -947,4 +927,97 @@ void Renderer::UpdateViewMatrix(glm::mat4 vm) {
     glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(vm));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+UID Renderer::GetObjectInPixel(const CameraLens* camera, int x, int y)
+{
+    if (!camera) return 0;
+
+    GLint last_viewport[4]; glGetIntegerv(GL_VIEWPORT, last_viewport);
+    GLint last_fbo; glGetIntegerv(GL_FRAMEBUFFER_BINDING, &last_fbo);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, (camera->fboID != 0) ? camera->fboID : 0);
+    glViewport(0, 0, camera->textureWidth, camera->textureHeight);
+
+    UpdateViewMatrix(camera->GetViewMatrix());
+    UpdateProjectionMatrix(camera->GetProjectionMatrix());
+
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, uboMatrices);
+
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+
+    pickingShader->Use();
+    std::map<uint32_t, UID> pickingMap;
+    uint32_t nextID = 1;
+
+    for (ComponentMesh* meshComponent : meshes)
+    {
+        if (!meshComponent || !meshComponent->owner->IsActive()) continue;
+
+        Mesh& mesh = meshComponent->GetMesh();
+        if (mesh.VAO == 0) continue;
+
+        if (/*!camera->GetFrustum()->InFrustum(meshComponent->GetGlobalAABB())*/false) continue;
+
+        UID realUID = meshComponent->owner->GetUID();
+        uint32_t currentPickingID = nextID++;
+        pickingMap[currentPickingID] = realUID;
+
+        glm::vec4 pickingColor = {
+            ((currentPickingID & 0x000000FF) >> 0) / 255.0f,
+            ((currentPickingID & 0x0000FF00) >> 8) / 255.0f,
+            ((currentPickingID & 0x00FF0000) >> 16) / 255.0f,
+            ((currentPickingID & 0xFF000000) >> 24) / 255.0f
+        };
+
+        pickingShader->SetVec4("pickingColor", pickingColor);
+
+        glm::mat4 model = meshComponent->owner->transform->GetGlobalMatrix();
+        pickingShader->SetMat4("model", model);
+
+        if (meshComponent->HasSkinning())
+        {
+            ComponentSkinnedMesh* skinned = (ComponentSkinnedMesh*)meshComponent;
+            pickingShader->SetMat4("meshInverse", skinned->GetMeshInverse());
+            pickingShader->SetBool("hasBones", true);
+
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, skinned->GetSSBOGlobal());
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, skinned->GetSSBOOffset());
+        }
+        else
+        {
+            pickingShader->SetBool("hasBones", false);
+        }
+
+        glBindVertexArray(mesh.VAO);
+        glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, 0);
+    }
+
+    int readX = x;
+    int readY = camera->textureHeight - y;
+
+    unsigned char pixel[4];
+    glReadPixels(readX, readY, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
+
+    uint32_t idFound = (uint32_t)pixel[0] |
+        ((uint32_t)pixel[1] << 8) |
+        ((uint32_t)pixel[2] << 16) |
+        ((uint32_t)pixel[3] << 24);
+
+    UID finalUID = 0;
+    if (idFound > 0 && pickingMap.find(idFound) != pickingMap.end()) {
+        finalUID = pickingMap[idFound];
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, last_fbo);
+    glViewport(last_viewport[0], last_viewport[1], last_viewport[2], last_viewport[3]);
+    glEnable(GL_BLEND);
+    glUseProgram(0);
+    glBindVertexArray(0);
+
+    return finalUID;
 }

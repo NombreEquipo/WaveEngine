@@ -103,6 +103,9 @@ public:
     void UpdateProjectionMatrix(glm::mat4 projectionMatrix);
     void UpdateViewMatrix(glm::mat4 viewMatrix);
 
+    // Perfect Pixel Picking
+    UID GetObjectInPixel(const CameraLens* camera, int x, int y);
+
 private:
 
     void ApplyRenderSettings();
@@ -123,6 +126,7 @@ private:
     std::unique_ptr<Shader> depthShader;
     std::unique_ptr<Shader> normalsShader;
     std::unique_ptr<Shader> meshShader;
+    std::unique_ptr<Shader> pickingShader;
 
     // Default assets
     std::unique_ptr<Texture> defaultTexture;
@@ -153,23 +157,8 @@ private:
         GLint meshInverseLoc = -1;
     } defaultUniforms, lineUniforms, outlineUniforms;
 
-    // Framebuffer (Scene window)
-    GLuint fbo = 0;
-    GLuint sceneTexture = 0;
-    GLuint rbo = 0;
-    int framebufferWidth = 1280;
-    int framebufferHeight = 720;
-
-    // Framebuffer (Game window)
-    GLuint gameFbo = 0;
-    GLuint gameTexture = 0;
-    GLuint gameRbo = 0;
-    int gameFramebufferWidth = 1280;
-    int gameFramebufferHeight = 720;
-
     // zBuffer visualization
     bool showZBuffer = false;
-
 
  
     // SHADERS

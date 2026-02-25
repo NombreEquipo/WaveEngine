@@ -40,22 +40,27 @@ void PlaneCollider::OnEditor()
         SetSize(s);
     }
 }
-//
-//void PlaneCollider::Save(Config& config)
-//{
-//    SaveBase(config);
-//    config.SetFloat("SizeX", size.x);
-//    config.SetFloat("SizeY", size.y);
-//}
-//
-//void PlaneCollider::Load(Config& config)
-//{
-//    LoadBase(config);
-//    size.x = config.GetFloat("SizeX", 1.0f);
-//    size.y = config.GetFloat("SizeY", 1.0f);
-//    Rigidbody* rb = (Rigidbody*)owner->GetComponentInParent(ComponentType::Rigidbody);
-//    if (rb) rb->CreateBody();
-//}
+
+void PlaneCollider::Serialize(nlohmann::json& componentObj) const
+{
+    SerializeBase(componentObj);
+
+    componentObj["SizeX"] = size.x;
+    componentObj["SizeY"] = size.y;
+}
+
+void PlaneCollider::Deserialize(const nlohmann::json& componentObj)
+{
+    DeserializeBase(componentObj);
+
+    size.x = componentObj.value("SizeX", 1.0f);
+    size.y = componentObj.value("SizeY", 1.0f);
+
+    Rigidbody* rb = static_cast<Rigidbody*>(owner->GetComponentInParent(ComponentType::RIGIDBODY));
+    if (rb) {
+        rb->CreateBody();
+    }
+}
 
 void PlaneCollider::SetSize(glm::vec2 size)
 {

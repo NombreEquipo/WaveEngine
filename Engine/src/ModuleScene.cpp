@@ -322,19 +322,20 @@ bool ModuleScene::LoadScene(const std::string& filepath)
         }
     }
 
+    if (root) root->SolveReferences();
+
     // Relink Scene Camera
     if (root) {
+        
         ComponentCamera* foundCamera = FindCameraInHierarchy(root);
         if (foundCamera) {
             
             Application::GetInstance().camera->SetSceneCamera(foundCamera);
             
-            
             if (foundCamera->owner && !foundCamera->owner->GetComponent(ComponentType::LISTENER)) {
                 foundCamera->owner->CreateComponent(ComponentType::LISTENER);
                 LOG_DEBUG("AudioListener automatically attached to loaded Scene Camera");
             }
-            
         }
     }
 
@@ -370,6 +371,16 @@ void ModuleScene::ClearScene()
     }
 
     LOG_CONSOLE("Scene cleared");
+}
+
+GameObject* ModuleScene::FindObject(const UID uid) 
+{ 
+    return root->FindChild(uid); 
+}
+
+GameObject* ModuleScene::FindObject(const std::string& name)
+{ 
+    return root->FindChild(name); 
 }
 
 ComponentCamera* ModuleScene::FindCameraInHierarchy(GameObject* obj)

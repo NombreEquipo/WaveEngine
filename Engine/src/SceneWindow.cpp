@@ -15,6 +15,7 @@
 #include "AssetsWindow.h"
 #include "ComponentMesh.h"
 #include "ComponentMaterial.h"
+#include "ModuleEditor.h"
 #include "EditorCamera.h"
 #include "CameraLens.h"
 #include "Log.h"
@@ -55,12 +56,15 @@ SceneWindow::SceneWindow(InspectorWindow* inspector)
 
 void SceneWindow::Draw()
 {
+    isHovered = (isOpen && ImGui::IsWindowHovered(ImGuiHoveredFlags_RootWindow | ImGuiHoveredFlags_ChildWindows));
+    isFocused = (isOpen && ImGui::IsWindowFocused(ImGuiHoveredFlags_RootWindow | ImGuiHoveredFlags_ChildWindows));
     if (!isOpen) return;
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::Begin(name.c_str(), &isOpen);
 
     isHovered = (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootWindow | ImGuiHoveredFlags_ChildWindows));
+    isFocused = (ImGui::IsWindowFocused(ImGuiHoveredFlags_RootWindow | ImGuiHoveredFlags_ChildWindows));
 
     sceneViewportPos = ImGui::GetCursorScreenPos();
     sceneViewportSize = ImGui::GetContentRegionAvail();
@@ -86,6 +90,9 @@ void SceneWindow::Draw()
         ImGui::InvisibleButton("SceneView", sceneViewportSize);
     }
 
+    if (Application::GetInstance().input->GetMouseButtonDown(1) == KEY_UP)
+        SelectObject();
+
     ImGuizmo::BeginFrame();
 
     HandleGizmoInput();
@@ -93,6 +100,32 @@ void SceneWindow::Draw()
 
     ImGui::End();
     ImGui::PopStyleVar();
+}
+
+void SceneWindow::SelectObject()
+{
+    if (ImGuizmo::IsOver() || ImGuizmo::IsUsing()) return;
+    
+    if (!isHovered) return;
+
+    Application::GetInstance().selectionManager->ClearSelection();
+
+    ImVec2 mousePos = ImGui::GetMousePos();
+
+    int mouseX = (int)(mousePos.x - sceneViewportPos.x);
+    int mouseY = (int)(mousePos.y - sceneViewportPos.y);
+
+    UID objectToSelectUID = Application::GetInstance().renderer->GetObjectInPixel(
+        Application::GetInstance().editor->GetEditorCamera()->GetCameraLens(),
+        mouseX,
+        mouseY
+    );
+
+    if (objectToSelectUID != 0) {
+        GameObject* objectToSelect = Application::GetInstance().scene->FindObject(objectToSelectUID);
+        Application::GetInstance().selectionManager->SetSelectedObject(objectToSelect);
+        LOG_CONSOLE("Selected: %s", objectToSelect ? objectToSelect->GetName().c_str() : "None");
+    }
 }
 
 void SceneWindow::HandleAssetDropTarget()
@@ -300,74 +333,35 @@ void SceneWindow::HandleGizmoInput()
 
 void SceneWindow::DrawGizmo()
 {
-    // First check if the gizmo was being used in the previous frame
-    bool wasUsingGizmo = isGizmoActive;
-
+    // 1. Verificación de objeto seleccionado
     GameObject* selectedObject = Application::GetInstance().selectionManager->GetSelectedObject();
-    if (!selectedObject)
-    {
+    if (!selectedObject) {
+        if (isGizmoActive) Application::GetInstance().scene->MarkOctreeForRebuild();
         isGizmoActive = false;
-
-        // If we have just released the gizmo, mark it as needing rebuilding.
-        if (wasUsingGizmo)
-        {
-            Application::GetInstance().scene->MarkOctreeForRebuild();
-        }
         return;
     }
 
-    ComponentCamera* camera = Application::GetInstance().camera->GetActiveCamera();
-    if (!camera)
-    {
-        isGizmoActive = false;
-
-        if (wasUsingGizmo)
-        {
-            Application::GetInstance().scene->MarkOctreeForRebuild();
-        }
-        return;
-    }
-
+    // 2. Obtención de componentes necesarios
+    EditorCamera* camera = Application::GetInstance().editor->GetEditorCamera();
     Transform* transform = static_cast<Transform*>(selectedObject->GetComponent(ComponentType::TRANSFORM));
-    if (!transform)
-    {
-        isGizmoActive = false;
 
-        if (wasUsingGizmo)
-        {
-            Application::GetInstance().scene->MarkOctreeForRebuild();
-        }
-        return;
-    }
+    if (!camera || !transform || sceneViewportSize.y <= 0.0f || sceneViewportSize.x <= 0.0f) return;
 
-    if (sceneViewportSize.y <= 0.0f)
-    {
-        isGizmoActive = false;
-
-        if (wasUsingGizmo)
-        {
-            Application::GetInstance().scene->MarkOctreeForRebuild();
-        }
-        return;
-    }
-
+    // 3. Configuración obligatoria para ImGuizmo
     ImGuizmo::SetOrthographic(false);
     ImGuizmo::SetDrawlist();
+
+    // Rectángulo exacto del viewport dentro de la ventana de ImGui
     ImGuizmo::SetRect(sceneViewportPos.x, sceneViewportPos.y, sceneViewportSize.x, sceneViewportSize.y);
 
-    float sceneAspect = sceneViewportSize.x / sceneViewportSize.y;
-    float currentAspect = camera->GetAspectRatio();
+    // 4. Preparación de matrices
+    glm::mat4 viewMatrix = camera->GetCameraLens()->GetViewMatrix();
+    glm::mat4 projectionMatrix = camera->GetCameraLens()->GetProjectionMatrix();
 
-    const float TOLERANCE = 0.001f;
-    if (std::abs(currentAspect - sceneAspect) > TOLERANCE)
-    {
-        camera->SetAspectRatio(sceneAspect);
-    }
+    // Obtenemos la matriz global inicial del objeto
+    glm::mat4 matrix = transform->GetGlobalMatrix();
 
-    glm::mat4 viewMatrix = camera->GetViewMatrix();
-    glm::mat4 projectionMatrix = camera->GetProjectionMatrix();
-    glm::mat4 transformMatrix = transform->GetGlobalMatrix();
-
+    // 5. Manipulación
     ImGuizmo::OPERATION currentOp = inspectorWindow->GetCurrentGizmoOperation();
     ImGuizmo::MODE currentMode = inspectorWindow->GetCurrentGizmoMode();
 
@@ -376,39 +370,41 @@ void SceneWindow::DrawGizmo()
         glm::value_ptr(projectionMatrix),
         currentOp,
         currentMode,
-        glm::value_ptr(transformMatrix)
+        glm::value_ptr(matrix)
     );
 
-    // Update the flag indicating whether the gizmo is being used
+    bool wasUsing = isGizmoActive;
     isGizmoActive = ImGuizmo::IsUsing();
 
-    if (ImGuizmo::IsUsing())
+    // 6. Si el usuario está moviendo el gizmo, actualizamos el transform
+    if (isGizmoActive)
     {
+        // Convertir de Global a Local si tiene padre (para mantener la jerarquía)
         GameObject* parent = selectedObject->GetParent();
-
-        if (parent)
+        if (parent && parent->GetParent() != nullptr) // No contar el root
         {
-            Transform* parentTransform = static_cast<Transform*>(parent->GetComponent(ComponentType::TRANSFORM));
-            if (parentTransform)
+            Transform* pTransform = static_cast<Transform*>(parent->GetComponent(ComponentType::TRANSFORM));
+            if (pTransform)
             {
-                const glm::mat4& parentGlobal = parentTransform->GetGlobalMatrix();
-                transformMatrix = glm::inverse(parentGlobal) * transformMatrix;
+                matrix = glm::inverse(pTransform->GetGlobalMatrix()) * matrix;
             }
         }
 
-        glm::vec3 position, scale, skew;
-        glm::vec4 perspective;
-        glm::quat rotation;
+        glm::vec3 pos, sca, skw;
+        glm::vec4 pers;
+        glm::quat rot;
 
-        glm::decompose(transformMatrix, scale, rotation, position, skew, perspective);
+        // Descomponemos la matriz resultante de ImGuizmo
+        glm::decompose(matrix, sca, rot, pos, skw, pers);
 
-        transform->SetPosition(position);
-        transform->SetRotationQuat(rotation);
-        transform->SetScale(scale);
+        // Aplicamos los cambios al componente Transform
+        transform->SetPosition(pos);
+        transform->SetRotationQuat(rot);
+        transform->SetScale(sca);
     }
-    else if (wasUsingGizmo)
+    else if (wasUsing)
     {
-        // We just released the gizmo, mark for octree rebuild
+        // Al soltar el gizmo, reconstruimos el Octree para que el picking siga funcionando
         Application::GetInstance().scene->MarkOctreeForRebuild();
     }
 }

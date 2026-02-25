@@ -87,14 +87,16 @@ void ConvexCollider::OnEditor() {
     }
 }
 
-//void ConvexCollider::Save(Config& config)
-//{
-//
-//}
-//void ConvexCollider::Load(Config& config)
-//{
-//
-//}
+void ConvexCollider::Serialize(nlohmann::json& componentObj) const {
+    SerializeBase(componentObj);
+}
+
+void ConvexCollider::Deserialize(const nlohmann::json& componentObj) {
+    DeserializeBase(componentObj);
+    CookMesh();
+    Rigidbody* rb = (Rigidbody*)owner->GetComponentInParent(ComponentType::RIGIDBODY);
+    if (rb) rb->CreateBody();
+}
 
 void ConvexCollider::DebugShape() {
     

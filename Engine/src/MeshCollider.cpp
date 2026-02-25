@@ -95,15 +95,16 @@ void MeshCollider::OnEditor() {
     }
 }
 
-//
-//void MeshCollider::Save(Config& config) {
-//    SaveBase(config);
-//}
-//
-//void MeshCollider::Load(Config& config) {
-//    LoadBase(config);
-//    CookMesh();
-//}
+void MeshCollider::Serialize(nlohmann::json& componentObj) const {
+    SerializeBase(componentObj);
+}
+
+void MeshCollider::Deserialize(const nlohmann::json& componentObj) {
+    DeserializeBase(componentObj);
+    CookMesh();
+    Rigidbody* rb = (Rigidbody*)owner->GetComponentInParent(ComponentType::RIGIDBODY);
+    if (rb) rb->CreateBody();
+}
 
 void MeshCollider::DebugShape() {
     

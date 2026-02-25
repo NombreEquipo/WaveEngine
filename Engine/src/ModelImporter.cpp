@@ -86,7 +86,7 @@ Model ModelImporter::ImportFromFile(const std::string& file_path)
             }
             else
             {
-                animUID = MetaFile::GenerateUID();
+                animUID = GenerateUID();
                 referedAnimations[animName] = animUID;
             }
 
@@ -202,7 +202,7 @@ GameObject* ModelImporter::ProcessNode(aiNode* node, const aiScene* scene, const
         }
         else {
             
-            meshUID = MetaFile::GenerateUID();
+            meshUID = GenerateUID();
             referedMeshes[meshName] = meshUID;
         }
 

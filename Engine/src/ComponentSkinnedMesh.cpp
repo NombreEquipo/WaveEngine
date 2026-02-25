@@ -3,6 +3,7 @@
 #include "GameObject.h"
 #include "Application.h"
 #include "ModuleResources.h"
+#include "ModuleEvents.h"
 #include "ResourceMesh.h"
 #include "Transform.h"
 #include "Log.h"
@@ -13,6 +14,7 @@ ComponentSkinnedMesh::ComponentSkinnedMesh(GameObject* owner) : ComponentMesh (o
 {
     name = "Skinned Mesh";
     bonesLinked = false;
+    Application::GetInstance().events->Subscribe(Event::Type::GameObjectDestroyed, this);
 }
 
 ComponentSkinnedMesh::~ComponentSkinnedMesh()
@@ -20,6 +22,7 @@ ComponentSkinnedMesh::~ComponentSkinnedMesh()
     ComponentMesh::~ComponentMesh();
     Application::GetInstance().renderer->DeleteSSBO(ssboGlobalMatrices);
     Application::GetInstance().renderer->DeleteSSBO(ssboOffsetMatrices);
+    Application::GetInstance().events->UnsubscribeAll(this);
 }
 
 
@@ -100,4 +103,29 @@ void ComponentSkinnedMesh::ReleaseCurrentMesh()
     boneGameObjects.clear();
 }
 
+void ComponentSkinnedMesh::OnEvent(const Event& event)
+{
+    switch (event.type)
+    {
+    case Event::Type::GameObjectDestroyed:
+    {
+        if (boneGameObjects.empty()) return;
+
+        GameObject* deletedGO = event.data.gameObject.gameObject;
+
+        for (size_t i = 0; i < boneGameObjects.size(); ++i)
+        {
+            if (boneGameObjects[i] == deletedGO)
+            {
+                boneGameObjects[i] = nullptr;
+            }
+        }
+
+        break;
+    }
+
+    default:
+        break;
+    }
+}
 

@@ -5,6 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "CameraLens.h"
 #include "ModuleEditor.h"
+#include "SceneWindow.h"
 #include "Renderer.h"
 #include "ModuleScene.h"
 #include "Window.h"
@@ -71,7 +72,7 @@ bool EditorCamera::Update()
 {
 	bool ret = true;
 
-	lockCamera = ImGuizmo::IsUsing() /*&& !Application::GetInstance().editor->GetInterface()->IsSceneFocused() || !Application::GetInstance().editor->GetInterface()->IsSceneHovered()*/;
+	lockCamera = ImGuizmo::IsUsing() || !Application::GetInstance().editor->GetSceneWindow()->IsHovered();
 
 	if (!lockCamera)
 	{

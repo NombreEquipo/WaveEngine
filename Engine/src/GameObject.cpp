@@ -1,4 +1,5 @@
 ﻿#include "GameObject.h"
+#include "Globals.h"
 #include "Component.h"
 #include "Transform.h"
 #include "ComponentMesh.h"
@@ -32,6 +33,7 @@
 
 GameObject::GameObject(const std::string& name) : name(name), active(true), parent(nullptr) {
     CreateComponent(ComponentType::TRANSFORM);
+    objectUID = GenerateUID();
 }
 
 GameObject::~GameObject() {
@@ -291,19 +293,25 @@ int GameObject::GetChildIndex(GameObject* child) const {
 
 GameObject* GameObject::FindChild(const std::string& nameToFind)
 {
-    if (name == nameToFind)
-    {
-        return this;
-    }
+    if (this->name == nameToFind) return this;
 
     for (GameObject* child : children)
     {
         GameObject* found = child->FindChild(nameToFind);
+        if (found) return found;
+    }
 
-        if (found != nullptr)
-        {
-            return found;
-        }
+    return nullptr;
+}
+
+GameObject* GameObject::FindChild(const UID uidToFind)
+{
+    if (this->objectUID == uidToFind) return this;
+
+    for (GameObject* child : children)
+    {
+        GameObject* found = child->FindChild(uidToFind);
+        if (found) return found;
     }
 
     return nullptr;
@@ -377,6 +385,7 @@ void GameObject::Serialize(nlohmann::json& gameObjectArray) const {
 
     // Set the name and active state
     gameObjectObj["name"] = name;
+    gameObjectObj["uid"] = objectUID;
     gameObjectObj["active"] = active;
 
     // Components
@@ -411,6 +420,7 @@ GameObject* GameObject::Deserialize(const nlohmann::json& gameObjectObj, GameObj
     // Create gameobject
     std::string objName = gameObjectObj.contains("name") ? gameObjectObj["name"].get<std::string>() : "GameObject";
     GameObject* newObject = new GameObject(objName);
+    newObject->objectUID = gameObjectObj.contains("uid") ? gameObjectObj["uid"].get<UID>() : newObject->objectUID;
 
     if (gameObjectObj.contains("active")) {
         newObject->SetActive(gameObjectObj["active"].get<bool>());
@@ -454,6 +464,19 @@ GameObject* GameObject::Deserialize(const nlohmann::json& gameObjectObj, GameObj
         }
     }
     return newObject;
+}
+
+void GameObject::SolveReferences() {
+    
+    for (Component* component : components)
+    {
+        component->SolveReferences();
+    }
+
+    for (GameObject* child : children)
+    {
+        child->SolveReferences();
+    }
 }
 
 

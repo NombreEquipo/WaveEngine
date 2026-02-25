@@ -22,6 +22,12 @@
 #include "ConvexCollider.h"
 #include "PlaneCollider.h"
 #include "InfinitePlaneCollider.h"
+#include "FixedJoint.h"
+#include "HingeJoint.h"
+#include "DistanceJoint.h"
+#include "D6Joint.h"
+#include "PrismaticJoint.h"
+#include "SphericalJoint.h"
 #include "AudioComponent.h"
 #include "AudioSource.h"
 #include "AudioListener.h"
@@ -107,26 +113,108 @@ void InspectorWindow::Draw()
     DrawGizmoSettings();
     ImGui::Separator();
 
-    DrawTransformComponent(selectedObject);
-    DrawCameraComponent(selectedObject);
-    DrawMeshComponent(selectedObject);
-    DrawSkinnedMeshComponent(selectedObject);
-    DrawMaterialComponent(selectedObject);
-    DrawRotateComponent(selectedObject);
-    DrawScriptComponent(selectedObject); 
-    DrawParticleComponent(selectedObject);
-    DrawRigidodyComponent(selectedObject);
-    DrawBoxColliderComponent(selectedObject);
-    DrawSphereColliderComponent(selectedObject);
-    DrawCapsuleColliderComponent(selectedObject);
-    DrawPlaneColliderComponent(selectedObject);
-    DrawInfinitePlaneColliderComponent(selectedObject);
-    DrawMeshColliderComponent(selectedObject);
-    DrawConvexColliderComponent(selectedObject);
-    DrawAudioSourceComponent(selectedObject);
-    DrawAudioListenerComponent(selectedObject);
-    DrawReverbZoneComponent(selectedObject);
-    DrawAnimationComponent(selectedObject);
+    for (Component* component : selectedObject->GetComponents())
+    {
+        switch (component->type)
+        {
+            // --- TRANSFORM & LÓGICA ---
+        case ComponentType::TRANSFORM:
+            DrawTransformComponent(component);
+            break;
+        case ComponentType::ROTATE:
+            DrawRotateComponent(component);
+            break;
+        case ComponentType::SCRIPT:
+            DrawScriptComponent(component);
+            break;
+
+            // --- GRÁFICOS & RENDER ---
+        case ComponentType::SKINNED_MESH:
+            DrawSkinnedMeshComponent(component);
+            break;
+        case ComponentType::MESH:
+            DrawMeshComponent(component);
+            break;
+        
+            break;
+        case ComponentType::MATERIAL:
+            DrawMaterialComponent(component);
+            break;
+        case ComponentType::CAMERA:
+            DrawCameraComponent(component);
+            break;
+        case ComponentType::PARTICLE:
+            DrawParticleComponent(component);
+            break;
+        case ComponentType::ANIMATION:
+            DrawAnimationComponent(component);
+            break;
+
+            // --- FÍSICAS ---
+        case ComponentType::RIGIDBODY:
+            DrawRigidodyComponent(component);
+            break;
+
+            // --- FÍSICAS (Colliders) ---
+        case ComponentType::BOX_COLLIDER:
+            DrawBoxColliderComponent(component);
+            break;
+        case ComponentType::SPHERE_COLLIDER:
+            DrawSphereColliderComponent(component);
+            break;
+        case ComponentType::CAPSULE_COLLIDER:
+            DrawCapsuleColliderComponent(component);
+            break;
+        case ComponentType::PLANE_COLLIDER:
+            DrawPlaneColliderComponent(component);
+            break;
+        case ComponentType::INFINITE_PLANE_COLLIDER:
+            DrawInfinitePlaneColliderComponent(component);
+            break;
+        case ComponentType::MESH_COLLIDER:
+            DrawMeshColliderComponent(component);
+            break;
+        case ComponentType::CONVEX_COLLIDER:
+            DrawConvexColliderComponent(component);
+            break;
+
+            // --- FÍSICAS (Joints) ---
+        case ComponentType::HINGE_JOINT:
+            DrawHingeJointComponent(component);
+            break;
+        case ComponentType::DISTANCE_JOINT:
+            DrawDistanceJointComponent(component);
+            break;
+        case ComponentType::FIXED_JOINT:
+            DrawFixedJointComponent(component);
+            break;
+        case ComponentType::D6_JOINT:
+            DrawD6JointComponent(component);
+            break;
+        case ComponentType::PRISMATIC_JOINT:
+            DrawPrismaticJointComponent(component);
+            break;
+        case ComponentType::SPHERICAL_JOINT:
+            DrawSphericalJointComponent(component);
+            break;
+
+            // --- AUDIO ---
+        case ComponentType::LISTENER:
+            DrawAudioListenerComponent(component);
+            break;
+        case ComponentType::AUDIOSOURCE:
+            DrawAudioSourceComponent(component);
+            break;
+        case ComponentType::REVERBZONE:
+            DrawReverbZoneComponent(component);
+            break;
+
+            // --- OTROS ---
+        case ComponentType::UNKNOWN:
+        default:
+            LOG_DEBUG("WARNING: Trying to serialize an UNKNOWN or unhandled component type.");
+        }
+    }
 
     ImGui::Spacing();
     ImGui::Separator();
@@ -218,9 +306,9 @@ void InspectorWindow::DrawGizmoSettings()
     }
 }
 
-void InspectorWindow::DrawTransformComponent(GameObject* selectedObject)
+void InspectorWindow::DrawTransformComponent(Component* component)
 {
-    Transform* transform = static_cast<Transform*>(selectedObject->GetComponent(ComponentType::TRANSFORM));
+    Transform* transform = static_cast<Transform*>(component);
 
     if (transform == nullptr) return;
 
@@ -309,8 +397,8 @@ void InspectorWindow::DrawTransformComponent(GameObject* selectedObject)
             // Rebuild después de reset
             Application::GetInstance().scene->MarkOctreeForRebuild();
 
-            LOG_DEBUG("Transform reset for: %s", selectedObject->GetName().c_str());
-            LOG_CONSOLE("Transform reset for: %s", selectedObject->GetName().c_str());
+            LOG_DEBUG("Transform reset for: %s", component->owner->GetName().c_str());
+            LOG_CONSOLE("Transform reset for: %s", component->owner->GetName().c_str());
         }
 
         if (ImGui::IsItemHovered())
@@ -320,9 +408,9 @@ void InspectorWindow::DrawTransformComponent(GameObject* selectedObject)
     }
 }
 
-void InspectorWindow::DrawCameraComponent(GameObject* selectedObject)
+void InspectorWindow::DrawCameraComponent(Component* component)
 {
-    ComponentCamera* cameraComp = static_cast<ComponentCamera*>(selectedObject->GetComponent(ComponentType::CAMERA));
+    ComponentCamera* cameraComp = static_cast<ComponentCamera*>(component);
 
     if (cameraComp == nullptr) return;
 
@@ -374,10 +462,10 @@ void InspectorWindow::DrawCameraComponent(GameObject* selectedObject)
             cameraComp->SetFrustumCulling(frustumEnabled);
             LOG_DEBUG("Frustum culling %s for camera: %s",
                 frustumEnabled ? "enabled" : "disabled",
-                selectedObject->GetName().c_str());
+                component->owner->GetName().c_str());
             LOG_CONSOLE("Frustum culling %s for %s",
                 frustumEnabled ? "enabled" : "disabled",
-                selectedObject->GetName().c_str());
+                component->owner->GetName().c_str());
         }
 
         if (ImGui::IsItemHovered())
@@ -405,10 +493,10 @@ void InspectorWindow::DrawCameraComponent(GameObject* selectedObject)
             cameraComp->SetDrawFrustum(drawFrustum);
             LOG_DEBUG("Frustum visualization %s for camera: %s",
                 drawFrustum ? "enabled" : "disabled",
-                selectedObject->GetName().c_str());
+                component->owner->GetName().c_str());
             LOG_CONSOLE("Frustum gizmo %s for %s",
                 drawFrustum ? "enabled" : "disabled",
-                selectedObject->GetName().c_str());
+                component->owner->GetName().c_str());
         }
 
         if (ImGui::IsItemHovered())
@@ -454,9 +542,9 @@ void InspectorWindow::DrawCameraComponent(GameObject* selectedObject)
     }
 }
 
-void InspectorWindow::DrawMeshComponent(GameObject* selectedObject)
+void InspectorWindow::DrawMeshComponent(Component* component)
 {
-    ComponentMesh* meshComp = static_cast<ComponentMesh*>(selectedObject->GetComponent(ComponentType::MESH));
+    ComponentMesh* meshComp = static_cast<ComponentMesh*>(component);
     if (meshComp == nullptr || meshComp->IsType(ComponentType::SKINNED_MESH)) return;
 
     if (ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen))
@@ -522,9 +610,9 @@ void InspectorWindow::DrawMeshComponent(GameObject* selectedObject)
                         if (meshComp->LoadMeshByUID(meshUID))
                         {
                             LOG_DEBUG("Assigned mesh '%s' (UID %llu) to GameObject '%s'",
-                                meshName.c_str(), meshUID, selectedObject->GetName().c_str());
+                                meshName.c_str(), meshUID, component->owner->GetName().c_str());
                             LOG_CONSOLE("Mesh '%s' assigned to '%s'",
-                                meshName.c_str(), selectedObject->GetName().c_str());
+                                meshName.c_str(), component->owner->GetName().c_str());
                         }
                         else
                         {
@@ -590,9 +678,9 @@ void InspectorWindow::DrawMeshComponent(GameObject* selectedObject)
     }
 }
 
-void InspectorWindow::DrawSkinnedMeshComponent(GameObject* selectedObject)
+void InspectorWindow::DrawSkinnedMeshComponent(Component* component)
 {
-    ComponentSkinnedMesh* meshComp = static_cast<ComponentSkinnedMesh*>(selectedObject->GetComponent(ComponentType::SKINNED_MESH));
+    ComponentSkinnedMesh* meshComp = static_cast<ComponentSkinnedMesh*>(component);
     if (meshComp == nullptr) return;
 
     if (ImGui::CollapsingHeader("Skinned Mesh", ImGuiTreeNodeFlags_DefaultOpen))
@@ -658,9 +746,9 @@ void InspectorWindow::DrawSkinnedMeshComponent(GameObject* selectedObject)
                         if (meshComp->LoadMeshByUID(meshUID))
                         {
                             LOG_DEBUG("Assigned mesh '%s' (UID %llu) to GameObject '%s'",
-                                meshName.c_str(), meshUID, selectedObject->GetName().c_str());
+                                meshName.c_str(), meshUID, component->owner->GetName().c_str());
                             LOG_CONSOLE("Mesh '%s' assigned to '%s'",
-                                meshName.c_str(), selectedObject->GetName().c_str());
+                                meshName.c_str(), component->owner->GetName().c_str());
                         }
                         else
                         {
@@ -732,18 +820,18 @@ void InspectorWindow::DrawSkinnedMeshComponent(GameObject* selectedObject)
     }
 }
 
-void InspectorWindow::DrawMaterialComponent(GameObject* selectedObject)
+void InspectorWindow::DrawMaterialComponent(Component* component)
 {
-    ComponentMaterial* materialComp = static_cast<ComponentMaterial*>(selectedObject->GetComponent(ComponentType::MATERIAL));
+    ComponentMaterial* materialComp = static_cast<ComponentMaterial*>(component);
 
     if (materialComp == nullptr) return;
 
     materialComp->OnEditor();
 }
 
-void InspectorWindow::DrawRotateComponent(GameObject* selectedObject)
+void InspectorWindow::DrawRotateComponent(Component* component)
 {
-    ComponentRotate* rotateComp = static_cast<ComponentRotate*>(selectedObject->GetComponent(ComponentType::ROTATE));
+    ComponentRotate* rotateComp = static_cast<ComponentRotate*>(component);
 
     if (rotateComp == nullptr) return;
 
@@ -759,9 +847,9 @@ void InspectorWindow::DrawRotateComponent(GameObject* selectedObject)
     }
 }
 
-void InspectorWindow::DrawParticleComponent(GameObject* selectedObject)
+void InspectorWindow::DrawParticleComponent(Component* component)
 {
-    ComponentParticleSystem* particleComp = static_cast<ComponentParticleSystem*>(selectedObject->GetComponent(ComponentType::PARTICLE));
+    ComponentParticleSystem* particleComp = static_cast<ComponentParticleSystem*>(component);
 
     if (particleComp != nullptr)
     {
@@ -770,92 +858,190 @@ void InspectorWindow::DrawParticleComponent(GameObject* selectedObject)
     }
 }
 
-void  InspectorWindow::DrawRigidodyComponent(GameObject* selectedObject)
+void  InspectorWindow::DrawRigidodyComponent(Component* component)
 {
-    Rigidbody* rigidbody = static_cast<Rigidbody*>(selectedObject->GetComponent(ComponentType::RIGIDBODY));
+    Rigidbody* rigidbody = static_cast<Rigidbody*>(component);
 
     if (rigidbody != nullptr)
     {
-        // Delegate the ui to the component
-        rigidbody->OnEditor();
+        if (ImGui::CollapsingHeader("Rigidbody", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            rigidbody->OnEditor();
+        }
     }
 }
 
-void  InspectorWindow::DrawBoxColliderComponent(GameObject* selectedObject)
+void  InspectorWindow::DrawBoxColliderComponent(Component* component)
 {
-    BoxCollider* boxCollider = static_cast<BoxCollider*>(selectedObject->GetComponent(ComponentType::BOX_COLLIDER));
+    BoxCollider* boxCollider = static_cast<BoxCollider*>(component);
 
     if (boxCollider != nullptr)
     {
-        // Delegate the ui to the component
-        boxCollider->OnEditor();
+        if (ImGui::CollapsingHeader("Box Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            boxCollider->OnEditor();
+        }
     }
 }
 
-void  InspectorWindow::DrawSphereColliderComponent(GameObject* selectedObject)
+void  InspectorWindow::DrawSphereColliderComponent(Component* component)
 {
-    SphereCollider* Collider = static_cast<SphereCollider*>(selectedObject->GetComponent(ComponentType::SPHERE_COLLIDER));
+    SphereCollider* Collider = static_cast<SphereCollider*>(component);
 
     if (Collider != nullptr)
     {
-        // Delegate the ui to the component
-        Collider->OnEditor();
+        if (ImGui::CollapsingHeader("Sphere Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            Collider->OnEditor();
+        }
     }
 }
 
-void  InspectorWindow::DrawCapsuleColliderComponent(GameObject* selectedObject)
+void  InspectorWindow::DrawCapsuleColliderComponent(Component* component)
 {
-    CapsuleCollider* Collider = static_cast<CapsuleCollider*>(selectedObject->GetComponent(ComponentType::CAPSULE_COLLIDER));
+    CapsuleCollider* Collider = static_cast<CapsuleCollider*>(component);
 
     if (Collider != nullptr)
     {
-        // Delegate the ui to the component
-        Collider->OnEditor();
+        if (ImGui::CollapsingHeader("Capsule Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            Collider->OnEditor();
+        }
+        
     }
 }
 
-void  InspectorWindow::DrawPlaneColliderComponent(GameObject* selectedObject)
+void  InspectorWindow::DrawPlaneColliderComponent(Component* component)
 {
-    PlaneCollider* Collider = static_cast<PlaneCollider*>(selectedObject->GetComponent(ComponentType::PLANE_COLLIDER));
+    PlaneCollider* Collider = static_cast<PlaneCollider*>(component);
 
     if (Collider != nullptr)
     {
-        // Delegate the ui to the component
-        Collider->OnEditor();
+        if (ImGui::CollapsingHeader("Plane Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            Collider->OnEditor();
+        }
     }
 }
-void  InspectorWindow::DrawInfinitePlaneColliderComponent(GameObject* selectedObject)
+void  InspectorWindow::DrawInfinitePlaneColliderComponent(Component* component)
 {
-    InfinitePlaneCollider* Collider = static_cast<InfinitePlaneCollider*>(selectedObject->GetComponent(ComponentType::INFINITE_PLANE_COLLIDER));
+    InfinitePlaneCollider* Collider = static_cast<InfinitePlaneCollider*>(component);
 
     if (Collider != nullptr)
     {
-        // Delegate the ui to the component
-        Collider->OnEditor();
+        if (ImGui::CollapsingHeader("Infinite Plane Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            Collider->OnEditor();
+        }
+        
     }
 }
-void  InspectorWindow::DrawMeshColliderComponent(GameObject* selectedObject)
+void  InspectorWindow::DrawMeshColliderComponent(Component* component)
 {
-    MeshCollider* Collider = static_cast<MeshCollider*>(selectedObject->GetComponent(ComponentType::MESH_COLLIDER));
+    MeshCollider* Collider = static_cast<MeshCollider*>(component);
 
     if (Collider != nullptr)
     {
-        // Delegate the ui to the component
-        Collider->OnEditor();
+        if (ImGui::CollapsingHeader("Mesh Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            Collider->OnEditor();
+        }
     }
 }
-void  InspectorWindow::DrawConvexColliderComponent(GameObject* selectedObject)
+void  InspectorWindow::DrawConvexColliderComponent(Component* component)
 {
-    ConvexCollider* Collider = static_cast<ConvexCollider*>(selectedObject->GetComponent(ComponentType::CONVEX_COLLIDER));
+    ConvexCollider* Collider = static_cast<ConvexCollider*>(component);
 
     if (Collider != nullptr)
     {
-        // Delegate the ui to the component
-        Collider->OnEditor();
+        if (ImGui::CollapsingHeader("Convex Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            Collider->OnEditor();
+        }
     }
 }
-void InspectorWindow::DrawAudioSourceComponent(GameObject* selectedObject) {
-    AudioSource* source = static_cast<AudioSource*>(selectedObject->GetComponent(ComponentType::AUDIOSOURCE));
+
+void  InspectorWindow::DrawFixedJointComponent(Component* component)
+{
+    FixedJoint* Joint = static_cast<FixedJoint*>(component);
+
+    if (Joint != nullptr)
+    {
+        if (ImGui::CollapsingHeader("Fixed Joint", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            Joint->OnEditor();
+        }
+    }
+}
+
+void  InspectorWindow::DrawDistanceJointComponent(Component* component)
+{
+    DistanceJoint* Joint = static_cast<DistanceJoint*>(component);
+
+    if (Joint != nullptr)
+    {
+        if (ImGui::CollapsingHeader("Distance Joint", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            Joint->OnEditor();
+        }
+    }
+}
+
+void  InspectorWindow::DrawHingeJointComponent(Component* component)
+{
+    HingeJoint* Joint = static_cast<HingeJoint*>(component);
+
+    if (Joint != nullptr)
+    {
+        if (ImGui::CollapsingHeader("Hinge Joint", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            Joint->OnEditor();
+        }
+    }
+}
+
+void  InspectorWindow::DrawPrismaticJointComponent(Component* component)
+{
+    PrismaticJoint* Joint = static_cast<PrismaticJoint*>(component);
+
+    if (Joint != nullptr)
+    {
+        if (ImGui::CollapsingHeader("Prismatic Joint", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            Joint->OnEditor();
+        }
+    }
+}
+
+void  InspectorWindow::DrawSphericalJointComponent(Component* component)
+{
+    SphericalJoint* Joint = static_cast<SphericalJoint*>(component);
+
+    if (Joint != nullptr)
+    {
+        if (ImGui::CollapsingHeader("Spherical Joint", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            Joint->OnEditor();
+        }
+    }
+}
+
+void  InspectorWindow::DrawD6JointComponent(Component* component)
+{
+    D6Joint* Joint = static_cast<D6Joint*>(component);
+
+    if (Joint != nullptr)
+    {
+        if (ImGui::CollapsingHeader("D6 Joint", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            Joint->OnEditor();
+        }
+    }
+}
+
+
+void InspectorWindow::DrawAudioSourceComponent(Component* component) {
+    AudioSource* source = static_cast<AudioSource*>(component);
     if (!source) return;
 
     if (ImGui::CollapsingHeader("Audio Source", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -863,8 +1049,8 @@ void InspectorWindow::DrawAudioSourceComponent(GameObject* selectedObject) {
     }
 }
 
-void InspectorWindow::DrawAudioListenerComponent(GameObject* selectedObject) {
-    AudioListener* listener = static_cast<AudioListener*>(selectedObject->GetComponent(ComponentType::LISTENER));
+void InspectorWindow::DrawAudioListenerComponent(Component* component) {
+    AudioListener* listener = static_cast<AudioListener*>(component);
     if (!listener) return;
 
     if (ImGui::CollapsingHeader("Audio Listener", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -872,9 +1058,9 @@ void InspectorWindow::DrawAudioListenerComponent(GameObject* selectedObject) {
     }
 }
 
-void InspectorWindow::DrawReverbZoneComponent(GameObject* selectedObject)
+void InspectorWindow::DrawReverbZoneComponent(Component* component)
 {
-    ReverbZone* zone = static_cast<ReverbZone*>(selectedObject->GetComponent(ComponentType::REVERBZONE));
+    ReverbZone* zone = static_cast<ReverbZone*>(component);
     if (!zone) return;
 
     if (ImGui::CollapsingHeader("Reverb Zone", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -882,9 +1068,9 @@ void InspectorWindow::DrawReverbZoneComponent(GameObject* selectedObject)
     }
 }
 
-void InspectorWindow::DrawAnimationComponent(GameObject* selectedObject)
+void InspectorWindow::DrawAnimationComponent(Component* component)
 {
-    ComponentAnimation* animation = static_cast<ComponentAnimation*>(selectedObject->GetComponent(ComponentType::ANIMATION));
+    ComponentAnimation* animation = static_cast<ComponentAnimation*>(component);
     if (!animation) return;
 
     if (ImGui::CollapsingHeader("Animation", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -1105,10 +1291,10 @@ bool InspectorWindow::IsDescendantOf(GameObject* potentialDescendant, GameObject
     return false;
 }
 
-void InspectorWindow::DrawScriptComponent(GameObject* selectedObject)
+void InspectorWindow::DrawScriptComponent(Component* component)
 {
     ComponentScript* scriptComp = static_cast<ComponentScript*>(
-        selectedObject->GetComponent(ComponentType::SCRIPT)
+        component
         );
 
     if (scriptComp == nullptr) return;
@@ -1140,14 +1326,14 @@ void InspectorWindow::DrawScriptComponent(GameObject* selectedObject)
 
                 if (ImGui::Button("Remove Script", ImVec2(120, 0))) {
                     scriptComp->UnloadScript();
-                    LOG_CONSOLE("[Inspector] Script removed from: %s", selectedObject->GetName().c_str());
+                    LOG_CONSOLE("[Inspector] Script removed from: %s", component->owner->GetName().c_str());
                 }
 
                 ImGui::SameLine();
 
                 if (ImGui::Button("Reload", ImVec2(80, 0))) {
                     scriptComp->ReloadScript();
-                    LOG_CONSOLE("[Inspector] Script reloaded for: %s", selectedObject->GetName().c_str());
+                    LOG_CONSOLE("[Inspector] Script reloaded for: %s", component->owner->GetName().c_str());
                 }
 
                 if (ImGui::IsItemHovered()) {
@@ -1269,7 +1455,7 @@ void InspectorWindow::DrawScriptComponent(GameObject* selectedObject)
                     if (ImGui::Selectable(filename.c_str(), isSelected)) {
                         if (scriptComp->LoadScriptByUID(uid)) {
                             LOG_CONSOLE("[Inspector] Script '%s' assigned to '%s'",
-                                filename.c_str(), selectedObject->GetName().c_str());
+                                filename.c_str(), component->owner->GetName().c_str());
                         }
                         else {
                             LOG_CONSOLE("[Inspector] Failed to load script '%s'", filename.c_str());

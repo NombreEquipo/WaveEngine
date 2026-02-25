@@ -18,9 +18,11 @@ public:
     bool IsOpen() const { return isOpen; }
     const std::string& GetName() const { return name; }
     bool IsHovered() const { return isHovered; }
+    bool IsFocused() const { return isFocused; }
 
 protected:
     std::string name;
     bool isOpen;
     bool isHovered;
+    bool isFocused;
 };

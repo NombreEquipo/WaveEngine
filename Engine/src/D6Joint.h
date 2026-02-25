@@ -16,6 +16,9 @@ public:
     void SetTwistLimit(float minAngle, float maxAngle);
     void SetSwingLimit(float yAngle, float zAngle);
 
+    virtual void Serialize(nlohmann::json& componentObj) const;
+    virtual void Deserialize(const nlohmann::json& componentObj);
+
     //void Save(Config& config) override;
     //void Load(Config& config) override;
     void OnEditor() override;

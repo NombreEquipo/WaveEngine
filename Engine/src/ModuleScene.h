@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "Module.h"
 #include "Octree.h"
+#include "Globals.h"
 #include <memory>
 #include <vector>
 
@@ -26,6 +27,9 @@ public:
     GameObject* CreateGameObject(const std::string& name);
 
     GameObject* GetRoot() const { return root; }
+
+    GameObject* FindObject(const UID uid) ; 
+    GameObject* FindObject(const std::string& name);
 
     void CleanupMarkedObjects(GameObject* parent);
 

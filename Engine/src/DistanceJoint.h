@@ -23,8 +23,8 @@ public:
     void SetDamping(float d);
     float GetDamping() const { return damping; }
 
-    //void Save(Config& componentNode) override;
-    //void Load(Config& componentNode) override;
+    virtual void Serialize(nlohmann::json& componentObj) const;
+    virtual void Deserialize(const nlohmann::json& componentObj);
 
     void DrawDebug() override;
     void OnEditor() override;

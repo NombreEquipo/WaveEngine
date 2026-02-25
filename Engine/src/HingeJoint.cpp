@@ -110,23 +110,39 @@ void HingeJoint::SetDriveVelocity(float v) {
     }
 }
 
-//void HingeJoint::Save(Config& config) {
-//    SaveBase(config);
-//    config.SetBool("EnableLimits", limitsEnabled);
-//    config.SetFloat("MinAngle", minAngle);
-//    config.SetFloat("MaxAngle", maxAngle);
-//    config.SetBool("EnableMotor", motorEnabled);
-//    config.SetFloat("DriveVelocity", driveVelocity);
-//}
-//
-//void HingeJoint::Load(Config& config) {
-//    LoadBase(config);
-//    EnableLimits(config.GetBool("EnableLimits"));
-//    SetMinAngle(config.GetFloat("MinAngle"));
-//    SetMaxAngle(config.GetFloat("MaxAngle"));
-//    EnableMotor(config.GetBool("EnableMotor"));
-//    SetDriveVelocity(config.GetFloat("DriveVelocity"));
-//}
+void HingeJoint::Serialize(nlohmann::json& componentObj) const
+{
+    SerializeBase(componentObj);
+
+    componentObj["Limits"] = {
+        {"Enabled", limitsEnabled},
+        {"Min", minAngle},
+        {"Max", maxAngle}
+    };
+
+    componentObj["Motor"] = {
+        {"Enabled", motorEnabled},
+        {"Velocity", driveVelocity}
+    };
+}
+
+void HingeJoint::Deserialize(const nlohmann::json& componentObj)
+{
+    DeserializeBase(componentObj);
+    if (componentObj.contains("Limits")) {
+        auto limits = componentObj["Limits"];
+        EnableLimits(limits.value("Enabled", false));
+        SetMinAngle(limits.value("Min", -45.0f));
+        SetMaxAngle(limits.value("Max", 45.0f));
+    }
+
+    if (componentObj.contains("Motor")) {
+        auto motor = componentObj["Motor"];
+        EnableMotor(motor.value("Enabled", false));
+        SetDriveVelocity(motor.value("Velocity", 0.0f));
+    }
+    RefreshJoint();
+}
 
 void HingeJoint::OnEditor() {
     OnEditorBase();

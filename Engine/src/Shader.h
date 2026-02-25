@@ -17,6 +17,7 @@ public:
     bool CreateLinesShader(); 
     bool CreateNormalShader(); 
     bool CreateMeshShader(); 
+    bool CreatePickingShader(); 
 
     bool LoadFromSource(const char* vSource, const char* fSource, const char* gSource = nullptr);
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ModuleResources.h"
+#include "glm/glm.hpp"
 
 // Vertex data structure
 struct Vertex {

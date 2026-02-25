@@ -12,12 +12,6 @@
 // META FILE IMPLEMENTATION
 ///////////////////////////////
 
-UID MetaFile::GenerateUID() {
-    std::random_device rd;
-    std::mt19937_64 gen(rd());
-    std::uniform_int_distribution<UID> dis;
-    return dis(gen);
-}
 
 AssetType MetaFile::GetAssetType(const std::string& extension) {
     std::string ext = extension;
@@ -247,7 +241,7 @@ void MetaFileManager::ScanAssets() {
         if (!std::filesystem::exists(metaPath)) {
             // Create new .meta
             MetaFile meta;
-            meta.uid = MetaFile::GenerateUID();
+            meta.uid = GenerateUID();
             meta.type = type;
             meta.originalPath = assetPath;
             meta.fileHash = GetFileHash(assetPath);
@@ -358,7 +352,7 @@ void MetaFileManager::CheckForChanges() {
             // Create .meta if it doesnt exist
             if (!std::filesystem::exists(metaPath)) {
                 MetaFile meta;
-                meta.uid = MetaFile::GenerateUID();
+                meta.uid = GenerateUID();
                 meta.type = type;
                 meta.originalPath = assetPath;
                 meta.fileHash = GetFileHash(assetPath);
@@ -424,7 +418,7 @@ MetaFile MetaFileManager::GetOrCreateMeta(const std::string& assetPath) {
 
         // If no UID, assign one now
         if (meta.uid == 0) {
-            meta.uid = MetaFile::GenerateUID();
+            meta.uid = GenerateUID();
             meta.Save(metaPath);
         }
 
@@ -433,7 +427,7 @@ MetaFile MetaFileManager::GetOrCreateMeta(const std::string& assetPath) {
 
     // Create new .meta
     MetaFile meta;
-    meta.uid = MetaFile::GenerateUID();
+    meta.uid = GenerateUID();
     meta.type = MetaFile::GetAssetType(std::filesystem::path(assetPath).extension().string());
     meta.originalPath = assetPath;
     meta.fileHash = GetFileHash(assetPath);
@@ -472,7 +466,7 @@ UID MetaFileManager::GetUIDFromAsset(const std::string& assetPath) {
     MetaFile meta = LoadMeta(assetPath);
 
     if (meta.uid == 0 && std::filesystem::exists(assetPath)) {
-        meta.uid = MetaFile::GenerateUID();
+        meta.uid = GenerateUID();
         std::string metaPath = GetMetaPath(assetPath);
         meta.Save(metaPath);
     }
