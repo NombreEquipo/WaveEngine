@@ -542,155 +542,46 @@ int OctreeNode::GetObjectCount() const
 
 void OctreeNode::DebugDraw() const
 {
-    // Skip drawing empty leaf nodes
     if (IsLeaf() && objects.empty())
         return;
 
-    // Crear las 8 esquinas del AABB
+    glm::vec4 color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+
     glm::vec3 corners[8] = {
-        // Bottom face
-        glm::vec3(box.min.x, box.min.y, box.min.z), // 0
-        glm::vec3(box.max.x, box.min.y, box.min.z), // 1
-        glm::vec3(box.max.x, box.min.y, box.max.z), // 2
-        glm::vec3(box.min.x, box.min.y, box.max.z), // 3
-        // Top face
-        glm::vec3(box.min.x, box.max.y, box.min.z), // 4
-        glm::vec3(box.max.x, box.max.y, box.min.z), // 5
-        glm::vec3(box.max.x, box.max.y, box.max.z), // 6
-        glm::vec3(box.min.x, box.max.y, box.max.z)  // 7
+        glm::vec3(box.min.x, box.min.y, box.min.z),
+        glm::vec3(box.max.x, box.min.y, box.min.z),
+        glm::vec3(box.max.x, box.min.y, box.max.z),
+        glm::vec3(box.min.x, box.min.y, box.max.z),
+
+        glm::vec3(box.min.x, box.max.y, box.min.z),
+        glm::vec3(box.max.x, box.max.y, box.min.z),
+        glm::vec3(box.max.x, box.max.y, box.max.z),
+        glm::vec3(box.min.x, box.max.y, box.max.z)
     };
 
-    std::vector<float> lineVertices;
-    lineVertices.reserve(24 * 3); // 12 edges * 2 points * 3 coords
+    auto* renderer = Application::GetInstance().renderer.get();
 
-    // Bottom face edges (4 lines)
     for (int i = 0; i < 4; ++i)
     {
-        int next = (i + 1) % 4;
-        lineVertices.insert(lineVertices.end(), {
-            corners[i].x, corners[i].y, corners[i].z,
-            corners[next].x, corners[next].y, corners[next].z
-            });
+        renderer->DrawLine(corners[i], corners[(i + 1) % 4], color);
     }
 
-    // Top face edges (4 lines)
     for (int i = 4; i < 8; ++i)
     {
         int next = 4 + ((i - 4 + 1) % 4);
-        lineVertices.insert(lineVertices.end(), {
-            corners[i].x, corners[i].y, corners[i].z,
-            corners[next].x, corners[next].y, corners[next].z
-            });
+        renderer->DrawLine(corners[i], corners[next], color);
     }
 
-    // Vertical edges (4 lines)
     for (int i = 0; i < 4; ++i)
     {
-        lineVertices.insert(lineVertices.end(), {
-            corners[i].x, corners[i].y, corners[i].z,
-            corners[i + 4].x, corners[i + 4].y, corners[i + 4].z
-            });
+        renderer->DrawLine(corners[i], corners[i + 4], color);
     }
-
-    // Crear VAO/VBO temporal para las líneas
-    GLuint vao, vbo;
-    glGenVertexArrays(1, &vao);
-    glGenBuffers(1, &vbo);
-
-    glBindVertexArray(vao);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, lineVertices.size() * sizeof(float),
-        lineVertices.data(), GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
-
-    // Obtener cámara y renderer
-    ComponentCamera* camera = Application::GetInstance().camera->GetActiveCamera();
-    if (!camera)
-    {
-        glBindVertexArray(0);
-        glDeleteBuffers(1, &vbo);
-        glDeleteVertexArrays(1, &vao);
-        return;
-    }
-
-    Renderer* renderer = Application::GetInstance().renderer.get();
-    if (!renderer)
-    {
-        glBindVertexArray(0);
-        glDeleteBuffers(1, &vbo);
-        glDeleteVertexArrays(1, &vao);
-        return;
-    }
-
-    Shader* lineShader = renderer->GetLineShader();
-
-    if (lineShader)
-    {
-        lineShader->Use();
-        GLuint shaderProgram = lineShader->GetProgramID();
-
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"),
-            1, GL_FALSE, glm::value_ptr(camera->GetProjectionMatrix()));
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"),
-            1, GL_FALSE, glm::value_ptr(camera->GetViewMatrix()));
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"),
-            1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
-
-        // Color based on node depth and occupancy
-        float colorFactor = 1.0f - (current_depth / (float)max_depth);
-        glm::vec3 color;
-
-        if (!objects.empty())
-        {
-            // Nodes with objects are more visible
-            color = glm::vec3(1.0f, colorFactor * 0.5f + 0.5f, 0.0f); // Orange to yellow
-        }
-        else
-        {
-            // Empty nodes are dimmer
-            color = glm::vec3(0.3f, colorFactor * 0.3f, 0.0f); // Dark orange
-        }
-
-        GLint colorLoc = glGetUniformLocation(shaderProgram, "color");
-        if (colorLoc == -1)
-            colorLoc = glGetUniformLocation(shaderProgram, "tintColor");
-
-        if (colorLoc != -1)
-        {
-            glUniform3fv(colorLoc, 1, glm::value_ptr(color));
-        }
-
-        glDisable(GL_DEPTH_TEST);
-
-        float lineWidth = !objects.empty() ? 2.0f : 1.0f;
-        glLineWidth(lineWidth);
-        glDrawArrays(GL_LINES, 0, lineVertices.size() / 3);
-        glLineWidth(1.0f);
-
-        glEnable(GL_DEPTH_TEST);
-    }
-
-    // Cleanup
-    glBindVertexArray(0);
-    glDeleteBuffers(1, &vbo);
-    glDeleteVertexArrays(1, &vao);
 
     if (!IsLeaf())
     {
         for (int i = 0; i < 8; ++i)
         {
-            if (children[i] != nullptr)
-            {
-                children[i]->DebugDraw();
-            }
+            if (children[i]) children[i]->DebugDraw();
         }
-    }
-
-    // Restore default shader
-    if (renderer)
-    {
-        renderer->GetDefaultShader()->Use();
     }
 }

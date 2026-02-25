@@ -283,16 +283,16 @@ static int Lua_Camera_GetScreenToWorldPlane(lua_State* L) {
     
     if (app.GetPlayState() == Application::PlayState::PLAYING) {
         // En Play mode: usar la cámara de escena (ya cacheada)
-        camera = app.camera->GetSceneCamera();
+        camera = app.camera->GetMainCamera();
         
-        // Fallback a editor si no hay cámara de juego
-        if (!camera) {
-            camera = app.camera->GetEditorCamera();
-        }
-    } else {
-        // En Editor mode: usar cámara del editor
-        camera = app.camera->GetEditorCamera();
-    }
+        //// Fallback a editor si no hay cámara de juego
+        //if (!camera) {
+        //    camera = app.camera->GetEditorCamera();
+        //}
+    } /*else {*/
+    //    // En Editor mode: usar cámara del editor
+    //    camera = app.camera->GetEditorCamera();
+    //}
 
     if (!camera) {
         LOG_CONSOLE("[Lua] ERROR: No camera available");
@@ -302,7 +302,7 @@ static int Lua_Camera_GetScreenToWorldPlane(lua_State* L) {
     }
 
     glm::vec3 rayDir = camera->ScreenToWorldRay(mouseX, mouseY, screenWidth, screenHeight);
-    glm::vec3 rayOrigin = camera->GetPosition();
+    glm::vec3 rayOrigin = camera->owner->transform->GetPosition();
 
     // Calculate intersection with plane Y = planeY
     if (std::abs(rayDir.y) < 0.0001f) {

@@ -96,7 +96,7 @@ bool ModuleLoader::Start()
 
     if (sceneCamera)
     {
-        app.camera->SetSceneCamera(sceneCamera);
+        app.camera->SetMainCamera(sceneCamera);
     }
 
     return true;

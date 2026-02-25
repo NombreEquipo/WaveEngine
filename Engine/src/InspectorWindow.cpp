@@ -10,6 +10,7 @@
 #include "ComponentSkinnedMesh.h"
 #include "ComponentMaterial.h"
 #include "ComponentCamera.h"
+#include "CameraLens.h"
 #include "ComponentRotate.h"
 #include "ComponentAnimation.h"
 #include "ResourceTexture.h"
@@ -71,24 +72,6 @@ void InspectorWindow::Draw()
     }
 
     ImGui::Text("GameObject: %s", selectedObject->GetName().c_str());
-    ImGui::SameLine();
-
-    if (selectedObject->GetComponent(ComponentType::CAMERA)) {
-        ComponentCamera* selectedCamera = static_cast<ComponentCamera*>(selectedObject->GetComponent(ComponentType::CAMERA));
-        ComponentCamera* currentSceneCamera = Application::GetInstance().camera->GetSceneCamera();
-
-        bool isActive = (selectedCamera == currentSceneCamera);
-
-        if (ImGui::Checkbox("##isActive", &isActive)) {
-            if (isActive) {
-                Application::GetInstance().camera->SetSceneCamera(selectedCamera);
-            }
-        }
-
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Set as Active Game Camera");
-        }
-    }
 
     ImGui::Separator();
 
@@ -410,135 +393,53 @@ void InspectorWindow::DrawTransformComponent(Component* component)
 
 void InspectorWindow::DrawCameraComponent(Component* component)
 {
-    ComponentCamera* cameraComp = static_cast<ComponentCamera*>(component);
+    ComponentCamera* cameraComp = (ComponentCamera*)component;
 
     if (cameraComp == nullptr) return;
 
-    if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
+    if (ImGui::CollapsingHeader("Camera"))
     {
-        ImGui::Text("Camera Settings");
+        float fov = cameraComp->GetLens()->GetFov();
+        if (ImGui::DragFloat("FOV", &fov, 0.1f, 1.0f, 160.0f))
+        {
+            cameraComp->GetLens()->SetFov(fov);
+        }
+
+        float zNear = cameraComp->GetLens()->GetNearPlane();
+        if (ImGui::DragFloat("Near Plane", &zNear, 0.1f, 0.01f, 1000.0f))
+        {
+            cameraComp->GetLens()->SetNearPlane(zNear);
+        }
+
+        float zFar = cameraComp->GetLens()->GetFarPlane();
+        if (ImGui::DragFloat("Far Plane", &zFar, 1.0f, 0.1f, 10000.0f))
+        {
+            cameraComp->GetLens()->SetFarPlane(zFar);
+        }
+
+        int depth = cameraComp->GetLens()->depth;
+        if (ImGui::InputInt("Depth", &depth))
+        {
+            cameraComp->GetLens()->depth = glm::clamp(depth, 0, 100000);
+        }
+
+        bool isMain = cameraComp->IsMainCamera();
+        if (ImGui::Checkbox("Is Main Camera", &isMain))
+        {
+            cameraComp->SetMainCamera(isMain);
+        }
+
+        ImGui::Text("FBO:");
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(0.0f, 0.7f, 0.9f, 1.0f), "%dx", cameraComp->GetLens()->fboID);
+
+        ImVec2 viewportSize = ImGui::GetContentRegionAvail();
+        viewportSize.y = viewportSize.x / cameraComp->GetLens()->GetAspectRatio();
+        ImVec2 winPos = ImGui::GetCursorScreenPos();
+        unsigned int textureID = cameraComp->GetLens()->textureID;
+
         ImGui::Separator();
-
-        float fov = cameraComp->GetFov();
-        if (ImGui::SliderFloat("Field of View", &fov, 20.0f, 120.0f, "%.1f"))
-        {
-            cameraComp->SetFov(fov);
-            LOG_DEBUG("Camera FOV set to: %.1f", fov);
-        }
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Camera field of view in degrees");
-
-        ImGui::Spacing();
-
-        float nearPlane = cameraComp->GetNearPlane();
-        float farPlane = cameraComp->GetFarPlane();
-
-        if (ImGui::DragFloat("Near Plane", &nearPlane, 0.01f, 0.01f, 10.0f, "%.2f"))
-        {
-            cameraComp->SetNearPlane(nearPlane);
-            LOG_DEBUG("Camera near plane set to: %.2f", nearPlane);
-        }
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Near clipping plane distance");
-
-        if (ImGui::DragFloat("Far Plane", &farPlane, 1.0f, 10.0f, 1000.0f, "%.1f"))
-        {
-            cameraComp->SetFarPlane(farPlane);
-            LOG_DEBUG("Camera far plane set to: %.1f", farPlane);
-        }
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Far clipping plane distance");
-
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
-        ImGui::Separator();
-
-        ImGui::Text("Optimization Settings");
-
-        bool frustumEnabled = cameraComp->IsFrustumCullingEnabled();
-        if (ImGui::Checkbox("Enable Frustum Culling", &frustumEnabled))
-        {
-            cameraComp->SetFrustumCulling(frustumEnabled);
-            LOG_DEBUG("Frustum culling %s for camera: %s",
-                frustumEnabled ? "enabled" : "disabled",
-                component->owner->GetName().c_str());
-            LOG_CONSOLE("Frustum culling %s for %s",
-                frustumEnabled ? "enabled" : "disabled",
-                component->owner->GetName().c_str());
-        }
-
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::BeginTooltip();
-            ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "Frustum Culling");
-            ImGui::Separator();
-            ImGui::Text("When enabled, objects outside the camera's");
-            ImGui::Text("view frustum will not be rendered.");
-            ImGui::Spacing();
-            ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "Benefits:");
-            ImGui::BulletText("Better performance in large scenes");
-            ImGui::BulletText("Reduces GPU workload");
-            ImGui::Spacing();
-            ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "Status:");
-            ImGui::BulletText(frustumEnabled ? "Objects outside view are HIDDEN" : "All objects are RENDERED");
-            ImGui::EndTooltip();
-        }
-
-        ImGui::Spacing();
-
-        bool drawFrustum = cameraComp->ShouldDrawFrustum();
-        if (ImGui::Checkbox("Draw Frustum Gizmo", &drawFrustum))
-        {
-            cameraComp->SetDrawFrustum(drawFrustum);
-            LOG_DEBUG("Frustum visualization %s for camera: %s",
-                drawFrustum ? "enabled" : "disabled",
-                component->owner->GetName().c_str());
-            LOG_CONSOLE("Frustum gizmo %s for %s",
-                drawFrustum ? "enabled" : "disabled",
-                component->owner->GetName().c_str());
-        }
-
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::BeginTooltip();
-            ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "Frustum Visualization");
-            ImGui::Separator();
-            ImGui::Text("Shows the camera's view frustum as a wireframe");
-            ImGui::Text("in the 3D viewport.");
-            ImGui::Spacing();
-            ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "Color Coding:");
-            ImGui::BulletText("Green: Active camera");
-            ImGui::BulletText("Yellow: Inactive cameras");
-            ImGui::Spacing();
-            ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f), "Tip:");
-            ImGui::Text("Use this to debug what each camera sees");
-            ImGui::EndTooltip();
-        }
-
-        ImGui::Spacing();
-
-        if (frustumEnabled)
-        {
-            ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "? Culling Active");
-            if (drawFrustum)
-            {
-                ImGui::SameLine();
-                ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "| ?? Frustum Visible");
-            }
-        }
-        else
-        {
-            ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.2f, 1.0f), "? Culling Disabled");
-            if (drawFrustum)
-            {
-                ImGui::SameLine();
-                ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "| ?? Frustum Visible");
-            }
-        }
-
-        ImGui::Spacing();
-        ImGui::Separator();
+        ImGui::Image((ImTextureID)(intptr_t)textureID, viewportSize, ImVec2(0, 1), ImVec2(1, 0));
     }
 }
 

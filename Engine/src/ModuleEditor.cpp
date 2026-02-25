@@ -98,25 +98,6 @@ bool ModuleEditor::PreUpdate()
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
 
-    if (sceneWindow)
-    {
-        ImVec2 oldSize = sceneViewportSize;
-        sceneViewportPos = sceneWindow->GetViewportPos();
-        sceneViewportSize = sceneWindow->GetViewportSize();
-
-        // Update camera aspect ratio when viewport size changes
-        if (sceneViewportSize.x > 0 && sceneViewportSize.y > 0 &&
-            (oldSize.x != sceneViewportSize.x || oldSize.y != sceneViewportSize.y))
-        {
-            float sceneAspect = sceneViewportSize.x / sceneViewportSize.y;
-            ComponentCamera* editorCamera = Application::GetInstance().camera->GetEditorCamera();
-            if (editorCamera)
-            {
-                editorCamera->SetAspectRatio(sceneAspect);
-            }
-        }
-    }
-
     return true;
 }
 
@@ -165,7 +146,6 @@ bool ModuleEditor::Update()
         DrawAboutWindow();
     }
 
-
     HandleDeleteKey();
 
 
@@ -175,20 +155,6 @@ bool ModuleEditor::Update()
         ImVec2 oldSize = sceneViewportSize;
         sceneViewportPos = sceneWindow->GetViewportPos();
         sceneViewportSize = sceneWindow->GetViewportSize();
-
-        // Update camera aspect ratio when viewport size changes
-        if (sceneViewportSize.x > 0 && sceneViewportSize.y > 0 &&
-            (oldSize.x != sceneViewportSize.x || oldSize.y != sceneViewportSize.y))
-        {
-            float sceneAspect = sceneViewportSize.x / sceneViewportSize.y;
-            ComponentCamera* editorCamera = Application::GetInstance().camera->GetEditorCamera();
-            if (editorCamera)
-            {
-                editorCamera->SetAspectRatio(sceneAspect);
-                LOG_DEBUG("Updated camera aspect ratio to %.3f (viewport: %.0fx%.0f)",
-                    sceneAspect, sceneViewportSize.x, sceneViewportSize.y);
-            }
-        }
     }
 
     if (gameWindow)
@@ -372,31 +338,6 @@ void ModuleEditor::ShowMenuBar()
             ImGui::EndMenu();
         }
 
-        if (ImGui::BeginMenu("Camera"))
-        {
-            if (ImGui::MenuItem("Create Camera"))
-            {
-                Application& app = Application::GetInstance();
-                GameObject* cameraGO = app.scene->CreateGameObject("Camera");
-
-                ComponentCamera* editorCam = app.camera->GetEditorCamera();
-                if (editorCam && editorCam->owner)
-                {
-                    Transform* editorTransform = static_cast<Transform*>(editorCam->owner->GetComponent(ComponentType::TRANSFORM));
-                    Transform* newCameraTransform = static_cast<Transform*>(cameraGO->GetComponent(ComponentType::TRANSFORM));
-
-                    if (editorTransform && newCameraTransform)
-                    {
-                        newCameraTransform->SetPosition(editorTransform->GetPosition());
-                        newCameraTransform->SetRotationQuat(editorTransform->GetRotationQuat());
-                    }
-                }
-
-                ComponentCamera* sceneCamera = static_cast<ComponentCamera*>(cameraGO->CreateComponent(ComponentType::CAMERA));
-            }
-
-            ImGui::EndMenu();
-        }
 
         if (ImGui::BeginMenu("GameObject"))
         {

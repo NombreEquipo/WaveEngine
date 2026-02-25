@@ -68,8 +68,6 @@ public:
     Shader* GetOutlineShader() const { return outlineShader.get(); }
     Shader* GetLineShader() const { return lineShader.get(); }
 
-    ComponentCamera* GetCamera();
-
     // Render configuration
     bool IsDepthTestEnabled() const { return depthTestEnabled; }
     void SetDepthTest(bool enabled);

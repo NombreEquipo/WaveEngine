@@ -854,11 +854,6 @@ void Renderer::ApplyRenderSettings()
     SetCullFaceMode(cullFaceMode);
 }
 
-ComponentCamera* Renderer::GetCamera() {
-    return Application::GetInstance().camera->GetActiveCamera();
-}
-
-
 void Renderer::DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color)
 {
     linesList.push_back({ start, end, color });

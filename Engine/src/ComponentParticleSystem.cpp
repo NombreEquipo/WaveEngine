@@ -100,7 +100,7 @@ void ComponentParticleSystem::Draw(ComponentCamera* camera) {
     }
     // In WORLD, we don't apply the object's matrix Identity, because particles already have absolute world positions calculated in Update()
     // Draw particles
-    emitter->Draw(camera->GetPosition());
+    emitter->Draw(camera->owner->transform->GetGlobalPosition());
 }
 
 void ComponentParticleSystem::OnEditor() {
