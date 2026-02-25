@@ -514,9 +514,8 @@ void ModuleEditor::ShowMenuBar()
 
         if (centerOnPaste)
         {
-            ImGui::DragFloat("Paste Distance", &pasteDistance, 0.1f);
+            ImGui::DragFloat("Paste Distance", &pasteDistance, 0.1f, 1.0f, 100.0f);
             ImGui::SameLine();
-            if (pasteDistance <= 1.0f) pasteDistance = 1.0f;
         }
 
         ImGui::EndMenuBar();

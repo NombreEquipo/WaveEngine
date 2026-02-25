@@ -26,6 +26,8 @@
 #include "ModuleEditor.h"
 #include "ComponentCommand.h"
 #include "ComponentStateCommand.h"
+#include "CreateCommand.h"
+#include "DeleteCommand.h"
 
 #include "Log.h"
 #include "ComponentScript.h"
@@ -49,7 +51,17 @@ static void DrawComponentContextMenu(Component* component, bool canRemove = true
         bool canPaste = (copiedComponentType == component->GetType() && !copiedComponentData.empty());
         if (ImGui::MenuItem("Paste Component Values", nullptr, false, canPaste))
         {
+            nlohmann::json before;
+            component->Serialize(before);
             component->Deserialize(copiedComponentData);
+            nlohmann::json after;
+            component->Serialize(after);
+            if (before != after)
+            {
+                Application::GetInstance().editor->GetCommandHistory()->ExecuteCommand(
+                    std::make_unique<ComponentStateCommand>(component, before, after)
+                );
+            }
         }
 
         if (canRemove)
@@ -884,11 +896,12 @@ bool InspectorWindow::DrawGameObjectSection(GameObject* selectedObject)
         {
             if (selectedObject != Application::GetInstance().scene->GetRoot())
             {
-                selectedObject->MarkForDeletion();
+                Application::GetInstance().selectionManager->ClearSelection();
+                Application::GetInstance().editor->GetCommandHistory()->ExecuteCommand(
+                    std::make_unique<DeleteCommand>(selectedObject)
+                );
                 LOG_DEBUG("GameObject '%s' marked for deletion", selectedObject->GetName().c_str());
                 LOG_CONSOLE("GameObject '%s' marked for deletion", selectedObject->GetName().c_str());
-
-                Application::GetInstance().selectionManager->ClearSelection();
                 objectDeleted = true;
             }
             else
@@ -920,7 +933,9 @@ bool InspectorWindow::DrawGameObjectSection(GameObject* selectedObject)
         {
             GameObject* newChild = Application::GetInstance().scene->CreateGameObject("Empty");
             newChild->SetParent(selectedObject);
-
+            Application::GetInstance().editor->GetCommandHistory()->ExecuteCommand(
+                std::make_unique<CreateCommand>(newChild)
+            );
             Application::GetInstance().selectionManager->SetSelectedObject(newChild);
 
             LOG_DEBUG("Created empty child for '%s'", selectedObject->GetName().c_str());
