@@ -212,13 +212,33 @@ void ModuleNavMesh::DrawDebug() {
 
                         if (!IsBlockedByObstacle(quadMin, quadMax))
                         {
-                            glm::vec4 navColor = { 0, 1, 0, 1 };
-
-                            glm::vec3 p1 = { fx,          GetCornerHeight(x,   y,   span->smax), fz };
-                            glm::vec3 p2 = { fx + hf->cs, GetCornerHeight(x + 1, y,   span->smax), fz };
+                            glm::vec3 p1 = { fx,          GetCornerHeight(x,     y,     span->smax), fz };
+                            glm::vec3 p2 = { fx + hf->cs, GetCornerHeight(x + 1, y,     span->smax), fz };
                             glm::vec3 p3 = { fx + hf->cs, GetCornerHeight(x + 1, y + 1, span->smax), fz + hf->cs };
-                            glm::vec3 p4 = { fx,          GetCornerHeight(x,   y + 1, span->smax), fz + hf->cs };
+                            glm::vec3 p4 = { fx,          GetCornerHeight(x,     y + 1, span->smax), fz + hf->cs };
 
+                            // ── Calcular el ángulo máximo de la celda ────────────────────────────
+                            // Comprobamos las dos diagonales y los 4 bordes del quad
+                            float diag = hf->cs * glm::sqrt(2.0f);
+                            float maxDeltaH = 0.0f;
+                            maxDeltaH = glm::max(maxDeltaH, glm::abs(p1.y - p2.y)); // borde N
+                            maxDeltaH = glm::max(maxDeltaH, glm::abs(p2.y - p3.y)); // borde E
+                            maxDeltaH = glm::max(maxDeltaH, glm::abs(p3.y - p4.y)); // borde S
+                            maxDeltaH = glm::max(maxDeltaH, glm::abs(p4.y - p1.y)); // borde W
+                            maxDeltaH = glm::max(maxDeltaH, glm::abs(p1.y - p3.y)); // diagonal
+                            maxDeltaH = glm::max(maxDeltaH, glm::abs(p2.y - p4.y)); // diagonal
+
+                            // atan2 con la horizontal más corta (borde) para ser conservadores
+                            float cellAngle = glm::degrees(glm::atan(maxDeltaH, hf->cs));
+
+                            if (cellAngle > maxSlopeAngle)
+                            {
+                                // Aplanar: todos los vértices a la altura central de la celda
+                                float flatY = hf->bmin[1] + span->smax * hf->ch;
+                                p1.y = p2.y = p3.y = p4.y = flatY;
+                            }
+
+                            glm::vec4 navColor = { 0, 1, 0, 1 };
                             Application::GetInstance().renderer->DrawLine(p1, p2, navColor);
                             Application::GetInstance().renderer->DrawLine(p2, p3, navColor);
                             Application::GetInstance().renderer->DrawLine(p3, p4, navColor);

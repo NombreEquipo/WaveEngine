@@ -28,6 +28,8 @@ public:
     void DrawDebug();
     void RemoveNavMesh(GameObject* obj);
 
+    float maxSlopeAngle = 0.0f;
+
 
 private:
 
