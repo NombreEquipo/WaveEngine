@@ -450,6 +450,8 @@ void ModuleEditor::ShowMenuBar()
             if (ImGui::MenuItem("Create Empty"))
             {
                 GameObject* empty = Application::GetInstance().scene->CreateGameObject("GameObject");
+                commandHistory->ExecuteCommand(std::make_unique<CreateCommand>(empty));
+
                 Application::GetInstance().selectionManager->SetSelectedObject(empty);
             }
             
@@ -493,16 +495,29 @@ void ModuleEditor::ShowMenuBar()
             }
             ImGui::EndMenu();
         }
+
+        ImGui::Separator();
         ImGui::Checkbox("Snap", &sceneWindow.get()->snapEnabled);
         ImGui::PushItemWidth(80);
         ImGui::DragFloat("Position", &sceneWindow.get()->positionSnap, 0.1f);
         ImGui::SameLine();
-        ImGui::Checkbox("Center On Paste", &centerOnPaste);
-        ImGui::SameLine();
+        ImGui::PushItemWidth(80);
         ImGui::DragFloat("Rotation", &sceneWindow.get()->rotationSnap, 0.1f);
         ImGui::SameLine();
         ImGui::DragFloat("Scale", &sceneWindow.get()->scaleSnap, 0.1f);
         ImGui::PopItemWidth();
+
+        ImGui::Separator();
+        ImGui::PushItemWidth(80);
+        ImGui::Checkbox("Center On Paste", &centerOnPaste);
+        ImGui::SameLine();
+
+        if (centerOnPaste)
+        {
+            ImGui::DragFloat("Paste Distance", &pasteDistance, 0.1f);
+            ImGui::SameLine();
+            if (pasteDistance <= 1.0f) pasteDistance = 1.0f;
+        }
 
         ImGui::EndMenuBar();
     }
@@ -1066,7 +1081,7 @@ void ModuleEditor::HandleCopyPaste()
             {
                 glm::vec3 camPos = editorCam->GetPosition();
                 glm::vec3 camForward = editorCam->GetFront();
-                centerPos = camPos + camForward * 10.0f;
+                centerPos = camPos + camForward * pasteDistance;
             }
         }
 
