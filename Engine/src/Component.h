@@ -49,7 +49,9 @@ public:
     virtual void Update() {};
     virtual void FixedUpdate() {};
     virtual void Disable() {};
+    
     virtual void OnEditor() {};
+    void DrawRemoveComponentPopup();
 
     // Serialization
     virtual void Serialize(nlohmann::json& componentObj) const {};
@@ -69,5 +71,7 @@ public:
     GameObject* owner;
     ComponentType type;
     bool active = true;
+    bool markedForRemoval = false;
+
     std::string name;
 };
