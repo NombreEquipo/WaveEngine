@@ -345,26 +345,42 @@ bool Renderer::PostUpdate()
 {
     bool ret = true;
 
+#ifndef WAVE_GAME
     for (CameraLens* camera : activeCameras)
     {
         RenderScene(camera);
     }
 
-    int width = 0;
-    int height = 0;
-
+    int width = 0, height = 0;
     Application::GetInstance().window->GetWindowSize(width, height);
-
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, width, height);
-
     glDisable(GL_SCISSOR_TEST);
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+#else
+    auto* cameraModule = Application::GetInstance().camera.get();
+    if (cameraModule)
+    {
+        ComponentCamera* mainCam = cameraModule->GetMainCamera();
+        if (mainCam)
+        {
+            CameraLens* mainLens = mainCam->GetLens();
+            if (mainLens)
+            {
+                GLuint savedFBO = mainLens->fboID;
+                mainLens->fboID = 0;
+
+                RenderScene(mainLens);
+
+                mainLens->fboID = savedFBO;
+            }
+        }
+    }
+#endif
 
     return ret;
 }
-
 
 bool Renderer::RenderScene(CameraLens* camera)
 {
