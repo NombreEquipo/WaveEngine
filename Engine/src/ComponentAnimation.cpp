@@ -325,6 +325,8 @@ void ComponentAnimation::Serialize(nlohmann::json& componentObj) const
 
         animationsArray.push_back(animNode);
     }
+
+    componentObj["Animations"] = animationsArray;
 }
 
 void ComponentAnimation::Deserialize(const nlohmann::json& componentObj)

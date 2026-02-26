@@ -225,9 +225,6 @@ void ModuleScene::CleanupMarkedObjects(GameObject* parent)
     {
         if (child->IsMarkedForDeletion())
         {
-            // Scene Camera
-            Application::GetInstance().selectionManager->RemoveFromSelection(child);
-
             parent->RemoveChild(child);
             delete child;
 
@@ -315,6 +312,9 @@ bool ModuleScene::LoadScene(const std::string& filepath)
             }
         }
     }
+
+    if (root) 
+        root->SolveReferences();
 
     // Force full rebuild after loading scene
     needsOctreeRebuild = true;

@@ -3,6 +3,7 @@
 
 #include <imgui.h>
 #include "Application.h"
+#include "ModuleEvents.h"
 #include "GameObject.h"
 #include "SelectionManager.h"
 #include "Transform.h"
@@ -41,8 +42,12 @@
 InspectorWindow::InspectorWindow()
     : EditorWindow("Inspector")
 {
-
+    Application::GetInstance().events.get()->Subscribe(Event::Type::GameObjectDestroyed, this);
   
+}
+InspectorWindow::~InspectorWindow()
+{
+    Application::GetInstance().events.get()->UnsubscribeAll(this);
 }
 
 void InspectorWindow::Draw()
@@ -62,7 +67,29 @@ void InspectorWindow::Draw()
         return;
     }
 
-    GameObject* selectedObject = selectionManager->GetSelectedObject();
+    std::string lockText = "Lock";
+
+    int size = ImGui::CalcTextSize(lockText.c_str()).x + ImGui::GetFrameHeight();
+    int startWidth = ImGui::GetContentRegionAvail().x - size;
+
+    ImGui::SetCursorPosX(startWidth);
+    ImGui::Text(lockText.c_str());
+    ImGui::SameLine();
+    if (ImGui::Checkbox("##LockInspector", &inspectorLocked))
+    {
+        if (inspectorLocked)
+        {
+            lockedObject = Application::GetInstance().selectionManager->GetSelectedObject();
+        }
+    }
+
+    ImGui::Spacing();
+
+    GameObject* selectedObject = nullptr;
+
+    if (inspectorLocked) selectedObject = lockedObject;
+    else selectedObject = selectionManager->GetSelectedObject();
+
 
     if (selectedObject == nullptr || selectedObject->IsMarkedForDeletion())
     {
@@ -1875,5 +1902,21 @@ void InspectorWindow::DrawAddComponentButton(GameObject* selectedObject)
         }
 
         ImGui::EndPopup();
+    }
+}
+
+void InspectorWindow::OnEvent(const Event& event)
+{
+    switch (event.type)
+    {
+    case Event::Type::GameObjectDestroyed:
+        if (lockedObject = event.data.gameObject.gameObject)
+        {
+            inspectorLocked = false;
+            lockedObject = nullptr;
+        }
+        break;
+    default:
+        break;
     }
 }

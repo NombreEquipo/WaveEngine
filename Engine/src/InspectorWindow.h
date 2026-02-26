@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EditorWindow.h"
+#include "EventListener.h"
 
 #include <imgui.h>  
 #include <ImGuizmo.h>
@@ -9,11 +10,11 @@
 
 class GameObject;
 
-class InspectorWindow : public EditorWindow
+class InspectorWindow : public EditorWindow, public EventListener
 {
 public:
     InspectorWindow();
-    ~InspectorWindow() override = default;
+    ~InspectorWindow() override;
 
     void Draw() override;
 
@@ -26,6 +27,8 @@ public:
 
     bool ShouldShowVertexNormals() const { return showVertexNormals; }
     bool ShouldShowFaceNormals() const { return showFaceNormals; }
+
+    void OnEvent(const Event& event);
 
 private:
     bool DrawGameObjectSection(GameObject* selectedObject);
@@ -74,4 +77,6 @@ private:
     bool showVertexNormals = false;
     bool showFaceNormals = false;
 
+    bool inspectorLocked = false;
+    GameObject* lockedObject;
 };

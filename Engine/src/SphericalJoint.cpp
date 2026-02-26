@@ -8,6 +8,7 @@
 SphericalJoint::SphericalJoint(GameObject* owner) : Joint(owner)
 {
     name = "Spherical Joint";
+    type = ComponentType::SPHERICAL_JOINT;
     RefreshJoint();
 }
 

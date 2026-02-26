@@ -1,4 +1,5 @@
 #include "SelectionManager.h"
+#include "ModuleEvents.h"
 #include "GameObject.h"
 #include "Log.h"
 
@@ -79,4 +80,21 @@ bool SelectionManager::IsSelected(GameObject* obj) const
 {
 	if (obj) return obj->IsSelected();
 	return false;
+}
+
+void SelectionManager::OnEvent(const Event& event)
+{
+	switch (event.type)
+	{
+	case Event::Type::GameObjectDestroyed:
+	{
+		GameObject* deletedObject = event.data.gameObject.gameObject;
+
+		RemoveFromSelection(deletedObject);
+		break;
+	}
+
+	default:
+		break;
+	}
 }

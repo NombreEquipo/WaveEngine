@@ -1,4 +1,6 @@
-﻿#include "GameObject.h"
+﻿#include "Application.h"
+#include "ModuleEvents.h"
+#include "GameObject.h"
 #include "Globals.h"
 #include "Component.h"
 #include "Transform.h"
@@ -40,11 +42,15 @@ GameObject::~GameObject() {
     
     MarkCleaning();
 
-    components.clear();
-    componentOwners.clear();
+    for (auto* component : components) {
+        delete component;
+        component = nullptr;
+    }
 
+    components.clear();
     for (auto* child : children) {
         delete child;
+        child = nullptr;
     }
     children.clear();
 }
@@ -149,7 +155,6 @@ Component* GameObject::CreateComponent(ComponentType type) {
     }
 
     if (newComponent) {
-        componentOwners.push_back(std::unique_ptr<Component>(newComponent));
         components.push_back(newComponent);
     }
     
@@ -489,4 +494,10 @@ void GameObject::PublishGameObjectEvent(GameObjectEvent event, Component* newCom
             component->OnGameObjectEvent(event, newComponent);
         }
     }
+}
+
+void GameObject::MarkForDeletion()
+{
+    markedForDeletion = true;
+    Application::GetInstance().events.get()->PublishImmediate({Event::Type::GameObjectDestroyed, this });
 }

@@ -55,7 +55,7 @@ public:
 
 protected:
     
-    uint32_t bUID;
+    UID bUID;
 
     Rigidbody* bodyA = nullptr;
     Rigidbody* bodyB = nullptr;

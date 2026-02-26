@@ -56,7 +56,8 @@ void Joint::CleanUp()
 
 void Joint::SerializeBase(nlohmann::json& componentObj) const
 {
-    componentObj["BodyBUID"] = (bodyB && bodyB->owner) ? bodyB->owner->GetUID() : 0;
+    UID referedUID = (bodyB && bodyB->owner) ? bodyB->owner->GetUID() : (UID)0;
+    componentObj["BodyBUID"] = referedUID;
 
     componentObj["LocalPositionA"] = { localPosA.x, localPosA.y, localPosA.z };
     componentObj["LocalPositionB"] = { localPosB.x, localPosB.y, localPosB.z };
@@ -72,7 +73,9 @@ void Joint::SerializeBase(nlohmann::json& componentObj) const
 
 void Joint::DeserializeBase(const nlohmann::json& componentObj)
 {
-    bUID = componentObj.value("BodyBUID", 0);
+    bUID = 0;
+    if (componentObj.contains("BodyBUID"))
+        bUID = componentObj["BodyBUID"].get<UID>();
 
     if (componentObj.contains("LocalPositionA")) {
         auto p = componentObj["LocalPositionA"];

@@ -12,6 +12,7 @@ ConvexCollider::ConvexCollider(GameObject* owner) : Collider(owner) {
     
     name = "Convex Collider";
     cookedMesh = nullptr;
+    type = ComponentType::CONVEX_COLLIDER;
     CookMesh();
 }
 
@@ -42,7 +43,7 @@ void ConvexCollider::CookMesh() {
     
     ComponentMesh* meshRenderer = (ComponentMesh*)owner->GetComponent(ComponentType::MESH);
 
-    bool hasValidMesh = meshRenderer && meshRenderer->HasMesh() && !meshRenderer->GetNumVertices() == 0;
+    bool hasValidMesh = meshRenderer && meshRenderer->HasMesh() && meshRenderer->GetNumVertices() != 0;
 
     if (cookedMesh) {
         cookedMesh->release();

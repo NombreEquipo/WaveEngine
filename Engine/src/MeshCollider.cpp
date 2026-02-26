@@ -13,6 +13,7 @@ MeshCollider::MeshCollider(GameObject* owner) : Collider(owner) {
     
     name = "Mesh Collider";
     cookedMesh = nullptr;
+    type = ComponentType::MESH_COLLIDER;
     CookMesh();
 }
 

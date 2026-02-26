@@ -58,7 +58,7 @@ public:
     void SetSelected(bool b) { isSelected = b; };
     bool IsSelected() { return isSelected; };
 
-    void MarkForDeletion() { markedForDeletion = true; }
+    void MarkForDeletion();
     bool IsMarkedForDeletion() const { return markedForDeletion; }
     void MarkCleaning() { isCleaning = true; };
     bool IsCleaning() { return isCleaning; };
@@ -82,7 +82,6 @@ private:
     std::vector<GameObject*> children;
 
     std::vector<Component*> components;
-    std::vector<std::unique_ptr<Component>> componentOwners;
 
     bool markedForDeletion = false;
     bool isCleaning = false;

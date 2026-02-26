@@ -37,6 +37,7 @@ ModuleEditor::ModuleEditor() : Module()
 
 ModuleEditor::~ModuleEditor()
 {
+
 }
 
 bool ModuleEditor::Start()
