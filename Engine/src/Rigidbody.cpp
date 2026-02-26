@@ -118,7 +118,7 @@ void Rigidbody::CollectColliders(GameObject* obj, std::vector<Collider*>& list) 
             }
             else
             {
-                /*LOG(LogType::LOG_WARNING, "%s ignored on GameObject '%s': This collider type is only compatible with STATIC Rigidbodies.", collider->name.c_str(), owner->name.c_str());*/
+                LOG_CONSOLE("%s ignored on GameObject '%s': This collider type is only compatible with STATIC Rigidbodies.", collider->name.c_str(), owner->name.c_str());
             }
         }
     }
@@ -395,38 +395,46 @@ void Rigidbody::EnableSimulation(bool enable)
     }
 }
 
-//void Rigidbody::Save(Config& config)
-//{
-//    config.SetInt("Type", (int)type);
-//    config.SetFloat("Mass", mass);
-//    config.SetFloat("LinearDamping", linearDamping);
-//    config.SetFloat("AngularDamping", angularDamping);
-//    config.SetBool("UseGravity", useGravity);
-//    config.SetBool("UseCCD", useContiniusCollisionDetection);
-//    config.SetBool("FreezePosX", freezePosX);
-//    config.SetBool("FreezePosY", freezePosY);
-//    config.SetBool("FreezePosZ", freezePosZ);
-//    config.SetBool("FreezeRotX", freezeRotX);
-//    config.SetBool("FreezeRotY", freezeRotY);
-//    config.SetBool("FreezeRotZ", freezeRotZ);
-//}
-//
-//void Rigidbody::Load(Config& config)
-//{
-//    type = (Type)config.GetInt("Type");
-//    mass = config.GetFloat("Mass", 1.0f);
-//    linearDamping = config.GetFloat("LinearDamping");
-//    angularDamping = config.GetFloat("AngularDamping");
-//    useGravity = config.GetBool("UseGravity", true);
-//    useContiniusCollisionDetection = config.GetBool("UseCCD");
-//    freezePosX = config.GetBool("FreezePosX");
-//    freezePosY = config.GetBool("FreezePosY");
-//    freezePosZ = config.GetBool("FreezePosZ");
-//    freezeRotX = config.GetBool("FreezeRotX");
-//    freezeRotY = config.GetBool("FreezeRotY");
-//    freezeRotZ = config.GetBool("FreezeRotZ");
-//    CreateBody();
-//}
+void Rigidbody::Serialize(nlohmann::json& componentObj) const
+{
+    componentObj["Type"] = static_cast<int>(type);
+    componentObj["Mass"] = mass;
+    componentObj["LinearDamping"] = linearDamping;
+    componentObj["AngularDamping"] = angularDamping;
+    componentObj["UseGravity"] = useGravity;
+    componentObj["UseCCD"] = useContiniusCollisionDetection;
+
+    componentObj["FreezePos"] = { freezePosX, freezePosY, freezePosZ };
+    componentObj["FreezeRot"] = { freezeRotX, freezeRotY, freezeRotZ };
+}
+
+void Rigidbody::Deserialize(const nlohmann::json& componentObj)
+{
+    if (componentObj.contains("Type"))
+        type = static_cast<Type>(componentObj["Type"].get<int>());
+
+    mass = componentObj.value("Mass", 1.0f);
+    linearDamping = componentObj.value("LinearDamping", 0.0f);
+    angularDamping = componentObj.value("AngularDamping", 0.0f);
+    useGravity = componentObj.value("UseGravity", true);
+    useContiniusCollisionDetection = componentObj.value("UseCCD", false);
+
+    if (componentObj.contains("FreezePos")) {
+        auto fPos = componentObj["FreezePos"];
+        freezePosX = fPos[0];
+        freezePosY = fPos[1];
+        freezePosZ = fPos[2];
+    }
+
+    if (componentObj.contains("FreezeRot")) {
+        auto fRot = componentObj["FreezeRot"];
+        freezeRotX = fRot[0];
+        freezeRotY = fRot[1];
+        freezeRotZ = fRot[2];
+    }
+
+    CreateBody();
+}
 
 void Rigidbody::AddForce(const glm::vec3& force, ForceMode mode) {
     if (type == Type::DYNAMIC && actor) {

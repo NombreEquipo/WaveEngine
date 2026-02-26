@@ -133,25 +133,43 @@ void PrismaticJoint::SetMaxLimit(float m) {
     }
 }
 
-//void PrismaticJoint::Save(Config& config) {
-//    SaveBase(config);
-//    config.SetBool("LimitsEnabled", limitsEnabled);
-//    config.SetFloat("MinLimit", minLimit);
-//    config.SetFloat("MaxLimit", maxLimit);
-//    config.SetBool("SoftLimit", softLimitEnabled);
-//    config.SetFloat("Stiffness", stiffness);
-//    config.SetFloat("Damping", damping);
-//}
-//
-//void PrismaticJoint::Load(Config& config) {
-//    LoadBase(config);
-//    EnableLimits(config.GetBool("LimitsEnabled"));
-//    SetMinLimit(config.GetFloat("MinLimit", -5.0f));
-//    SetMaxLimit(config.GetFloat("MaxLimit", 5.0f));
-//    EnableSoftLimit(config.GetBool("SoftLimit"));
-//    SetStiffness(config.GetFloat("Stiffness"));
-//    SetDamping(config.GetFloat("Damping"));
-//}
+void PrismaticJoint::Serialize(nlohmann::json& componentObj) const
+{
+    SerializeBase(componentObj);
+
+    componentObj["Limits"] = {
+        {"Enabled", limitsEnabled},
+        {"Min", minLimit},
+        {"Max", maxLimit}
+    };
+
+    componentObj["SoftLimit"] = {
+        {"Enabled", softLimitEnabled},
+        {"Stiffness", stiffness},
+        {"Damping", damping}
+    };
+}
+
+void PrismaticJoint::Deserialize(const nlohmann::json& componentObj)
+{
+    DeserializeBase(componentObj);
+
+    if (componentObj.contains("Limits")) {
+        auto limits = componentObj["Limits"];
+        EnableLimits(limits.value("Enabled", false));
+        SetMinLimit(limits.value("Min", -5.0f));
+        SetMaxLimit(limits.value("Max", 5.0f));
+    }
+
+    if (componentObj.contains("SoftLimit")) {
+        auto soft = componentObj["SoftLimit"];
+        EnableSoftLimit(soft.value("Enabled", false));
+        SetStiffness(soft.value("Stiffness", 0.0f));
+        SetDamping(soft.value("Damping", 0.0f));
+    }
+
+    RefreshJoint();
+}
 
 void PrismaticJoint::OnEditor() {
 #ifndef WAVE_GAME

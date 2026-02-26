@@ -18,6 +18,7 @@
 #include "ComponentMesh.h"
 #include "Transform.h"           
 #include "ComponentCamera.h"   
+#include "EditorCamera.h"   
 #include "ComponentMaterial.h"
 
 #include "ConfigurationWindow.h"
@@ -38,6 +39,7 @@ ModuleEditor::ModuleEditor() : Module()
 
 ModuleEditor::~ModuleEditor()
 {
+
 }
 
 bool ModuleEditor::Start()
@@ -84,6 +86,10 @@ bool ModuleEditor::Start()
     assetsWindow = std::make_unique<AssetsWindow>();
     shaderEditorWindow = std::make_unique<ShaderEditorWindow>();
 
+    editorCamera = new EditorCamera();
+
+    Application::GetInstance().events->Subscribe(Event::Type::EventSDL, this);
+
     LOG_CONSOLE("Editor initialized");
 
     return true;
@@ -95,30 +101,14 @@ bool ModuleEditor::PreUpdate()
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
 
-    if (sceneWindow)
-    {
-        ImVec2 oldSize = sceneViewportSize;
-        sceneViewportPos = sceneWindow->GetViewportPos();
-        sceneViewportSize = sceneWindow->GetViewportSize();
-
-        // Update camera aspect ratio when viewport size changes
-        if (sceneViewportSize.x > 0 && sceneViewportSize.y > 0 &&
-            (oldSize.x != sceneViewportSize.x || oldSize.y != sceneViewportSize.y))
-        {
-            float sceneAspect = sceneViewportSize.x / sceneViewportSize.y;
-            ComponentCamera* editorCamera = Application::GetInstance().camera->GetEditorCamera();
-            if (editorCamera)
-            {
-                editorCamera->SetAspectRatio(sceneAspect);
-            }
-        }
-    }
-
     return true;
 }
 
 bool ModuleEditor::Update()
 {
+    if (editorCamera)
+        editorCamera->Update();
+
     // Create fullscreen dockspace window
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->Pos);
@@ -159,28 +149,15 @@ bool ModuleEditor::Update()
         DrawAboutWindow();
     }
 
-
     HandleDeleteKey();
+
+
 
     if (sceneWindow)
     {
         ImVec2 oldSize = sceneViewportSize;
         sceneViewportPos = sceneWindow->GetViewportPos();
         sceneViewportSize = sceneWindow->GetViewportSize();
-
-        // Update camera aspect ratio when viewport size changes
-        if (sceneViewportSize.x > 0 && sceneViewportSize.y > 0 &&
-            (oldSize.x != sceneViewportSize.x || oldSize.y != sceneViewportSize.y))
-        {
-            float sceneAspect = sceneViewportSize.x / sceneViewportSize.y;
-            ComponentCamera* editorCamera = Application::GetInstance().camera->GetEditorCamera();
-            if (editorCamera)
-            {
-                editorCamera->SetAspectRatio(sceneAspect);
-                LOG_DEBUG("Updated camera aspect ratio to %.3f (viewport: %.0fx%.0f)",
-                    sceneAspect, sceneViewportSize.x, sceneViewportSize.y);
-            }
-        }
     }
 
     if (gameWindow)
@@ -210,6 +187,11 @@ bool ModuleEditor::PostUpdate()
 
 bool ModuleEditor::CleanUp()
 {
+    Application::GetInstance().events->UnsubscribeAll(this);
+
+    delete editorCamera;
+    editorCamera = nullptr;
+
     LOG_DEBUG("Cleaning up Editor");
 
     // Save if auto save is enabled
@@ -366,31 +348,6 @@ void ModuleEditor::ShowMenuBar()
             ImGui::EndMenu();
         }
 
-        if (ImGui::BeginMenu("Camera"))
-        {
-            if (ImGui::MenuItem("Create Camera"))
-            {
-                Application& app = Application::GetInstance();
-                GameObject* cameraGO = app.scene->CreateGameObject("Camera");
-
-                ComponentCamera* editorCam = app.camera->GetEditorCamera();
-                if (editorCam && editorCam->owner)
-                {
-                    Transform* editorTransform = static_cast<Transform*>(editorCam->owner->GetComponent(ComponentType::TRANSFORM));
-                    Transform* newCameraTransform = static_cast<Transform*>(cameraGO->GetComponent(ComponentType::TRANSFORM));
-
-                    if (editorTransform && newCameraTransform)
-                    {
-                        newCameraTransform->SetPosition(editorTransform->GetPosition());
-                        newCameraTransform->SetRotationQuat(editorTransform->GetRotationQuat());
-                    }
-                }
-
-                ComponentCamera* sceneCamera = static_cast<ComponentCamera*>(cameraGO->CreateComponent(ComponentType::CAMERA));
-            }
-
-            ImGui::EndMenu();
-        }
 
         if (ImGui::BeginMenu("GameObject"))
         {
@@ -960,6 +917,46 @@ std::string ModuleEditor::OpenLoadFile(const std::string& defaultPath)
     }
 
     return ""; // User cancelled
+
+
+}
+
+
+void ModuleEditor::OnEvent(const Event& event)
+{
+    switch (event.type)
+    {
+    case Event::Type::EventSDL:
+    {
+        ImGui_ImplSDL3_ProcessEvent(event.data.event.event);
+        break;
+    }
+    case Event::Type::CastRay:
+    {
+        //startLastRay = event.data.ray.ray->origin;
+        //endLastRay = event.data.ray.ray->origin + (event.data.ray.ray->direction * 100.0f);
+        break;
+    }
+    case Event::Type::SceneCleared:
+    {
+        /*selectedGameObjects.clear();*/
+        break;
+    }
+    case Event::Type::GameObjectDestroyed:
+    {
+        /*GameObject* destroyedGO = event.data.gameObject.gameObject;
+
+        auto it = std::remove(selectedGameObjects.begin(), selectedGameObjects.end(), destroyedGO);
+
+        if (it != selectedGameObjects.end())
+        {
+            selectedGameObjects.erase(it, selectedGameObjects.end());
+        }
+        break;*/
+    }
+    default:
+        break;
+    }
 }
 
 std::string ModuleEditor::OpenFolderDialog()

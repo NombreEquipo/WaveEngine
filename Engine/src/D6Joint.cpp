@@ -127,30 +127,50 @@ void D6Joint::SetSwingLimit(float yAngle, float zAngle) {
     }
 }
 
-//void D6Joint::Save(Config& config) {
-//    SaveBase(config);
-//    for (int i = 0; i < 6; ++i)
-//    {
-//        std::string motionName = "Motion" + std::to_string(i);
-//        config.SetInt(motionName.c_str(), (int)motions[i]);
-//    }
-//    config.SetFloat("LinearLimit", linearLimit);
-//    config.SetFloat("TwistMin", twistMin); config.SetFloat("TwistMax", twistMax);
-//    config.SetFloat("SwingY", swingY); config.SetFloat("SwingZ", swingZ);
-//}
-//
-//void D6Joint::Load(Config& config) {
-//    LoadBase(config);
-//    for (int i = 0; i < 6; ++i)
-//    {
-//        std::string motionName = "Motion" + std::to_string(i);
-//        motions[i] = (physx::PxD6Motion::Enum)config.GetInt(motionName.c_str());
-//    }
-//    linearLimit = config.GetFloat("LinearLimit", 1.0f);
-//    twistMin = config.GetFloat("TwistMin", -45.0f); twistMax = config.GetFloat("TwistMax", 45.0f);
-//    swingY = config.GetFloat("SwingY", 45.0f); swingZ = config.GetFloat("SwingZ", 45.0f);
-//    RefreshJoint();
-//}
+void D6Joint::Serialize(nlohmann::json& componentObj) const
+{
+    SerializeBase(componentObj);
+
+    nlohmann::json motionsArray = nlohmann::json::array();
+    for (int i = 0; i < 6; ++i)
+    {
+        motionsArray.push_back(static_cast<int>(motions[i]));
+    }
+    componentObj["Motions"] = motionsArray;
+
+    componentObj["LinearLimit"] = linearLimit;
+    componentObj["TwistLimit"] = { twistMin, twistMax };
+    componentObj["SwingLimit"] = { swingY, swingZ };
+}
+
+void D6Joint::Deserialize(const nlohmann::json& componentObj)
+{
+    DeserializeBase(componentObj);
+
+    if (componentObj.contains("Motions") && componentObj["Motions"].is_array())
+    {
+        for (int i = 0; i < 6 && i < componentObj["Motions"].size(); ++i)
+        {
+            motions[i] = static_cast<physx::PxD6Motion::Enum>(componentObj["Motions"][i].get<int>());
+        }
+    }
+
+    linearLimit = componentObj.value("LinearLimit", 1.0f);
+
+    if (componentObj.contains("TwistLimit")) {
+        auto t = componentObj["TwistLimit"];
+        twistMin = t[0];
+        twistMax = t[1];
+    }
+
+    if (componentObj.contains("SwingLimit")) {
+        auto s = componentObj["SwingLimit"];
+        swingY = s[0];
+        swingZ = s[1];
+    }
+
+    RefreshJoint();
+}
 
 void D6Joint::OnEditor() {
 #ifndef WAVE_GAME

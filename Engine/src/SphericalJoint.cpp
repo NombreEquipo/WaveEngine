@@ -8,6 +8,7 @@
 SphericalJoint::SphericalJoint(GameObject* owner) : Joint(owner)
 {
     name = "Spherical Joint";
+    type = ComponentType::SPHERICAL_JOINT;
     RefreshJoint();
 }
 
@@ -79,17 +80,27 @@ void SphericalJoint::SetConeLimit(float angle) {
     }
 }
 
-//void SphericalJoint::Save(Config& config) {
-//    SaveBase(config);
-//    config.SetBool("LimitsEnabled", limitsEnabled);
-//    config.SetFloat("LimitAngle", limitAngle);
-//}
-//
-//void SphericalJoint::Load(Config& config) {
-//    LoadBase(config);
-//    EnableLimits(config.GetBool("LimitsEnabled"));
-//    SetConeLimit(config.GetFloat("LimitAngle", 45.0f));
-//}
+void SphericalJoint::Serialize(nlohmann::json& componentObj) const
+{
+    SerializeBase(componentObj);
+
+    componentObj["ConeLimit"] = {
+        {"Enabled", limitsEnabled},
+        {"Angle", limitAngle}
+    };
+}
+
+void SphericalJoint::Deserialize(const nlohmann::json& componentObj)
+{
+    DeserializeBase(componentObj);
+
+    if (componentObj.contains("ConeLimit")) {
+        auto cone = componentObj["ConeLimit"];
+        EnableLimits(cone.value("Enabled", false));
+
+        SetConeLimit(cone.value("Angle", 45.0f));
+    }
+}
 
 void SphericalJoint::OnEditor() {
 #ifndef WAVE_GAME
@@ -115,7 +126,6 @@ void SphericalJoint::OnEditor() {
 void SphericalJoint::DrawDebug() {
     if (!bodyA || !pxJoint) return;
 
-    // 1. Marco de REFERENCIA (Fijo - Body B)
     physx::PxTransform poseRef = (bodyB) ? bodyB->GetActor()->getGlobalPose() : physx::PxTransform(physx::PxIdentity);
     physx::PxTransform localRef = pxJoint->getLocalPose(physx::PxJointActorIndex::eACTOR1);
     physx::PxTransform worldRef = poseRef.transform(localRef);

@@ -61,13 +61,17 @@ void FixedJoint::CreateJoint() {
     pxJoint->setBreakForce(breakForce, breakTorque);
 }
 
-//void FixedJoint::Save(Config& config) {
-//    SaveBase(config);
-//}
-//
-//void FixedJoint::Load(Config& config) {
-//    LoadBase(config);
-//}
+void FixedJoint::Serialize(nlohmann::json& componentObj) const
+{
+    SerializeBase(componentObj);
+}
+
+void FixedJoint::Deserialize(const nlohmann::json& componentObj)
+{
+    DeserializeBase(componentObj);
+
+    RefreshJoint();
+}
 
 void FixedJoint::OnEditor() {
 #ifndef WAVE_GAME

@@ -43,18 +43,24 @@ void SphereCollider::OnEditor()
 #endif
 }
 
-//void SphereCollider::Save(Config& config)
-//{
-//    SaveBase(config);
-//    config.SetFloat("Radius", radius);
-//}
-//
-//void SphereCollider::Load(Config& config)
-//{
-//    LoadBase(config);
-//    SetRadius(config.GetFloat("Radius", 1.0f));
-//    
-//}
+void SphereCollider::Serialize(nlohmann::json& componentObj) const
+{
+    SerializeBase(componentObj);
+
+    componentObj["Radius"] = radius;
+}
+
+void SphereCollider::Deserialize(const nlohmann::json& componentObj)
+{
+    DeserializeBase(componentObj);
+
+    SetRadius(componentObj.value("Radius", 1.0f));
+
+    Rigidbody* rb = static_cast<Rigidbody*>(owner->GetComponentInParent(ComponentType::RIGIDBODY));
+    if (rb) {
+        rb->CreateBody();
+    }
+}
 
 void SphereCollider::SetRadius(float radius)
 {

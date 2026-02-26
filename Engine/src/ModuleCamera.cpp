@@ -5,125 +5,45 @@
 #include "Input.h"
 #include "Window.h"
 
-ModuleCamera::ModuleCamera() : 
-    Module(),
-    editorCameraGO(nullptr),
-    editorCamera(nullptr),
-    sceneCamera(nullptr),
-    useEditorCamera(true)
+ModuleCamera::ModuleCamera() :
+    Module()
 {
+    name = "Camera";
+    mainCamera = nullptr;
 }
 
 ModuleCamera::~ModuleCamera()
 {
+
 }
 
-bool ModuleCamera::Start()
-{
-    LOG_DEBUG("Initializing Camera Module");
-
-    editorCameraGO = new GameObject("Editor Camera");
-
-    // Set initial position for editorcamera
-    Transform* transform = static_cast<Transform*>(editorCameraGO->GetComponent(ComponentType::TRANSFORM));
-    if (transform)
-    {
-        transform->SetPosition(glm::vec3(0.0f, 1.5f, 10.0f));
-    }
-
-    editorCamera = static_cast<ComponentCamera*>(editorCameraGO->CreateComponent(ComponentType::CAMERA));
-
-    // Set aspect ratio from window
-    Application& app = Application::GetInstance();
-    int width, height;
-    app.window->GetWindowSize(width, height);
-
-    if (editorCamera && height > 0)
-    {
-        float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
-        editorCamera->SetAspectRatio(aspectRatio);
-    }
-
-    LOG_DEBUG("Camera Module initialized");
-    return true;
+void ModuleCamera::AddCamera(ComponentCamera* cam) {
+    
+    cameras.push_back(cam);
 }
 
-bool ModuleCamera::Update()
+void ModuleCamera::RemoveCamera(ComponentCamera* cam)
 {
-    Application& app = Application::GetInstance();
+    auto it = std::find(cameras.begin(), cameras.end(), cam);
 
-    int width, height;
-    app.window->GetWindowSize(width, height);
-
-    ComponentCamera* activeCamera = GetActiveCamera();
-    if (activeCamera && height > 0)
+    if (it != cameras.end())
     {
-        float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
-        if (aspectRatio != activeCamera->GetAspectRatio())
-        {
-            activeCamera->SetAspectRatio(aspectRatio);
-        }
+        cameras.erase(it);
+        LOG_DEBUG("Camera removed from ModuleCamera");
     }
-
-    if (useEditorCamera)
-    {
-        HandleEditorControls();
-    }
-
-    // Update active camera
-    if (activeCamera)
-    {
-        activeCamera->Update();
-    }
-
-	// Update scene camera if different from active
-    if (sceneCamera && sceneCamera != activeCamera && sceneCamera->owner)
-    {
-        sceneCamera->Update();
-    }
-
-    return true;
 }
 
 bool ModuleCamera::CleanUp()
 {
     LOG_DEBUG("Cleaning up Camera Module");
 
-    if (editorCameraGO)
-    {
-        delete editorCameraGO;
-        editorCameraGO = nullptr;
-        editorCamera = nullptr;
-    }
-
-    sceneCamera = nullptr;
+    cameras.clear();
+    mainCamera = nullptr;
 
     return true;
 }
 
-ComponentCamera* ModuleCamera::GetActiveCamera() const
+void ModuleCamera::SetMainCamera(ComponentCamera* camera)
 {
-    if (useEditorCamera)
-    {
-        return editorCamera;
-    }
-    else
-    {
-        return sceneCamera;
-    }
-}
-
-void ModuleCamera::HandleEditorControls()
-{
-    if (!editorCamera)
-        return;
-
-    Application& app = Application::GetInstance();
-
-    // Mouse wheel for zoom (scroll)
-    // This is already handled in Input.cpp
-
-    // Right mouse button - Handled in Input.cpp
-    // Middle mouse button - Handled in Input.cpp
-    // F key - Focus - Handled in Input.cpp
+    mainCamera = camera;
 }

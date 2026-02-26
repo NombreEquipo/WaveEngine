@@ -1,6 +1,6 @@
 #include "Input.h"
-#include "Window.h"
 #include "Application.h"
+/*
 #include <iostream>
 #ifndef WAVE_GAME
 #include "imgui.h"
@@ -12,24 +12,25 @@
 #include "ComponentMesh.h"
 #include <limits>
 #include <SDL3/SDL_scancode.h>
+*/
+#include "Globals.h"
+#include "ModuleEvents.h"
 
-#define MAX_KEYS 300
+#include "Log.h"
+#include "glm/glm.hpp"
 
-Input* Input::instance = nullptr;
-
-Input::Input() : Module(), droppedFile(false), droppedFilePath(""), droppedFileType(DROPPED_NONE)
+Input::Input() : Module()
 {
+	name = "input";
+
 	keyboard = new KeyState[MAX_KEYS];
 	memset(keyboard, KEY_IDLE, sizeof(KeyState) * MAX_KEYS);
 	memset(mouseButtons, KEY_IDLE, sizeof(KeyState) * NUM_MOUSE_BUTTONS);
-
-	instance = this;
 }
 
 Input::~Input()
 {
-	delete[] keyboard;
-	instance = this;
+
 }
 
 bool Input::Awake()
@@ -37,10 +38,39 @@ bool Input::Awake()
 	bool ret = true;
 	SDL_Init(0);
 
-	if (SDL_InitSubSystem(SDL_INIT_EVENTS) < 0)
+	if (SDL_InitSubSystem(SDL_INIT_EVENTS | SDL_INIT_GAMEPAD) < 0)
 	{
-		ret = false;
+		LOG_DEBUG("SDL_EVENTS could not initialize! SDL_Error: %s\n", SDL_GetError());
+		return false;
 	}
+
+	int count = 0;
+	SDL_JoystickID* joysticks = SDL_GetJoysticks(&count);
+
+	if (joysticks && count > 0)
+	{
+		for (int i = 0; i < count; ++i)
+		{
+			SDL_JoystickID joystick_id = joysticks[i];
+
+			if (SDL_IsGamepad(joystick_id))
+			{
+				controller = SDL_OpenGamepad(joystick_id);
+				if (controller) {
+					const char* name = SDL_GetGamepadName(controller);
+					LOG_DEBUG("Gamepad connected: %s", name ? name : "Unknown");
+					break;
+				}
+			}
+		}
+	}
+
+
+	if (joysticks) {
+		SDL_free(joysticks);
+	}
+
+	scale = 1.0f;
 
 	return ret;
 }
@@ -63,13 +93,12 @@ bool IsMouseOverSceneWindow()
 bool Input::PreUpdate()
 {
 	static SDL_Event event;
-	const bool* keys = SDL_GetKeyboardState(NULL);
-
-	droppedFile = false;
-
-	for (int i = 0; i < MAX_KEYS; ++i)
+	int numKeys;
+	const bool* keys = SDL_GetKeyboardState(&numKeys);
+	mouseWheelY = 0;
+	for (int i = 0; i < MAX_KEYS && i < numKeys; ++i)
 	{
-		if (keys[i])
+		if (keys[i] == 1)
 		{
 			if (keyboard[i] == KEY_IDLE)
 				keyboard[i] = KEY_DOWN;
@@ -89,37 +118,45 @@ bool Input::PreUpdate()
 	{
 		if (mouseButtons[i] == KEY_DOWN)
 			mouseButtons[i] = KEY_REPEAT;
+
 		if (mouseButtons[i] == KEY_UP)
 			mouseButtons[i] = KEY_IDLE;
 	}
-	//For script text editor
-	SDL_StartTextInput(Application::GetInstance().window->GetWindow());
 
-	while (SDL_PollEvent(&event))
+	while (SDL_PollEvent(&event) != 0)
 	{
+/*
 #ifndef WAVE_GAME
 		ImGui_ImplSDL3_ProcessEvent(&event);
 #endif
+*/	
+		Application::GetInstance().events->PublishImmediate(Event(Event::Type::EventSDL, &event));
 
 		switch (event.type)
 		{
 		case SDL_EVENT_QUIT:
 			windowEvents[WE_QUIT] = true;
 			break;
+
 		case SDL_EVENT_WINDOW_HIDDEN:
 		case SDL_EVENT_WINDOW_MINIMIZED:
 		case SDL_EVENT_WINDOW_FOCUS_LOST:
 			windowEvents[WE_HIDE] = true;
 			break;
+
 		case SDL_EVENT_WINDOW_SHOWN:
 		case SDL_EVENT_WINDOW_FOCUS_GAINED:
 		case SDL_EVENT_WINDOW_MAXIMIZED:
+			break;
 		case SDL_EVENT_WINDOW_RESTORED:
 			windowEvents[WE_SHOW] = true;
 			break;
-		case SDL_EVENT_MOUSE_BUTTON_DOWN:
+	/*
+case SDL_EVENT_MOUSE_BUTTON_DOWN:
 		{
 			mouseButtons[event.button.button - 1] = KEY_DOWN;
+			break;
+		}
 
 #ifndef WAVE_GAME
 			ComponentCamera* camera = Application::GetInstance().camera->GetEditorCamera();
@@ -214,15 +251,23 @@ bool Input::PreUpdate()
 				camera->ResetPanInput();
 			}
 #endif
+*/
+		case SDL_EVENT_WINDOW_RESIZED:
+			Application::GetInstance().events->PublishImmediate(Event(Event::Type::WindowResize, event.window.data1, event.window.data2));
+			windowEvents[WE_SHOW] = true;
 			break;
-		}
+
+		case SDL_EVENT_MOUSE_BUTTON_DOWN:
+			mouseButtons[event.button.button - 1] = KEY_DOWN;
+			break;
+
 		case SDL_EVENT_MOUSE_BUTTON_UP:
 			mouseButtons[event.button.button - 1] = KEY_UP;
 			break;
 
 		case SDL_EVENT_MOUSE_MOTION:
 		{
-			int scale = Application::GetInstance().window.get()->GetScale();
+/*		int scale = Application::GetInstance().window.get()->GetScale();
 			mouseMotionX = static_cast<int>(event.motion.xrel / scale);
 			mouseMotionY = static_cast<int>(event.motion.yrel / scale);
 			mouseX = static_cast<int>(event.motion.x / scale);
@@ -260,32 +305,18 @@ bool Input::PreUpdate()
 				}
 			}
 #endif
+
 			break;
+*/	
+			mouseMotionX = event.motion.xrel / scale;
+			mouseMotionY = event.motion.yrel / scale;
+			mouseX = event.motion.x / scale;
+			mouseY = event.motion.y / scale;
 		}
-
-		case SDL_EVENT_DROP_FILE:
-			if (event.drop.data != nullptr)
-			{
-				droppedFilePath = event.drop.data;
-				droppedFile = true;
-
-				if (droppedFilePath.size() >= 4)
-				{
-					std::string extension = droppedFilePath.substr(droppedFilePath.size() - 4);
-					for (char& c : extension) c = tolower(c);
-
-					if (extension == ".fbx")
-						droppedFileType = DROPPED_FBX;
-					else if (extension == ".png" || extension == ".dds")
-						droppedFileType = DROPPED_TEXTURE;
-					else
-						droppedFileType = DROPPED_NONE;
-				}
-			}
-			break;
-
+		break;
 		case SDL_EVENT_MOUSE_WHEEL:
 		{
+			/*
 #ifndef WAVE_GAME
 			float mouseXf, mouseYf;
 			SDL_GetMouseState(&mouseXf, &mouseYf);
@@ -356,230 +387,98 @@ bool Input::PreUpdate()
 	if (keyboard[SDL_SCANCODE_F] == KEY_DOWN)
 	{
 		if (Application::GetInstance().selectionManager->HasSelection())
+		*/
+			mouseWheelY = event.wheel.y;
+			break;
+		case SDL_EVENT_DROP_FILE:
 		{
-			// Get all selected objects
-			const std::vector<GameObject*>& selectedObjects =
-				Application::GetInstance().selectionManager->GetSelectedObjects();
 
-			if (!selectedObjects.empty())
+			const char* filePath = event.drop.data;
+
+			LOG_DEBUG("File dropped in window: %s", filePath);
+
+			std::string filePathStr(filePath);
+			std::string extension = filePathStr.substr(filePathStr.find_last_of(".") + 1);
+
+			Application::GetInstance().events->PublishImmediate(Event(Event::Type::FileDropped, filePath));
+		}
+		break;
+
+		}
+	};
+
+	if (controller != nullptr)
+	{
+		for (int i = 0; i < MAX_GAMEPAD_BUTTONS; ++i)
+		{
+			bool isPressed = SDL_GetGamepadButton(controller, static_cast<SDL_GamepadButton>(i));
+
+			switch (gamepadButtons[i])
 			{
-				// Calculate combined AABB that encompasses all selected objects
-				glm::vec3 combinedMin(FLT_MAX);
-				glm::vec3 combinedMax(-FLT_MAX);
-				bool hasValidAABB = false;
-
-				for (GameObject* obj : selectedObjects)
-				{
-					if (!obj) continue;
-
-					ComponentMesh* mesh = static_cast<ComponentMesh*>(obj->GetComponent(ComponentType::MESH));
-					Transform* transform = static_cast<Transform*>(obj->GetComponent(ComponentType::TRANSFORM));
-
-					if (mesh && mesh->HasMesh() && transform)
-					{
-						glm::vec3 localMin = mesh->GetAABBMin();
-						glm::vec3 localMax = mesh->GetAABBMax();
-						glm::mat4 globalMatrix = transform->GetGlobalMatrix();
-
-						// Transform the 8 corners of the local AABB to world space
-						glm::vec3 corners[8] = {
-							glm::vec3(globalMatrix * glm::vec4(localMin.x, localMin.y, localMin.z, 1.0f)),
-							glm::vec3(globalMatrix * glm::vec4(localMax.x, localMin.y, localMin.z, 1.0f)),
-							glm::vec3(globalMatrix * glm::vec4(localMin.x, localMax.y, localMin.z, 1.0f)),
-							glm::vec3(globalMatrix * glm::vec4(localMax.x, localMax.y, localMin.z, 1.0f)),
-							glm::vec3(globalMatrix * glm::vec4(localMin.x, localMin.y, localMax.z, 1.0f)),
-							glm::vec3(globalMatrix * glm::vec4(localMax.x, localMin.y, localMax.z, 1.0f)),
-							glm::vec3(globalMatrix * glm::vec4(localMin.x, localMax.y, localMax.z, 1.0f)),
-							glm::vec3(globalMatrix * glm::vec4(localMax.x, localMax.y, localMax.z, 1.0f))
-						};
-
-						// Expand the AABB combined with all corners
-						for (int i = 0; i < 8; ++i)
-						{
-							combinedMin = glm::min(combinedMin, corners[i]);
-							combinedMax = glm::max(combinedMax, corners[i]);
-						}
-
-						hasValidAABB = true;
-					}
-					else if (transform)
-					{
-						// If there is no mesh, use only its position
-						glm::mat4 globalMatrix = transform->GetGlobalMatrix();
-						glm::vec3 position = glm::vec3(globalMatrix[3]);
-
-						combinedMin = glm::min(combinedMin, position);
-						combinedMax = glm::max(combinedMax, position);
-						hasValidAABB = true;
-					}
-				}
-
-				if (hasValidAABB)
-				{
-					// Calculate centre and radius of the combined AABB
-					glm::vec3 worldCenter = (combinedMin + combinedMax) * 0.5f;
-					glm::vec3 worldSize = combinedMax - combinedMin;
-
-					// Use the maximum dimension of the combined AABB
-					float maxDimension = glm::max(glm::max(worldSize.x, worldSize.y), worldSize.z);
-					float radius = maxDimension * 0.5f;
-
-					if (radius < 0.1f)
-						radius = 1.0f;
-
-					// Obtain the aspect ratio of the viewport
-					ImVec2 sceneSize = Application::GetInstance().editor->sceneViewportSize;
-					float viewportAspectRatio = sceneSize.x / sceneSize.y;
-
-					camera->FocusOnTarget(worldCenter, radius, viewportAspectRatio);
-					camera->SetOrbitTarget(worldCenter);
-				}
+			case KEY_IDLE:
+				if (isPressed)
+					gamepadButtons[i] = KEY_DOWN;
+				break;
+			case KEY_DOWN:
+				gamepadButtons[i] = isPressed ? KEY_REPEAT : KEY_UP;
+				break;
+			case KEY_REPEAT:
+				if (!isPressed)
+					gamepadButtons[i] = KEY_UP;
+				break;
+			case KEY_UP:
+				gamepadButtons[i] = isPressed ? KEY_DOWN : KEY_IDLE;
+				break;
 			}
 		}
 	}
+/*
 #endif
+*/	
+else
+	{
+		for (int i = 0; i < MAX_GAMEPAD_BUTTONS; ++i)
+			gamepadButtons[i] = KEY_IDLE;
+	}
 
 	return true;
 }
 
 bool Input::CleanUp()
 {
+	LOG_DEBUG("Quitting SDL event subsystem");
 	SDL_QuitSubSystem(SDL_INIT_EVENTS);
+	delete[] keyboard;
+
+	if (controller != nullptr) {
+		SDL_CloseGamepad(controller);
+		controller = nullptr;
+	}
 	return true;
 }
+
 
 bool Input::GetWindowEvent(EventWindow ev)
 {
 	return windowEvents[ev];
 }
 
-// Ray picking functions
-GameObject* FindClosestObjectToRayOptimized(GameObject* root, const glm::vec3& rayOrigin,
-	const glm::vec3& rayDir, float& minDist)
+glm::vec2 Input::GetMousePosition()
 {
-	ModuleScene* scene = Application::GetInstance().scene.get();
-	if (!scene)
-	{
-		return nullptr;
-	}
-
-	Octree* octree = scene->GetOctree();
-
-	if (octree)
-	{
-		Ray ray(rayOrigin, rayDir);
-		float distance;
-		GameObject* picked = octree->RayPick(ray, distance);
-
-		if (picked)
-		{
-			minDist = distance;
-			scene->lastRayOrigin = rayOrigin;
-			scene->lastRayDirection = rayDir;
-			scene->lastRayLength = distance;
-
-			return picked;
-		}
-		else
-		{
-			scene->lastRayOrigin = rayOrigin;
-			scene->lastRayDirection = rayDir;
-			scene->lastRayLength = 100.0f;
-
-			float fallbackDist = std::numeric_limits<float>::max();
-			GameObject* fallbackResult = FindClosestObjectToRay(root, rayOrigin, rayDir, fallbackDist);
-
-			if (fallbackResult)
-			{
-				minDist = fallbackDist;
-				return fallbackResult;
-			}
-		}
-
-		return picked;
-	}
-
-	GameObject* result = FindClosestObjectToRay(root, rayOrigin, rayDir, minDist);
-	return result;
+	return glm::vec2(mouseX, mouseY);
 }
 
-GameObject* FindClosestObjectToRay(GameObject* obj, const glm::vec3& rayOrigin,
-	const glm::vec3& rayDir, float& minDist)
+glm::vec2 Input::GetMouseMotion()
 {
-	if (!obj || !obj->IsActive())
-		return nullptr;
-
-	GameObject* closest = nullptr;
-
-	ComponentMesh* mesh = static_cast<ComponentMesh*>(obj->GetComponent(ComponentType::MESH));
-	if (mesh && mesh->IsActive() && mesh->HasMesh())
-	{
-		Transform* t = static_cast<Transform*>(obj->GetComponent(ComponentType::TRANSFORM));
-		if (t)
-		{
-			glm::vec3 localMin = mesh->GetAABBMin();
-			glm::vec3 localMax = mesh->GetAABBMax();
-			glm::mat4 globalMatrix = t->GetGlobalMatrix();
-
-			glm::vec3 corners[8] = {
-				glm::vec3(globalMatrix * glm::vec4(localMin.x, localMin.y, localMin.z, 1.0f)),
-				glm::vec3(globalMatrix * glm::vec4(localMax.x, localMin.y, localMin.z, 1.0f)),
-				glm::vec3(globalMatrix * glm::vec4(localMin.x, localMax.y, localMin.z, 1.0f)),
-				glm::vec3(globalMatrix * glm::vec4(localMax.x, localMax.y, localMin.z, 1.0f)),
-				glm::vec3(globalMatrix * glm::vec4(localMin.x, localMin.y, localMax.z, 1.0f)),
-				glm::vec3(globalMatrix * glm::vec4(localMax.x, localMin.y, localMax.z, 1.0f)),
-				glm::vec3(globalMatrix * glm::vec4(localMin.x, localMax.y, localMax.z, 1.0f)),
-				glm::vec3(globalMatrix * glm::vec4(localMax.x, localMax.y, localMax.z, 1.0f))
-			};
-
-			glm::vec3 worldMin = corners[0];
-			glm::vec3 worldMax = corners[0];
-			for (int i = 1; i < 8; ++i)
-			{
-				worldMin = glm::min(worldMin, corners[i]);
-				worldMax = glm::max(worldMax, corners[i]);
-			}
-
-			float dist;
-			if (RayIntersectsAABB(rayOrigin, rayDir, worldMin, worldMax, dist))
-			{
-				if (dist < minDist)
-				{
-					minDist = dist;
-					closest = obj;
-				}
-			}
-		}
-	}
-
-	for (GameObject* child : obj->GetChildren())
-	{
-		GameObject* childResult = FindClosestObjectToRay(child, rayOrigin, rayDir, minDist);
-		if (childResult) closest = childResult;
-	}
-
-	return closest;
+	return glm::vec2(mouseMotionX, mouseMotionY);
 }
 
-bool Input::IsKeyPressed(int scancode)
+KeyState Input::GetGamepadButton(SDL_GamepadButton button) const
 {
-	if (!instance) return false;
-	return instance->GetKey(scancode) == KEY_REPEAT || instance->GetKey(scancode) == KEY_DOWN;
+	return gamepadButtons[button];
 }
 
-bool Input::IsKeyDown(int scancode)
+float Input::GetMouseWheelY()
 {
-	if (!instance) return false;
-	return instance->GetKey(scancode) == KEY_DOWN;
-}
-
-void Input::GetMousePosition(int& x, int& y)
-{
-	if (!instance) {
-		x = 0;
-		y = 0;
-		return;
-	}
-	x = instance->mouseX;
-	y = instance->mouseY;
+	return mouseWheelY;
 }

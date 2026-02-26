@@ -28,15 +28,16 @@ void InfinitePlaneCollider::OnEditor()
 #endif
 }
 
-//void InfinitePlaneCollider::Save(Config& config) {
-//    SaveBase(config);
-//}
-//
-//void InfinitePlaneCollider::Load(Config& config) {
-//    LoadBase(config);
-//    Rigidbody* rb = (Rigidbody*)owner->GetComponentInParent(ComponentType::Rigidbody);
-//    if (rb) rb->CreateBody();
-//}
+
+void InfinitePlaneCollider::Serialize(nlohmann::json& componentObj) const {
+    SerializeBase(componentObj);
+}
+
+void InfinitePlaneCollider::Deserialize(const nlohmann::json& componentObj) {
+    DeserializeBase(componentObj);
+    Rigidbody* rb = (Rigidbody*)owner->GetComponentInParent(ComponentType::RIGIDBODY);
+    if (rb) rb->CreateBody();
+}
 
 void InfinitePlaneCollider::DebugShape() {
    

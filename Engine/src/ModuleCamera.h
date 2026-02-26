@@ -2,6 +2,7 @@
 #include "Module.h"
 #include "ComponentCamera.h"
 #include <memory>
+#include <vector>
 
 class GameObject;
 
@@ -11,29 +12,16 @@ public:
     ModuleCamera();
     ~ModuleCamera();
 
-    bool Start() override;
-    bool Update() override;
     bool CleanUp() override;
 
-    ComponentCamera* GetActiveCamera() const;
+    ComponentCamera* GetMainCamera() const { return mainCamera; }
+    void SetMainCamera(ComponentCamera*);
 
-    ComponentCamera* GetEditorCamera() const { return editorCamera; }
-    ComponentCamera* GetSceneCamera() const { return sceneCamera; }
+    void AddCamera(ComponentCamera* camera);
+    void RemoveCamera(ComponentCamera* camera);
 
-    void SetSceneCamera(ComponentCamera* camera) { sceneCamera = camera; }
-
-	// Switch between editor and scene camera
-    void SetUseEditorCamera(bool useEditor) { useEditorCamera = useEditor; }
-    bool IsUsingEditorCamera() const { return useEditorCamera; }
-
-    // Handle editor camera controls
-    void HandleEditorControls();
-
-private:
-    GameObject* editorCameraGO;    
-    ComponentCamera* editorCamera;   
-    ComponentCamera* sceneCamera; 
-
-    bool useEditorCamera;      
+private:  
+    std::vector<ComponentCamera*> cameras;
+    ComponentCamera* mainCamera;     
 };
 

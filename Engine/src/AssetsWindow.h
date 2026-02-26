@@ -31,7 +31,7 @@ struct AssetEntry
     // Para FBX expandibles
     bool isFBX;
     bool isExpanded;
-    std::vector<AssetEntry> subMeshes;
+    std::vector<AssetEntry> subResources;
 
     // Preview/thumbnail
     unsigned int previewTextureID = 0;
@@ -46,14 +46,15 @@ enum class DragDropAssetType
     MESH,           // Mesh individual
     TEXTURE,        // Texture (PNG, JPG, DDS, etc)
     SCRIPT,         // Lua script
-    PREFAB
+    PREFAB,
+    ANIMATION
 };
 
 // Payload para drag & drop interno
 struct DragDropPayload
 {
     std::string assetPath;
-    unsigned long long assetUID;
+    UID assetUID;
     DragDropAssetType assetType;
 };
 
@@ -82,7 +83,7 @@ private:
     bool DeleteDirectory(const fs::path& dirPath);
 
     // Funciones para expandir FBX
-    void LoadFBXSubMeshes(AssetEntry& fbxAsset);
+    void LoadFBXSubresources(AssetEntry& fbxAsset);
     void DrawExpandableAssetItem(AssetEntry& asset, std::string& pathPendingToLoad);
 
     // Preview/Thumbnail system
@@ -95,11 +96,6 @@ private:
     void HandleExternalDragDrop();
     bool ProcessDroppedFile(const std::string& sourceFilePath);
     bool CopyFileToAssets(const std::string& sourceFilePath, std::string& outDestPath);
-    bool ImportAssetToLibrary(const std::string& assetPath);
-
-    // Import helpers
-    bool ImportTextureToLibrary(const std::string& assetPath, const MetaFile& meta);
-    bool ImportFBXToLibrary(const std::string& assetPath, const MetaFile& meta);
 
     // Script management
     void CreateNewScript(const std::string& scriptName);

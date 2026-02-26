@@ -22,6 +22,7 @@ public:
     bool IsGizmoBeingUsed() const { return isGizmoActive; }
 
 private:
+    void SelectObject();
     void HandleGizmoInput();
     void DrawGizmo();
     void HandleAssetDropTarget();  

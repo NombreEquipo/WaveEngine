@@ -1,6 +1,8 @@
 #pragma once
 
 #include "EditorWindow.h"
+#include "EventListener.h"
+
 #include <imgui.h>  
 #include <ImGuizmo.h>
 #include <vector>
@@ -8,11 +10,11 @@
 
 class GameObject;
 
-class InspectorWindow : public EditorWindow
+class InspectorWindow : public EditorWindow, public EventListener
 {
 public:
     InspectorWindow();
-    ~InspectorWindow() override = default;
+    ~InspectorWindow() override;
 
     void Draw() override;
 
@@ -26,28 +28,40 @@ public:
     bool ShouldShowVertexNormals() const { return showVertexNormals; }
     bool ShouldShowFaceNormals() const { return showFaceNormals; }
 
+    void OnEvent(const Event& event);
+
 private:
     bool DrawGameObjectSection(GameObject* selectedObject);
     void DrawGizmoSettings();
-    void DrawTransformComponent(GameObject* selectedObject);
-    void DrawCameraComponent(GameObject* selectedObject);
-    void DrawMeshComponent(GameObject* selectedObject);
-    void DrawMaterialComponent(GameObject* selectedObject);
-    void DrawRotateComponent(GameObject* selectedObject);
-    void DrawScriptComponent(GameObject* selectedObject);
     void DrawAddComponentButton(GameObject* selectedObject);
-    void DrawParticleComponent(GameObject* selectedObject);
-    void DrawRigidodyComponent(GameObject* selectedObject);
-    void DrawBoxColliderComponent(GameObject* selectedObject);
-    void DrawSphereColliderComponent(GameObject* selectedObject);
-    void DrawCapsuleColliderComponent(GameObject* selectedObject);
-    void DrawPlaneColliderComponent(GameObject* selectedObject);
-    void DrawInfinitePlaneColliderComponent(GameObject* selectedObject);
-    void DrawMeshColliderComponent(GameObject* selectedObject);
-    void DrawConvexColliderComponent(GameObject* selectedObject);
-    void DrawAudioSourceComponent(GameObject* selectedObject);
-    void DrawAudioListenerComponent(GameObject* selectedObject);
-    void DrawReverbZoneComponent(GameObject* selectedObject); 
+
+    // Draw component functions
+    void DrawTransformComponent(Component* component);
+    void DrawCameraComponent(Component* component);
+    void DrawMeshComponent(Component* component);
+    void DrawSkinnedMeshComponent(Component* component);
+    void DrawMaterialComponent(Component* component);
+    void DrawRotateComponent(Component* component);
+    void DrawScriptComponent(Component* component);
+    void DrawParticleComponent(Component* component);
+    void DrawRigidodyComponent(Component* component);
+    void DrawBoxColliderComponent(Component* component);
+    void DrawSphereColliderComponent(Component* component);
+    void DrawCapsuleColliderComponent(Component* component);
+    void DrawPlaneColliderComponent(Component* component);
+    void DrawInfinitePlaneColliderComponent(Component* component);
+    void DrawMeshColliderComponent(Component* component);
+    void DrawConvexColliderComponent(Component* component);
+    void DrawHingeJointComponent(Component* component);
+    void DrawDistanceJointComponent(Component* component);
+    void DrawFixedJointComponent(Component* component);
+    void DrawD6JointComponent(Component* component);
+    void DrawPrismaticJointComponent(Component* component);
+    void DrawSphericalJointComponent(Component* component);
+    void DrawAudioSourceComponent(Component* component);
+    void DrawAudioListenerComponent(Component* component);
+    void DrawReverbZoneComponent(Component* component);
+    void DrawAnimationComponent(Component* component);
 
     // Helper methods
     void GetAllGameObjects(GameObject* root, std::vector<GameObject*>& outObjects);
@@ -63,4 +77,6 @@ private:
     bool showVertexNormals = false;
     bool showFaceNormals = false;
 
+    bool inspectorLocked = false;
+    GameObject* lockedObject;
 };

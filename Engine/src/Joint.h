@@ -42,11 +42,12 @@ public:
     void SetBreakForce(float force = INFINITY_PHYSIC);
     void SetBreakTorque(float torque= INFINITY_PHYSIC);
 
-    //virtual void Save(Config& componentNode) {}
-    //void SaveBase(Config& config);
-    //virtual void Load(Config& componentNode) {}
-    //void LoadBase(Config& config);
-    //void ResolveReferences() override;
+    void SerializeBase(nlohmann::json& componentObj) const;
+    void DeserializeBase(const nlohmann::json& componentObj);
+
+    virtual void Serialize(nlohmann::json& componentObj) const override { SerializeBase(componentObj); }
+    virtual void Deserialize(const nlohmann::json& componentObj) override { DeserializeBase(componentObj); }
+    void SolveReferences() override;
 
     void OnEditorBase();
     void OnGameObjectEvent(GameObjectEvent event, Component* component) override;
@@ -56,7 +57,7 @@ public:
 
 protected:
     
-    uint32_t bUID;
+    UID bUID;
 
     Rigidbody* bodyA = nullptr;
     Rigidbody* bodyB = nullptr;

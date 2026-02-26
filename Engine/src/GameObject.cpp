@@ -1,7 +1,11 @@
-﻿#include "GameObject.h"
+﻿#include "Application.h"
+#include "ModuleEvents.h"
+#include "GameObject.h"
+#include "Globals.h"
 #include "Component.h"
 #include "Transform.h"
 #include "ComponentMesh.h"
+#include "ComponentSkinnedMesh.h"
 #include "ComponentMaterial.h"
 #include "ComponentCamera.h"
 #include "ComponentRotate.h"
@@ -22,6 +26,7 @@
 #include "HingeJoint.h"
 #include "ComponentParticleSystem.h"
 #include "ComponentRotate.h"
+#include "ComponentAnimation.h"
 #include "AudioComponent.h"
 #include "AudioSource.h"
 #include "AudioListener.h"
@@ -30,40 +35,51 @@
 
 GameObject::GameObject(const std::string& name) : name(name), active(true), parent(nullptr) {
     CreateComponent(ComponentType::TRANSFORM);
+    objectUID = GenerateUID();
 }
 
 GameObject::~GameObject() {
     
     MarkCleaning();
 
-    components.clear();
-    componentOwners.clear();
+    for (auto* component : components) {
+        delete component;
+        component = nullptr;
+    }
 
+    components.clear();
     for (auto* child : children) {
         delete child;
+        child = nullptr;
     }
     children.clear();
 }
 
 Component* GameObject::CreateComponent(ComponentType type) {
     
+    for (Component* component : components)
+    {
+        if (component->IsIncompatible(type))
+        {
+            LOG_CONSOLE("Could not add component: Conflict with component %s", component->name.c_str());
+            return nullptr;
+        }
+    }
+
     Component* newComponent = nullptr;
 
     switch (type) {
     case ComponentType::TRANSFORM:
-        if (GetComponent(ComponentType::TRANSFORM) != nullptr) {
-            return GetComponent(ComponentType::TRANSFORM);
-        }
         newComponent = new Transform(this);
         if (newComponent) transform = (Transform*)newComponent;
         break;
     case ComponentType::MESH:
         newComponent = new ComponentMesh(this);
         break;
+    case ComponentType::SKINNED_MESH:
+        newComponent = new ComponentSkinnedMesh(this);
+        break;
     case ComponentType::MATERIAL:
-        if (GetComponent(ComponentType::MATERIAL) != nullptr) {
-            return GetComponent(ComponentType::MATERIAL);
-        }
         newComponent = new ComponentMaterial(this);
         break;
     case ComponentType::AUDIOSOURCE:
@@ -73,9 +89,6 @@ Component* GameObject::CreateComponent(ComponentType type) {
         newComponent = new AudioListener(this);
         break;
     case ComponentType::CAMERA:
-        if (GetComponent(ComponentType::CAMERA) != nullptr) {
-            return GetComponent(ComponentType::CAMERA);
-        }
         newComponent = new ComponentCamera(this);
         break;
     case ComponentType::ROTATE:
@@ -132,6 +145,9 @@ Component* GameObject::CreateComponent(ComponentType type) {
     case ComponentType::DISTANCE_JOINT:
         newComponent = new DistanceJoint(this);
         break;
+    case ComponentType::ANIMATION:
+        newComponent = new ComponentAnimation(this);
+        break;
     default:
         LOG_DEBUG("ERROR: Unknown component type requested for GameObject '%s'", name.c_str());
         LOG_CONSOLE("Failed to create component");
@@ -139,9 +155,10 @@ Component* GameObject::CreateComponent(ComponentType type) {
     }
 
     if (newComponent) {
-        componentOwners.push_back(std::unique_ptr<Component>(newComponent));
         components.push_back(newComponent);
     }
+    
+    PublishGameObjectEvent(GameObjectEvent::COMPONENT_ADDED, newComponent);
 
     return newComponent;
 }
@@ -279,6 +296,32 @@ int GameObject::GetChildIndex(GameObject* child) const {
     return -1;
 }
 
+GameObject* GameObject::FindChild(const std::string& nameToFind)
+{
+    if (this->name == nameToFind) return this;
+
+    for (GameObject* child : children)
+    {
+        GameObject* found = child->FindChild(nameToFind);
+        if (found) return found;
+    }
+
+    return nullptr;
+}
+
+GameObject* GameObject::FindChild(const UID uidToFind)
+{
+    if (this->objectUID == uidToFind) return this;
+
+    for (GameObject* child : children)
+    {
+        GameObject* found = child->FindChild(uidToFind);
+        if (found) return found;
+    }
+
+    return nullptr;
+}
+
 void GameObject::Update() {
     // Si este GameObject está marcado para eliminación, no actualizar
     if (markedForDeletion) {
@@ -347,6 +390,7 @@ void GameObject::Serialize(nlohmann::json& gameObjectArray) const {
 
     // Set the name and active state
     gameObjectObj["name"] = name;
+    gameObjectObj["uid"] = objectUID;
     gameObjectObj["active"] = active;
 
     // Components
@@ -373,6 +417,7 @@ void GameObject::Serialize(nlohmann::json& gameObjectArray) const {
 }
 
 GameObject* GameObject::Deserialize(const nlohmann::json& gameObjectObj, GameObject* parent) {
+    
     if (!gameObjectObj.is_object()) {
         return nullptr;
     }
@@ -380,6 +425,7 @@ GameObject* GameObject::Deserialize(const nlohmann::json& gameObjectObj, GameObj
     // Create gameobject
     std::string objName = gameObjectObj.contains("name") ? gameObjectObj["name"].get<std::string>() : "GameObject";
     GameObject* newObject = new GameObject(objName);
+    newObject->objectUID = gameObjectObj.contains("uid") ? gameObjectObj["uid"].get<UID>() : newObject->objectUID;
 
     if (gameObjectObj.contains("active")) {
         newObject->SetActive(gameObjectObj["active"].get<bool>());
@@ -425,6 +471,19 @@ GameObject* GameObject::Deserialize(const nlohmann::json& gameObjectObj, GameObj
     return newObject;
 }
 
+void GameObject::SolveReferences() {
+    
+    for (Component* component : components)
+    {
+        component->SolveReferences();
+    }
+
+    for (GameObject* child : children)
+    {
+        child->SolveReferences();
+    }
+}
+
 
 void GameObject::PublishGameObjectEvent(GameObjectEvent event, Component* newComponent)
 {
@@ -435,4 +494,10 @@ void GameObject::PublishGameObjectEvent(GameObjectEvent event, Component* newCom
             component->OnGameObjectEvent(event, newComponent);
         }
     }
+}
+
+void GameObject::MarkForDeletion()
+{
+    markedForDeletion = true;
+    Application::GetInstance().events.get()->PublishImmediate({Event::Type::GameObjectDestroyed, this });
 }

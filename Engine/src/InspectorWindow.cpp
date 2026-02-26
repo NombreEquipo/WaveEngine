@@ -1,13 +1,19 @@
 ﻿#include "InspectorWindow.h"
+#include "AssetsWindow.h"
+
 #include <imgui.h>
 #include "Application.h"
+#include "ModuleEvents.h"
 #include "GameObject.h"
 #include "SelectionManager.h"
 #include "Transform.h"
 #include "ComponentMesh.h"
+#include "ComponentSkinnedMesh.h"
 #include "ComponentMaterial.h"
 #include "ComponentCamera.h"
+#include "CameraLens.h"
 #include "ComponentRotate.h"
+#include "ComponentAnimation.h"
 #include "ResourceTexture.h"
 #include "ComponentParticleSystem.h"
 #include "Rigidbody.h"
@@ -18,6 +24,12 @@
 #include "ConvexCollider.h"
 #include "PlaneCollider.h"
 #include "InfinitePlaneCollider.h"
+#include "FixedJoint.h"
+#include "HingeJoint.h"
+#include "DistanceJoint.h"
+#include "D6Joint.h"
+#include "PrismaticJoint.h"
+#include "SphericalJoint.h"
 #include "AudioComponent.h"
 #include "AudioSource.h"
 #include "AudioListener.h"
@@ -30,8 +42,12 @@
 InspectorWindow::InspectorWindow()
     : EditorWindow("Inspector")
 {
-
+    Application::GetInstance().events.get()->Subscribe(Event::Type::GameObjectDestroyed, this);
   
+}
+InspectorWindow::~InspectorWindow()
+{
+    Application::GetInstance().events.get()->UnsubscribeAll(this);
 }
 
 void InspectorWindow::Draw()
@@ -51,7 +67,29 @@ void InspectorWindow::Draw()
         return;
     }
 
-    GameObject* selectedObject = selectionManager->GetSelectedObject();
+    std::string lockText = "Lock";
+
+    int size = ImGui::CalcTextSize(lockText.c_str()).x + ImGui::GetFrameHeight();
+    int startWidth = ImGui::GetContentRegionAvail().x - size;
+
+    ImGui::SetCursorPosX(startWidth);
+    ImGui::Text(lockText.c_str());
+    ImGui::SameLine();
+    if (ImGui::Checkbox("##LockInspector", &inspectorLocked))
+    {
+        if (inspectorLocked)
+        {
+            lockedObject = Application::GetInstance().selectionManager->GetSelectedObject();
+        }
+    }
+
+    ImGui::Spacing();
+
+    GameObject* selectedObject = nullptr;
+
+    if (inspectorLocked) selectedObject = lockedObject;
+    else selectedObject = selectionManager->GetSelectedObject();
+
 
     if (selectedObject == nullptr || selectedObject->IsMarkedForDeletion())
     {
@@ -61,24 +99,6 @@ void InspectorWindow::Draw()
     }
 
     ImGui::Text("GameObject: %s", selectedObject->GetName().c_str());
-    ImGui::SameLine();
-
-    if (selectedObject->GetComponent(ComponentType::CAMERA)) {
-        ComponentCamera* selectedCamera = static_cast<ComponentCamera*>(selectedObject->GetComponent(ComponentType::CAMERA));
-        ComponentCamera* currentSceneCamera = Application::GetInstance().camera->GetSceneCamera();
-
-        bool isActive = (selectedCamera == currentSceneCamera);
-
-        if (ImGui::Checkbox("##isActive", &isActive)) {
-            if (isActive) {
-                Application::GetInstance().camera->SetSceneCamera(selectedCamera);
-            }
-        }
-
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Set as Active Game Camera");
-        }
-    }
 
     ImGui::Separator();
 
@@ -103,24 +123,108 @@ void InspectorWindow::Draw()
     DrawGizmoSettings();
     ImGui::Separator();
 
-    DrawTransformComponent(selectedObject);
-    DrawCameraComponent(selectedObject);
-    DrawMeshComponent(selectedObject);
-    DrawMaterialComponent(selectedObject);
-    DrawRotateComponent(selectedObject);
-    DrawScriptComponent(selectedObject); 
-    DrawParticleComponent(selectedObject);
-    DrawRigidodyComponent(selectedObject);
-    DrawBoxColliderComponent(selectedObject);
-    DrawSphereColliderComponent(selectedObject);
-    DrawCapsuleColliderComponent(selectedObject);
-    DrawPlaneColliderComponent(selectedObject);
-    DrawInfinitePlaneColliderComponent(selectedObject);
-    DrawMeshColliderComponent(selectedObject);
-    DrawConvexColliderComponent(selectedObject);
-    DrawAudioSourceComponent(selectedObject);
-    DrawAudioListenerComponent(selectedObject);
-    DrawReverbZoneComponent(selectedObject);
+    for (Component* component : selectedObject->GetComponents())
+    {
+        switch (component->type)
+        {
+            // --- TRANSFORM & LÓGICA ---
+        case ComponentType::TRANSFORM:
+            DrawTransformComponent(component);
+            break;
+        case ComponentType::ROTATE:
+            DrawRotateComponent(component);
+            break;
+        case ComponentType::SCRIPT:
+            DrawScriptComponent(component);
+            break;
+
+            // --- GRÁFICOS & RENDER ---
+        case ComponentType::SKINNED_MESH:
+            DrawSkinnedMeshComponent(component);
+            break;
+        case ComponentType::MESH:
+            DrawMeshComponent(component);
+            break;
+        
+            break;
+        case ComponentType::MATERIAL:
+            DrawMaterialComponent(component);
+            break;
+        case ComponentType::CAMERA:
+            DrawCameraComponent(component);
+            break;
+        case ComponentType::PARTICLE:
+            DrawParticleComponent(component);
+            break;
+        case ComponentType::ANIMATION:
+            DrawAnimationComponent(component);
+            break;
+
+            // --- FÍSICAS ---
+        case ComponentType::RIGIDBODY:
+            DrawRigidodyComponent(component);
+            break;
+
+            // --- FÍSICAS (Colliders) ---
+        case ComponentType::BOX_COLLIDER:
+            DrawBoxColliderComponent(component);
+            break;
+        case ComponentType::SPHERE_COLLIDER:
+            DrawSphereColliderComponent(component);
+            break;
+        case ComponentType::CAPSULE_COLLIDER:
+            DrawCapsuleColliderComponent(component);
+            break;
+        case ComponentType::PLANE_COLLIDER:
+            DrawPlaneColliderComponent(component);
+            break;
+        case ComponentType::INFINITE_PLANE_COLLIDER:
+            DrawInfinitePlaneColliderComponent(component);
+            break;
+        case ComponentType::MESH_COLLIDER:
+            DrawMeshColliderComponent(component);
+            break;
+        case ComponentType::CONVEX_COLLIDER:
+            DrawConvexColliderComponent(component);
+            break;
+
+            // --- FÍSICAS (Joints) ---
+        case ComponentType::HINGE_JOINT:
+            DrawHingeJointComponent(component);
+            break;
+        case ComponentType::DISTANCE_JOINT:
+            DrawDistanceJointComponent(component);
+            break;
+        case ComponentType::FIXED_JOINT:
+            DrawFixedJointComponent(component);
+            break;
+        case ComponentType::D6_JOINT:
+            DrawD6JointComponent(component);
+            break;
+        case ComponentType::PRISMATIC_JOINT:
+            DrawPrismaticJointComponent(component);
+            break;
+        case ComponentType::SPHERICAL_JOINT:
+            DrawSphericalJointComponent(component);
+            break;
+
+            // --- AUDIO ---
+        case ComponentType::LISTENER:
+            DrawAudioListenerComponent(component);
+            break;
+        case ComponentType::AUDIOSOURCE:
+            DrawAudioSourceComponent(component);
+            break;
+        case ComponentType::REVERBZONE:
+            DrawReverbZoneComponent(component);
+            break;
+
+            // --- OTROS ---
+        case ComponentType::UNKNOWN:
+        default:
+            LOG_DEBUG("WARNING: Trying to serialize an UNKNOWN or unhandled component type.");
+        }
+    }
 
     ImGui::Spacing();
     ImGui::Separator();
@@ -212,9 +316,9 @@ void InspectorWindow::DrawGizmoSettings()
     }
 }
 
-void InspectorWindow::DrawTransformComponent(GameObject* selectedObject)
+void InspectorWindow::DrawTransformComponent(Component* component)
 {
-    Transform* transform = static_cast<Transform*>(selectedObject->GetComponent(ComponentType::TRANSFORM));
+    Transform* transform = static_cast<Transform*>(component);
 
     if (transform == nullptr) return;
 
@@ -303,8 +407,8 @@ void InspectorWindow::DrawTransformComponent(GameObject* selectedObject)
             // Rebuild después de reset
             Application::GetInstance().scene->MarkOctreeForRebuild();
 
-            LOG_DEBUG("Transform reset for: %s", selectedObject->GetName().c_str());
-            LOG_CONSOLE("Transform reset for: %s", selectedObject->GetName().c_str());
+            LOG_DEBUG("Transform reset for: %s", component->owner->GetName().c_str());
+            LOG_CONSOLE("Transform reset for: %s", component->owner->GetName().c_str());
         }
 
         if (ImGui::IsItemHovered())
@@ -314,145 +418,62 @@ void InspectorWindow::DrawTransformComponent(GameObject* selectedObject)
     }
 }
 
-void InspectorWindow::DrawCameraComponent(GameObject* selectedObject)
+void InspectorWindow::DrawCameraComponent(Component* component)
 {
-    ComponentCamera* cameraComp = static_cast<ComponentCamera*>(selectedObject->GetComponent(ComponentType::CAMERA));
+    ComponentCamera* cameraComp = (ComponentCamera*)component;
 
     if (cameraComp == nullptr) return;
 
-    if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
+    if (ImGui::CollapsingHeader("Camera"))
     {
-        ImGui::Text("Camera Settings");
+        float fov = cameraComp->GetLens()->GetFov();
+        if (ImGui::DragFloat("FOV", &fov, 0.1f, 1.0f, 160.0f))
+        {
+            cameraComp->GetLens()->SetFov(fov);
+        }
+
+        float zNear = cameraComp->GetLens()->GetNearPlane();
+        if (ImGui::DragFloat("Near Plane", &zNear, 0.1f, 0.01f, 1000.0f))
+        {
+            cameraComp->GetLens()->SetNearPlane(zNear);
+        }
+
+        float zFar = cameraComp->GetLens()->GetFarPlane();
+        if (ImGui::DragFloat("Far Plane", &zFar, 1.0f, 0.1f, 10000.0f))
+        {
+            cameraComp->GetLens()->SetFarPlane(zFar);
+        }
+
+        int depth = cameraComp->GetLens()->depth;
+        if (ImGui::InputInt("Depth", &depth))
+        {
+            cameraComp->GetLens()->depth = glm::clamp(depth, 0, 100000);
+        }
+
+        bool isMain = cameraComp->IsMainCamera();
+        if (ImGui::Checkbox("Is Main Camera", &isMain))
+        {
+            cameraComp->SetMainCamera(isMain);
+        }
+
+        ImGui::Text("FBO:");
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(0.0f, 0.7f, 0.9f, 1.0f), "%dx", cameraComp->GetLens()->fboID);
+
+        ImVec2 viewportSize = ImGui::GetContentRegionAvail();
+        viewportSize.y = viewportSize.x / cameraComp->GetLens()->GetAspectRatio();
+        ImVec2 winPos = ImGui::GetCursorScreenPos();
+        unsigned int textureID = cameraComp->GetLens()->textureID;
+
         ImGui::Separator();
-
-        float fov = cameraComp->GetFov();
-        if (ImGui::SliderFloat("Field of View", &fov, 20.0f, 120.0f, "%.1f"))
-        {
-            cameraComp->SetFov(fov);
-            LOG_DEBUG("Camera FOV set to: %.1f", fov);
-        }
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Camera field of view in degrees");
-
-        ImGui::Spacing();
-
-        float nearPlane = cameraComp->GetNearPlane();
-        float farPlane = cameraComp->GetFarPlane();
-
-        if (ImGui::DragFloat("Near Plane", &nearPlane, 0.01f, 0.01f, 10.0f, "%.2f"))
-        {
-            cameraComp->SetNearPlane(nearPlane);
-            LOG_DEBUG("Camera near plane set to: %.2f", nearPlane);
-        }
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Near clipping plane distance");
-
-        if (ImGui::DragFloat("Far Plane", &farPlane, 1.0f, 10.0f, 1000.0f, "%.1f"))
-        {
-            cameraComp->SetFarPlane(farPlane);
-            LOG_DEBUG("Camera far plane set to: %.1f", farPlane);
-        }
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Far clipping plane distance");
-
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
-        ImGui::Separator();
-
-        ImGui::Text("Optimization Settings");
-
-        bool frustumEnabled = cameraComp->IsFrustumCullingEnabled();
-        if (ImGui::Checkbox("Enable Frustum Culling", &frustumEnabled))
-        {
-            cameraComp->SetFrustumCulling(frustumEnabled);
-            LOG_DEBUG("Frustum culling %s for camera: %s",
-                frustumEnabled ? "enabled" : "disabled",
-                selectedObject->GetName().c_str());
-            LOG_CONSOLE("Frustum culling %s for %s",
-                frustumEnabled ? "enabled" : "disabled",
-                selectedObject->GetName().c_str());
-        }
-
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::BeginTooltip();
-            ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "Frustum Culling");
-            ImGui::Separator();
-            ImGui::Text("When enabled, objects outside the camera's");
-            ImGui::Text("view frustum will not be rendered.");
-            ImGui::Spacing();
-            ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "Benefits:");
-            ImGui::BulletText("Better performance in large scenes");
-            ImGui::BulletText("Reduces GPU workload");
-            ImGui::Spacing();
-            ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "Status:");
-            ImGui::BulletText(frustumEnabled ? "Objects outside view are HIDDEN" : "All objects are RENDERED");
-            ImGui::EndTooltip();
-        }
-
-        ImGui::Spacing();
-
-        bool drawFrustum = cameraComp->ShouldDrawFrustum();
-        if (ImGui::Checkbox("Draw Frustum Gizmo", &drawFrustum))
-        {
-            cameraComp->SetDrawFrustum(drawFrustum);
-            LOG_DEBUG("Frustum visualization %s for camera: %s",
-                drawFrustum ? "enabled" : "disabled",
-                selectedObject->GetName().c_str());
-            LOG_CONSOLE("Frustum gizmo %s for %s",
-                drawFrustum ? "enabled" : "disabled",
-                selectedObject->GetName().c_str());
-        }
-
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::BeginTooltip();
-            ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "Frustum Visualization");
-            ImGui::Separator();
-            ImGui::Text("Shows the camera's view frustum as a wireframe");
-            ImGui::Text("in the 3D viewport.");
-            ImGui::Spacing();
-            ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "Color Coding:");
-            ImGui::BulletText("Green: Active camera");
-            ImGui::BulletText("Yellow: Inactive cameras");
-            ImGui::Spacing();
-            ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f), "Tip:");
-            ImGui::Text("Use this to debug what each camera sees");
-            ImGui::EndTooltip();
-        }
-
-        ImGui::Spacing();
-
-        if (frustumEnabled)
-        {
-            ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "? Culling Active");
-            if (drawFrustum)
-            {
-                ImGui::SameLine();
-                ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "| ?? Frustum Visible");
-            }
-        }
-        else
-        {
-            ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.2f, 1.0f), "? Culling Disabled");
-            if (drawFrustum)
-            {
-                ImGui::SameLine();
-                ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "| ?? Frustum Visible");
-            }
-        }
-
-        ImGui::Spacing();
-        ImGui::Separator();
+        ImGui::Image((ImTextureID)(intptr_t)textureID, viewportSize, ImVec2(0, 1), ImVec2(1, 0));
     }
 }
 
-void InspectorWindow::DrawMeshComponent(GameObject* selectedObject)
+void InspectorWindow::DrawMeshComponent(Component* component)
 {
-    ComponentMesh* meshComp = static_cast<ComponentMesh*>(selectedObject->GetComponent(ComponentType::MESH));
-
-    if (meshComp == nullptr) return;
+    ComponentMesh* meshComp = static_cast<ComponentMesh*>(component);
+    if (meshComp == nullptr || meshComp->IsType(ComponentType::SKINNED_MESH)) return;
 
     if (ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen))
     {
@@ -517,9 +538,9 @@ void InspectorWindow::DrawMeshComponent(GameObject* selectedObject)
                         if (meshComp->LoadMeshByUID(meshUID))
                         {
                             LOG_DEBUG("Assigned mesh '%s' (UID %llu) to GameObject '%s'",
-                                meshName.c_str(), meshUID, selectedObject->GetName().c_str());
+                                meshName.c_str(), meshUID, component->owner->GetName().c_str());
                             LOG_CONSOLE("Mesh '%s' assigned to '%s'",
-                                meshName.c_str(), selectedObject->GetName().c_str());
+                                meshName.c_str(), component->owner->GetName().c_str());
                         }
                         else
                         {
@@ -567,33 +588,178 @@ void InspectorWindow::DrawMeshComponent(GameObject* selectedObject)
             ImGui::Separator();
             ImGui::Spacing();
 
-            ImGui::Text("Normals Visualization:");
-
-            if (ImGui::Checkbox("Show Vertex Normals", &showVertexNormals))
+            ImGui::Text("Debug Visualization:");
+            bool showNormals = meshComp->GetDrawNormals();
+            if (ImGui::Checkbox("Show Normals", &showNormals))
             {
-                LOG_DEBUG("Vertex normals visualization: %s", showVertexNormals ? "ON" : "OFF");
+                meshComp->SetDrawNormals(showNormals);
+                LOG_DEBUG("Vertex normals visualization: %s", showNormals ? "ON" : "OFF");
             }
 
-            if (ImGui::Checkbox("Show Face Normals", &showFaceNormals))
+            bool showMesh = meshComp->GetDrawMesh();
+            if (ImGui::Checkbox("Show Mesh", &showMesh))
             {
-                LOG_DEBUG("Face normals visualization: %s", showFaceNormals ? "ON" : "OFF");
+                meshComp->SetDrawMesh(showNormals);
+                LOG_DEBUG("Face normals visualization: %s", showMesh ? "ON" : "OFF");
             }
         }
     }
 }
 
-void InspectorWindow::DrawMaterialComponent(GameObject* selectedObject)
+void InspectorWindow::DrawSkinnedMeshComponent(Component* component)
 {
-    ComponentMaterial* materialComp = static_cast<ComponentMaterial*>(selectedObject->GetComponent(ComponentType::MATERIAL));
+    ComponentSkinnedMesh* meshComp = static_cast<ComponentSkinnedMesh*>(component);
+    if (meshComp == nullptr) return;
+
+    if (ImGui::CollapsingHeader("Skinned Mesh", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        ImGui::Text("Mesh:");
+        ImGui::SameLine();
+
+        // Mesh display
+        std::string currentMeshName = "None";
+        if (meshComp->HasMesh() && meshComp->IsUsingResourceMesh())
+        {
+            UID currentUID = meshComp->GetMeshUID();
+            ModuleResources* resources = Application::GetInstance().resources.get();
+            const Resource* res = resources->GetResourceDirect(currentUID);
+            if (res)
+            {
+                currentMeshName = std::string(res->GetAssetFile());
+                // Filename
+                size_t lastSlash = currentMeshName.find_last_of("/\\");
+                if (lastSlash != std::string::npos)
+                    currentMeshName = currentMeshName.substr(lastSlash + 1);
+            }
+            else
+            {
+                //Show UID
+                currentMeshName = "UID " + std::to_string(currentUID);
+            }
+        }
+        else if (meshComp->HasMesh() && meshComp->IsUsingDirectMesh())
+        {
+            currentMeshName = "[Primitive]";
+        }
+
+        ImGui::SetNextItemWidth(-1);
+        if (ImGui::BeginCombo("##MeshSelector", currentMeshName.c_str()))
+        {
+			// Get mesh resources
+            ModuleResources* resources = Application::GetInstance().resources.get();
+            const std::map<UID, Resource*>& allResources = resources->GetAllResources();
+
+            for (const auto& pair : allResources)
+            {
+                const Resource* res = pair.second;
+                if (res->GetType() == Resource::MESH)
+                {
+                    std::string meshName = res->GetAssetFile();
+
+                    // Filename
+                    size_t lastSlash = meshName.find_last_of("/\\");
+                    if (lastSlash != std::string::npos) meshName = meshName.substr(lastSlash + 1);
+
+                    UID meshUID = res->GetUID();
+                    bool isSelected = (meshComp->IsUsingResourceMesh() && meshComp->GetMeshUID() == meshUID);
+
+                    std::string displayName = meshName;
+                    if (res->IsLoadedToMemory())
+                    {
+                        displayName += " [Loaded]";
+                    }
+
+                    if (ImGui::Selectable(displayName.c_str(), isSelected))
+                    {
+                        if (meshComp->LoadMeshByUID(meshUID))
+                        {
+                            LOG_DEBUG("Assigned mesh '%s' (UID %llu) to GameObject '%s'",
+                                meshName.c_str(), meshUID, component->owner->GetName().c_str());
+                            LOG_CONSOLE("Mesh '%s' assigned to '%s'",
+                                meshName.c_str(), component->owner->GetName().c_str());
+                        }
+                        else
+                        {
+                            LOG_CONSOLE("Failed to load mesh '%s' (UID %llu)", meshName.c_str(), meshUID);
+                        }
+                    }
+
+                    if (isSelected)
+                    {
+						ImGui::SetItemDefaultFocus(); // Highlight selected item
+                    }
+
+                    // Show tooltip with UID and path
+                    if (ImGui::IsItemHovered())
+                    {
+                        ImGui::BeginTooltip();
+                        ImGui::Text("UID: %llu", meshUID);
+                        ImGui::Text("Path: %s", res->GetAssetFile());
+                        if (res->IsLoadedToMemory())
+                        {
+                            ImGui::TextColored(ImVec4(0.3f, 1.0f, 0.3f, 1.0f), "Loaded in memory");
+                        }
+                        ImGui::EndTooltip();
+                    }
+                }
+            }
+
+            ImGui::EndCombo();
+        }
+
+        if (meshComp->HasMesh())
+        {
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            const Mesh& mesh = meshComp->GetMesh();
+
+            ImGui::Text("Mesh Statistics:");
+            ImGui::Text("Vertices: %d", (int)mesh.vertices.size());
+            ImGui::Text("Indices: %d", (int)mesh.indices.size());
+            ImGui::Text("Triangles: %d", (int)mesh.indices.size() / 3);
+            ImGui::Text("Linked bones: %d / %d", meshComp->GetLinkedBonesNum(), (int)mesh.bones.size());
+
+            if (ImGui::Button("Link Bones"))
+            {
+                meshComp->LinkBones();
+            }
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            ImGui::Text("Debug Visualization:");
+            bool showNormals = meshComp->GetDrawNormals();
+            if (ImGui::Checkbox("Show Normals", &showNormals))
+            {
+                meshComp->SetDrawNormals(showNormals);
+                LOG_DEBUG("Vertex normals visualization: %s", showNormals ? "ON" : "OFF");
+            }
+
+            bool showMesh = meshComp->GetDrawMesh();
+            if (ImGui::Checkbox("Show Mesh", &showMesh))
+            {
+                meshComp->SetDrawMesh(showMesh);
+                LOG_DEBUG("Face normals visualization: %s", showMesh ? "ON" : "OFF");
+            }
+        }
+    }
+}
+
+void InspectorWindow::DrawMaterialComponent(Component* component)
+{
+    ComponentMaterial* materialComp = static_cast<ComponentMaterial*>(component);
 
     if (materialComp == nullptr) return;
 
     materialComp->OnEditor();
 }
 
-void InspectorWindow::DrawRotateComponent(GameObject* selectedObject)
+void InspectorWindow::DrawRotateComponent(Component* component)
 {
-    ComponentRotate* rotateComp = static_cast<ComponentRotate*>(selectedObject->GetComponent(ComponentType::ROTATE));
+    ComponentRotate* rotateComp = static_cast<ComponentRotate*>(component);
 
     if (rotateComp == nullptr) return;
 
@@ -609,103 +775,200 @@ void InspectorWindow::DrawRotateComponent(GameObject* selectedObject)
     }
 }
 
-void InspectorWindow::DrawParticleComponent(GameObject* selectedObject)
+void InspectorWindow::DrawParticleComponent(Component* component)
 {
-    ComponentParticleSystem* particleComp = static_cast<ComponentParticleSystem*>(selectedObject->GetComponent(ComponentType::PARTICLE));
+    ComponentParticleSystem* particleComp = static_cast<ComponentParticleSystem*>(component);
 
     if (particleComp != nullptr)
     {
-        // Delegate the ui to the component
         particleComp->OnEditor();
     }
 }
 
-void  InspectorWindow::DrawRigidodyComponent(GameObject* selectedObject)
+void  InspectorWindow::DrawRigidodyComponent(Component* component)
 {
-    Rigidbody* rigidbody = static_cast<Rigidbody*>(selectedObject->GetComponent(ComponentType::RIGIDBODY));
+    Rigidbody* rigidbody = static_cast<Rigidbody*>(component);
 
     if (rigidbody != nullptr)
     {
-        // Delegate the ui to the component
-        rigidbody->OnEditor();
+        if (ImGui::CollapsingHeader("Rigidbody", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            rigidbody->OnEditor();
+        }
     }
 }
 
-void  InspectorWindow::DrawBoxColliderComponent(GameObject* selectedObject)
+void  InspectorWindow::DrawBoxColliderComponent(Component* component)
 {
-    BoxCollider* boxCollider = static_cast<BoxCollider*>(selectedObject->GetComponent(ComponentType::BOX_COLLIDER));
+    BoxCollider* boxCollider = static_cast<BoxCollider*>(component);
 
     if (boxCollider != nullptr)
     {
-        // Delegate the ui to the component
-        boxCollider->OnEditor();
+        if (ImGui::CollapsingHeader("Box Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            boxCollider->OnEditor();
+        }
     }
 }
 
-void  InspectorWindow::DrawSphereColliderComponent(GameObject* selectedObject)
+void  InspectorWindow::DrawSphereColliderComponent(Component* component)
 {
-    SphereCollider* Collider = static_cast<SphereCollider*>(selectedObject->GetComponent(ComponentType::SPHERE_COLLIDER));
+    SphereCollider* Collider = static_cast<SphereCollider*>(component);
 
     if (Collider != nullptr)
     {
-        // Delegate the ui to the component
-        Collider->OnEditor();
+        if (ImGui::CollapsingHeader("Sphere Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            Collider->OnEditor();
+        }
     }
 }
 
-void  InspectorWindow::DrawCapsuleColliderComponent(GameObject* selectedObject)
+void  InspectorWindow::DrawCapsuleColliderComponent(Component* component)
 {
-    CapsuleCollider* Collider = static_cast<CapsuleCollider*>(selectedObject->GetComponent(ComponentType::CAPSULE_COLLIDER));
+    CapsuleCollider* Collider = static_cast<CapsuleCollider*>(component);
 
     if (Collider != nullptr)
     {
-        // Delegate the ui to the component
-        Collider->OnEditor();
+        if (ImGui::CollapsingHeader("Capsule Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            Collider->OnEditor();
+        }
+        
     }
 }
 
-void  InspectorWindow::DrawPlaneColliderComponent(GameObject* selectedObject)
+void  InspectorWindow::DrawPlaneColliderComponent(Component* component)
 {
-    PlaneCollider* Collider = static_cast<PlaneCollider*>(selectedObject->GetComponent(ComponentType::PLANE_COLLIDER));
+    PlaneCollider* Collider = static_cast<PlaneCollider*>(component);
 
     if (Collider != nullptr)
     {
-        // Delegate the ui to the component
-        Collider->OnEditor();
+        if (ImGui::CollapsingHeader("Plane Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            Collider->OnEditor();
+        }
     }
 }
-void  InspectorWindow::DrawInfinitePlaneColliderComponent(GameObject* selectedObject)
+void  InspectorWindow::DrawInfinitePlaneColliderComponent(Component* component)
 {
-    InfinitePlaneCollider* Collider = static_cast<InfinitePlaneCollider*>(selectedObject->GetComponent(ComponentType::INFINITE_PLANE_COLLIDER));
+    InfinitePlaneCollider* Collider = static_cast<InfinitePlaneCollider*>(component);
 
     if (Collider != nullptr)
     {
-        // Delegate the ui to the component
-        Collider->OnEditor();
+        if (ImGui::CollapsingHeader("Infinite Plane Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            Collider->OnEditor();
+        }
+        
     }
 }
-void  InspectorWindow::DrawMeshColliderComponent(GameObject* selectedObject)
+void  InspectorWindow::DrawMeshColliderComponent(Component* component)
 {
-    MeshCollider* Collider = static_cast<MeshCollider*>(selectedObject->GetComponent(ComponentType::MESH_COLLIDER));
+    MeshCollider* Collider = static_cast<MeshCollider*>(component);
 
     if (Collider != nullptr)
     {
-        // Delegate the ui to the component
-        Collider->OnEditor();
+        if (ImGui::CollapsingHeader("Mesh Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            Collider->OnEditor();
+        }
     }
 }
-void  InspectorWindow::DrawConvexColliderComponent(GameObject* selectedObject)
+void  InspectorWindow::DrawConvexColliderComponent(Component* component)
 {
-    ConvexCollider* Collider = static_cast<ConvexCollider*>(selectedObject->GetComponent(ComponentType::CONVEX_COLLIDER));
+    ConvexCollider* Collider = static_cast<ConvexCollider*>(component);
 
     if (Collider != nullptr)
     {
-        // Delegate the ui to the component
-        Collider->OnEditor();
+        if (ImGui::CollapsingHeader("Convex Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            Collider->OnEditor();
+        }
     }
 }
-void InspectorWindow::DrawAudioSourceComponent(GameObject* selectedObject) {
-    AudioSource* source = static_cast<AudioSource*>(selectedObject->GetComponent(ComponentType::AUDIOSOURCE));
+
+void  InspectorWindow::DrawFixedJointComponent(Component* component)
+{
+    FixedJoint* Joint = static_cast<FixedJoint*>(component);
+
+    if (Joint != nullptr)
+    {
+        if (ImGui::CollapsingHeader("Fixed Joint", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            Joint->OnEditor();
+        }
+    }
+}
+
+void  InspectorWindow::DrawDistanceJointComponent(Component* component)
+{
+    DistanceJoint* Joint = static_cast<DistanceJoint*>(component);
+
+    if (Joint != nullptr)
+    {
+        if (ImGui::CollapsingHeader("Distance Joint", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            Joint->OnEditor();
+        }
+    }
+}
+
+void  InspectorWindow::DrawHingeJointComponent(Component* component)
+{
+    HingeJoint* Joint = static_cast<HingeJoint*>(component);
+
+    if (Joint != nullptr)
+    {
+        if (ImGui::CollapsingHeader("Hinge Joint", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            Joint->OnEditor();
+        }
+    }
+}
+
+void  InspectorWindow::DrawPrismaticJointComponent(Component* component)
+{
+    PrismaticJoint* Joint = static_cast<PrismaticJoint*>(component);
+
+    if (Joint != nullptr)
+    {
+        if (ImGui::CollapsingHeader("Prismatic Joint", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            Joint->OnEditor();
+        }
+    }
+}
+
+void  InspectorWindow::DrawSphericalJointComponent(Component* component)
+{
+    SphericalJoint* Joint = static_cast<SphericalJoint*>(component);
+
+    if (Joint != nullptr)
+    {
+        if (ImGui::CollapsingHeader("Spherical Joint", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            Joint->OnEditor();
+        }
+    }
+}
+
+void  InspectorWindow::DrawD6JointComponent(Component* component)
+{
+    D6Joint* Joint = static_cast<D6Joint*>(component);
+
+    if (Joint != nullptr)
+    {
+        if (ImGui::CollapsingHeader("D6 Joint", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Delegate the ui to the component
+            Joint->OnEditor();
+        }
+    }
+}
+
+
+void InspectorWindow::DrawAudioSourceComponent(Component* component) {
+    AudioSource* source = static_cast<AudioSource*>(component);
     if (!source) return;
 
     if (ImGui::CollapsingHeader("Audio Source", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -713,8 +976,8 @@ void InspectorWindow::DrawAudioSourceComponent(GameObject* selectedObject) {
     }
 }
 
-void InspectorWindow::DrawAudioListenerComponent(GameObject* selectedObject) {
-    AudioListener* listener = static_cast<AudioListener*>(selectedObject->GetComponent(ComponentType::LISTENER));
+void InspectorWindow::DrawAudioListenerComponent(Component* component) {
+    AudioListener* listener = static_cast<AudioListener*>(component);
     if (!listener) return;
 
     if (ImGui::CollapsingHeader("Audio Listener", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -722,13 +985,127 @@ void InspectorWindow::DrawAudioListenerComponent(GameObject* selectedObject) {
     }
 }
 
-void InspectorWindow::DrawReverbZoneComponent(GameObject* selectedObject)
+void InspectorWindow::DrawReverbZoneComponent(Component* component)
 {
-    ReverbZone* zone = static_cast<ReverbZone*>(selectedObject->GetComponent(ComponentType::REVERBZONE));
+    ReverbZone* zone = static_cast<ReverbZone*>(component);
     if (!zone) return;
 
     if (ImGui::CollapsingHeader("Reverb Zone", ImGuiTreeNodeFlags_DefaultOpen)) {
         zone->OnEditor();
+    }
+}
+
+void InspectorWindow::DrawAnimationComponent(Component* component)
+{
+    ComponentAnimation* animation = static_cast<ComponentAnimation*>(component);
+    if (!animation) return;
+
+    if (ImGui::CollapsingHeader("Animation", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Separator();
+        ImGui::Text("Library:");
+
+        int i = 0;
+        for (auto it = animation->animationsLibrary.begin(); it != animation->animationsLibrary.end(); )
+        {
+            ImGui::PushID(it->first.c_str());
+
+            bool deleteRequested = false;
+
+            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_SpanAvailWidth;
+
+            bool isNodeOpen = ImGui::TreeNodeEx(it->first.c_str(), flags);
+
+            ImGui::SameLine();
+
+            float buttonWidth = 20.0f;
+            float availableWidth = ImGui::GetContentRegionAvail().x;
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + availableWidth - buttonWidth);
+
+            if (ImGui::SmallButton("X"))
+            {
+                deleteRequested = true;
+            }
+
+            if (isNodeOpen)
+            {
+                if (!deleteRequested)
+                {
+                    ImGui::Unindent();
+                    ImGui::Text("UID: %d", it->second.uid);
+
+
+                    ImGui::Text("Speed");
+                    ImGui::SameLine();
+                    float speed = it->second.speed;
+                    if (ImGui::InputFloat("##Speed", &speed))
+                    {
+                        animation->SetAnimationSpeed(it->first, speed);
+                    }
+
+                    ImGui::Text("Loop");
+                    ImGui::SameLine();
+                    bool loop = it->second.loop;
+                    if (ImGui::Checkbox("##Loop", &loop))
+                    {
+                        animation->SetAnimationLoop(it->first, loop);
+                    }
+
+                    if (ImGui::Button("Play", ImVec2(-1, 0)))
+                    {
+                        animation->Play(it->first, 0.5f);
+                    }
+                    ImGui::Indent();
+                }
+
+                ImGui::TreePop();
+            }
+
+            ImGui::PopID();
+
+            if (deleteRequested)
+            {
+                auto nextIt = it;
+                ++nextIt;
+
+                animation->RemoveAnimation(it->first);
+
+                it = nextIt;
+            }
+            else
+            {
+                ++it;
+            }
+            i++;
+        }
+
+        if (i == 0)
+        {
+            ImGui::SameLine();
+            ImGui::Text("empty");
+        }
+
+        ImGui::Separator();
+
+        static char nameBuffer[64] = "New Animation";
+        int availableWidth = ImGui::GetContentRegionAvail().x;
+
+        ImGui::InputText(" ", nameBuffer, 64);
+        ImGui::Button("Drop animation", ImVec2(availableWidth, 20));
+        if (ImGui::BeginDragDropTarget())
+        {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_ITEM"))
+            {
+                DragDropPayload* dropData = (DragDropPayload*)payload->Data;
+                UID droppedUID = dropData->assetUID;
+
+                const Resource* res = Application::GetInstance().resources->PeekResource(droppedUID);
+                if (res && res->GetType() == Resource::Type::ANIMATION)
+                {
+                    animation->AddAnimation(nameBuffer, droppedUID);
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
     }
 }
 
@@ -841,10 +1218,10 @@ bool InspectorWindow::IsDescendantOf(GameObject* potentialDescendant, GameObject
     return false;
 }
 
-void InspectorWindow::DrawScriptComponent(GameObject* selectedObject)
+void InspectorWindow::DrawScriptComponent(Component* component)
 {
     ComponentScript* scriptComp = static_cast<ComponentScript*>(
-        selectedObject->GetComponent(ComponentType::SCRIPT)
+        component
         );
 
     if (scriptComp == nullptr) return;
@@ -876,14 +1253,14 @@ void InspectorWindow::DrawScriptComponent(GameObject* selectedObject)
 
                 if (ImGui::Button("Remove Script", ImVec2(120, 0))) {
                     scriptComp->UnloadScript();
-                    LOG_CONSOLE("[Inspector] Script removed from: %s", selectedObject->GetName().c_str());
+                    LOG_CONSOLE("[Inspector] Script removed from: %s", component->owner->GetName().c_str());
                 }
 
                 ImGui::SameLine();
 
                 if (ImGui::Button("Reload", ImVec2(80, 0))) {
                     scriptComp->ReloadScript();
-                    LOG_CONSOLE("[Inspector] Script reloaded for: %s", selectedObject->GetName().c_str());
+                    LOG_CONSOLE("[Inspector] Script reloaded for: %s", component->owner->GetName().c_str());
                 }
 
                 if (ImGui::IsItemHovered()) {
@@ -1005,7 +1382,7 @@ void InspectorWindow::DrawScriptComponent(GameObject* selectedObject)
                     if (ImGui::Selectable(filename.c_str(), isSelected)) {
                         if (scriptComp->LoadScriptByUID(uid)) {
                             LOG_CONSOLE("[Inspector] Script '%s' assigned to '%s'",
-                                filename.c_str(), selectedObject->GetName().c_str());
+                                filename.c_str(), component->owner->GetName().c_str());
                         }
                         else {
                             LOG_CONSOLE("[Inspector] Failed to load script '%s'", filename.c_str());
@@ -1497,8 +1874,48 @@ void InspectorWindow::DrawAddComponentButton(GameObject* selectedObject)
             ImGui::EndTooltip();
         }
 
-        
+        bool hasAnimation = (selectedObject->GetComponent(ComponentType::ANIMATION) != nullptr);
+
+        if (hasAnimation) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+
+        if (ImGui::Selectable("Animation", false, hasAnimation ? ImGuiSelectableFlags_Disabled : 0))
+        {
+            selectedObject->CreateComponent(ComponentType::ANIMATION);
+            LOG_CONSOLE("[Inspector] Animation component added to: %s", selectedObject->GetName().c_str());
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (hasAnimation) ImGui::PopStyleColor();
+
+        if (ImGui::IsItemHovered() && !hasAnimation)
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Add an Animation");
+            ImGui::EndTooltip();
+        }
+        else if (ImGui::IsItemHovered() && hasAnimation)
+        {
+            ImGui::BeginTooltip();
+            ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f), "Already has an Animation");
+            ImGui::EndTooltip();
+        }
 
         ImGui::EndPopup();
+    }
+}
+
+void InspectorWindow::OnEvent(const Event& event)
+{
+    switch (event.type)
+    {
+    case Event::Type::GameObjectDestroyed:
+        if (lockedObject = event.data.gameObject.gameObject)
+        {
+            inspectorLocked = false;
+            lockedObject = nullptr;
+        }
+        break;
+    default:
+        break;
     }
 }

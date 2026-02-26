@@ -31,9 +31,16 @@ set(CORE_SRC
     src/Window.h
 )
 
+set(EVENTS_SRC 
+    src/ModuleEvents.h 
+    src/ModuleEvents.cpp
+	src/Event.h
+	src/EventListener.h
+)
+
 set(RENDERING_SRC 
-    src/Camera.h 
-    src/Camera.cpp
+    src/EditorCamera.h 
+    src/EditorCamera.cpp
     src/Primitives.cpp 
     src/Primitives.h 
     src/RenderContext.h 
@@ -43,7 +50,13 @@ set(RENDERING_SRC
     src/Shader.h 
     src/Shader.cpp 
     src/Frustum.h 
-    src/Frustum.cpp 
+    src/AABB.h 
+    src/ComponentMesh.h
+    src/ComponentMesh.cpp
+    src/ComponentSkinnedMesh.h
+    src/ComponentSkinnedMesh.cpp
+    src/CameraLens.h
+    src/CameraLens.cpp
 )
 
 set(VFX_SRC
@@ -127,8 +140,6 @@ set(COMPONENTS_SRC
     src/Component.cpp
     src/ComponentMaterial.cpp
     src/ComponentMaterial.h
-    src/ComponentMesh.h
-    src/ComponentMesh.cpp
     src/Transform.cpp
     src/Transform.h
     src/ComponentCamera.cpp
@@ -144,13 +155,15 @@ set(COMPONENTS_SRC
     src/AudioListener.cpp
     src/ReverbZone.h
     src/ReverbZone.cpp
+    src/ComponentAnimation.h
+    src/ComponentAnimation.cpp
 )
 
 set(LOADERS_SRC 
     src/Texture.h 
     src/Texture.cpp  
-    src/FileSystem.h  
-    src/FileSystem.cpp 
+    src/ModuleLoader.h
+    src/ModuleLoader.cpp 
 )
 
 set(EDITOR_SRC 
@@ -175,29 +188,35 @@ set(EDITOR_SRC
     src/ImportSettingsWindow.cpp 
     src/ShaderEditorWindow.h
     src/ShaderEditorWindow.cpp
-    src/ScriptEditorWindow.h
-    src/ScriptEditorWindow.cpp
-    src/TextEditor.h
-    src/TextEditor.cpp
 )
 
 set(IMPORTERS_SRC 
     src/MeshImporter.cpp 
     src/MeshImporter.h 
+    src/AnimationImporter.cpp 
+    src/AnimationImporter.h 
     src/LibraryManager.cpp 
     src/LibraryManager.h 
     src/MetaFile.cpp 
     src/MetaFile.h 
     src/TextureImporter.cpp 
     src/TextureImporter.h 
+    src/ModelImporter.cpp 
+    src/ModelImporter.h 
     src/ModuleResources.cpp 
     src/ModuleResources.h 
     src/ResourceMesh.cpp 
     src/ResourceMesh.h 
+    src/ResourceModel.cpp 
+    src/ResourceModel.h 
     src/ResourceTexture.cpp 
     src/ResourceTexture.h 
+    src/ResourceAnimation.cpp 
+    src/ResourceAnimation.h 
     src/ResourceShader.cpp
     src/ResourceShader.h
+    src/ResourceAnimation.cpp
+    src/ResourceAnimation.h
 )
 
 set(SCRIPTING_SRC 
@@ -207,6 +226,8 @@ set(SCRIPTING_SRC
     src/ResourceScript.cpp
     src/ComponentScript.h
     src/ComponentScript.cpp
+    src/ScriptEditorWindow.h
+    src/ScriptEditorWindow.cpp
     src/EditorPreferences.h
     src/EditorPreferences.cpp
     src/Prefab.h
@@ -215,10 +236,15 @@ set(SCRIPTING_SRC
     src/PrefabManager.cpp
     src/ResourcePrefab.h
     src/ResourcePrefab.cpp
+    src/TextEditor.h
+    src/TextEditor.cpp
 )
 
 
+
+
 source_group("Source\\Core" FILES ${CORE_SRC})
+source_group("Source\\Events" FILES ${EVENTS_SRC})
 source_group("Source\\Rendering" FILES ${RENDERING_SRC})
 source_group("Source\\Rendering\\VFX" FILES ${VFX_SRC})
 source_group("Source\\Audio" FILES ${AUDIO_SRC})
@@ -231,7 +257,7 @@ source_group("Source\\Loaders\\Importers" FILES ${IMPORTERS_SRC})
 source_group("Scripting" FILES ${SCRIPTING_SRC})
 source_group("Source\\Physics" FILES ${PHYSICS_SRC})
 
-set(SRCS ${CORE_SRC} ${RENDERING_SRC} ${VFX_SRC} ${AUDIO_SRC} ${UTILS_SRC} ${EDITOR_SRC} ${GAMEOBJECTS_SRC} ${COMPONENTS_SRC} ${LOADERS_SRC} ${IMPORTERS_SRC} ${SCRIPTING_SRC} ${PHYSICS_SRC})
+set(SRCS ${CORE_SRC} ${RENDERING_SRC} ${VFX_SRC} ${AUDIO_SRC} ${UTILS_SRC} ${EDITOR_SRC} ${GAMEOBJECTS_SRC} ${COMPONENTS_SRC} ${LOADERS_SRC} ${IMPORTERS_SRC} ${SCRIPTING_SRC} ${PHYSICS_SRC} ${EVENTS_SRC})
 
 add_executable(Engine ${SRCS})
 
@@ -248,6 +274,7 @@ target_link_libraries(Engine PRIVATE Tracy::TracyClient)
 target_link_libraries(Engine PRIVATE unofficial::omniverse-physx-sdk::sdk)
 target_link_libraries(Engine PRIVATE ${LUA_LIBRARIES})
 target_include_directories(Engine PRIVATE ${LUA_INCLUDE_DIR})
+
 
 # ============= WWISE AUTO-DOWNLOAD =============
 set(WWISE_SDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/External/Wwise/SDK")
@@ -324,57 +351,4 @@ target_link_libraries(Engine PRIVATE
     dinput8.lib 
     dsound.lib 
     dxguid.lib
-)
-
-target_include_directories(Engine PRIVATE ${LUA_INCLUDE_DIR})
-
-# Game (standalone)
-set(GAME_SRC ${CORE_SRC} ${RENDERING_SRC} ${UTILS_SRC} ${GAMEOBJECTS_SRC} ${COMPONENTS_SRC} ${LOADERS_SRC} ${IMPORTERS_SRC} ${SCRIPTING_SRC} ${PHYSICS_SRC} ${VFX_SRC} ${AUDIO_SRC} )
-
-add_executable(Game ${GAME_SRC})
-
-target_compile_definitions(Game PRIVATE WAVE_GAME)
-
-target_link_libraries(Game PRIVATE SDL3::SDL3)
-target_link_libraries(Game PRIVATE glad::glad)
-target_link_libraries(Game PRIVATE glm::glm)
-target_link_libraries(Game PRIVATE assimp::assimp)
-target_link_libraries(Game PRIVATE DevIL::IL)
-target_link_libraries(Game PRIVATE DevIL::ILU)
-target_link_libraries(Game PRIVATE nlohmann_json::nlohmann_json)
-target_link_libraries(Game PRIVATE Tracy::TracyClient)
-target_link_libraries(Game PRIVATE unofficial::omniverse-physx-sdk::sdk)
-target_link_libraries(Game PRIVATE ${LUA_LIBRARIES})
-
-
-target_include_directories(Game PRIVATE ${LUA_INCLUDE_DIR})
-
-target_sources(Game PRIVATE ${WWISE_IO_SOURCES})
-
-target_link_libraries(Game PRIVATE 
-    "${WWISE_LIB_DIR}/AkSoundEngine.lib"
-    "${WWISE_LIB_DIR}/AkMemoryMgr.lib"
-    "${WWISE_LIB_DIR}/AkStreamMgr.lib"
-    "${WWISE_LIB_DIR}/AkSpatialAudio.lib"
-    "${WWISE_SDK_DIR}/x64_vc170/${WWISE_CONFIG_DIR}/lib/CommunicationCentral.lib"
-    "${WWISE_LIB_DIR}/AkRoomVerbFX.lib"
-    ws2_32.lib 
-    mswsock.lib 
-    dinput8.lib 
-    dsound.lib 
-    dxguid.lib
-)
-
-target_compile_definitions(Game PRIVATE 
-    AK_WIN 
-    WIN32 
-    $<$<CONFIG:Debug>:_DEBUG>
-    $<$<CONFIG:Release>:AK_OPTIMIZED>
-)
-
-target_include_directories(Game PRIVATE BEFORE
-    "${WWISE_SDK_DIR}/include"
-    "${WWISE_SDK_DIR}"
-    "${WWISE_SDK_DIR}/include/Common"
-    "${WWISE_SDK_DIR}/include/Win32"
-)
+) 

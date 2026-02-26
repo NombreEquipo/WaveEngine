@@ -1,10 +1,10 @@
 #pragma once
 #include <vector>
-#include <algorithm>
+#include "EventListener.h"
 
 class GameObject;
 
-class SelectionManager
+class SelectionManager : public EventListener
 {
 public:
 	SelectionManager() = default;
@@ -28,6 +28,9 @@ public:
 	bool HasSelection() const { return !selectedObjects.empty(); }
 	int GetSelectionCount() const { return static_cast<int>(selectedObjects.size()); }
 
+	void OnEvent(const Event& event);
+
 private:
 	std::vector<GameObject*> selectedObjects;
+
 };

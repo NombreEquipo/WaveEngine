@@ -10,6 +10,7 @@ Application::Application() : isRunning(true), playState(PlayState::EDITING)
     LOG_CONSOLE("Starting engine...");
 
     window = std::make_shared<Window>();
+    events = std::make_shared<ModuleEvents>();
     input = std::make_shared<Input>();
     renderContext = std::make_shared<RenderContext>();
     renderer = std::make_shared<Renderer>();
@@ -19,7 +20,7 @@ Application::Application() : isRunning(true), playState(PlayState::EDITING)
 #ifndef WAVE_GAME
     editor = std::make_shared<ModuleEditor>();
 #endif
-    filesystem = std::make_shared<FileSystem>();
+    loader = std::make_shared<ModuleLoader>();
     time = std::make_shared<Time>();
     grid = std::make_shared<Grid>();
     resources = std::make_shared<ModuleResources>();
@@ -28,6 +29,7 @@ Application::Application() : isRunning(true), playState(PlayState::EDITING)
 
     
     AddModule(std::static_pointer_cast<Module>(window));
+    AddModule(std::static_pointer_cast<Module>(events));
     AddModule(std::static_pointer_cast<Module>(input));
     AddModule(std::static_pointer_cast<Module>(physics));
     AddModule(std::static_pointer_cast<Module>(renderContext));
@@ -38,11 +40,13 @@ Application::Application() : isRunning(true), playState(PlayState::EDITING)
 #ifndef WAVE_GAME
     AddModule(std::static_pointer_cast<Module>(editor));
 #endif
+    AddModule(std::static_pointer_cast<Module>(resources));
     AddModule(std::static_pointer_cast<Module>(scripts));  
-    AddModule(std::static_pointer_cast<Module>(filesystem));
+    AddModule(std::static_pointer_cast<Module>(loader));
     AddModule(std::static_pointer_cast<Module>(time));
     AddModule(std::static_pointer_cast<Module>(grid));
     AddModule(std::static_pointer_cast<Module>(renderer));
+    AddModule(std::static_pointer_cast<Module>(editor));
 
 
     selectionManager = new SelectionManager();
@@ -305,7 +309,7 @@ bool Application::CleanUp()
     renderer.reset();
     grid.reset();
     time.reset();
-    filesystem.reset();
+    loader.reset();
     scripts.reset();
     resources.reset();
     renderContext.reset();

@@ -13,13 +13,14 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "ImportSettingsWindow.h"
 #include "TextureImporter.h" 
-#include "FileSystem.h"       
+#include "ModuleLoader.h"       
 #include "GameObject.h"        
 #include "Input.h"           
 #include "ScriptEditorWindow.h"
 #include "EditorPreferences.h"
 #include "ResourcePrefab.h"
 #include "PrefabManager.h"
+#include "Globals.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -466,7 +467,7 @@ void AssetsWindow::Draw()
 
                 if (asset.isFBX)
                 {
-                    for (auto& subMesh : asset.subMeshes)
+                    for (auto& subMesh : asset.subResources)
                     {
                         if (show3DPreviews)
                         {
@@ -861,8 +862,8 @@ void AssetsWindow::DrawExpandableAssetItem(AssetEntry& asset, std::string& pathP
     {
         asset.isExpanded = !asset.isExpanded;
 
-        if (asset.isExpanded && asset.subMeshes.empty()) {
-            LoadFBXSubMeshes(asset);
+        if (asset.isExpanded && asset.subResources.empty()) {
+            LoadFBXSubresources(asset);
         }
     }
     ImGui::PopStyleColor();
@@ -962,7 +963,7 @@ void AssetsWindow::DrawExpandableAssetItem(AssetEntry& asset, std::string& pathP
         if (asset.uid != 0) {
             ImGui::Text("UID: %llu", asset.uid);
         }
-        ImGui::Text("Contains %zu meshes", asset.subMeshes.size());
+        ImGui::Text("Contains %zu subresources", asset.subResources.size());
         ImGui::EndTooltip();
     }
 
@@ -973,17 +974,15 @@ void AssetsWindow::DrawExpandableAssetItem(AssetEntry& asset, std::string& pathP
         if (asset.uid != 0) {
             ImGui::Text("UID: %llu", asset.uid);
         }
-        ImGui::Text("Contains %zu meshes", asset.subMeshes.size());
+        ImGui::Text("Contains %zu subresources", asset.subResources.size());
         ImGui::EndTooltip();
     }
 
     // Draw submeshes horizontally with wrapping
-    if (asset.isExpanded && !asset.subMeshes.empty())
+    if (asset.isExpanded && !asset.subResources.empty())
     {
         float smallIconSize = iconSize * 0.7f;
         float itemWidth = smallIconSize + 15.0f;
-
-        LOG_DEBUG("[DrawExpandableAsset] FBX: %s has %zu submeshes", asset.name.c_str(), asset.subMeshes.size());
 
         ImGui::Dummy(ImVec2(0, 0));
 
@@ -1002,9 +1001,9 @@ void AssetsWindow::DrawExpandableAssetItem(AssetEntry& asset, std::string& pathP
         float currentX = startX;
 
         // Draw each submesh
-        for (size_t i = 0; i < asset.subMeshes.size(); ++i)
+        for (size_t i = 0; i < asset.subResources.size(); ++i)
         {
-            auto& subMesh = asset.subMeshes[i];
+            auto& subMesh = asset.subResources[i];
 
             // Load preview if it has not yet been loaded
             // Solo cargar si show3DPreviews est activado
@@ -1018,13 +1017,9 @@ void AssetsWindow::DrawExpandableAssetItem(AssetEntry& asset, std::string& pathP
             {
                 float remainingWidth = startX + windowContentWidth - currentX;
 
-                LOG_DEBUG("[DrawExpandableAsset] Mesh %zu: currentX: %.2f, remaining: %.2f",
-                    i, currentX, remainingWidth);
-
                 if (remainingWidth < itemWidth)
                 {
                     // New line with indentation
-                    LOG_DEBUG("[DrawExpandableAsset] Mesh %zu: NUEVA LINEA", i);
                     ImGui::NewLine();
                     ImGui::SetCursorPosX(startX);
                     currentX = startX;
@@ -1481,9 +1476,11 @@ void AssetsWindow::DrawAssetItem(const AssetEntry& asset, std::string& pathPendi
 
     ImGui::PopID();
 }
-void AssetsWindow::LoadFBXSubMeshes(AssetEntry& fbxAsset)
+
+void AssetsWindow::LoadFBXSubresources(AssetEntry& fbxAsset)
 {
-    fbxAsset.subMeshes.clear();
+    // Limpiamos los subrecursos anteriores
+    fbxAsset.subResources.clear();
 
     std::string metaPath = fbxAsset.path + ".meta";
     if (!fs::exists(metaPath)) {
@@ -1506,50 +1503,57 @@ void AssetsWindow::LoadFBXSubMeshes(AssetEntry& fbxAsset)
 
     const auto& allResources = resources->GetAllResources();
 
-    int meshIndex = 0;
-    const int maxMeshes = 100; // Safety limit
-
-    for (int i = 0; i < maxMeshes; i++)
+    // --- 1. PROCESAR MINTAS (MESHES) ---
+    for (const auto& [meshName, meshUID] : meta.meshes)
     {
-        unsigned long long meshUID = meta.uid + i;
         std::string libPath = LibraryManager::GetMeshPathFromUID(meshUID);
 
-        // Check if file exists
-        if (!LibraryManager::FileExists(libPath)) {
-            break; // No more meshes
-        }
+        if (!LibraryManager::FileExists(libPath))
+            continue;
 
         AssetEntry meshEntry;
-
-        fs::path meshPath(libPath);
-        meshEntry.name = "Mesh_" + std::to_string(meshIndex);
-
+        meshEntry.name = meshName;
         meshEntry.path = libPath;
         meshEntry.extension = ".mesh";
         meshEntry.isDirectory = false;
         meshEntry.isFBX = false;
-        meshEntry.isExpanded = false;
         meshEntry.uid = meshUID;
-        meshEntry.inMemory = false;
-        meshEntry.references = 0;
-        meshEntry.previewTextureID = 0;
-        meshEntry.previewLoaded = false;
 
-        // Check if loaded in memory
         auto it = allResources.find(meshUID);
-        if (it != allResources.end())
-        {
+        if (it != allResources.end()) {
             meshEntry.inMemory = it->second->IsLoadedToMemory();
             meshEntry.references = it->second->GetReferenceCount();
         }
 
-        fbxAsset.subMeshes.push_back(meshEntry);
-        meshIndex++;
+        fbxAsset.subResources.push_back(meshEntry);
     }
 
-    LOG_DEBUG("[AssetsWindow] Loaded %d submeshes for FBX: %s", meshIndex, fbxAsset.name.c_str());
-}
+    for (const auto& [animName, animUID] : meta.animations)
+    {
+        std::string libPath = LibraryManager::GetAnimationPathFromUID(animUID);
 
+        if (!LibraryManager::FileExists(libPath))
+            continue;
+
+        AssetEntry animEntry;
+        animEntry.name = animName;
+        animEntry.path = libPath;
+        animEntry.extension = ".anim";
+        animEntry.isDirectory = false;
+        animEntry.isFBX = false;
+        animEntry.uid = animUID;
+
+        auto it = allResources.find(animUID);
+        if (it != allResources.end()) {
+            animEntry.inMemory = it->second->IsLoadedToMemory();
+            animEntry.references = it->second->GetReferenceCount();
+        }
+
+        fbxAsset.subResources.push_back(animEntry);
+    }
+
+    LOG_DEBUG("[AssetsWindow] FBX Subresources loaded: %d items", (int)fbxAsset.subResources.size());
+}
 bool AssetsWindow::DeleteAsset(const AssetEntry& asset)
 {
     try {
@@ -1739,7 +1743,7 @@ void AssetsWindow::ScanDirectory(const fs::path& directory, std::vector<AssetEnt
 
         asset.isFBX = (extension == ".fbx");
         asset.isExpanded = false;
-        asset.subMeshes.clear();
+        asset.subResources.clear();
 
         if (isDirectory)
         {
@@ -2422,38 +2426,38 @@ unsigned int AssetsWindow::RenderMultipleMeshesToTexture(const std::vector<const
 
 void AssetsWindow::HandleExternalDragDrop()
 {
-    // Manejar archivos externos (desde fuera de la aplicación)
-    if (Application::GetInstance().input->HasDroppedFile())
-    {
-        ImVec2 mousePos = ImGui::GetMousePos();
-        ImVec2 windowPos = ImGui::GetWindowPos();
-        ImVec2 windowSize = ImGui::GetWindowSize();
+    //// Manejar archivos externos (desde fuera de la aplicación)
+    //if (Application::GetInstance().input->HasDroppedFile())
+    //{
+    //    ImVec2 mousePos = ImGui::GetMousePos();
+    //    ImVec2 windowPos = ImGui::GetWindowPos();
+    //    ImVec2 windowSize = ImGui::GetWindowSize();
 
-        bool isMouseOverWindow = (mousePos.x >= windowPos.x &&
-            mousePos.x <= windowPos.x + windowSize.x &&
-            mousePos.y >= windowPos.y &&
-            mousePos.y <= windowPos.y + windowSize.y);
+    //    bool isMouseOverWindow = (mousePos.x >= windowPos.x &&
+    //        mousePos.x <= windowPos.x + windowSize.x &&
+    //        mousePos.y >= windowPos.y &&
+    //        mousePos.y <= windowPos.y + windowSize.y);
 
-        bool windowActive = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) ||
-            ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
+    //    bool windowActive = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) ||
+    //        ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
 
-        if (isMouseOverWindow || windowActive)
-        {
-            std::string droppedPath = Application::GetInstance().input->GetDroppedFilePath();
-            Application::GetInstance().input->ClearDroppedFile();
+    //    if (isMouseOverWindow || windowActive)
+    //    {
+    //        std::string droppedPath = Application::GetInstance().input->GetDroppedFilePath();
+    //        Application::GetInstance().input->ClearDroppedFile();
 
-            LOG_CONSOLE("[AssetsWindow] File dropped on Assets window: %s", droppedPath.c_str());
+    //        LOG_CONSOLE("[AssetsWindow] File dropped on Assets window: %s", droppedPath.c_str());
 
-            if (ProcessDroppedFile(droppedPath))
-            {
-                RefreshAssets();
-            }
-            else
-            {
-                LOG_CONSOLE("[AssetsWindow] Failed to import: %s", droppedPath.c_str());
-            }
-        }
-    }
+    //        if (ProcessDroppedFile(droppedPath))
+    //        {
+    //            RefreshAssets();
+    //        }
+    //        else
+    //        {
+    //            LOG_CONSOLE("[AssetsWindow] Failed to import: %s", droppedPath.c_str());
+    //        }
+    //    }
+    //}
 }
 bool AssetsWindow::ProcessDroppedFile(const std::string& sourceFilePath)
 {
@@ -2487,11 +2491,7 @@ bool AssetsWindow::ProcessDroppedFile(const std::string& sourceFilePath)
 
     LOG_CONSOLE("[AssetsWindow] File copied to: %s", destPath.c_str());
 
-    if (!ImportAssetToLibrary(destPath))
-    {
-        LOG_CONSOLE("[AssetsWindow] ERROR: Failed to import asset to Library");
-        return false;
-    }
+    Application::GetInstance().resources.get()->ImportFile(destPath.c_str(), true);
 
     return true;
 }
@@ -2549,202 +2549,6 @@ bool AssetsWindow::CopyFileToAssets(const std::string& sourceFilePath, std::stri
         LOG_CONSOLE("[AssetsWindow] ERROR copying file: %s", e.what());
         return false;
     }
-}
-
-bool AssetsWindow::ImportAssetToLibrary(const std::string& assetPath)
-{
-
-    if (!fs::exists(assetPath))
-    {
-        LOG_CONSOLE("[AssetsWindow] ERROR: Asset file does not exist!");
-        return false;
-    }
-
-    fs::path path(assetPath);
-    std::string extension = path.extension().string();
-    std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
-
-    LOG_CONSOLE("[AssetsWindow] File extension: %s", extension.c_str());
-
-    LOG_CONSOLE("[AssetsWindow] Step 1: Processing .meta file...");
-    std::string metaPath = assetPath + ".meta";
-    MetaFile meta;
-
-    if (fs::exists(metaPath))
-    {
-        LOG_CONSOLE("[AssetsWindow] Loading existing .meta file");
-        meta = MetaFile::Load(metaPath);
-        LOG_CONSOLE("[AssetsWindow] Loaded .meta with UID: %llu", meta.uid);
-    }
-    else
-    {
-        LOG_CONSOLE("[AssetsWindow] Creating new .meta file");
-        meta.uid = MetaFile::GenerateUID();
-        meta.type = MetaFile::GetAssetType(extension);
-        meta.originalPath = assetPath;
-        meta.lastModified = MetaFileManager::GetFileTimestamp(assetPath);
-
-        if (meta.type == AssetType::MODEL_FBX)
-        {
-            meta.importSettings.generateNormals = true;
-            meta.importSettings.flipUVs = true;
-            meta.importSettings.optimizeMeshes = true;
-            meta.importSettings.importScale = 1.0f;
-        }
-        else if (meta.type == AssetType::TEXTURE_PNG ||
-            meta.type == AssetType::TEXTURE_JPG ||
-            meta.type == AssetType::TEXTURE_DDS ||
-            meta.type == AssetType::TEXTURE_TGA)
-        {
-            meta.importSettings.generateMipmaps = true;
-            meta.importSettings.filterMode = 2;
-            meta.importSettings.flipHorizontal = false;
-            meta.importSettings.maxTextureSize = 6;
-        }
-
-        if (!meta.Save(metaPath))
-        {
-            LOG_CONSOLE("[AssetsWindow] ERROR: Failed to save .meta file");
-            return false;
-        }
-
-        LOG_CONSOLE("[AssetsWindow] Created .meta with UID: %llu", meta.uid);
-    }
-
-    if (meta.uid == 0)
-    {
-        LOG_CONSOLE("[AssetsWindow] ERROR: Invalid UID (0)");
-        return false;
-    }
-
-    bool success = false;
-
-    if (extension == ".fbx")
-    {
-        success = ImportFBXToLibrary(assetPath, meta);
-    }
-    else if (extension == ".png" || extension == ".jpg" ||
-        extension == ".jpeg" || extension == ".tga" || extension == ".dds")
-    {
-        success = ImportTextureToLibrary(assetPath, meta);
-    }
-    else
-    {
-        LOG_CONSOLE("[AssetsWindow] ERROR: Unsupported file type: %s", extension.c_str());
-        return false;
-    }
-
-    if (success)
-    {
-        meta.lastModified = MetaFileManager::GetFileTimestamp(assetPath);
-        meta.Save(metaPath);
-    }
-
-    return success;
-}
-
-bool AssetsWindow::ImportTextureToLibrary(const std::string& assetPath, const MetaFile& meta)
-{
-
-    TextureData texture = TextureImporter::ImportFromFile(assetPath, meta.importSettings);
-
-    if (!texture.IsValid())
-    {
-        return false;
-    }
-
-    std::string libraryFilename = std::to_string(meta.uid) + ".texture";
-    std::string expectedLibraryPath = LibraryManager::GetTexturePathFromUID(meta.uid);
-
-    if (!TextureImporter::SaveToCustomFormat(texture, libraryFilename))
-    {
-        return false;
-    }
-
-    if (!fs::exists(expectedLibraryPath))
-    {
-        return false;
-    }
-
-    uintmax_t fileSize = fs::file_size(expectedLibraryPath);
-
-    if (fileSize == 0)
-    {
-        LOG_CONSOLE("[AssetsWindow] ERROR: Library file is empty!");
-        return false;
-    }
-
-
-    ModuleResources* resources = Application::GetInstance().resources.get();
-    if (!resources)
-    {
-        LOG_CONSOLE("[AssetsWindow] ERROR: ModuleResources not available");
-        return false;
-    }
-
-    const Resource* existingRes = resources->GetResource(meta.uid);
-    if (existingRes)
-    {
-        LOG_CONSOLE("[AssetsWindow] Resource already registered (UID: %llu)", meta.uid);
-        return true;
-    }
-
-    Resource* newResource = resources->CreateNewResourceWithUID(
-        assetPath.c_str(),
-        Resource::TEXTURE,
-        meta.uid
-    );
-
-    if (!newResource)
-    {
-        LOG_CONSOLE("[AssetsWindow] ERROR: Failed to create resource entry");
-        return false;
-    }
-
-    newResource->SetLibraryFile(expectedLibraryPath);
-
-    return true;
-}
-
-bool AssetsWindow::ImportFBXToLibrary(const std::string& assetPath, const MetaFile& meta)
-{
-
-    GameObject* tempModel = Application::GetInstance().filesystem->LoadFBXAsGameObject(assetPath);
-
-    if (!tempModel)
-    {
-        LOG_CONSOLE("[AssetsWindow] ERROR: LoadFBXAsGameObject failed");
-        return false;
-    }
-
-
-    int meshCount = 0;
-    for (int i = 0; i < 100; i++)
-    {
-        UID meshUID = meta.uid + i;
-        std::string meshPath = LibraryManager::GetMeshPathFromUID(meshUID);
-
-        if (!fs::exists(meshPath))
-        {
-            break;
-        }
-
-        meshCount++;
-        LOG_CONSOLE("[AssetsWindow] Found mesh %d (UID: %llu): %s",
-            i, meshUID, meshPath.c_str());
-    }
-
-    if (meshCount == 0)
-    {
-        LOG_CONSOLE("[AssetsWindow] ERROR: No meshes found in Library!");
-        tempModel->MarkForDeletion();
-        return false;
-    }
-
-
-    tempModel->MarkForDeletion();
-
-    return true;
 }
 
 bool AssetsWindow::TestImportSystem()
@@ -2919,10 +2723,10 @@ void AssetsWindow::CreateNewScript(const std::string& scriptName)
 
     // Crear archivo .meta
     MetaFile meta;
-    meta.uid = MetaFile::GenerateUID();
+    meta.uid = GenerateUID();
     meta.type = AssetType::SCRIPT_LUA;
     meta.originalPath = scriptPath.string();
-    meta.lastModified = MetaFileManager::GetFileTimestamp(scriptPath.string());
+    meta.fileHash = MetaFileManager::GetFileHash(scriptPath.string());
 
     std::string metaPath = scriptPath.string() + ".meta";
     meta.Save(metaPath);
@@ -3086,10 +2890,10 @@ bool AssetsWindow::CreatePrefabFromGameObject(GameObject* obj, const std::string
 
     // Create .meta file
     MetaFile meta;
-    meta.uid = MetaFile::GenerateUID();
+    meta.uid = GenerateUID();
     meta.type = AssetType::PREFAB;
     meta.originalPath = prefabPath;
-    meta.lastModified = MetaFileManager::GetFileTimestamp(prefabPath);
+    meta.fileHash = MetaFileManager::GetFileHash(prefabPath);
 
     std::string metaPath = prefabPath + ".meta";
     if (!meta.Save(metaPath))
