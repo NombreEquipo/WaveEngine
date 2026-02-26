@@ -297,6 +297,18 @@ void Renderer::RemoveMesh(ComponentMesh* mesh) {
     }
 }
 
+void Renderer::AddParticle(ComponentParticleSystem* particle) {
+    particles.push_back(particle);
+}
+
+void Renderer::RemoveParticle(ComponentParticleSystem* particle) {
+    auto it = std::find(particles.begin(), particles.end(), particle);
+    if (it != particles.end()) {
+        *it = particles.back();
+        particles.pop_back();
+    }
+}
+
 void Renderer::AddCamera(CameraLens* camera)
 {
     activeCameras.push_back(camera);
@@ -387,6 +399,7 @@ bool Renderer::RenderScene(CameraLens* camera)
     //CLEAN LIST AND BUILD NEWS
     opaqueList.clear();
     transparentList.clear();
+    particlesList.clear();
 
     BuildRenderLists(camera);
 
@@ -416,6 +429,8 @@ bool Renderer::RenderScene(CameraLens* camera)
     glEnable(GL_BLEND);
     glDepthMask(GL_FALSE);
     DrawRenderList(transparentList, camera);
+
+    DrawParticlesList(camera);
 
     //RENDER DEBUG
     if (camera->GetDebugCamera())
@@ -477,6 +492,26 @@ void Renderer::BuildRenderLists(const CameraLens* camera)
             }
         }
     }
+
+    for (ComponentParticleSystem* ps : particles)
+    {
+        if (!ps->IsActive() || !ps->GetEmitter()) continue;
+
+        ParticleObject pObj;
+        pObj.system = ps;
+
+        if (ps->GetEmitter()->simulationSpace == SimulationSpace::LOCAL) {
+            pObj.modelMatrix = ps->owner->transform->GetGlobalMatrix();
+        }
+        else {
+            pObj.modelMatrix = glm::mat4(1.0f);
+        }
+
+        glm::vec3 pos = ps->owner->transform->GetGlobalPosition();
+       float distanceToCamera = glm::distance(pos, camera->position);
+
+        particlesList.emplace(distanceToCamera, pObj);
+    }
 }
 
 void Renderer::DrawRenderList(const std::multimap<float, RenderObject>& map, const CameraLens* camera)
@@ -519,6 +554,40 @@ void Renderer::DrawRenderList(const std::multimap<float, RenderObject>& map, con
     }
 }
 
+void Renderer::DrawParticlesList(const CameraLens* camera)
+{
+    if (particlesList.empty()) return;
+
+    // 1. IMPORTANTE: Desactivar cualquier shader activo para usar el pipeline fijo
+    glUseProgram(0);
+
+    // 2. Configuración de matrices legacy (necesaria para glBegin/glEnd)
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadMatrixf(glm::value_ptr(camera->GetProjectionMatrix()));
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadMatrixf(glm::value_ptr(camera->GetViewMatrix()));
+
+    for (const auto& pair : particlesList)
+    {
+        // Aplicar la matriz de modelo de la entidad (si es LOCAL)
+        glMatrixMode(GL_MODELVIEW);
+        glPushMatrix();
+        glMultMatrixf(glm::value_ptr(pair.second.modelMatrix));
+
+        pair.second.system->GetEmitter()->Draw(camera->position);
+
+        glPopMatrix();
+    }
+
+    // 3. Restaurar matrices
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+}
 void Renderer::DrawStencilList(const CameraLens* camera)
 {
     glEnable(GL_STENCIL_TEST);
@@ -654,6 +723,8 @@ bool Renderer::CleanUp()
 {
     LOG_DEBUG("Cleaning up Renderer");
 
+    
+
     // Release primitive meshes
     UnloadMesh(sphere);
     UnloadMesh(cylinder);
@@ -690,6 +761,15 @@ bool Renderer::CleanUp()
         glDeleteBuffers(1, &normalLinesVBO);
     }
 
+
+    meshes.clear();
+    activeCameras.clear();
+    opaqueList.clear();
+    transparentList.clear();
+    stencilList.clear();
+    normalsList.clear();
+    meshLinesList.clear();
+    linesList.clear();
 
     LOG_DEBUG("Renderer cleaned up successfully");
     LOG_CONSOLE("Renderer shutdown complete");

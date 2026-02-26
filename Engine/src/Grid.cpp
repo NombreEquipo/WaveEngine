@@ -3,7 +3,7 @@
 #include "Renderer.h"
 #include "Log.h"
 
-Grid::Grid() : Module(), enabled(true), gridSize(20.0f), gridDivisions(20)
+Grid::Grid() : Module(), enabled(true), gridSize(200.0f), gridDivisions(20)
 {
 }
 

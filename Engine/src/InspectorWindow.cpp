@@ -781,7 +781,6 @@ void InspectorWindow::DrawParticleComponent(Component* component)
 
     if (particleComp != nullptr)
     {
-        // Delegate the ui to the component
         particleComp->OnEditor();
     }
 }

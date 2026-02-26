@@ -21,9 +21,12 @@ ComponentParticleSystem::ComponentParticleSystem(GameObject* owner)
     name = "Particle System";
     emitter = new EmitterInstance();
     emitter->Init(); // Initialize default modules
+    Application::GetInstance().renderer.get()->AddParticle(this);
 }
 
 ComponentParticleSystem::~ComponentParticleSystem() {
+    
+    Application::GetInstance().renderer.get()->RemoveParticle(this);
     // Release texture resource reference
     if (textureResourceUID != 0) {
         Application::GetInstance().resources->ReleaseResource(textureResourceUID);
@@ -75,6 +78,7 @@ void ComponentParticleSystem::Update() {
 }
 
 void ComponentParticleSystem::Draw(ComponentCamera* camera) {
+    
     if (!active || !emitter) return;
 
     glUseProgram(0);

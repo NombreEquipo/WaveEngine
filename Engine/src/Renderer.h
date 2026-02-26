@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Module.h"
 #include "ModuleLoader.h"
 #include "Shader.h"
@@ -12,6 +13,7 @@
 
 class GameObject;
 class ComponentMesh;
+class ComponentParticleSystem;
 class CameraLens;
 
 class Renderer : public Module
@@ -20,6 +22,12 @@ class Renderer : public Module
     {
         ComponentMesh* mesh;
         glm::mat4 globalModelMatrix;
+    };
+   
+    struct ParticleObject
+    {
+        ComponentParticleSystem* system;
+        glm::mat4 modelMatrix;
     };
 
     struct RenderLine {
@@ -46,6 +54,10 @@ public:
     void AddMesh(ComponentMesh* mesh);
     void RemoveMesh(ComponentMesh* mesh);
     void DrawMesh(const ComponentMesh* meshComp);
+    
+    // Particles management
+    void AddParticle(ComponentParticleSystem* particle);
+    void RemoveParticle(ComponentParticleSystem* particle);
 
     // Camera management
     void AddCamera(CameraLens* camera);
@@ -110,6 +122,7 @@ private:
 
     // Draw Functions
     void DrawRenderList(const std::multimap<float, RenderObject>& map, const CameraLens* camera);
+    void DrawParticlesList(const CameraLens* camera);
     void DrawLinesList(const CameraLens* camera);
     void DrawStencilList(const CameraLens* camera);
     void DrawNormalsList(const CameraLens* camera);
@@ -165,10 +178,12 @@ private:
 
     // LISTS
     std::vector<ComponentMesh*> meshes;
+    std::vector<ComponentParticleSystem*> particles;
     std::vector<CameraLens*> activeCameras;
 
     std::multimap<float, RenderObject> opaqueList;
     std::multimap<float, RenderObject> transparentList;
+    std::multimap<float, ParticleObject> particlesList;
     std::vector<RenderObject> stencilList;
     std::vector<RenderObject> normalsList;
     std::vector<RenderObject> meshLinesList;

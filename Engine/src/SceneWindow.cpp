@@ -56,8 +56,9 @@ SceneWindow::SceneWindow(InspectorWindow* inspector)
 
 void SceneWindow::Draw()
 {
-    isHovered = (isOpen && ImGui::IsWindowHovered(ImGuiHoveredFlags_RootWindow | ImGuiHoveredFlags_ChildWindows));
-    isFocused = (isOpen && ImGui::IsWindowFocused(ImGuiHoveredFlags_RootWindow | ImGuiHoveredFlags_ChildWindows));
+    isHovered = false;
+    isFocused = false;
+    
     if (!isOpen) return;
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
@@ -104,27 +105,21 @@ void SceneWindow::Draw()
 
 void SceneWindow::SelectObject()
 {
-    if (ImGuizmo::IsOver() || ImGuizmo::IsUsing()) return;
-    
+    bool hasSelection = Application::GetInstance().selectionManager->GetSelectedObject() != nullptr;
+
+    if (hasSelection)
+    {
+        if (ImGuizmo::IsOver() || ImGuizmo::IsUsing()) return;
+    }
+
     if (!isHovered) return;
 
     Application::GetInstance().selectionManager->ClearSelection();
+    GameObject* objToSelect = GetGameObjectUnderMouse();
 
-    ImVec2 mousePos = ImGui::GetMousePos();
-
-    int mouseX = (int)(mousePos.x - sceneViewportPos.x);
-    int mouseY = (int)(mousePos.y - sceneViewportPos.y);
-
-    UID objectToSelectUID = Application::GetInstance().renderer->GetObjectInPixel(
-        Application::GetInstance().editor->GetEditorCamera()->GetCameraLens(),
-        mouseX,
-        mouseY
-    );
-
-    if (objectToSelectUID != 0) {
-        GameObject* objectToSelect = Application::GetInstance().scene->FindObject(objectToSelectUID);
-        Application::GetInstance().selectionManager->SetSelectedObject(objectToSelect);
-        LOG_CONSOLE("Selected: %s", objectToSelect ? objectToSelect->GetName().c_str() : "None");
+    if (objToSelect) {
+        Application::GetInstance().selectionManager->SetSelectedObject(objToSelect);
+        LOG_CONSOLE("Selected: %s", objToSelect ? objToSelect->GetName().c_str() : "None");
     }
 }
 
@@ -564,34 +559,21 @@ void SceneWindow::ApplyMeshTransformFromFBX(GameObject* meshObject, unsigned lon
 
 GameObject* SceneWindow::GetGameObjectUnderMouse()
 {
-    //// Get mouse position relative to scene viewport
-    //ImVec2 mousePos = ImGui::GetMousePos();
-    //float relativeX = mousePos.x - sceneViewportPos.x;
-    //float relativeY = mousePos.y - sceneViewportPos.y;
-    //// Verify that the mouse is inside the viewport
-    //if (relativeX < 0 || relativeX > sceneViewportSize.x ||
-    //    relativeY < 0 || relativeY > sceneViewportSize.y)
-    //{
-    //    return nullptr;
-    //}
-    //// Get the active camera
-    //ComponentCamera* camera = Application::GetInstance().camera->GetActiveCamera();
-    //if (!camera)
-    //{
-    //    return nullptr;
-    //}
-    //// Generate ray from the camera
-    //glm::vec3 rayOrigin = camera->GetPosition();
-    //glm::vec3 rayDir = camera->ScreenToWorldRay(
-    //    static_cast<int>(relativeX),
-    //    static_cast<int>(relativeY),
-    //    static_cast<int>(sceneViewportSize.x),
-    //    static_cast<int>(sceneViewportSize.y)
-    //);
-    //// Perform ray picking
-    //GameObject* root = Application::GetInstance().scene->GetRoot();
-    //float minDist = std::numeric_limits<float>::max();
-    //GameObject* hitObject = FindClosestObjectToRayOptimized(root, rayOrigin, rayDir, minDist);
-    //return hitObject;
+
+    ImVec2 mousePos = ImGui::GetMousePos();
+
+    int mouseX = (int)(mousePos.x - sceneViewportPos.x);
+    int mouseY = (int)(mousePos.y - sceneViewportPos.y);
+
+    UID objectToSelectUID = Application::GetInstance().renderer->GetObjectInPixel(
+        Application::GetInstance().editor->GetEditorCamera()->GetCameraLens(),
+        mouseX,
+        mouseY
+    );
+
+    if (objectToSelectUID != 0) {
+        GameObject* objectToSelect = Application::GetInstance().scene->FindObject(objectToSelectUID);
+        return objectToSelect;
+    }
     return nullptr;
 }
