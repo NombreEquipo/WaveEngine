@@ -2,7 +2,12 @@
 #include <iostream>
 #include <chrono>
 #include <filesystem>
+#include <fstream>
 #include "LibraryManager.h"
+#ifdef WAVE_GAME
+#include <nlohmann/json.hpp>
+#include <windows.h>
+#endif
 
 Application::Application() : isRunning(true), playState(PlayState::EDITING)
 {
@@ -107,8 +112,23 @@ bool Application::Start()
     // Load scene and start in play mode
     if (result)
     {
-		std::filesystem::path projectRoot = std::filesystem::path(LibraryManager::GetLibraryRoot()).parent_path(); // Example: /WaveEngine/Engine/Build then --> /WaveEngine/Engine
-		std::string scenePath = (projectRoot / "Scene" / "game_scene.json").string(); // Search Scene/game_scene.json   
+        std::filesystem::path projectRoot = std::filesystem::path(LibraryManager::GetLibraryRoot()).parent_path(); // Example: /WaveEngine/Engine/Build then --> /WaveEngine/Engine
+
+        char exeBuffer[MAX_PATH];
+        GetModuleFileNameA(NULL, exeBuffer, MAX_PATH);
+        std::filesystem::path execDir = std::filesystem::path(exeBuffer).parent_path();
+
+        std::string startupScene = "game_scene.json";
+        std::filesystem::path configPath = execDir / "build_config.json";
+        if (std::filesystem::exists(configPath))
+        {
+            std::ifstream f(configPath);
+            nlohmann::json config = nlohmann::json::parse(f);
+            if (config.contains("startup_scene"))
+                startupScene = config["startup_scene"].get<std::string>();
+        }
+
+        std::string scenePath = (projectRoot / "Scene" / startupScene).string();
         if (scene->LoadScene(scenePath))
         {
             LOG_CONSOLE("[Game] Loaded scene: %s", scenePath.c_str());

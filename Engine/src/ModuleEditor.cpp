@@ -5,9 +5,11 @@
 #include <SDL3/SDL.h>
 #include <IL/il.h>
 #include <filesystem>
+#include <fstream>
 #include <windows.h>
 #include <commdlg.h> // For file dialogs
 #include <shobjidl.h> // For folder selection
+#include <nlohmann/json.hpp>
 
 #include "Application.h"
 #include "Log.h"
@@ -1085,19 +1087,26 @@ void ModuleEditor::BuildGame()
         fs::path projectRoot = fs::path(LibraryManager::GetLibraryRoot()).parent_path();
         std::string sceneFolder = (projectRoot / "Scene").string();
         std::string sceneSrc = OpenLoadFile(sceneFolder);
+        std::string startupSceneName;
         if (!sceneSrc.empty())
         {
             fs::path sceneFilename = fs::path(sceneSrc).filename();
-            fs::copy_file(sceneSrc, dest / "Scene" / "game_scene.json", fs::copy_options::overwrite_existing);
-            LOG_CONSOLE("[Build] Copied scene '%s'", sceneFilename.string().c_str());
+            fs::copy_file(sceneSrc, dest / "Scene" / sceneFilename, fs::copy_options::overwrite_existing);
+            startupSceneName = sceneFilename.string();
+            LOG_CONSOLE("[Build] Copied scene '%s'", startupSceneName.c_str());
         }
         else
         {
-            std::string sceneDestPath = (dest / "Scene" / "game_scene.json").string();
+            startupSceneName = "game_scene.json";
+            std::string sceneDestPath = (dest / "Scene" / startupSceneName).string();
             Application::GetInstance().scene->SaveScene(sceneDestPath);
             LOG_CONSOLE("[Build] No scene selected, saved current scene");
         }
 
+        nlohmann::json config;
+        config["startup_scene"] = startupSceneName;
+        std::ofstream configFile(dest / "build_config.json");
+        configFile << config.dump(4);
         LOG_CONSOLE("[Build] Export complete %s", destFolder.c_str());
     }
     catch (const std::exception& error)
