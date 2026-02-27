@@ -16,7 +16,9 @@
 #include "Primitives.h"
 #include "ComponentMesh.h"
 #include "Transform.h"           
-#include "ComponentCamera.h"   
+#include "ComponentCamera.h"  
+#include "CameraLens.h"   
+
 #include "EditorCamera.h"   
 #include "ComponentMaterial.h"
 #include "ComponentScript.h"
@@ -1070,13 +1072,14 @@ void ModuleEditor::HandleCopyPaste()
         
         if (centerOnPaste)
         {
-            ComponentCamera* editorCam = Application::GetInstance().camera->GetMainCamera();
+            EditorCamera* editorCam = Application::GetInstance().editor->GetEditorCamera();
+
             if (editorCam)
             {
-               //Need to be fix using new camera
-                //glm::vec3 camPos = editorCam->GetPosition();
-                //glm::vec3 camForward = editorCam->GetFront();
-                //centerPos = camPos + camForward * pasteDistance;
+                CameraLens* camLens = editorCam->GetCameraLens();
+                glm::vec3 camPos = camLens->position;
+                glm::vec3 camForward = editorCam->forward;
+                centerPos = camPos + camForward * pasteDistance;
             }
         }
 
