@@ -24,6 +24,7 @@
 #endif
 #include "ConsoleWindow.h"
 #include "Application.h"
+#include "ComponentAnimation.h"
 
 #include <filesystem>
 #include <cmath>            
@@ -272,6 +273,7 @@ static int Lua_Input_GetMousePosition(lua_State* L) {
     lua_pushnil(L);
     return 2;
 }
+
 static int Lua_Time_GetDeltaTime(lua_State* L) {
     lua_pushnumber(L, Time::GetDeltaTimeStatic());
     return 1;
@@ -388,6 +390,16 @@ void ScriptManager::RegisterEngineFunctions() {
 }
 // GAMEOBJECT API
 
+static int Lua_Animation_Play(lua_State* L)
+{
+    ComponentAnimation* anim = *static_cast<ComponentAnimation**>(lua_touserdata(L, 1));
+
+    const char* animName = lua_tostring(L, 2);
+
+    anim->Play(std::string(animName));
+
+    return 0; 
+}
 
 // GameObject.Create(name) - Deferred operation
 static int Lua_GameObject_Create(lua_State* L) {
@@ -704,6 +716,27 @@ static int Lua_GameObject_GetComponent(lua_State* L) {
         lua_pushlightuserdata(L, mat);
         lua_pushcclosure(L, Lua_ComponentMaterial_SetTexture, 1);
         lua_setfield(L, -2, "SetTexture");
+
+        return 1;
+    }
+
+    if (strcmp(componentType, "Animation") == 0) {
+        Component* comp = obj->GetComponent(ComponentType::ANIMATION);
+        ComponentAnimation* anim = static_cast<ComponentAnimation*>(comp);
+        if (!anim) {
+            lua_pushnil(L);
+            return 1;
+        }
+
+        // Crear userdata con el puntero
+        ComponentAnimation** udata = static_cast<ComponentAnimation**>(
+            lua_newuserdata(L, sizeof(ComponentAnimation*))
+            );
+        *udata = anim;
+
+        // Asignar la metatable de Animation
+        luaL_getmetatable(L, "Animation");
+        lua_setmetatable(L, -2);
 
         return 1;
     }
@@ -1039,12 +1072,17 @@ static int Lua_Transform_Index(lua_State* L) {
 void ScriptManager::RegisterComponentAPI() {
     // Transform metatable
     luaL_newmetatable(L, "Transform");
-
     lua_pushcfunction(L, Lua_Transform_Index);
     lua_setfield(L, -2, "__index");
-
     lua_pop(L, 1);
 
+    // Animation metatable separada
+    luaL_newmetatable(L, "Animation");
+    lua_pushvalue(L, -1);
+    lua_setfield(L, -2, "__index");
+    lua_pushcfunction(L, Lua_Animation_Play);
+    lua_setfield(L, -2, "Play");
+    lua_pop(L, 1); 
 }
 
 // PREFAB API
