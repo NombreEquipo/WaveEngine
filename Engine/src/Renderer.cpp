@@ -41,7 +41,7 @@ bool Renderer::Start()
     // Initialize default shader
     defaultShader = make_unique<Shader>();
 
-    if (!defaultShader->CreateNoTexture())  
+    if (!defaultShader->CreateNoTexture())
     {
         LOG_DEBUG("ERROR: Failed to create default shader");
         LOG_CONSOLE("ERROR: Failed to compile shaders");
@@ -96,7 +96,7 @@ bool Renderer::Start()
         LOG_DEBUG("Water shader created successfully - Program ID: %d", waterShader->GetProgramID());
         LOG_CONSOLE("Water shader compiled successfully");
     }
-    
+
     normalsShader = make_unique<Shader>();
     if (!normalsShader->CreateNormalShader())
     {
@@ -109,7 +109,7 @@ bool Renderer::Start()
         LOG_DEBUG("normals shader created successfully - Program ID: %d", normalsShader->GetProgramID());
         LOG_CONSOLE("normals shader compiled successfully");
     }
-    
+
     meshShader = make_unique<Shader>();
     if (!meshShader->CreateMeshShader())
     {
@@ -326,26 +326,42 @@ bool Renderer::PostUpdate()
 {
     bool ret = true;
 
+#ifndef WAVE_GAME
     for (CameraLens* camera : activeCameras)
     {
         RenderScene(camera);
     }
 
-    int width = 0;
-    int height = 0;
-
+    int width = 0, height = 0;
     Application::GetInstance().window->GetWindowSize(width, height);
-
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, width, height);
-
     glDisable(GL_SCISSOR_TEST);
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+#else
+    auto* cameraModule = Application::GetInstance().camera.get();
+    if (cameraModule)
+    {
+        ComponentCamera* mainCam = cameraModule->GetMainCamera();
+        if (mainCam)
+        {
+            CameraLens* mainLens = mainCam->GetLens();
+            if (mainLens)
+            {
+                GLuint savedFBO = mainLens->fboID;
+                mainLens->fboID = 0;
+
+                RenderScene(mainLens);
+
+                mainLens->fboID = savedFBO;
+            }
+        }
+    }
+#endif
 
     return ret;
 }
-
 
 bool Renderer::RenderScene(CameraLens* camera)
 {
@@ -374,7 +390,7 @@ bool Renderer::RenderScene(CameraLens* camera)
     //UPDATE CAM MATRIX 
     UpdateViewMatrix(camera->GetViewMatrix());
     UpdateProjectionMatrix(camera->GetProjectionMatrix());
-    
+
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, uboMatrices);
 
     //CLEAN LIST AND BUILD NEWS
@@ -489,7 +505,7 @@ void Renderer::BuildRenderLists(const CameraLens* camera)
         }
 
         glm::vec3 pos = ps->owner->transform->GetGlobalPosition();
-       float distanceToCamera = glm::distance(pos, camera->position);
+        float distanceToCamera = glm::distance(pos, camera->position);
 
         particlesList.emplace(distanceToCamera, pObj);
     }
@@ -513,7 +529,7 @@ void Renderer::DrawRenderList(const std::multimap<float, RenderObject>& map, con
             glStencilFunc(GL_ALWAYS, 0, 0xFF);
             glStencilMask(0x00);
         }
-        
+
         ComponentMaterial* materialComp = meshComp->GetAttachedMaterial();
         materialComp->Use();
 
@@ -542,7 +558,7 @@ void Renderer::DrawParticlesList(const CameraLens* camera)
     // 1. IMPORTANTE: Desactivar cualquier shader activo para usar el pipeline fijo
     glUseProgram(0);
 
-    // 2. Configuración de matrices legacy (necesaria para glBegin/glEnd)
+    // 2. Configuraciï¿½n de matrices legacy (necesaria para glBegin/glEnd)
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadMatrixf(glm::value_ptr(camera->GetProjectionMatrix()));
@@ -698,7 +714,7 @@ bool Renderer::CleanUp()
 {
     LOG_DEBUG("Cleaning up Renderer");
 
-    
+
 
     // Release primitive meshes
     UnloadMesh(sphere);

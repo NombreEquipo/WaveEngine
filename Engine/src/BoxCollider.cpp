@@ -30,6 +30,7 @@ void BoxCollider::Update()
 
 void BoxCollider::OnEditor()
 {
+    #ifndef WAVE_GAME
     OnEditorBase();
     ImGui::Separator();
 
@@ -39,6 +40,7 @@ void BoxCollider::OnEditor()
     {
         SetSize(s);
     }
+    #endif
 }
 
 void BoxCollider::Serialize(nlohmann::json& componentObj) const
@@ -121,3 +123,18 @@ void BoxCollider::DebugShape()
         render->DrawLine(v[i], v[i + 4], color);
     }
 }
+
+//void BoxCollider::Serialize(nlohmann::json& componentObj) const
+//{
+//    Collider::Serialize(componentObj);
+//    componentObj["size"] = { size.x, size.y, size.z };
+//}
+//
+//void BoxCollider::Deserialize(const nlohmann::json& componentObj)
+//{
+//    Collider::Deserialize(componentObj);
+//    if (componentObj.contains("size")) {
+//        const auto& s = componentObj["size"];
+//        SetSize(glm::vec3(s[0].get<float>(), s[1].get<float>(), s[2].get<float>()));
+//    }
+//}

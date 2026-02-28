@@ -11,7 +11,9 @@
 #include "Time.h"
 #include "ModuleScene.h"
 #include "Grid.h"
+#ifndef WAVE_GAME
 #include "ModuleEditor.h"
+#endif
 #include "SelectionManager.h"
 #include "ModuleCamera.h" 
 #include "ModuleResources.h"
@@ -72,7 +74,9 @@ public:
     std::shared_ptr<Time> time;
     std::shared_ptr<ModuleScene> scene;
     std::shared_ptr<ModuleCamera> camera;
+#ifndef WAVE_GAME
     std::shared_ptr<ModuleEditor> editor;
+#endif
     std::shared_ptr<ModuleAudio> audio;
     std::shared_ptr<Grid> grid;
     std::shared_ptr<ModuleResources> resources;

@@ -15,6 +15,11 @@
 #include "Frustum.h"
 #include "Time.h"
 #include "ImGuizmo.h"
+#ifndef WAVE_GAME
+#include "ModuleEditor.h"
+#endif // !WAVE_GAME
+
+
 
 EditorCamera::EditorCamera()
 {
@@ -67,13 +72,13 @@ EditorCamera::~EditorCamera()
 bool EditorCamera::Update()
 {
 	bool ret = true;
-
+#ifndef WAVE_GAME
 	lockCamera = ImGuizmo::IsUsing() || !Application::GetInstance().editor->GetSceneWindow()->IsHovered();
 
-	if (!lockCamera)
-	{
-		MoveCamera();
-	}
+		if (!lockCamera)
+		{
+			MoveCamera();
+		}
 
 	//UPDATE MATRIX
 	if (viewChanged)
@@ -94,8 +99,9 @@ bool EditorCamera::Update()
 		cameraLens->SetPerspective(fieldOfView, aspectRatio, 0.1f, 1000.0f);
 		windowChanged = false;
 	}
-
+#endif // !WAVE_ENGINE
 	return ret;
+
 }
 
 void EditorCamera::MoveCamera()

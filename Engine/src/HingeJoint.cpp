@@ -15,6 +15,7 @@ HingeJoint::HingeJoint(GameObject* owner) : Joint(owner)
 HingeJoint::~HingeJoint() {}
 
 void HingeJoint::CreateJoint() {
+
     auto* physics = Application::GetInstance().physics->GetPhysics();
 
     if (!physics || !bodyA || !bodyA->GetActor()) return;
@@ -145,6 +146,7 @@ void HingeJoint::Deserialize(const nlohmann::json& componentObj)
 }
 
 void HingeJoint::OnEditor() {
+#ifndef WAVE_GAME
     OnEditorBase();
 
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth;
@@ -163,6 +165,7 @@ void HingeJoint::OnEditor() {
         if (ImGui::InputFloat("Velocity", &driveVelocity)) SetDriveVelocity(driveVelocity);
         ImGui::TreePop();
     }
+#endif 
 }
 
 void HingeJoint::DrawDebug() 
@@ -224,3 +227,30 @@ void HingeJoint::DrawDebug()
         render->DrawLine(pRef, pRef + dirNeedle * (radius * 0.8f), glm::vec4(1, 1, 0, 1));
     }
 }
+
+//void HingeJoint::Serialize(nlohmann::json& componentObj) const
+//{
+//    Joint::Serialize(componentObj);
+//    componentObj["limitsEnabled"] = limitsEnabled;
+//    componentObj["minAngle"] = minAngle;
+//    componentObj["maxAngle"] = maxAngle;
+//    componentObj["motorEnabled"] = motorEnabled;
+//    componentObj["driveVelocity"] = driveVelocity;
+//}
+//
+//void HingeJoint::Deserialize(const nlohmann::json& componentObj)
+//{
+//    Joint::Deserialize(componentObj);
+//
+//    if (componentObj.contains("minAngle"))
+//        SetMinAngle(componentObj["minAngle"].get<float>());
+//    if (componentObj.contains("maxAngle"))
+//        SetMaxAngle(componentObj["maxAngle"].get<float>());
+//    if (componentObj.contains("limitsEnabled"))
+//        EnableLimits(componentObj["limitsEnabled"].get<bool>());
+//
+//    if (componentObj.contains("driveVelocity"))
+//        SetDriveVelocity(componentObj["driveVelocity"].get<float>());
+//    if (componentObj.contains("motorEnabled"))
+//        EnableMotor(componentObj["motorEnabled"].get<bool>());
+//}

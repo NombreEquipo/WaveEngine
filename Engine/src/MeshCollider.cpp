@@ -78,6 +78,7 @@ void MeshCollider::CookMesh() {
 }
 
 void MeshCollider::OnEditor() {
+#ifndef WAVE_GAME
     OnEditorBase();
     ImGui::Separator();
 
@@ -94,6 +95,7 @@ void MeshCollider::OnEditor() {
         CookMesh();
         if (attachedRigidbody) attachedRigidbody->CreateBody();
     }
+#endif
 }
 
 void MeshCollider::Serialize(nlohmann::json& componentObj) const {
@@ -163,3 +165,14 @@ void MeshCollider::OnGameObjectEvent(GameObjectEvent event, Component* component
     }
     Collider::OnGameObjectEvent(event, component);
 }
+
+//void MeshCollider::Serialize(nlohmann::json& componentObj) const
+//{
+//    Collider::Serialize(componentObj);
+//}
+//
+//void MeshCollider::Deserialize(const nlohmann::json& componentObj)
+//{
+//    Collider::Deserialize(componentObj);
+//    CookMesh();
+//}

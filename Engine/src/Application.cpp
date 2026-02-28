@@ -1,6 +1,13 @@
 ﻿#include "Application.h"
 #include <iostream>
 #include <chrono>
+#include <filesystem>
+#include <fstream>
+#include "LibraryManager.h"
+#ifdef WAVE_GAME
+#include <nlohmann/json.hpp>
+#include <windows.h>
+#endif
 
 Application::Application() : isRunning(true), playState(PlayState::EDITING)
 {
@@ -15,7 +22,9 @@ Application::Application() : isRunning(true), playState(PlayState::EDITING)
     scene = std::make_shared<ModuleScene>();
     camera = std::make_shared<ModuleCamera>();
     audio = std::make_shared<ModuleAudio>();
+#ifndef WAVE_GAME
     editor = std::make_shared<ModuleEditor>();
+#endif
     loader = std::make_shared<ModuleLoader>();
     time = std::make_shared<Time>();
     grid = std::make_shared<Grid>();
@@ -23,12 +32,12 @@ Application::Application() : isRunning(true), playState(PlayState::EDITING)
     scripts = std::make_shared<ScriptManager>();  
     physics = std::make_shared<ModulePhysics>();  
 
-    
     AddModule(std::static_pointer_cast<Module>(window));
     AddModule(std::static_pointer_cast<Module>(events));
     AddModule(std::static_pointer_cast<Module>(input));
     AddModule(std::static_pointer_cast<Module>(physics));
     AddModule(std::static_pointer_cast<Module>(renderContext));
+    AddModule(std::static_pointer_cast<Module>(resources));
     AddModule(std::static_pointer_cast<Module>(scene));
     AddModule(std::static_pointer_cast<Module>(camera));
     AddModule(std::static_pointer_cast<Module>(audio));
@@ -38,8 +47,9 @@ Application::Application() : isRunning(true), playState(PlayState::EDITING)
     AddModule(std::static_pointer_cast<Module>(time));
     AddModule(std::static_pointer_cast<Module>(grid));
     AddModule(std::static_pointer_cast<Module>(renderer));
+#ifndef WAVE_GAME
     AddModule(std::static_pointer_cast<Module>(editor));
-
+#endif
 
     selectionManager = new SelectionManager();
 }
@@ -97,6 +107,41 @@ bool Application::Start()
     {
         LOG_CONSOLE("Engine ready - All systems initialized");
     }
+
+#ifdef WAVE_GAME
+    // Load scene and start in play mode
+    if (result)
+    {
+        std::filesystem::path projectRoot = std::filesystem::path(LibraryManager::GetLibraryRoot()).parent_path(); // Example: /WaveEngine/Engine/Build then --> /WaveEngine/Engine
+
+        char exeBuffer[MAX_PATH];
+        GetModuleFileNameA(NULL, exeBuffer, MAX_PATH);
+        std::filesystem::path execDir = std::filesystem::path(exeBuffer).parent_path();
+
+        std::string startupScene = "game_scene.json";
+        std::filesystem::path configPath = execDir / "build_config.json";
+        if (std::filesystem::exists(configPath))
+        {
+            std::ifstream f(configPath);
+            nlohmann::json config = nlohmann::json::parse(f);
+            if (config.contains("startup_scene"))
+                startupScene = config["startup_scene"].get<std::string>();
+        }
+
+        std::string scenePath = (projectRoot / "Scene" / startupScene).string();
+        if (scene->LoadScene(scenePath))
+        {
+            LOG_CONSOLE("[Game] Loaded scene: %s", scenePath.c_str());
+        }
+        else
+        {
+            LOG_CONSOLE("[Game] WARNING: Could not load scene: %s", scenePath.c_str());
+        }
+        playState = PlayState::PLAYING;
+        time->Resume();
+        LOG_CONSOLE("[Game] Play state: PLAYING");
+    }
+#endif
 
     return true;
 }
@@ -163,10 +208,12 @@ bool Application::DoUpdate()
     //Iterates the module list and calls Update on each module
     bool result = true;
     for (const auto& module : moduleList) {
+#ifndef WAVE_GAME
         // Skip scene updates when in editing mode
         if (playState == PlayState::EDITING && module == scene) {
             continue;
         }
+#endif
 
         result = module.get()->Update();
         if (!result) {
@@ -271,15 +318,17 @@ bool Application::CleanUp()
 
     moduleList.clear();
 
+#ifndef WAVE_GAME
+    editor.reset();
+#endif
+    camera.reset();
+    scene.reset();
     renderer.reset();
     grid.reset();
     time.reset();
     loader.reset();
     scripts.reset();
     resources.reset();
-    editor.reset();
-    camera.reset();
-    scene.reset();
     renderContext.reset();
     physics.reset();
     input.reset();

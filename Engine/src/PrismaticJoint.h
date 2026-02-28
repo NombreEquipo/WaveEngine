@@ -26,6 +26,9 @@ public:
     void OnEditor() override;
     void DrawDebug() override;
 
+    //void Serialize(nlohmann::json& componentObj) const override;
+    //void Deserialize(const nlohmann::json& componentObj) override;
+
 private:
     float minLimit = -5.0f;
     float maxLimit = 5.0f;

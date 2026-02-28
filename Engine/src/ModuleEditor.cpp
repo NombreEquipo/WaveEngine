@@ -5,8 +5,11 @@
 #include <SDL3/SDL.h>
 #include <IL/il.h>
 #include <filesystem>
+#include <fstream>
 #include <windows.h>
-#include <commdlg.h>
+#include <commdlg.h> // For file dialogs
+#include <shobjidl.h> // For folder selection
+#include <nlohmann/json.hpp>
 
 #include "Application.h"
 #include "Log.h"
@@ -28,6 +31,7 @@
 #include "GameWindow.h"
 #include "AssetsWindow.h"
 #include "MetaFile.h"
+#include "LibraryManager.h"
 #include "ShaderEditorWindow.h"
 
 ModuleEditor::ModuleEditor() : Module()
@@ -234,6 +238,13 @@ void ModuleEditor::ShowMenuBar()
                     app.scene->LoadScene(filepath);
                     LOG_CONSOLE("Scene loaded from %s", filepath.c_str());
                 }
+            }
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Build Game..."))
+            {
+                BuildGame();
             }
 
             ImGui::Separator();
@@ -852,9 +863,11 @@ std::string ModuleEditor::OpenSaveFile(const std::string& defaultPath)
     OPENFILENAMEA ofn;
     char szFile[260] = { 0 };
 
-    // Get the default scene folder
-    std::filesystem::path scenePath = std::filesystem::current_path().parent_path().parent_path() / "Scene";
-    std::string sceneDir = scenePath.string();
+    std::string sceneDir;
+	if (!defaultPath.empty()) // Default path
+        sceneDir = defaultPath;
+	else // Current path
+        sceneDir = (std::filesystem::current_path().parent_path().parent_path() / "Scene").string();
 
     ZeroMemory(&ofn, sizeof(ofn));
     ofn.lStructSize = sizeof(ofn); 
@@ -882,9 +895,11 @@ std::string ModuleEditor::OpenLoadFile(const std::string& defaultPath)
     OPENFILENAMEA ofn;
     char szFile[260] = { 0 };
 
-    // Get the default scene folder
-    std::filesystem::path scenePath = std::filesystem::current_path().parent_path().parent_path() / "Scene";
-    std::string sceneDir = scenePath.string();
+    std::string sceneDir;
+    if (!defaultPath.empty()) // Default path
+        sceneDir = defaultPath;
+    else // Current path
+        sceneDir = (std::filesystem::current_path().parent_path().parent_path() / "Scene").string();
 
     ZeroMemory(&ofn, sizeof(ofn));
     ofn.lStructSize = sizeof(ofn);
@@ -943,5 +958,159 @@ void ModuleEditor::OnEvent(const Event& event)
     }
     default:
         break;
+    }
+}
+
+std::string ModuleEditor::OpenFolderDialog()
+{
+    std::string result; // string use UTF-8, while windows use UTF-16
+    // HRESULT is a Windows API type used for error handling.
+	// CoInitializeEx initializes the COM(Component Object Model. Basically a system created by windows to act has intermediary) library for use by the calling thread.
+    HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED); 
+    if (FAILED(hr)) return result;
+
+	IFileDialog* pDialog = nullptr; 
+    hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileDialog, (void**)&pDialog); // https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-cocreateinstance
+    if (SUCCEEDED(hr))
+    {
+        // Create the file dialog 
+        DWORD options;
+        pDialog->GetOptions(&options);
+		pDialog->SetOptions(options | FOS_PICKFOLDERS); // FOS_PICKFOLDERS: only select folders
+        pDialog->SetTitle(L"Select Export Folder"); // L means wchar_t*, windows use UTF-16 
+
+        // Show the dialog 
+		hr = pDialog->Show(NULL); // NULL means that the dialog has no parent window
+        if (SUCCEEDED(hr))
+        {
+            IShellItem* pItem = nullptr; // IShellItem stores the selected folder
+            hr = pDialog->GetResult(&pItem);
+            if (SUCCEEDED(hr))
+            {
+                PWSTR pszPath = nullptr; // Store the folder path
+                hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszPath); // Function to get the path
+                if (SUCCEEDED(hr))
+                {
+                    int len = WideCharToMultiByte(CP_UTF8, 0, pszPath, -1, NULL, 0, NULL, NULL); 
+                    result.resize(len - 1); // remove \0
+					WideCharToMultiByte(CP_UTF8, 0, pszPath, -1, &result[0], len, NULL, NULL); // Convert from UTF-16 to UTF-8
+                    CoTaskMemFree(pszPath);
+                }
+                pItem->Release();
+            }
+        }
+        pDialog->Release();
+    }
+
+    CoUninitialize();
+    return result;
+}
+
+void ModuleEditor::BuildGame()
+{
+    std::string destFolder = OpenFolderDialog();
+    if (destFolder.empty())
+    {
+        LOG_CONSOLE("[Build] Export cancelled.");
+        return;
+    }
+
+    namespace fs = std::filesystem;
+    fs::path dest(destFolder); // https://en.cppreference.com/w/cpp/filesystem/path
+
+    // Search the exe directory
+    char exePath[MAX_PATH]; // Windows has a MAX_PATH limit of 260 characters
+    GetModuleFileNameA(NULL, exePath, MAX_PATH); // https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-getmodulefilenamea
+    fs::path exeDir = fs::path(exePath).parent_path();
+	// Example: exePath = C:\WaveEngine\Engine\build\Release\Engine.exe --> exeDir = C:\WaveEngine\Engine\build\Release
+
+    fs::path gameExeSrc = exeDir / "Game.exe";
+    if (!fs::exists(gameExeSrc))
+    {
+        LOG_CONSOLE("[Build] ERROR: Game.exe not found at %s", gameExeSrc.string().c_str());
+        return;
+    }
+
+    try 
+    {
+        // Copy Game.exe
+        fs::copy_file(gameExeSrc, dest / "Game.exe", fs::copy_options::overwrite_existing); // https://en.cppreference.com/w/cpp/filesystem/copy_file
+        LOG_CONSOLE("[Build] Copied Game.exe");
+
+        // Copy all dlls 
+        int dllCount = 0;
+        for (const auto& entry : fs::directory_iterator(exeDir)) // https://en.cppreference.com/w/cpp/filesystem/directory_iterator
+        {
+			if (entry.is_regular_file() && entry.path().extension() == ".dll") // is a file and has .dll
+            {
+                fs::copy_file(entry.path(), dest / entry.path().filename(), fs::copy_options::overwrite_existing);
+                dllCount++;
+            }
+        }
+        LOG_CONSOLE("[Build] Copied %d DLL(s)", dllCount);
+
+        // Copy Assets/ folder
+        fs::path assetsSrc(LibraryManager::GetAssetsRoot());
+        if (fs::exists(assetsSrc))
+        {
+            fs::create_directories(dest / "Assets");
+            fs::copy(assetsSrc, dest / "Assets", fs::copy_options::overwrite_existing | fs::copy_options::recursive); // https://en.cppreference.com/w/cpp/filesystem/copy
+            LOG_CONSOLE("[Build] Copied Assets/ folder");
+        }
+        else
+        {
+            fs::create_directories(dest / "Assets");
+            LOG_CONSOLE("[Build] WARNING: Assets not found");
+        }
+
+        // Copy Library/Meshes and Library/Textures
+        fs::path libRoot(LibraryManager::GetLibraryRoot());
+
+        fs::path meshSrc = libRoot / "Meshes";
+        if (fs::exists(meshSrc))
+        {
+            fs::create_directories(dest / "Library" / "Meshes");
+            fs::copy(meshSrc, dest / "Library" / "Meshes", fs::copy_options::overwrite_existing | fs::copy_options::recursive);
+            LOG_CONSOLE("[Build] Copied Library/Meshes");
+        }
+
+        fs::path texSrc = libRoot / "Textures";
+        if (fs::exists(texSrc))
+        {
+            fs::create_directories(dest / "Library" / "Textures");
+            fs::copy(texSrc, dest / "Library" / "Textures", fs::copy_options::overwrite_existing | fs::copy_options::recursive);
+            LOG_CONSOLE("[Build] Copied Library/Textures");
+        }
+
+        // Export scene
+        fs::create_directories(dest / "Scene");
+        fs::path projectRoot = fs::path(LibraryManager::GetLibraryRoot()).parent_path();
+        std::string sceneFolder = (projectRoot / "Scene").string();
+        std::string sceneSrc = OpenLoadFile(sceneFolder);
+        std::string startupSceneName;
+        if (!sceneSrc.empty())
+        {
+            fs::path sceneFilename = fs::path(sceneSrc).filename();
+            fs::copy_file(sceneSrc, dest / "Scene" / sceneFilename, fs::copy_options::overwrite_existing);
+            startupSceneName = sceneFilename.string();
+            LOG_CONSOLE("[Build] Copied scene '%s'", startupSceneName.c_str());
+        }
+        else
+        {
+            startupSceneName = "game_scene.json";
+            std::string sceneDestPath = (dest / "Scene" / startupSceneName).string();
+            Application::GetInstance().scene->SaveScene(sceneDestPath);
+            LOG_CONSOLE("[Build] No scene selected, saved current scene");
+        }
+
+        nlohmann::json config;
+        config["startup_scene"] = startupSceneName;
+        std::ofstream configFile(dest / "build_config.json");
+        configFile << config.dump(4);
+        LOG_CONSOLE("[Build] Export complete %s", destFolder.c_str());
+    }
+    catch (const std::exception& error)
+    {
+        LOG_CONSOLE("[Build] ERROR: %s", error.what());
     }
 }

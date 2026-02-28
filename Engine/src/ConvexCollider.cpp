@@ -70,6 +70,7 @@ void ConvexCollider::CookMesh() {
 }
 
 void ConvexCollider::OnEditor() {
+#ifndef WAVE_GAME
     OnEditorBase();
     ImGui::Separator();
 
@@ -86,6 +87,7 @@ void ConvexCollider::OnEditor() {
         CookMesh();
         if (attachedRigidbody) attachedRigidbody->CreateBody();
     }
+#endif
 }
 
 void ConvexCollider::Serialize(nlohmann::json& componentObj) const {
@@ -153,3 +155,14 @@ void ConvexCollider::OnGameObjectEvent(GameObjectEvent event, Component* compone
 
     Collider::OnGameObjectEvent(event, component);
 }
+
+//void ConvexCollider::Serialize(nlohmann::json& componentObj) const
+//{
+//    Collider::Serialize(componentObj);
+//}
+//
+//void ConvexCollider::Deserialize(const nlohmann::json& componentObj)
+//{
+//    Collider::Deserialize(componentObj);
+//    CookMesh();
+//}

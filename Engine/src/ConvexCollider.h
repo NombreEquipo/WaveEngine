@@ -24,6 +24,9 @@ public:
 
     void OnGameObjectEvent(GameObjectEvent event, Component* component) override;
 
+    //void Serialize(nlohmann::json& componentObj) const override;
+    //void Deserialize(const nlohmann::json& componentObj) override;
+
 private:
     void CookMesh();
 
