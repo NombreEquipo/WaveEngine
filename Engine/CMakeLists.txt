@@ -323,7 +323,6 @@ target_include_directories(Engine PRIVATE BEFORE
     "${WWISE_SDK_DIR}/include/Common"
     "${WWISE_SDK_DIR}/include/Win32"
 )
-
 set(WWISE_IO_SOURCES
     "${WWISE_SDK_DIR}/include/Common/AkFileLocationBase.cpp"
     "${WWISE_SDK_DIR}/include/Common/AkFilePackage.cpp"
@@ -343,7 +342,7 @@ target_link_libraries(Engine PRIVATE
     "${WWISE_LIB_DIR}/AkMemoryMgr.lib"
     "${WWISE_LIB_DIR}/AkStreamMgr.lib"
     "${WWISE_LIB_DIR}/AkSpatialAudio.lib"
-    "${WWISE_SDK_DIR}/x64_vc170/${WWISE_CONFIG_DIR}/lib/CommunicationCentral.lib"
+    $<$<NOT:<CONFIG:Release>>:${WWISE_LIB_DIR}/CommunicationCentral.lib>
     "${WWISE_LIB_DIR}/AkRoomVerbFX.lib"
     ws2_32.lib 
     mswsock.lib 
@@ -382,7 +381,7 @@ target_link_libraries(Game PRIVATE
     "${WWISE_LIB_DIR}/AkMemoryMgr.lib"
     "${WWISE_LIB_DIR}/AkStreamMgr.lib"
     "${WWISE_LIB_DIR}/AkSpatialAudio.lib"
-    "${WWISE_SDK_DIR}/x64_vc170/${WWISE_CONFIG_DIR}/lib/CommunicationCentral.lib"
+    $<$<NOT:<CONFIG:Release>>:${WWISE_LIB_DIR}/CommunicationCentral.lib>
     "${WWISE_LIB_DIR}/AkRoomVerbFX.lib"
     ws2_32.lib 
     mswsock.lib 
@@ -404,3 +403,4 @@ target_include_directories(Game PRIVATE BEFORE
     "${WWISE_SDK_DIR}/include/Common"
     "${WWISE_SDK_DIR}/include/Win32"
 )
+
