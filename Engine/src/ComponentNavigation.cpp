@@ -33,28 +33,81 @@ void ComponentNavigation::OnEditor()
             ImGui::SliderFloat("Max Slope Angle", &maxSlopeAngle, 0.0f, 90.0f);
         }
 
-
-        ImGui::Spacing();
-
-        if (ImGui::Button("Bake NavMesh", ImVec2(-1, 30)))
+        if (type == NavType::AGENT)
         {
-            Application::GetInstance().navMesh->Bake(this->owner);
+            ImGui::Text("Agent Settings");
+            ImGui::Separator();
 
-         
-        }
+            ImGui::Text("NavMesh Surface:");
+            ImGui::SameLine();
 
-        ImGui::Spacing();
+            const char* surfaceName = linkedSurface ?
+                linkedSurface->GetName().c_str() :
+                "None (Drag Surface Here)";
 
-        if (ImGui::Button("Clear NavMesh", ImVec2(-1, 30)))
-        {
+            ImGui::Button(surfaceName, ImVec2(-1, 25));
 
-            if (Application::GetInstance().navMesh)
+            // --- Drag Target ---
+            if (ImGui::BeginDragDropTarget())
             {
-                Application::GetInstance().navMesh->RemoveNavMesh(owner);
+                if (const ImGuiPayload* payload =
+                    ImGui::AcceptDragDropPayload("HIERARCHY_GAMEOBJECT"))
+                {
+                    GameObject* dropped =
+                        *(GameObject**)payload->Data;
+
+                    if (dropped)
+                    {
+                        ComponentNavigation* nav =
+                            (ComponentNavigation*)dropped->GetComponent(ComponentType::NAVIGATION);
+
+                        if (nav && nav->type == NavType::SURFACE)
+                        {
+                            linkedSurface = dropped;
+                            LOG_CONSOLE("Agent linked to surface: %s", dropped->GetName().c_str());
+                        }
+                        else
+                        {
+                            LOG_CONSOLE("Dropped object is not a NavMesh Surface!");
+                        }
+                    }
+                }
+                ImGui::EndDragDropTarget();
             }
 
-          
+            if (linkedSurface)
+            {
+                if (ImGui::Button("Clear Surface"))
+                {
+                    linkedSurface = nullptr;
+                }
+            }
         }
+
+        ImGui::Spacing();
+
+        if (type != NavType::AGENT) {
+            if (ImGui::Button("Bake NavMesh", ImVec2(-1, 30)))
+            {
+                Application::GetInstance().navMesh->Bake(this->owner);
+
+
+            }
+
+            ImGui::Spacing();
+
+            if (ImGui::Button("Clear NavMesh", ImVec2(-1, 30)))
+            {
+
+                if (Application::GetInstance().navMesh)
+                {
+                    Application::GetInstance().navMesh->RemoveNavMesh(owner);
+                }
+
+
+            }
+        }
+     
 
     }
 }

@@ -29,22 +29,6 @@ public:
     void RemoveNavMesh(GameObject* obj);
     void RemoveNavMeshRecursive(GameObject* obj);
 
-
-
-private:
-
-    void RecollectGeometry(GameObject* obj, std::vector<float>& vertices, std::vector<int>& indices);
-    void ExtractVertices(ComponentMesh* mesh, std::vector<float>& vertices, std::vector<int>& indices);
-
-    rcConfig CreateDefaultConfig(const float* minBounds, const float* maxBounds);
-    void CalculateAABB(const std::vector<float>& verts, float* minBounds, float* maxBounds);
-
-
-    bool IsBlockedByObstacle(const glm::vec3& min, const glm::vec3& max);
-    void RecollectObstacles(GameObject* obj);
-
-    rcPolyMesh* m_polyMesh = nullptr;
-
     struct NavMeshData
     {
         rcHeightfield* heightfield = nullptr;
@@ -53,6 +37,25 @@ private:
         GameObject* owner = nullptr;
     };
 
+    NavMeshData* GetNavMeshData(GameObject* owner);
+
+
+private:
+
+    void RecollectGeometry(GameObject* obj, std::vector<float>& vertices, std::vector<int>& indices);
+    void ExtractVertices(ComponentMesh* mesh, std::vector<float>& vertices, std::vector<int>& indices);
+    
+    void CalculateAABB(const std::vector<float>& verts, float* minBounds, float* maxBounds);
+    rcConfig CreateDefaultConfig(const float* minBounds, const float* maxBounds);
+
+    bool IsBlockedByObstacle(const glm::vec3& min, const glm::vec3& max);
+    void RecollectObstacles(GameObject* obj);
+ 
+
     std::vector<NavMeshData> navMeshes;
     std::vector<GameObject*> navObstacles;
+
+    float sampleDist = 6.0f; 
+    float sampleMaxError = 1.0f;
+
 };

@@ -22,5 +22,6 @@ public:
     NavType type = NavType::SURFACE;
 
     float maxSlopeAngle = 35.0f;
+    GameObject* linkedSurface = nullptr;
 
 };

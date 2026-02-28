@@ -8,6 +8,9 @@
 #include "NavMeshManager.h"
 #include "ComponentNavigation.h"
 
+#include "DetourNavMesh.h"
+#include "DetourNavMeshBuilder.h"
+#include "DetourNavMeshQuery.h"
 ModuleNavMesh::ModuleNavMesh() : Module() {
     name = "ModuleNavMesh";
 }
@@ -31,8 +34,18 @@ void ModuleNavMesh::RecollectGeometry(GameObject* obj, std::vector<float>& verti
     if (obj == nullptr || !obj->IsActive()) return;
 
     ComponentMesh* mesh = (ComponentMesh*)obj->GetComponent(ComponentType::MESH);
-    if (mesh != nullptr && mesh->HasMesh())
-        ExtractVertices(mesh, vertices, indices);
+    if (mesh) {
+        LOG_CONSOLE("Checking mesh for object: %s, HasMesh: %d, Vertices: %d, Indices: %d",
+            obj->GetName().c_str(),
+            mesh->HasMesh(),
+            (int)mesh->GetMesh().vertices.size(),
+            (int)mesh->GetMesh().indices.size());
+        if (mesh->HasMesh())
+            ExtractVertices(mesh, vertices, indices);
+    }
+
+  /*  if (mesh != nullptr && mesh->HasMesh())
+        ExtractVertices(mesh, vertices, indices);*/
 
     for (GameObject* child : obj->GetChildren())
         RecollectGeometry(child, vertices, indices);
@@ -66,13 +79,10 @@ void ModuleNavMesh::ExtractVertices(ComponentMesh* mesh, std::vector<float>& ver
     for (unsigned int idx : meshData.indices)
         indices.push_back(vertexOffset + (int)idx);
 }
-
 void ModuleNavMesh::Bake(GameObject* obj)
 {
     RemoveNavMeshRecursive(obj);
-
     navObstacles.clear();
-
     RecollectObstacles(obj);
 
     std::vector<float> allVertices;
@@ -89,7 +99,6 @@ void ModuleNavMesh::Bake(GameObject* obj)
     ComponentNavigation* navComp = static_cast<ComponentNavigation*>(obj->GetComponent(ComponentType::NAVIGATION));
 
     if (navComp && navComp->type == NavType::OBSTACLE) {
-        //navObstacles.push_back(obj);
         NavMeshData obstacleData;
         obstacleData.heightfield = nullptr;
         obstacleData.owner = obj;
@@ -116,16 +125,49 @@ void ModuleNavMesh::Bake(GameObject* obj)
     int nTris = allIndices.size() / 3;
 
     std::vector<unsigned char> areas(nTris, RC_WALKABLE_AREA);
+    rcRasterizeTriangles(&ctx, allVertices.data(), nVerts, allIndices.data(), areas.data(), nTris, *hf, cfg.walkableClimb);
 
-    rcRasterizeTriangles(&ctx, allVertices.data(), nVerts,
-        allIndices.data(), areas.data(), nTris,
-        *hf, cfg.walkableClimb);
+    // ── Convertir los vértices a unsigned short para la versión antigua
+    std::vector<unsigned short> vertsShort;
+    vertsShort.reserve(allVertices.size());
+    for (float v : allVertices)
+        vertsShort.push_back(static_cast<unsigned short>(v / cfg.cs)); // escala a celda
+
+    // ── Convertir los índices a unsigned short
+    std::vector<unsigned short> shortIndices;
+    shortIndices.reserve(allIndices.size());
+    for (int idx : allIndices)
+        shortIndices.push_back(static_cast<unsigned short>(idx));
+
+    dtNavMesh* navMesh = dtAllocNavMesh();
+    dtNavMeshCreateParams params;
+    memset(&params, 0, sizeof(params));
+
+    // Asignar datos correctos
+    params.verts = vertsShort.data();      // unsigned short*
+    params.vertCount = nVerts;
+
+    params.polys = shortIndices.data();    // unsigned short*
+    params.polyCount = nTris;             // número de triángulos
+    params.nvp = 3;                        // vértices por triángulo
+
+    params.walkableHeight = cfg.walkableHeight;
+    params.walkableRadius = cfg.walkableRadius;
+    params.walkableClimb = cfg.walkableClimb;
+    memcpy(params.bmin, bmin, sizeof(float) * 3);
+    memcpy(params.bmax, bmax, sizeof(float) * 3);
+    params.cs = cfg.cs;
+    params.ch = cfg.ch;
+    params.buildBvTree = true;
 
     NavMeshData newMesh;
     newMesh.heightfield = hf;
+    newMesh.navMesh = navMesh;
+    newMesh.navQuery = dtAllocNavMeshQuery();
+    newMesh.navQuery->init(navMesh, 2048);
     newMesh.owner = obj;
-    navMeshes.push_back(newMesh);
 
+    navMeshes.push_back(newMesh);
     LOG_CONSOLE("NavMesh Bake exitoso: %s. Vertices: %d Triangulos: %d", obj->GetName().c_str(), nVerts, nTris);
 }
 
@@ -349,6 +391,15 @@ void ModuleNavMesh::RemoveNavMeshRecursive(GameObject* obj)
         RemoveNavMeshRecursive(child);
 }
 
+
+ModuleNavMesh::NavMeshData* ModuleNavMesh::GetNavMeshData(GameObject* owner) {
+    for (auto& data : navMeshes)
+    {
+        if (data.owner == owner)
+            return &data;
+    }
+    return nullptr;
+}
 
 
 bool ModuleNavMesh::CleanUp() {
