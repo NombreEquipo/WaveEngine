@@ -1,4 +1,5 @@
 #include "ModuleCamera.h"
+#include "ModuleEvents.h"
 #include "GameObject.h"
 #include "Transform.h"
 #include "Application.h"
@@ -10,11 +11,29 @@ ModuleCamera::ModuleCamera() :
 {
     name = "Camera";
     mainCamera = nullptr;
+    
 }
 
 ModuleCamera::~ModuleCamera()
 {
+   
+}
 
+bool ModuleCamera::Start() 
+{
+    Application::GetInstance().events.get()->Subscribe(Event::Type::GameObjectDestroyed, this);
+    return true;
+}
+
+bool ModuleCamera::CleanUp()
+{
+    LOG_DEBUG("Cleaning up Camera Module");
+
+    Application::GetInstance().events.get()->UnsubscribeAll(this);
+    cameras.clear();
+    mainCamera = nullptr;
+
+    return true;
 }
 
 void ModuleCamera::AddCamera(ComponentCamera* cam) {
@@ -33,17 +52,25 @@ void ModuleCamera::RemoveCamera(ComponentCamera* cam)
     }
 }
 
-bool ModuleCamera::CleanUp()
-{
-    LOG_DEBUG("Cleaning up Camera Module");
 
-    cameras.clear();
-    mainCamera = nullptr;
-
-    return true;
-}
 
 void ModuleCamera::SetMainCamera(ComponentCamera* camera)
 {
     mainCamera = camera;
+}
+
+void ModuleCamera::OnEvent(const Event& event)
+{
+    switch (event.type)
+    {
+    case Event::Type::GameObjectDestroyed:
+    {
+        GameObject* deletedObject = event.data.gameObject.gameObject;
+        if (mainCamera->owner == deletedObject) SetMainCamera(nullptr);
+        break;
+    }
+
+    default:
+        break;
+    }
 }

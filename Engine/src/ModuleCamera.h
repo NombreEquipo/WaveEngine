@@ -1,16 +1,18 @@
 #pragma once
 #include "Module.h"
-#include "ComponentCamera.h"
-#include <memory>
-#include <vector>
+#include "EventListener.h"
+
 
 class GameObject;
+class ComponentCamera;
 
-class ModuleCamera : public Module
+class ModuleCamera : public Module, public EventListener
 {
 public:
     ModuleCamera();
     ~ModuleCamera();
+
+    bool Start() override;
 
     bool CleanUp() override;
 
@@ -19,6 +21,8 @@ public:
 
     void AddCamera(ComponentCamera* camera);
     void RemoveCamera(ComponentCamera* camera);
+
+    void OnEvent(const Event& event);
 
 private:  
     std::vector<ComponentCamera*> cameras;
