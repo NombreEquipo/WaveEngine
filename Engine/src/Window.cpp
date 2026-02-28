@@ -1,3 +1,5 @@
+#include "Application.h"
+#include "ModuleEvents.h"
 #include "Window.h"
 #include <iostream>
 #include <glad/glad.h>
@@ -69,23 +71,10 @@ bool Window::Start()
     LOG_DEBUG("Window created successfully");
     LOG_CONSOLE("Window created: %dx%d with OpenGL", width, height);
 
+    Application::GetInstance().events->Subscribe(Event::Type::WindowResize, this);
     return true;
 }
 
-bool Window::Update()
-{
-    int newWidth, newHeight;
-    SDL_GetWindowSize(window, &newWidth, &newHeight);
-
-    if (newWidth != width || newHeight != height)
-    {
-        width = newWidth;
-        height = newHeight;
-        glViewport(0, 0, width, height);
-    }
-
-    return true;
-}
 
 bool Window::PostUpdate()
 {
@@ -100,6 +89,7 @@ void Window::Render()
 
 bool Window::CleanUp()
 {
+    Application::GetInstance().events->UnsubscribeAll(this);
     LOG_DEBUG("Destroying SDL window");
     if (window != nullptr)
     {
@@ -121,4 +111,17 @@ void Window::GetWindowSize(int& width, int& height) const
 int Window::GetScale() const
 {
     return scale;
+}
+
+
+void Window::OnEvent(const Event& event)
+{
+    switch (event.type)
+    {
+    case Event::Type::WindowResize:
+        glViewport(0, 0, event.data.point.x, event.data.point.y);
+        break;
+    default:
+        break;
+    }
 }
