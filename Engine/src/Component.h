@@ -50,6 +50,7 @@ public:
     virtual void FixedUpdate() {};
     virtual void Disable() {};
     virtual void OnEditor() {};
+    virtual void CleanUp() {};
 
     // Serialization
     virtual void Serialize(nlohmann::json& componentObj) const {};

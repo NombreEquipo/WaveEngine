@@ -43,6 +43,7 @@ GameObject::~GameObject() {
     MarkCleaning();
 
     for (auto* component : components) {
+        component->CleanUp();
         delete component;
         component = nullptr;
     }
