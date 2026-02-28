@@ -66,7 +66,7 @@ void ModuleCamera::OnEvent(const Event& event)
     case Event::Type::GameObjectDestroyed:
     {
         GameObject* deletedObject = event.data.gameObject.gameObject;
-        if (mainCamera->owner == deletedObject) SetMainCamera(nullptr);
+        if (mainCamera && mainCamera->owner == deletedObject) SetMainCamera(nullptr);
         break;
     }
 

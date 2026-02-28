@@ -126,6 +126,8 @@ set(UTILS_SRC
     src/SelectionManager.cpp
     src/Octree.h
     src/Octree.cpp
+    src/FileUtils.h
+    src/FileUtils.cpp
 )
 
 set(GAMEOBJECTS_SRC 

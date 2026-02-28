@@ -206,6 +206,8 @@ void EditorCamera::MoveCamera()
 		bool sPressed = Application::GetInstance().input->GetKey(SDL_SCANCODE_S) == KEY_REPEAT;
 		bool aPressed = Application::GetInstance().input->GetKey(SDL_SCANCODE_A) == KEY_REPEAT;
 		bool dPressed = Application::GetInstance().input->GetKey(SDL_SCANCODE_D) == KEY_REPEAT;
+		bool qPressed = Application::GetInstance().input->GetKey(SDL_SCANCODE_Q) == KEY_REPEAT;
+		bool ePressed = Application::GetInstance().input->GetKey(SDL_SCANCODE_E) == KEY_REPEAT;
 		bool shift = (Application::GetInstance().input->GetKey(SDL_SCANCODE_LSHIFT) == KEY_REPEAT ||
 			Application::GetInstance().input->GetKey(SDL_SCANCODE_RSHIFT) == KEY_REPEAT);
 
@@ -229,6 +231,10 @@ void EditorCamera::MoveCamera()
 			position -= right * finalSpeed;
 		if (dPressed)
 			position += right * finalSpeed;
+		if (qPressed)
+			position -= up * finalSpeed;
+		if (ePressed)
+			position += up * finalSpeed;
 		viewChanged = true;
 	}
 

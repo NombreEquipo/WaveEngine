@@ -11,6 +11,7 @@
 #include "ComponentMesh.h"
 #include "ComponentSkinnedMesh.h"
 #include "ComponentMaterial.h"
+#include "FileUtils.h"
 
 #include "ResourceModel.h"
 #include "ResourceAnimation.h"
@@ -65,9 +66,10 @@ Model ModelImporter::ImportFromFile(const std::string& file_path)
     bool hasMeshes = scene->HasMeshes();
 
     GameObject* rootObj = nullptr;
-
     std::string directory = file_path.substr(0, file_path.find_last_of("/\\"));
     rootObj = ProcessNode(scene->mRootNode, scene, directory, referedMeshes);
+
+    rootObj->name = GetFileNameNoExtension(file_path);
 
     if (hasAnimations)
     {
