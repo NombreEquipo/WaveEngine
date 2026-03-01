@@ -28,7 +28,7 @@ void GameWindow::Draw()
     {
         CameraLens* camera = cameraComp->GetLens();
 
-        if (gameViewportSize.x > 1 && gameViewportSize.y > 1)
+        if (camera && gameViewportSize.x > 1 && gameViewportSize.y > 1)
         {
             if (gameViewportSize.x != camera->textureWidth || gameViewportSize.y != camera->textureHeight)
             {
