@@ -212,6 +212,10 @@ static int Lua_Input_GetKey(lua_State* L) {
     else if (strcmp(keyName, "E") == 0) pressed = Application::GetInstance().input->GetKey(SDL_SCANCODE_E) == KEY_REPEAT;
     else if (strcmp(keyName, "LeftShift") == 0) pressed = Application::GetInstance().input->GetKey(SDL_SCANCODE_LSHIFT) == KEY_REPEAT;
     else if (strcmp(keyName, "RightShift") == 0) pressed = Application::GetInstance().input->GetKey(SDL_SCANCODE_RSHIFT) == KEY_REPEAT;
+    else if (strcmp(keyName, "5") == 0) pressed = Application::GetInstance().input->GetKey(SDL_SCANCODE_5) == KEY_REPEAT;
+    else if (strcmp(keyName, "6") == 0) pressed = Application::GetInstance().input->GetKey(SDL_SCANCODE_6) == KEY_REPEAT;
+    else if (strcmp(keyName, "7") == 0) pressed = Application::GetInstance().input->GetKey(SDL_SCANCODE_7) == KEY_REPEAT;
+    
 
     lua_pushboolean(L, pressed);
     return 1;
@@ -231,6 +235,7 @@ static int Lua_Input_GetKeyDown(lua_State* L) {
     else if (strcmp(keyName, "E") == 0) pressed = Application::GetInstance().input->GetKey(SDL_SCANCODE_E) == KEY_DOWN;
     else if (strcmp(keyName, "LeftShift") == 0) pressed = Application::GetInstance().input->GetKey(SDL_SCANCODE_LSHIFT) == KEY_DOWN;
     else if (strcmp(keyName, "RightShift") == 0) pressed = Application::GetInstance().input->GetKey(SDL_SCANCODE_RSHIFT) == KEY_DOWN;
+    else if (strcmp(keyName, "7") == 0) pressed = Application::GetInstance().input->GetKey(SDL_SCANCODE_7) == KEY_DOWN;
 
     lua_pushboolean(L, pressed);
     return 1;
