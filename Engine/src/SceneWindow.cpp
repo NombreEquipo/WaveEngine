@@ -158,6 +158,7 @@ void SceneWindow::HandleAssetDropTarget()
             {
                 LOG_CONSOLE("Loading FBX model...");
                 bool loadedModel = Application::GetInstance().loader->LoadFbx(dropData->assetPath);
+                //GameObject* loadedModel = Application::GetInstance().filesystem->LoadFBXAsGameObject(dropData->assetPath);
 
                 if (loadedModel)
                 {
