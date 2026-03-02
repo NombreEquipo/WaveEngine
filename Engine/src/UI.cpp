@@ -42,9 +42,22 @@ bool UI::Start()
     NsRegisterReflectionAppInteractivity();
     NsInitPackageAppInteractivity();
 
-    Noesis::GUI::SetXamlProvider(Noesis::MakePtr<NoesisApp::LocalXamlProvider>("../Assets/UI"));
-    Noesis::GUI::SetFontProvider(Noesis::MakePtr<NoesisApp::LocalFontProvider>("../Assets/Fonts"));
-    Noesis::GUI::SetTextureProvider(Noesis::MakePtr<NoesisApp::LocalTextureProvider>("../Assets/UI/Textures"));
+    char buffer[MAX_PATH];
+    GetModuleFileNameA(NULL, buffer, MAX_PATH);
+    std::filesystem::path exeDir = std::filesystem::path(buffer).parent_path();
+
+    auto assetsDir = exeDir / "Assets";
+    if (!std::filesystem::exists(assetsDir))
+        assetsDir = exeDir / "../Assets";
+
+    std::string xamlPath = (assetsDir / "UI").string();
+    std::string fontPath = (assetsDir / "Fonts").string();
+    std::string texturePath = (assetsDir / "UI/Textures").string();
+    LOG_DEBUG("[UI] Texture path: %s", texturePath.c_str());
+
+    Noesis::GUI::SetXamlProvider(Noesis::MakePtr<NoesisApp::LocalXamlProvider>(xamlPath.c_str()));
+    Noesis::GUI::SetFontProvider(Noesis::MakePtr<NoesisApp::LocalFontProvider>(fontPath.c_str()));
+    Noesis::GUI::SetTextureProvider(Noesis::MakePtr<NoesisApp::LocalTextureProvider>(texturePath.c_str()));
 
     renderDevice = Noesis::MakePtr<NoesisApp::GLRenderDevice>(false);
 

@@ -59,17 +59,25 @@ bool ComponentCanvas::LoadXAML(const char* filename)
     Noesis::Ptr<Noesis::FrameworkElement> xaml =
         Noesis::GUI::LoadXaml<Noesis::FrameworkElement>(filename);
 
-    if (!xaml) return false;
+    if (!xaml)
+    {
+        LOG_CONSOLE("[Canvas] '%s' is not a valid FrameworkElement XAML", filename);
+        return false;
+    }
 
-    ShutdownView();  
-
+    ShutdownView();
     view = Noesis::GUI::CreateView(xaml);
+
+    if (!view)
+    {
+        LOG_CONSOLE("[Canvas] Failed to create view from: %s", filename);
+        return false;
+    }
+
     view->SetFlags(Noesis::RenderFlags_PPAA | Noesis::RenderFlags_LCD);
     view->SetSize(width, height);
-
     device = Application::GetInstance().ui->GetRenderDevice();
     view->GetRenderer()->Init(device);
-
     currentXAML = filename;
     view->Activate();
     return true;

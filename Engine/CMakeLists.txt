@@ -515,3 +515,38 @@ target_include_directories(Game PRIVATE BEFORE
     "${WWISE_SDK_DIR}/include/Win32"
 )
 
+target_sources(Game PRIVATE
+    ${NOESIS_APP_PROVIDERS_SOURCES}
+    ${NOESIS_RENDER_SOURCES}
+    ${NOESIS_INTERACTIVITY_SOURCES}
+    ${NOESIS_MEDIAELEMENT_SOURCES}
+) 
+target_include_directories(Game PRIVATE
+    "${NOESIS_SDK_DIR}/Include"
+    ${NOESIS_PACKAGE_INCLUDE_DIRS}
+)
+
+target_compile_definitions(Game PRIVATE
+    NS_APP_PROVIDERS_API=
+    NS_APP_FRAMEWORK_API=
+    NS_APP_INTERACTIVITY_API=
+    NS_RENDER_GLRENDERDEVICE_API=
+    NS_APP_MEDIAELEMENT_API=
+)
+
+if(MSVC)
+    target_compile_options(Game PRIVATE /FS)
+endif()
+if(WIN32)
+    set(NOESIS_LIB "${NOESIS_SDK_DIR}/Lib/windows_x86_64/Noesis.lib")
+    set(NOESIS_DLL "${NOESIS_SDK_DIR}/Bin/windows_x86_64/Noesis.dll")
+
+    target_link_libraries(Game PRIVATE ${NOESIS_LIB})
+
+    add_custom_command(TARGET Game POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${NOESIS_DLL}"
+        $<TARGET_FILE_DIR:Game>
+    )
+endif()
+

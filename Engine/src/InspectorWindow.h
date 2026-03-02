@@ -14,6 +14,7 @@ class GameObject;
 class InspectorWindow : public EditorWindow, public EventListener
 {
 public:
+
     InspectorWindow();
     ~InspectorWindow() override;
 
@@ -25,10 +26,10 @@ public:
     void SetGizmoMode(ImGuizmo::MODE mode) { currentGizmoMode = mode; }
     bool ShouldShowVertexNormals() const { return showVertexNormals; }
     bool ShouldShowFaceNormals() const { return showFaceNormals; }
-
     void OnEvent(const Event& event);
 
 private:
+    void DrawComponentContextMenu(Component* component, bool canRemove);
     bool DrawGameObjectSection(GameObject* selectedObject);
     void DrawGizmoSettings();
     void DrawAddComponentButton(GameObject* selectedObject);
@@ -57,6 +58,7 @@ private:
     void DrawPrismaticJointComponent(Component* component);
     void DrawSphericalJointComponent(Component* component);
     void DrawAudioSourceComponent(Component* component);
+    void DrawCanvasComponent(Component* selectedObject);
     void DrawAudioListenerComponent(Component* component);
     void DrawReverbZoneComponent(Component* component);
     void DrawAnimationComponent(Component* component);
