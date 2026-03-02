@@ -4,8 +4,7 @@
 #include "Application.h"
 #include "AudioSystem.h"
 #include "Log.h"
-#include <glm/gtc/matrix_access.hpp> // Required for column extraction
-
+#include <glm/gtc/matrix_access.hpp> // Required for column 
 
 AudioSource::AudioSource(GameObject* containerGO)
     : Component(containerGO, ComponentType::AUDIOSOURCE) // This sets the base owner
@@ -90,6 +89,9 @@ void AudioSource::Deserialize(const nlohmann::json& componentObj) {
 }
 
 void AudioSource::OnEditor() {
+
+    #ifndef WAVE_GAME
+
     //get all Wwise events 
     auto& events = Application::GetInstance().audio->audioSystem->eventNames;
     auto& wwiseEvents = Application::GetInstance().audio->audioSystem->GetAudioEvents();
@@ -165,4 +167,6 @@ void AudioSource::OnEditor() {
             Application::GetInstance().audio->StopAudio(this, eventID);
         }
     }
+
+    #endif 
 }

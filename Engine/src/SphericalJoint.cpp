@@ -3,6 +3,7 @@
 #include "Application.h"
 #include "ModulePhysics.h"
 #include "Renderer.h"
+#include "imgui.h"
 
 SphericalJoint::SphericalJoint(GameObject* owner) : Joint(owner)
 {
@@ -15,12 +16,17 @@ SphericalJoint::~SphericalJoint() {}
 
 void SphericalJoint::CreateJoint() {
     auto* physics = Application::GetInstance().physics->GetPhysics();
+
     if (!physics || !bodyA || !bodyA->GetActor()) return;
 
     bool isADynamic = (bodyA->GetBodyType() == Rigidbody::Type::DYNAMIC);
+
     bool isBDynamic = (bodyB != nullptr) && (bodyB->GetBodyType() == Rigidbody::Type::DYNAMIC);
 
-    if (!isADynamic && !isBDynamic) return;
+    if (!isADynamic && !isBDynamic) {
+        /*LOG(LogType::LOG_WARNING, "Spherical Joint ignored: At least one body must be DYNAMIC.");*/
+        return;
+    }
 
     physx::PxRigidActor* actorA = bodyA->GetActor();
     physx::PxRigidActor* actorB = (bodyB) ? bodyB->GetActor() : nullptr;
@@ -36,14 +42,20 @@ void SphericalJoint::CreateJoint() {
     );
 
     pxJoint = physx::PxSphericalJointCreate(*physics, actorA, localA, actorB, localB);
-    if (pxJoint == nullptr) return;
+
+    if (pxJoint == nullptr) {
+        /*LOG(LogType::LOG_ERROR, "Joint Error: PhysX failed to create PxSphericalJoint");*/
+        return;
+    }
 
     pxJoint->setBreakForce(breakForce, breakTorque);
 
     auto* sJoint = static_cast<physx::PxSphericalJoint*>(pxJoint);
+
     physx::PxJointLimitCone limit(glm::radians(limitAngle), glm::radians(limitAngle));
     sJoint->setLimitCone(limit);
     sJoint->setSphericalJointFlag(physx::PxSphericalJointFlag::eLIMIT_ENABLED, limitsEnabled);
+
 }
 
 void SphericalJoint::EnableLimits(bool b) {
@@ -57,13 +69,58 @@ void SphericalJoint::EnableLimits(bool b) {
 }
 
 void SphericalJoint::SetConeLimit(float angle) {
+    
     limitAngle = glm::clamp(angle, 0.01f, 179.9f);
+
     auto* sJoint = static_cast<physx::PxSphericalJoint*>(pxJoint);
     if (sJoint) {
         physx::PxJointLimitCone limit(glm::radians(limitAngle), glm::radians(limitAngle));
         sJoint->setLimitCone(limit);
         if (bodyA) bodyA->WakeUp();
     }
+}
+
+void SphericalJoint::Serialize(nlohmann::json& componentObj) const
+{
+    SerializeBase(componentObj);
+
+    componentObj["ConeLimit"] = {
+        {"Enabled", limitsEnabled},
+        {"Angle", limitAngle}
+    };
+}
+
+void SphericalJoint::Deserialize(const nlohmann::json& componentObj)
+{
+    DeserializeBase(componentObj);
+
+    if (componentObj.contains("ConeLimit")) {
+        auto cone = componentObj["ConeLimit"];
+        EnableLimits(cone.value("Enabled", false));
+
+        SetConeLimit(cone.value("Angle", 45.0f));
+    }
+}
+
+void SphericalJoint::OnEditor() {
+#ifndef WAVE_GAME
+    OnEditorBase();
+
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth;
+
+    bool isNodeOpen = ImGui::TreeNodeEx("Cone Limit Settings", flags);
+    if (isNodeOpen) {
+        if (ImGui::Checkbox("Enable Cone Limit", &limitsEnabled)) {
+            EnableLimits(limitsEnabled);
+        }
+
+        if (ImGui::SliderFloat("Limit Angle", &limitAngle, 0.0f, 180.0f)) {
+            SetConeLimit(limitAngle);
+        }
+
+        ImGui::TreePop();
+    }
+#endif
 }
 
 void SphericalJoint::DrawDebug() {
@@ -95,10 +152,14 @@ void SphericalJoint::DrawDebug() {
         glm::vec3 prevPoint;
         for (int i = 0; i <= segments; ++i) {
             float theta = (i * 2.0f * 3.14159265f) / segments;
+
             glm::vec3 currentPoint = pRef + (dirX * cosf(rad) +
                 (dirY * cosf(theta) + dirZ * sinf(theta)) * sinf(rad)) * radius;
+
             if (i > 0) render->DrawLine(prevPoint, currentPoint, color);
+
             if (i % (segments / 4) == 0) render->DrawLine(pRef, currentPoint, color * 0.4f);
+
             prevPoint = currentPoint;
         }
     }
@@ -106,5 +167,20 @@ void SphericalJoint::DrawDebug() {
     physx::PxTransform poseA = bodyA->GetActor()->getGlobalPose();
     physx::PxTransform worldA = poseA.transform(pxJoint->getLocalPose(physx::PxJointActorIndex::eACTOR0));
     physx::PxVec3 bXA = worldA.q.getBasisVector0();
+
     render->DrawLine(pRef, pRef + glm::vec3(bXA.x, bXA.y, bXA.z) * radius, glm::vec4(1, 1, 1, 1));
 }
+
+//void SphericalJoint::Serialize(nlohmann::json& componentObj) const {
+//    Joint::Serialize(componentObj);
+//    componentObj["limitsEnabled"] = limitsEnabled;
+//    componentObj["limitAngle"] = limitAngle;
+//}
+//
+//void SphericalJoint::Deserialize(const nlohmann::json& componentObj) {
+//    Joint::Deserialize(componentObj);
+//    if (componentObj.contains("limitsEnabled"))
+//        EnableLimits(componentObj["limitsEnabled"].get<bool>());
+//    if (componentObj.contains("limitAngle"))
+//        SetConeLimit(componentObj["limitAngle"].get<float>());
+//}

@@ -23,8 +23,15 @@ public:
     void SetDamping(float d);
     float GetDamping() const { return damping; }
 
-    void OnEditor() override {}
+    virtual void Serialize(nlohmann::json& componentObj) const;
+    virtual void Deserialize(const nlohmann::json& componentObj);
+
     void DrawDebug() override;
+    void OnEditor() override;
+
+    //void Serialize(nlohmann::json& componentObj) const override;
+    //void Deserialize(const nlohmann::json& componentObj) override;
+
 
 private:
     float maxDistance = 10.0f;

@@ -3,6 +3,7 @@
 #include "Application.h"
 #include "ModulePhysics.h"
 #include "Renderer.h"
+#include "imgui.h"
 
 PrismaticJoint::PrismaticJoint(GameObject* owner) : Joint(owner) {
     name = "Prismatic Joint";
@@ -14,12 +15,17 @@ PrismaticJoint::~PrismaticJoint() {}
 
 void PrismaticJoint::CreateJoint() {
     auto* physics = Application::GetInstance().physics->GetPhysics();
+   
     if (!physics || !bodyA || !bodyA->GetActor()) return;
 
     bool isADynamic = (bodyA->GetBodyType() == Rigidbody::Type::DYNAMIC);
+
     bool isBDynamic = (bodyB != nullptr) && (bodyB->GetBodyType() == Rigidbody::Type::DYNAMIC);
 
-    if (!isADynamic && !isBDynamic) return;
+    if (!isADynamic && !isBDynamic) {
+        /*LOG(LogType::LOG_WARNING, "Prismatic Joint ignored: At least one body must be DYNAMIC.");*/
+        return;
+    }
 
     physx::PxRigidActor* actorA = bodyA->GetActor();
     physx::PxRigidActor* actorB = (bodyB) ? bodyB->GetActor() : nullptr;
@@ -39,6 +45,11 @@ void PrismaticJoint::CreateJoint() {
     pxJoint->setBreakForce(breakForce, breakTorque);
 
     auto* pJoint = static_cast<physx::PxPrismaticJoint*>(pxJoint);
+
+    if (pxJoint == nullptr) {
+        /*LOG(LogType::LOG_ERROR, "Joint Error: PhysX failed to create PxPrismaticJoint");*/
+        return;
+    }
 
     physx::PxTolerancesScale scale;
     physx::PxJointLinearLimitPair limit(scale, minLimit, maxLimit);
@@ -65,13 +76,17 @@ void PrismaticJoint::EnableSoftLimit(bool b) {
     softLimitEnabled = b;
     auto* pJoint = static_cast<physx::PxPrismaticJoint*>(pxJoint);
     if (pJoint) {
+
         physx::PxTolerancesScale scale;
         physx::PxJointLinearLimitPair limit(scale, minLimit, maxLimit);
+
         if (softLimitEnabled) {
             limit.stiffness = stiffness;
             limit.damping = damping;
         }
+
         pJoint->setLimit(limit);
+
         if (bodyA) bodyA->WakeUp();
         if (bodyB) bodyB->WakeUp();
     }
@@ -79,13 +94,18 @@ void PrismaticJoint::EnableSoftLimit(bool b) {
 
 void PrismaticJoint::SetStiffness(float s) {
     stiffness = glm::max(0.0f, s);
-    if (softLimitEnabled) EnableSoftLimit(true);
+    if (softLimitEnabled) {
+        EnableSoftLimit(true);
+    }
 }
 
 void PrismaticJoint::SetDamping(float d) {
     damping = glm::max(0.0f, d);
-    if (softLimitEnabled) EnableSoftLimit(true);
+    if (softLimitEnabled) {
+        EnableSoftLimit(true);
+    }
 }
+
 
 void PrismaticJoint::SetMinLimit(float m) {
     minLimit = m;
@@ -111,6 +131,66 @@ void PrismaticJoint::SetMaxLimit(float m) {
         pJoint->setLimit(limit);
         if (bodyA) bodyA->WakeUp();
     }
+}
+
+void PrismaticJoint::Serialize(nlohmann::json& componentObj) const
+{
+    SerializeBase(componentObj);
+
+    componentObj["Limits"] = {
+        {"Enabled", limitsEnabled},
+        {"Min", minLimit},
+        {"Max", maxLimit}
+    };
+
+    componentObj["SoftLimit"] = {
+        {"Enabled", softLimitEnabled},
+        {"Stiffness", stiffness},
+        {"Damping", damping}
+    };
+}
+
+void PrismaticJoint::Deserialize(const nlohmann::json& componentObj)
+{
+    DeserializeBase(componentObj);
+
+    if (componentObj.contains("Limits")) {
+        auto limits = componentObj["Limits"];
+        EnableLimits(limits.value("Enabled", false));
+        SetMinLimit(limits.value("Min", -5.0f));
+        SetMaxLimit(limits.value("Max", 5.0f));
+    }
+
+    if (componentObj.contains("SoftLimit")) {
+        auto soft = componentObj["SoftLimit"];
+        EnableSoftLimit(soft.value("Enabled", false));
+        SetStiffness(soft.value("Stiffness", 0.0f));
+        SetDamping(soft.value("Damping", 0.0f));
+    }
+
+    RefreshJoint();
+}
+
+void PrismaticJoint::OnEditor() {
+#ifndef WAVE_GAME
+    OnEditorBase();
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth;
+
+    if (ImGui::TreeNodeEx("Limit Settings", flags)) {
+        if (ImGui::Checkbox("Enable Limits", &limitsEnabled)) EnableLimits(limitsEnabled);
+        if (ImGui::InputFloat("Min Limit", &minLimit)) SetMinLimit(minLimit);
+        if (ImGui::InputFloat("Max Limit", &maxLimit)) SetMaxLimit(maxLimit);
+        ImGui::TreePop();
+    }
+
+    if (ImGui::TreeNodeEx("Soft Limit (Spring)", flags)) {
+        if (ImGui::Checkbox("Enable Soft Limit", &softLimitEnabled)) RefreshJoint();
+        ImGui::InputFloat("Stiffness", &stiffness);
+        ImGui::InputFloat("Damping", &damping);
+        if (ImGui::IsItemDeactivatedAfterEdit()) RefreshJoint();
+        ImGui::TreePop();
+    }
+#endif 
 }
 
 void PrismaticJoint::DrawDebug() {
@@ -142,3 +222,29 @@ void PrismaticJoint::DrawDebug() {
     physx::PxTransform worldA = poseA.transform(localA);
     render->DrawSphere(glm::vec3(worldA.p.x, worldA.p.y, worldA.p.z), 0.2f, color);
 }
+
+//void PrismaticJoint::Serialize(nlohmann::json& componentObj) const {
+//    Joint::Serialize(componentObj);
+//    componentObj["limitsEnabled"] = limitsEnabled;
+//    componentObj["softLimitEnabled"] = softLimitEnabled;
+//    componentObj["stiffness"] = stiffness;
+//    componentObj["damping"] = damping;
+//    componentObj["minLimit"] = minLimit;
+//    componentObj["maxLimit"] = maxLimit;
+//}
+//
+//void PrismaticJoint::Deserialize(const nlohmann::json& componentObj) {
+//    Joint::Deserialize(componentObj);
+//    if (componentObj.contains("limitsEnabled"))
+//        EnableLimits(componentObj["limitsEnabled"].get<bool>());
+//    if (componentObj.contains("minLimit"))
+//        SetMinLimit(componentObj["minLimit"].get<float>());
+//    if (componentObj.contains("maxLimit"))
+//        SetMaxLimit(componentObj["maxLimit"].get<float>());
+//    if (componentObj.contains("stiffness"))
+//        SetStiffness(componentObj["stiffness"].get<float>());
+//    if (componentObj.contains("damping"))
+//        SetDamping(componentObj["damping"].get<float>());
+//    if (componentObj.contains("softLimitEnabled"))
+//        EnableSoftLimit(componentObj["softLimitEnabled"].get<bool>());
+//}

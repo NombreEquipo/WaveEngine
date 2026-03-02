@@ -1,5 +1,5 @@
 #pragma once
-
+#include <vector>
 #include "EditorWindow.h"
 #include <imgui.h>
 #include <ImGuizmo.h>
@@ -23,7 +23,13 @@ public:
 
     bool IsGizmoBeingUsed() const { return isGizmoActive; }
 
+    bool snapEnabled = true;
+    float positionSnap = 1.0f;
+    float rotationSnap = 15.0f;
+    float scaleSnap = 0.1f;
+
 private:
+    void SelectObject();
     void HandleGizmoInput();
     void DrawGizmo();
     void HandleAssetDropTarget();  
@@ -44,4 +50,6 @@ private:
     glm::vec3 gizmoSnapshotPos;
     glm::vec3 gizmoSnapshotRot;
     glm::vec3 gizmoSnapshotScale;
+
+    std::vector<glm::vec3> originalScales;
 };

@@ -1,7 +1,6 @@
 Engine/build/
 Engine/Library/
 Engine/CMakeUserPresets.json
-
 Engine/External
 
 editor_layout.ini
@@ -9,3 +8,4 @@ editor_layout.ini
 *.prof
 *.validationcache
 *.wsettings
+*.ini

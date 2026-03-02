@@ -13,11 +13,16 @@ public:
     void EnableLimits(bool b);
     void SetConeLimit(float angle);
 
-    float GetLimitAngle() const { return limitAngle; }
-    bool GetLimitsEnabled() const { return limitsEnabled; }
+    virtual void Serialize(nlohmann::json& componentObj) const;
+    virtual void Deserialize(const nlohmann::json& componentObj);
 
-    void OnEditor() override {}
+    //void Save(Config& config) override;
+    //void Load(Config& config) override;
+    void OnEditor() override;
     void DrawDebug() override;
+
+    //void Serialize(nlohmann::json& componentObj) const override;
+    //void Deserialize(const nlohmann::json& componentObj) override;
 
 private:
     float limitAngle = 45.0f;

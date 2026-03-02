@@ -3,6 +3,7 @@
 #include "Application.h"
 #include "ModulePhysics.h"
 #include "Renderer.h"
+#include "imgui.h"
 
 FixedJoint::FixedJoint(GameObject* owner) : Joint(owner)
 {
@@ -14,16 +15,28 @@ FixedJoint::FixedJoint(GameObject* owner) : Joint(owner)
 FixedJoint::~FixedJoint() {}
 
 void FixedJoint::CreateJoint() {
-
+    
     auto* physics = Application::GetInstance().physics->GetPhysics();
 
-    if (!physics) return;
-    if (!bodyA || !bodyA->GetActor()) return;
+    if (!physics) {
+        /*LOG(LogType::LOG_ERROR, "Joint Error: PhysX Physics pointer is NULL");*/
+        return;
+    }
+
+    if (!bodyA || !bodyA->GetActor()) {
+        /*LOG(LogType::LOG_ERROR, "Joint Error: BodyA or its PhysX Actor is NULL");*/
+        return;
+    }
+
 
     bool isADynamic = (bodyA->GetBodyType() == Rigidbody::Type::DYNAMIC);
+
     bool isBDynamic = (bodyB != nullptr) && (bodyB->GetBodyType() == Rigidbody::Type::DYNAMIC);
 
-    if (!isADynamic && !isBDynamic) return;
+    if (!isADynamic && !isBDynamic) {
+        /*LOG(LogType::LOG_WARNING, "Fixed Joint ignored: At least one body must be DYNAMIC.");*/
+        return;
+    }
 
     physx::PxRigidActor* actorA = bodyA->GetActor();
     physx::PxRigidActor* actorB = (bodyB) ? bodyB->GetActor() : nullptr;
@@ -40,13 +53,35 @@ void FixedJoint::CreateJoint() {
 
     pxJoint = physx::PxFixedJointCreate(*physics, actorA, localA, actorB, localB);
 
-    if (pxJoint == nullptr) return;
+    if (pxJoint == nullptr) {
+        /*LOG(LogType::LOG_ERROR, "Joint Error: PhysX failed to create PxFixedJoint");*/
+        return;
+    }
 
     pxJoint->setBreakForce(breakForce, breakTorque);
 }
 
-void FixedJoint::DrawDebug() {
+void FixedJoint::Serialize(nlohmann::json& componentObj) const
+{
+    SerializeBase(componentObj);
+}
 
+void FixedJoint::Deserialize(const nlohmann::json& componentObj)
+{
+    DeserializeBase(componentObj);
+
+    RefreshJoint();
+}
+
+void FixedJoint::OnEditor() {
+#ifndef WAVE_GAME
+    
+    OnEditorBase();
+#endif
+}
+
+void FixedJoint::DrawDebug() {
+    
     if (!bodyA || !pxJoint) return;
 
     physx::PxTransform poseA = bodyA->GetActor()->getGlobalPose();
@@ -67,8 +102,20 @@ void FixedJoint::DrawDebug() {
     }
 
     auto* render = Application::GetInstance().renderer.get();
+
     glm::vec4 color = glm::vec4(1, 1, 1, 1);
+
     render->DrawLine(pA, pB, color);
     render->DrawSphere(pA, 0.2f, color);
     render->DrawSphere(pB, 0.2f, color);
 }
+
+//void FixedJoint::Serialize(nlohmann::json& componentObj) const
+//{
+//    Joint::Serialize(componentObj);
+//}
+//
+//void FixedJoint::Deserialize(const nlohmann::json& componentObj)
+//{
+//    Joint::Deserialize(componentObj);
+//}

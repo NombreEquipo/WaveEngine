@@ -5,8 +5,11 @@
 #include <SDL3/SDL.h>
 #include <IL/il.h>
 #include <filesystem>
+#include <fstream>
 #include <windows.h>
-#include <commdlg.h>
+#include <commdlg.h> // For file dialogs
+#include <shobjidl.h> // For folder selection
+#include <nlohmann/json.hpp>
 
 #include "Application.h"
 #include "Log.h"
@@ -16,8 +19,12 @@
 #include "Primitives.h"
 #include "ComponentMesh.h"
 #include "Transform.h"           
-#include "ComponentCamera.h"   
+#include "ComponentCamera.h"  
+#include "CameraLens.h"   
+
+#include "EditorCamera.h"   
 #include "ComponentMaterial.h"
+#include "ComponentScript.h"
 
 #include "ConfigurationWindow.h"
 #include "HierarchyWindow.h"
@@ -27,6 +34,7 @@
 #include "GameWindow.h"
 #include "AssetsWindow.h"
 #include "MetaFile.h"
+#include "LibraryManager.h"
 #include "ShaderEditorWindow.h"
 #include "ScriptEditorWindow.h"
 #include "DeleteCommand.h"
@@ -40,6 +48,7 @@ ModuleEditor::ModuleEditor() : Module()
 
 ModuleEditor::~ModuleEditor()
 {
+
 }
 
 bool ModuleEditor::Start()
@@ -87,6 +96,10 @@ bool ModuleEditor::Start()
     shaderEditorWindow = std::make_unique<ShaderEditorWindow>();
     commandHistory = std::make_unique<CommandHistory>();
 
+    editorCamera = new EditorCamera();
+
+    Application::GetInstance().events->Subscribe(Event::Type::EventSDL, this);
+
     LOG_CONSOLE("Editor initialized");
 
     return true;
@@ -98,30 +111,14 @@ bool ModuleEditor::PreUpdate()
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
 
-    if (sceneWindow)
-    {
-        ImVec2 oldSize = sceneViewportSize;
-        sceneViewportPos = sceneWindow->GetViewportPos();
-        sceneViewportSize = sceneWindow->GetViewportSize();
-
-        // Update camera aspect ratio when viewport size changes
-        if (sceneViewportSize.x > 0 && sceneViewportSize.y > 0 &&
-            (oldSize.x != sceneViewportSize.x || oldSize.y != sceneViewportSize.y))
-        {
-            float sceneAspect = sceneViewportSize.x / sceneViewportSize.y;
-            ComponentCamera* editorCamera = Application::GetInstance().camera->GetEditorCamera();
-            if (editorCamera)
-            {
-                editorCamera->SetAspectRatio(sceneAspect);
-            }
-        }
-    }
-
     return true;
 }
 
 bool ModuleEditor::Update()
 {
+    if (editorCamera)
+        editorCamera->Update();
+
     // Create fullscreen dockspace window
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->Pos);
@@ -162,27 +159,17 @@ bool ModuleEditor::Update()
         DrawAboutWindow();
     }
 
-
     HandleDeleteKey();
     HandleUndoRedo();
+    HandleCopyPaste();
+
+
 
     if (sceneWindow)
     {
         ImVec2 oldSize = sceneViewportSize;
         sceneViewportPos = sceneWindow->GetViewportPos();
         sceneViewportSize = sceneWindow->GetViewportSize();
-
-        // Update camera aspect ratio when viewport size changes
-        if (sceneViewportSize.x > 0 && sceneViewportSize.y > 0 &&
-            (oldSize.x != sceneViewportSize.x || oldSize.y != sceneViewportSize.y))
-        {
-            float sceneAspect = sceneViewportSize.x / sceneViewportSize.y;
-            ComponentCamera* editorCamera = Application::GetInstance().camera->GetEditorCamera();
-            if (editorCamera)
-            {
-                editorCamera->SetAspectRatio(sceneAspect);
-            }
-        }
     }
 
     if (gameWindow)
@@ -212,6 +199,11 @@ bool ModuleEditor::PostUpdate()
 
 bool ModuleEditor::CleanUp()
 {
+    Application::GetInstance().events->UnsubscribeAll(this);
+
+    delete editorCamera;
+    editorCamera = nullptr;
+
     LOG_DEBUG("Cleaning up Editor");
 
     commandHistory->Clear();
@@ -263,6 +255,13 @@ void ModuleEditor::ShowMenuBar()
                     app.scene->LoadScene(filepath);
                     LOG_CONSOLE("Scene loaded from %s", filepath.c_str());
                 }
+            }
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Build Game..."))
+            {
+                BuildGame();
             }
 
             ImGui::Separator();
@@ -382,38 +381,11 @@ void ModuleEditor::ShowMenuBar()
                         LOG_CONSOLE("Auto save disabled");
                     }
                 }
-
                 ImGui::EndMenu();
             }
-
             ImGui::EndMenu();
         }
 
-        if (ImGui::BeginMenu("Camera"))
-        {
-            if (ImGui::MenuItem("Create Camera"))
-            {
-                Application& app = Application::GetInstance();
-                GameObject* cameraGO = app.scene->CreateGameObject("Camera");
-
-                ComponentCamera* editorCam = app.camera->GetEditorCamera();
-                if (editorCam && editorCam->owner)
-                {
-                    Transform* editorTransform = static_cast<Transform*>(editorCam->owner->GetComponent(ComponentType::TRANSFORM));
-                    Transform* newCameraTransform = static_cast<Transform*>(cameraGO->GetComponent(ComponentType::TRANSFORM));
-
-                    if (editorTransform && newCameraTransform)
-                    {
-                        newCameraTransform->SetPosition(editorTransform->GetPosition());
-                        newCameraTransform->SetRotationQuat(editorTransform->GetRotationQuat());
-                    }
-                }
-
-                ComponentCamera* sceneCamera = static_cast<ComponentCamera*>(cameraGO->CreateComponent(ComponentType::CAMERA));
-            }
-
-            ImGui::EndMenu();
-        }
 
         if (ImGui::BeginMenu("GameObject"))
         {
@@ -462,6 +434,8 @@ void ModuleEditor::ShowMenuBar()
             if (ImGui::MenuItem("Empty GameObject"))
             {
                 GameObject* empty = Application::GetInstance().scene->CreateGameObject("GameObject");
+                commandHistory->ExecuteCommand(std::make_unique<CreateCommand>(empty));
+
                 Application::GetInstance().selectionManager->SetSelectedObject(empty);
             }
             
@@ -504,6 +478,26 @@ void ModuleEditor::ShowMenuBar()
                 showAbout = true;
             }
             ImGui::EndMenu();
+        }
+
+        ImGui::Separator();
+        ImGui::Checkbox("Snap", &sceneWindow.get()->snapEnabled);
+        ImGui::PushItemWidth(80);
+        ImGui::DragFloat("Position", &sceneWindow.get()->positionSnap, 0.1f, 0.0f, 100.0f, "%.3fx");
+        ImGui::SameLine();
+        ImGui::DragFloat("Rotation", &sceneWindow.get()->rotationSnap, 0.1f, 0.0f, 100.0f, "%.3fx");
+        ImGui::SameLine();
+        ImGui::DragFloat("Scale", &sceneWindow.get()->scaleSnap, 0.1f, 0.0f, 100.0f, "%.3fx");
+        ImGui::SameLine();
+        
+        ImGui::Separator();
+        ImGui::Checkbox("Center On Paste", &centerOnPaste);
+        ImGui::SameLine();
+
+        if (centerOnPaste)
+        {
+            ImGui::DragFloat("Paste Distance", &pasteDistance, 0.1f, 1.0f, 100.0f);
+            ImGui::SameLine();
         }
 
         ImGui::EndMenuBar();
@@ -564,6 +558,7 @@ void ModuleEditor::ShowPlayToolbar()
 
     if (ImGui::Button("Play", ImVec2(40, 0))) {
         commandHistory->Clear();
+        ObjectsCopy.clear();
         app.Play();
         // Focus the Game window when entering play mode
         if (gameWindow && gameWindow->IsOpen()) {
@@ -977,9 +972,11 @@ std::string ModuleEditor::OpenSaveFile(const std::string& defaultPath)
     OPENFILENAMEA ofn;
     char szFile[260] = { 0 };
 
-    // Get the default scene folder
-    std::filesystem::path scenePath = std::filesystem::current_path().parent_path().parent_path() / "Scene";
-    std::string sceneDir = scenePath.string();
+    std::string sceneDir;
+	if (!defaultPath.empty()) // Default path
+        sceneDir = defaultPath;
+	else // Current path
+        sceneDir = (std::filesystem::current_path().parent_path().parent_path() / "Scene").string();
 
     ZeroMemory(&ofn, sizeof(ofn));
     ofn.lStructSize = sizeof(ofn); 
@@ -1007,9 +1004,11 @@ std::string ModuleEditor::OpenLoadFile(const std::string& defaultPath)
     OPENFILENAMEA ofn;
     char szFile[260] = { 0 };
 
-    // Get the default scene folder
-    std::filesystem::path scenePath = std::filesystem::current_path().parent_path().parent_path() / "Scene";
-    std::string sceneDir = scenePath.string();
+    std::string sceneDir;
+    if (!defaultPath.empty()) // Default path
+        sceneDir = defaultPath;
+    else // Current path
+        sceneDir = (std::filesystem::current_path().parent_path().parent_path() / "Scene").string();
 
     ZeroMemory(&ofn, sizeof(ofn));
     ofn.lStructSize = sizeof(ofn);
@@ -1029,8 +1028,192 @@ std::string ModuleEditor::OpenLoadFile(const std::string& defaultPath)
     }
 
     return ""; // User cancelled
+
+
 }
 
+
+void ModuleEditor::OnEvent(const Event& event)
+{
+    switch (event.type)
+    {
+    case Event::Type::EventSDL:
+    {
+        ImGui_ImplSDL3_ProcessEvent(event.data.event.event);
+        break;
+    }
+    case Event::Type::CastRay:
+    {
+        //startLastRay = event.data.ray.ray->origin;
+        //endLastRay = event.data.ray.ray->origin + (event.data.ray.ray->direction * 100.0f);
+        break;
+    }
+    case Event::Type::SceneCleared:
+    {
+        /*selectedGameObjects.clear();*/
+        break;
+    }
+    case Event::Type::GameObjectDestroyed:
+    {
+        /*GameObject* destroyedGO = event.data.gameObject.gameObject;
+
+        auto it = std::remove(selectedGameObjects.begin(), selectedGameObjects.end(), destroyedGO);
+
+        if (it != selectedGameObjects.end())
+        {
+            selectedGameObjects.erase(it, selectedGameObjects.end());
+        }
+        break;*/
+    }
+    default:
+        break;
+    }
+}
+
+std::string ModuleEditor::OpenFolderDialog()
+{
+    std::string result; // string use UTF-8, while windows use UTF-16
+    // HRESULT is a Windows API type used for error handling.
+	// CoInitializeEx initializes the COM(Component Object Model. Basically a system created by windows to act has intermediary) library for use by the calling thread.
+    HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED); 
+    if (FAILED(hr)) return result;
+
+	IFileDialog* pDialog = nullptr; 
+    hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileDialog, (void**)&pDialog); // https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-cocreateinstance
+    if (SUCCEEDED(hr))
+    {
+        // Create the file dialog 
+        DWORD options;
+        pDialog->GetOptions(&options);
+		pDialog->SetOptions(options | FOS_PICKFOLDERS); // FOS_PICKFOLDERS: only select folders
+        pDialog->SetTitle(L"Select Export Folder"); // L means wchar_t*, windows use UTF-16 
+
+        // Show the dialog 
+		hr = pDialog->Show(NULL); // NULL means that the dialog has no parent window
+        if (SUCCEEDED(hr))
+        {
+            IShellItem* pItem = nullptr; // IShellItem stores the selected folder
+            hr = pDialog->GetResult(&pItem);
+            if (SUCCEEDED(hr))
+            {
+                PWSTR pszPath = nullptr; // Store the folder path
+                hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszPath); // Function to get the path
+                if (SUCCEEDED(hr))
+                {
+                    int len = WideCharToMultiByte(CP_UTF8, 0, pszPath, -1, NULL, 0, NULL, NULL); 
+                    result.resize(len - 1); // remove \0
+					WideCharToMultiByte(CP_UTF8, 0, pszPath, -1, &result[0], len, NULL, NULL); // Convert from UTF-16 to UTF-8
+                    CoTaskMemFree(pszPath);
+                }
+                pItem->Release();
+            }
+        }
+        pDialog->Release();
+    }
+
+    CoUninitialize();
+    return result;
+}
+
+void ModuleEditor::BuildGame()
+{
+    std::string destFolder = OpenFolderDialog();
+    if (destFolder.empty())
+    {
+        LOG_CONSOLE("[Build] Export cancelled.");
+        return;
+    }
+
+    namespace fs = std::filesystem;
+    fs::path dest(destFolder); // https://en.cppreference.com/w/cpp/filesystem/path
+
+    // Search the exe directory
+    char exePath[MAX_PATH]; // Windows has a MAX_PATH limit of 260 characters
+    GetModuleFileNameA(NULL, exePath, MAX_PATH); // https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-getmodulefilenamea
+    fs::path exeDir = fs::path(exePath).parent_path();
+	// Example: exePath = C:\WaveEngine\Engine\build\Release\Engine.exe --> exeDir = C:\WaveEngine\Engine\build\Release
+
+    fs::path gameExeSrc = exeDir / "Game.exe";
+    if (!fs::exists(gameExeSrc))
+    {
+        LOG_CONSOLE("[Build] ERROR: Game.exe not found at %s", gameExeSrc.string().c_str());
+        return;
+    }
+
+    try 
+    {
+        // Copy Game.exe
+        fs::copy_file(gameExeSrc, dest / "Game.exe", fs::copy_options::overwrite_existing); // https://en.cppreference.com/w/cpp/filesystem/copy_file
+        LOG_CONSOLE("[Build] Copied Game.exe");
+
+        // Copy all dlls 
+        int dllCount = 0;
+        for (const auto& entry : fs::directory_iterator(exeDir)) // https://en.cppreference.com/w/cpp/filesystem/directory_iterator
+        {
+			if (entry.is_regular_file() && entry.path().extension() == ".dll") // is a file and has .dll
+            {
+                fs::copy_file(entry.path(), dest / entry.path().filename(), fs::copy_options::overwrite_existing);
+                dllCount++;
+            }
+        }
+        LOG_CONSOLE("[Build] Copied %d DLL(s)", dllCount);
+
+        // Copy Assets/ folder
+        fs::path assetsSrc(LibraryManager::GetAssetsRoot());
+        if (fs::exists(assetsSrc))
+        {
+            fs::copy(assetsSrc, dest / "Assets", fs::copy_options::overwrite_existing | fs::copy_options::recursive);
+            LOG_CONSOLE("[Build] Copied Assets/ folder");
+        }
+        else
+        {
+            LOG_CONSOLE("[Build] WARNING: Assetsfolder not found");
+        }
+
+        // Copy Library/ folder
+        fs::path libRoot(LibraryManager::GetLibraryRoot());
+        if (fs::exists(libRoot))
+        {
+            fs::copy(libRoot, dest / "Library", fs::copy_options::overwrite_existing | fs::copy_options::recursive);
+            LOG_CONSOLE("[Build] Copied Library/ folder");
+        }
+        else
+        {
+            LOG_CONSOLE("[Build] WARNING: Library folder not found");
+        }
+
+        // Export scene
+        fs::create_directories(dest / "Scene");
+        fs::path projectRoot = fs::path(LibraryManager::GetLibraryRoot()).parent_path();
+        std::string sceneFolder = (projectRoot / "Scene").string();
+        std::string sceneSrc = OpenLoadFile(sceneFolder);
+        std::string startupSceneName;
+        if (!sceneSrc.empty())
+        {
+            fs::path sceneFilename = fs::path(sceneSrc).filename();
+            fs::copy_file(sceneSrc, dest / "Scene" / sceneFilename, fs::copy_options::overwrite_existing);
+            startupSceneName = sceneFilename.string();
+            LOG_CONSOLE("[Build] Copied scene '%s'", startupSceneName.c_str());
+        }
+        else
+        {
+            startupSceneName = "game_scene.json";
+            std::string sceneDestPath = (dest / "Scene" / startupSceneName).string();
+            Application::GetInstance().scene->SaveScene(sceneDestPath);
+            LOG_CONSOLE("[Build] No scene selected, saved current scene");
+        }
+
+        nlohmann::json config;
+        config["startup_scene"] = startupSceneName;
+        std::ofstream configFile(dest / "build_config.json");
+        configFile << config.dump(4);
+        LOG_CONSOLE("[Build] Export complete %s", destFolder.c_str());
+    }
+    catch (const std::exception& error)
+    {
+        LOG_CONSOLE("[Build] ERROR: %s", error.what());
+    }
+}
 void ModuleEditor::HandleUndoRedo()
 {
     ImGuiIO& io = ImGui::GetIO();
@@ -1041,4 +1224,168 @@ void ModuleEditor::HandleUndoRedo()
 
     if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Y, false))
         commandHistory->Redo();
+}
+
+void ModuleEditor::HandleCopyPaste()
+{
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.WantTextInput) return;
+    
+    //copy (ctrl c)
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_C, false))
+        ObjectsCopy = Application::GetInstance().selectionManager->GetFilteredObjects();
+
+    //paste (ctrl v)
+    if ((io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_V, false)) && !ObjectsCopy.empty())
+    {
+        GameObject* root = Application::GetInstance().scene->GetRoot();
+        Application::GetInstance().selectionManager->ClearSelection();
+
+        //center pos option
+        glm::vec3 centerPos(0.0f);
+        
+        if (centerOnPaste)
+        {
+            EditorCamera* editorCam = Application::GetInstance().editor->GetEditorCamera();
+
+            if (editorCam)
+            {
+                CameraLens* camLens = editorCam->GetCameraLens();
+                glm::vec3 camPos = camLens->position;
+                glm::vec3 camForward = editorCam->forward;
+                centerPos = camPos + camForward * pasteDistance;
+            }
+        }
+
+        auto composite = std::make_unique<CompositeCommand>();
+
+        for (GameObject* obj : ObjectsCopy)
+        {
+            GameObject* clonedObject = CloneGameObject(obj);
+
+            if (centerOnPaste)
+                clonedObject->transform->SetPosition(centerPos);
+
+            root->AddChild(clonedObject);
+            ischild = false;
+
+            Application::GetInstance().selectionManager->AddToSelection(clonedObject);
+            composite->AddCommand(std::make_unique<CreateCommand>(clonedObject));
+        }
+
+        commandHistory->PushWithoutExecute(std::move(composite));
+        Application::GetInstance().scene->RebuildOctree();
+    }
+
+    //cut (ctrl x)
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_X, false))
+    {
+        std::vector<GameObject*> toCut =
+            Application::GetInstance().selectionManager->GetFilteredObjects();
+
+        if (!toCut.empty())
+        {
+            ObjectsCopy = toCut;
+
+            Application::GetInstance().selectionManager->ClearSelection();
+
+            auto composite = std::make_unique<CompositeCommand>();
+            for (GameObject* obj : toCut)
+            {
+                if (obj && obj != Application::GetInstance().scene->GetRoot() && obj->GetParent())
+                    composite->AddCommand(std::make_unique<DeleteCommand>(obj));
+            }
+            commandHistory->ExecuteCommand(std::move(composite));
+        }
+    }
+
+    //duplicate (ctrl d)
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_D, false))
+    {
+        std::vector<GameObject*> toClone =
+            Application::GetInstance().selectionManager->GetFilteredObjects();
+
+        if (!toClone.empty())
+        {
+            GameObject* root = Application::GetInstance().scene->GetRoot();
+            Application::GetInstance().selectionManager->ClearSelection();
+
+            auto composite = std::make_unique<CompositeCommand>();
+
+            for (GameObject* obj : toClone)
+            {
+                GameObject* cloned = CloneGameObject(obj);
+                root->AddChild(cloned);
+                Application::GetInstance().selectionManager->AddToSelection(cloned);
+                composite->AddCommand(std::make_unique<CreateCommand>(cloned));
+            }
+
+            commandHistory->PushWithoutExecute(std::move(composite));
+            Application::GetInstance().scene->RebuildOctree();
+        }
+    }
+}
+
+GameObject* ModuleEditor::CloneGameObject(GameObject* original)
+{
+    std::string name = original->GetName() + "_copy";
+    GameObject* clone = new GameObject(name.c_str());
+
+    Transform* originalTransform =
+        (Transform*)original->GetComponent(ComponentType::TRANSFORM);
+   
+    clone->transform->SetGlobalPosition(originalTransform->GetGlobalPosition());
+    clone->transform->SetGlobalScale(originalTransform->GetGlobalScale());
+    clone->transform->SetGlobalRotation(originalTransform->GetGlobalRotation());
+
+    if (ischild)
+    {
+        clone->transform->SetPosition(originalTransform->GetPosition());
+        clone->transform->SetScale(originalTransform->GetScale());
+        clone->transform->SetRotation(originalTransform->GetRotation());
+    }
+
+    if (original->GetComponent(ComponentType::MESH))
+    {
+        ComponentMesh* originalMesh =
+            (ComponentMesh*)original->GetComponent(ComponentType::MESH);
+
+        ComponentMesh* newMesh =
+            (ComponentMesh*)clone->CreateComponent(ComponentType::MESH);
+
+        newMesh->SetMesh(originalMesh->GetMesh());
+        newMesh->SetPrimitiveType(name);
+    }
+
+    if (original->GetComponent(ComponentType::MATERIAL))
+    {
+        ComponentMaterial* originalMaterial =
+            (ComponentMaterial*)original->GetComponent(ComponentType::MATERIAL);
+
+        ComponentMaterial* newMaterial =
+            (ComponentMaterial*)clone->CreateComponent(ComponentType::MATERIAL);
+        UID tempUid = originalMaterial->GetTextureUID();
+        if(tempUid !=0)newMaterial->LoadTextureByUID(tempUid);
+    
+        newMaterial->SetDiffuseColor(originalMaterial->GetDiffuseColor());
+    }
+    if (original->GetComponent(ComponentType::SCRIPT))
+    {
+        ComponentScript * originalScript =
+            (ComponentScript*)original->GetComponent(ComponentType::SCRIPT);
+
+        ComponentScript* newScript =
+            (ComponentScript*)clone->CreateComponent(ComponentType::SCRIPT);
+
+        newScript->LoadScriptByUID(originalScript->GetScriptUID());
+    }
+    for (GameObject* child : original->GetChildren())
+    {
+        ischild = true;
+        GameObject* childClone = CloneGameObject(child);
+        clone->AddChild(childClone);
+    }
+    ischild = false;
+
+    return clone;
 }
