@@ -25,6 +25,8 @@
 #include "EditorCamera.h"   
 #include "ComponentMaterial.h"
 #include "ComponentScript.h"
+#include "ComponentAnimation.h"
+#include "ComponentParticleSystem.h"
 
 #include "ConfigurationWindow.h"
 #include "HierarchyWindow.h"
@@ -1380,6 +1382,25 @@ GameObject* ModuleEditor::CloneGameObject(GameObject* original)
             (ComponentScript*)clone->CreateComponent(ComponentType::SCRIPT);
 
         newScript->LoadScriptByUID(originalScript->GetScriptUID());
+    }
+    if (original->GetComponent(ComponentType::ANIMATION))
+    {
+        ComponentAnimation * originalAnimator =
+            (ComponentAnimation*)original->GetComponent(ComponentType::ANIMATION);
+
+        ComponentAnimation* newAnimator =
+            (ComponentAnimation*)clone->CreateComponent(ComponentType::ANIMATION);
+        std::map<std::string, AnimationData> animations = originalAnimator->animationsLibrary;
+        for(auto & anim: animations)
+			newAnimator->AddAnimation(anim.first, anim.second.uid);
+    }
+    if (original->GetComponent(ComponentType::PARTICLE))
+    {
+        ComponentParticleSystem* originalParticle =
+            (ComponentParticleSystem*)original->GetComponent(ComponentType::PARTICLE);
+
+        ComponentParticleSystem* newParticle =
+            (ComponentParticleSystem*)clone->CreateComponent(ComponentType::PARTICLE);
     }
     for (GameObject* child : original->GetChildren())
     {
