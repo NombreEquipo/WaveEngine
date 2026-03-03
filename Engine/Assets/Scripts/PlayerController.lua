@@ -91,6 +91,9 @@ function Start(self)
 end
 
 function Update(self, dt)
+    
+    local anim = self.gameObject:GetComponent("Animation")
+    anim:Play("Walking", 0.5)
     Player.rollTimer = max_(0, Player.rollTimer - dt)
     Player.coolTimer = max_(0, Player.coolTimer - dt)
 
