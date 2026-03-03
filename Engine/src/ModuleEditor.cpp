@@ -1234,88 +1234,92 @@ void ModuleEditor::HandleCopyPaste()
 {
     ImGuiIO& io = ImGui::GetIO();
     if (io.WantTextInput) return;
-    
-    //copy (ctrl c)
-    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_C, false))
-        ObjectsCopy = Application::GetInstance().selectionManager->GetFilteredObjects();
 
-    //paste (ctrl v)
+    auto setActiveRecursive = [](GameObject* obj, bool state, auto& self) -> void {
+        obj->SetActive(state);
+        for (GameObject* child : obj->GetChildren())
+            self(child, state, self);
+        };
+
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_C, false))
+    {
+        for (GameObject* obj : ObjectsCopy) delete obj;
+        ObjectsCopy.clear();
+        for (GameObject* obj : Application::GetInstance().selectionManager->GetFilteredObjects())
+        {
+            if (obj)
+            {
+                GameObject* clone = CloneGameObject(obj);
+                setActiveRecursive(clone, false, setActiveRecursive);
+                ObjectsCopy.push_back(clone);
+            }
+        }
+    }
+
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_X, false))
+    {
+        std::vector<GameObject*> toCut = Application::GetInstance().selectionManager->GetFilteredObjects();
+        if (!toCut.empty())
+        {
+            for (GameObject* obj : ObjectsCopy) delete obj;
+            ObjectsCopy.clear();
+            for (GameObject* obj : toCut)
+            {
+                if (obj)
+                {
+                    GameObject* clone = CloneGameObject(obj);
+                    setActiveRecursive(clone, false, setActiveRecursive);
+                    ObjectsCopy.push_back(clone);
+                }
+            }
+            Application::GetInstance().selectionManager->ClearSelection();
+            auto composite = std::make_unique<CompositeCommand>();
+            for (GameObject* obj : toCut)
+                if (obj && obj != Application::GetInstance().scene->GetRoot() && obj->GetParent())
+                    composite->AddCommand(std::make_unique<DeleteCommand>(obj));
+            commandHistory->ExecuteCommand(std::move(composite));
+            Application::GetInstance().scene->RebuildOctree();
+        }
+    }
+
     if ((io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_V, false)) && !ObjectsCopy.empty())
     {
         GameObject* root = Application::GetInstance().scene->GetRoot();
         Application::GetInstance().selectionManager->ClearSelection();
-
-        //center pos option
         glm::vec3 centerPos(0.0f);
-        
         if (centerOnPaste)
         {
             EditorCamera* editorCam = Application::GetInstance().editor->GetEditorCamera();
-
             if (editorCam)
             {
                 CameraLens* camLens = editorCam->GetCameraLens();
-                glm::vec3 camPos = camLens->position;
-                glm::vec3 camForward = editorCam->forward;
-                centerPos = camPos + camForward * pasteDistance;
+                centerPos = camLens->position + editorCam->forward * pasteDistance;
             }
         }
-
         auto composite = std::make_unique<CompositeCommand>();
-
         for (GameObject* obj : ObjectsCopy)
         {
             GameObject* clonedObject = CloneGameObject(obj);
-
-            if (centerOnPaste)
-                clonedObject->transform->SetPosition(centerPos);
-
+            if (!clonedObject) continue;
+            setActiveRecursive(clonedObject, true, setActiveRecursive);
+            if (centerOnPaste) clonedObject->transform->SetPosition(centerPos);
             root->AddChild(clonedObject);
             ischild = false;
-
             Application::GetInstance().selectionManager->AddToSelection(clonedObject);
             composite->AddCommand(std::make_unique<CreateCommand>(clonedObject));
         }
-
         commandHistory->PushWithoutExecute(std::move(composite));
         Application::GetInstance().scene->RebuildOctree();
     }
 
-    //cut (ctrl x)
-    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_X, false))
-    {
-        std::vector<GameObject*> toCut =
-            Application::GetInstance().selectionManager->GetFilteredObjects();
-
-        if (!toCut.empty())
-        {
-            ObjectsCopy = toCut;
-
-            Application::GetInstance().selectionManager->ClearSelection();
-
-            auto composite = std::make_unique<CompositeCommand>();
-            for (GameObject* obj : toCut)
-            {
-                if (obj && obj != Application::GetInstance().scene->GetRoot() && obj->GetParent())
-                    composite->AddCommand(std::make_unique<DeleteCommand>(obj));
-            }
-            commandHistory->ExecuteCommand(std::move(composite));
-        }
-    }
-
-    //duplicate (ctrl d)
     if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_D, false))
     {
-        std::vector<GameObject*> toClone =
-            Application::GetInstance().selectionManager->GetFilteredObjects();
-
+        std::vector<GameObject*> toClone = Application::GetInstance().selectionManager->GetFilteredObjects();
         if (!toClone.empty())
         {
             GameObject* root = Application::GetInstance().scene->GetRoot();
             Application::GetInstance().selectionManager->ClearSelection();
-
             auto composite = std::make_unique<CompositeCommand>();
-
             for (GameObject* obj : toClone)
             {
                 GameObject* cloned = CloneGameObject(obj);
@@ -1323,7 +1327,6 @@ void ModuleEditor::HandleCopyPaste()
                 Application::GetInstance().selectionManager->AddToSelection(cloned);
                 composite->AddCommand(std::make_unique<CreateCommand>(cloned));
             }
-
             commandHistory->PushWithoutExecute(std::move(composite));
             Application::GetInstance().scene->RebuildOctree();
         }
