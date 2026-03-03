@@ -588,85 +588,83 @@ bool Renderer::RenderScene(CameraLens* camera)
 {
     if (!camera) return false;
 
-    // Check for active PostProcessing
+    //Find active post-processing
     ComponentPostProcessing* activePP = nullptr;
     for (auto* pp : postProcessingComponents) {
-        if (pp->IsActive()) {
-            activePP = pp;
-            break;
-        }
+        if (pp->IsActive()) { activePP = pp; break; }
     }
 
-    GLuint targetFBO = (camera->fboID != 0) ? camera->fboID : 0;
-    int viewportW = (camera->fboID != 0) ? camera->textureWidth : 0;
-    int viewportH = (camera->fboID != 0) ? camera->textureHeight : 0;
-
-    if (targetFBO == 0) {
-        int width, height;
-        Application::GetInstance().window.get()->GetWindowSize(width, height);
-        viewportW = width;
-        viewportH = height;
+    //Viewport setup
+    int width = 0, height = 0;
+    if (camera->fboID == 0)
+        Application::GetInstance().window->GetWindowSize(width, height);
+    else {
+        width  = camera->textureWidth;
+        height = camera->textureHeight;
     }
 
-    // Setup Framebuffer
+    //Bind FBO
+    //Priority --> PostProcess FBO > MSAA FBO > camera FBO > default
+    bool usingMSAA = msaaEnabled && camera->msaaFBO != 0;
+
     if (activePP) {
-        ResizePostProcessingBuffer(viewportW, viewportH);
+        ResizePostProcessingBuffer(width, height);
         glBindFramebuffer(GL_FRAMEBUFFER, postProcessFBO);
-    } else {
-        glBindFramebuffer(GL_FRAMEBUFFER, targetFBO);
+        glDisable(GL_MULTISAMPLE);
     }
-    glViewport(0, 0, viewportW, viewportH);
+    else if (usingMSAA) {
+        glBindFramebuffer(GL_FRAMEBUFFER, camera->msaaFBO);
+        glEnable(GL_MULTISAMPLE);
+    }
+    else {
+        glBindFramebuffer(GL_FRAMEBUFFER, (camera->fboID != 0) ? camera->fboID : 0);
+        glDisable(GL_MULTISAMPLE);
+    }
 
-    //CLEAN BUFFERS
+    glViewport(0, 0, width, height);
+
+    //Clear buffers
     glDisable(GL_SCISSOR_TEST);
+    glClearColor(clearColorR, clearColorG, clearColorB, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glClearStencil(0);
 
-    //UPDATE CAM MATRIX 
+    //Camera Matrices
     UpdateViewMatrix(camera->GetViewMatrix());
     UpdateProjectionMatrix(camera->GetProjectionMatrix());
-
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, uboMatrices);
 
-    //CLEAN LIST AND BUILD NEWS
+    //Build Render List
     opaqueList.clear();
     transparentList.clear();
     particlesList.clear();
-
     BuildRenderLists(camera);
 
-    if (showZBuffer)
-    {
+    if (showZBuffer) {
         depthShader->Use();
         depthShader->SetFloat("nearPlane", camera->GetNearPlane());
-        depthShader->SetFloat("farPlane", camera->GetFarPlane());
+        depthShader->SetFloat("farPlane",  camera->GetFarPlane());
     }
-    else
-    {
+    else {
         defaultShader->Use();
     }
 
-    //CONFIG OPENGL
+    // --- Render ---
     glEnable(GL_STENCIL_TEST);
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
-    //RENDER OPAQUES
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
     glEnable(GL_CULL_FACE);
     DrawRenderList(opaqueList, camera);
 
-    //RENDER TRANSPARENT
     glEnable(GL_BLEND);
     glDepthMask(GL_FALSE);
     DrawRenderList(transparentList, camera);
-
     DrawParticlesList(camera);
 
-    //RENDER DEBUG
-    if (camera->GetDebugCamera())
-    {
+    if (camera->GetDebugCamera()) {
         Application::GetInstance().physics->DrawDebug();
         DrawStencilList(camera);
         DrawNormalsList(camera);
@@ -674,7 +672,7 @@ bool Renderer::RenderScene(CameraLens* camera)
         DrawLinesList(camera);
     }
 
-    //RESET STATES
+    // --- Reset States ---
     glDisable(GL_STENCIL_TEST);
     glStencilMask(0xFF);
     glStencilFunc(GL_ALWAYS, 0, 0xFF);
@@ -682,73 +680,76 @@ bool Renderer::RenderScene(CameraLens* camera)
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
     glEnable(GL_CULL_FACE);
-
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glUseProgram(0);
 
-    // Apply Post Processing if active
+    // --- MSAA Blit (antes de post-process para que PP reciba la imagen resuelta) ---
+    if (usingMSAA && !activePP) {
+        GLuint targetFBO = (camera->fboID != 0) ? camera->fboID : 0;
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, camera->msaaFBO);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, targetFBO);
+        glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    }
+
+    // --- Post Processing ---
     if (activePP) {
+        GLuint targetFBO = (camera->fboID != 0) ? camera->fboID : 0;
         glBindFramebuffer(GL_FRAMEBUFFER, targetFBO);
-        glViewport(0, 0, viewportW, viewportH);
+        glViewport(0, 0, width, height);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
         postProcessShader->Use();
-        
+
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, postProcessTexture);
         postProcessShader->SetInt("sceneTexture", 0);
 
         // Color Grading
-        postProcessShader->SetBool("gradingEnabled", activePP->colorGrading.enabled);
-        postProcessShader->SetFloat("exposure", activePP->colorGrading.exposure);
-        postProcessShader->SetFloat("contrast", activePP->colorGrading.contrast);
-        postProcessShader->SetFloat("saturation", activePP->colorGrading.saturation);
-        postProcessShader->SetInt("toneMapper", activePP->colorGrading.toneMapper);
-        postProcessShader->SetFloat("gamma", activePP->colorGrading.gamma);
-        postProcessShader->SetFloat("temperature", activePP->colorGrading.temperature);
-        postProcessShader->SetFloat("tint", activePP->colorGrading.tint);
-        postProcessShader->SetVec3("colorFilter", activePP->colorGrading.colorFilter);
+        postProcessShader->SetBool ("gradingEnabled", activePP->colorGrading.enabled);
+        postProcessShader->SetFloat("exposure",       activePP->colorGrading.exposure);
+        postProcessShader->SetFloat("contrast",       activePP->colorGrading.contrast);
+        postProcessShader->SetFloat("saturation",     activePP->colorGrading.saturation);
+        postProcessShader->SetInt  ("toneMapper",     activePP->colorGrading.toneMapper);
+        postProcessShader->SetFloat("gamma",          activePP->colorGrading.gamma);
+        postProcessShader->SetFloat("temperature",    activePP->colorGrading.temperature);
+        postProcessShader->SetFloat("tint",           activePP->colorGrading.tint);
+        postProcessShader->SetVec3 ("colorFilter",    activePP->colorGrading.colorFilter);
 
         // Bloom
-        postProcessShader->SetBool("bloomEnabled", activePP->bloom.enabled);
+        postProcessShader->SetBool ("bloomEnabled",   activePP->bloom.enabled);
         postProcessShader->SetFloat("bloomIntensity", activePP->bloom.intensity);
         postProcessShader->SetFloat("bloomThreshold", activePP->bloom.threshold);
-        postProcessShader->SetFloat("bloomSoftKnee", activePP->bloom.softKnee);
-        postProcessShader->SetVec3("bloomTint", activePP->bloom.tint);
+        postProcessShader->SetFloat("bloomSoftKnee",  activePP->bloom.softKnee);
+        postProcessShader->SetVec3 ("bloomTint",      activePP->bloom.tint);
 
-        // Lens
-        postProcessShader->SetBool("caEnabled", activePP->lens.chromaticAberrationEnabled);
-        postProcessShader->SetFloat("caIntensity", activePP->lens.chromaticAberrationIntensity);
+        // Chromatic Aberration
+        postProcessShader->SetBool ("caEnabled",      activePP->lens.chromaticAberrationEnabled);
+        postProcessShader->SetFloat("caIntensity",    activePP->lens.chromaticAberrationIntensity);
 
-        postProcessShader->SetBool("vignetteEnabled", activePP->lens.vignetteEnabled);
-        postProcessShader->SetFloat("vignetteIntensity", activePP->lens.vignetteIntensity);
-        postProcessShader->SetFloat("vignetteSmoothness", activePP->lens.vignetteSmoothness);
-        postProcessShader->SetFloat("vignetteRoundness", activePP->lens.vignetteRoundness);
-        postProcessShader->SetVec3("vignetteColor", activePP->lens.vignetteColor);
+        // Vignette
+        postProcessShader->SetBool ("vignetteEnabled",     activePP->lens.vignetteEnabled);
+        postProcessShader->SetFloat("vignetteIntensity",   activePP->lens.vignetteIntensity);
+        postProcessShader->SetFloat("vignetteSmoothness",  activePP->lens.vignetteSmoothness);
+        postProcessShader->SetFloat("vignetteRoundness",   activePP->lens.vignetteRoundness);
+        postProcessShader->SetVec3 ("vignetteColor",       activePP->lens.vignetteColor);
 
         // Grain
-        postProcessShader->SetBool("grainEnabled", activePP->grain.enabled);
+        postProcessShader->SetBool ("grainEnabled",   activePP->grain.enabled);
         postProcessShader->SetFloat("grainIntensity", activePP->grain.intensity);
-        postProcessShader->SetFloat("grainScale", std::max(0.001f, activePP->grain.scale));
-        float time = 0.0f;
-        if (activePP->grain.animated) {
-            time = Application::GetInstance().time->GetTotalTimeStatic();
-        }
-        postProcessShader->SetFloat("grainTime", time);
+        postProcessShader->SetFloat("grainScale",     std::max(0.001f, activePP->grain.scale));
+        postProcessShader->SetFloat("grainTime",      activePP->grain.animated
+            ? Application::GetInstance().time->GetTotalTimeStatic() : 0.0f);
 
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);
-
         glBindVertexArray(quadVAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
         glUseProgram(0);
     }
 
-    //UNBINF FRAMEBUFFER
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
     return true;
 }
 
@@ -1403,4 +1404,12 @@ UID Renderer::GetObjectInPixel(const CameraLens* camera, int x, int y)
     glBindVertexArray(0);
 
     return finalUID;
+}
+
+void Renderer::SetMSAA(bool enabled) {
+    msaaEnabled = enabled;
+    if (msaaEnabled)
+        glEnable(GL_MULTISAMPLE);
+    else
+        glDisable(GL_MULTISAMPLE);
 }
