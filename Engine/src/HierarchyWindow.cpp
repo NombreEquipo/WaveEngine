@@ -14,6 +14,7 @@
 #include "Transform.h"
 #include "ComponentCamera.h"
 #include "ComponentCanvas.h"
+#include "ComponentPostProcessing.h"
 
 HierarchyWindow::HierarchyWindow()
     : EditorWindow("Hierarchy")
@@ -55,6 +56,12 @@ void HierarchyWindow::DrawBackgroundContextMenu()
     {
         GameObject* canvas = CreateAndRegisterGameObject("Canvas");
         canvas->CreateComponent(ComponentType::CANVAS);
+    }
+
+    if (ImGui::MenuItem("Create Post Processing"))
+    {
+        GameObject* postProcessing = CreateAndRegisterGameObject("PostProcessing");
+        postProcessing->CreateComponent(ComponentType::POSTPROCESSING);
     }
 
     ImGui::EndPopup();

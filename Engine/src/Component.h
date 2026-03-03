@@ -38,6 +38,7 @@ enum class ComponentType {
     AUDIOSOURCE,
     REVERBZONE,
     ANIMATION,
+    POSTPROCESSING,
     UNKNOWN,
 };
 

@@ -33,7 +33,7 @@ private:
     bool DrawGameObjectSection(GameObject* selectedObject);
     void DrawGizmoSettings();
     void DrawAddComponentButton(GameObject* selectedObject);
-
+    void DrawPostProcessingComponent(Component* component);
     // Draw component functions
     void DrawTransformComponent(Component* component);
     void DrawCameraComponent(Component* component);

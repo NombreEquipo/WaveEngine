@@ -11,9 +11,11 @@
 #include "ComponentParticleSystem.h"
 #include "CameraLens.h"
 #include "ModulePhysics.h"
+#include "ComponentPostProcessing.h"
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <stack>
+#include <algorithm>
 
 #include "tracy/Tracy.hpp"
 
@@ -200,6 +202,153 @@ bool Renderer::Start()
     outlineUniforms.view = glGetUniformLocation(outlineShader->GetProgramID(), "view");
     outlineUniforms.model = glGetUniformLocation(outlineShader->GetProgramID(), "model");
 
+    // Initialize Post Processing Shader
+    postProcessShader = make_unique<Shader>();
+    const char* ppVertex = R"(
+        #version 330 core
+        layout (location = 0) in vec2 aPos;
+        layout (location = 1) in vec2 aTexCoords;
+        out vec2 TexCoords;
+        void main() {
+            gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0);
+            TexCoords = aTexCoords;
+        }
+    )";
+    const char* ppFragment = R"(
+        #version 330 core
+        out vec4 FragColor;
+        in vec2 TexCoords;
+        uniform sampler2D sceneTexture;
+
+        // Color grading
+        uniform bool  gradingEnabled;
+        uniform float exposure;
+        uniform float contrast;
+        uniform float saturation;
+        uniform int   toneMapper;
+        uniform float gamma;
+        uniform float temperature;
+        uniform float tint;
+        uniform vec3  colorFilter;
+
+        // Vignette
+        uniform bool  vignetteEnabled;
+        uniform float vignetteIntensity;
+        uniform float vignetteSmoothness;
+        uniform float vignetteRoundness;
+        uniform vec3  vignetteColor;
+
+        // Chromatic aberration
+        uniform bool  caEnabled;
+        uniform float caIntensity;
+
+        // Bloom
+        uniform bool  bloomEnabled;
+        uniform float bloomIntensity;
+        uniform float bloomThreshold;
+        uniform float bloomSoftKnee;   // NEW
+        uniform vec3  bloomTint;       // NEW
+
+        // Grain
+        uniform bool  grainEnabled;
+        uniform float grainIntensity;
+        uniform float grainScale;
+        uniform float grainTime;
+
+        vec3 ACESFilm(vec3 x) {
+            const float a=2.51, b=0.03, c=2.43, d=0.59, e=0.14;
+            return clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0, 1.0);
+        }
+
+        float random(vec2 st) {
+            return fract(sin(dot(st, vec2(12.9898, 78.233))) * 43758.5453123);
+        }
+
+        // Soft-knee bloom contribution for a single sample
+        float bloomWeight(float brightness) {
+            float knee = bloomThreshold * bloomSoftKnee;
+            float soft  = brightness - bloomThreshold + knee;
+            soft = clamp(soft, 0.0, 2.0 * knee);
+            soft = (soft * soft) / (4.0 * knee + 0.00001);
+            return max(soft, brightness - bloomThreshold);
+        }
+
+        void main() {
+            vec2 uv = TexCoords;
+
+            // --- Chromatic Aberration ---
+            vec3 color;
+            if (caEnabled) {
+                vec2 offset = (uv - 0.5) * (caIntensity * 0.01);
+                color.r = texture(sceneTexture, uv - offset).r;
+                color.g = texture(sceneTexture, uv).g;
+                color.b = texture(sceneTexture, uv + offset).b;
+            } else {
+                color = texture(sceneTexture, uv).rgb;
+            }
+
+            // --- Bloom (box-blur with soft-knee + tint) ---
+            if (bloomEnabled) {
+                vec2 texel = 1.0 / textureSize(sceneTexture, 0);
+                vec3 bloomAccum = vec3(0.0);
+                const int range = 3;
+                for (int x = -range; x <= range; ++x) {
+                    for (int y = -range; y <= range; ++y) {
+                        vec3  s   = texture(sceneTexture, uv + vec2(x, y) * texel * 2.5).rgb;
+                        float lum = dot(s, vec3(0.2126, 0.7152, 0.0722));
+                        bloomAccum += s * bloomWeight(lum);
+                    }
+                }
+                bloomAccum /= float((range*2+1) * (range*2+1));
+                color += bloomAccum * bloomIntensity * bloomTint;
+            }
+
+            // --- Vignette ---
+            if (vignetteEnabled) {
+                vec2  d       = abs(uv - 0.5) * 2.0;
+                float boxDist = max(d.x, d.y);
+                float cirDist = length(d);
+                float dist    = mix(boxDist, cirDist, vignetteRoundness);
+                float radius  = 1.0 - vignetteIntensity;
+                float soft    = vignetteSmoothness + 0.05;
+                float vig     = smoothstep(radius, radius - soft, dist);
+                color = mix(vignetteColor, color, vig);
+            }
+
+            // --- Grain ---
+            if (grainEnabled) {
+                vec2  res  = textureSize(sceneTexture, 0);
+                float noise = random(floor(uv * res / grainScale) + grainTime);
+                color += (noise - 0.5) * grainIntensity;
+            }
+
+            // --- Color Grading ---
+            if (gradingEnabled) {
+                // White balance
+                float temp = temperature / 10000.0;
+                float tnt  = tint / 100.0;
+                color *= vec3(1.0 + temp, 1.0 + tnt, 1.0 - temp);
+
+                // Color filter, exposure, contrast, saturation
+                color *= colorFilter;
+                color *= exposure;
+                color  = (color - 0.5) * contrast + 0.5;
+                color  = mix(vec3(dot(color, vec3(0.2126, 0.7152, 0.0722))), color, saturation);
+
+                // Tonemapping
+                if      (toneMapper == 0) color = ACESFilm(color);
+                else if (toneMapper == 1) color = color / (color + vec3(1.0));
+                // toneMapper == 2 -> None
+
+                // Gamma AFTER tonemapping (correct order)
+                if (gamma > 0.001) color = pow(max(color, vec3(0.0)), vec3(1.0 / gamma));
+            }
+
+            FragColor = vec4(color, 1.0);
+        }
+    )";
+    postProcessShader->LoadFromSource(ppVertex, ppFragment, nullptr);
+
     LOG_DEBUG("Renderer initialized successfully");
     LOG_CONSOLE("Renderer ready");
 
@@ -346,6 +495,19 @@ void Renderer::RemoveCamera(CameraLens* camera)
     activeCameras.erase(it, activeCameras.end());
 }
 
+void Renderer::AddPostProcessing(ComponentPostProcessing* component)
+{
+    postProcessingComponents.push_back(component);
+}
+
+void Renderer::RemovePostProcessing(ComponentPostProcessing* component)
+{
+    auto it = std::find(postProcessingComponents.begin(), postProcessingComponents.end(), component);
+    if (it != postProcessingComponents.end()) {
+        postProcessingComponents.erase(it);
+    }
+}
+
 bool Renderer::PostUpdate()
 {
     bool ret = true;
@@ -426,20 +588,34 @@ bool Renderer::RenderScene(CameraLens* camera)
 {
     if (!camera) return false;
 
-    //BIND FRAMEBUFFER
-    if (camera->fboID != 0)
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, camera->fboID);
-        glViewport(0, 0, camera->textureWidth, camera->textureHeight);
+    // Check for active PostProcessing
+    ComponentPostProcessing* activePP = nullptr;
+    for (auto* pp : postProcessingComponents) {
+        if (pp->IsActive()) {
+            activePP = pp;
+            break;
+        }
     }
-    else
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    GLuint targetFBO = (camera->fboID != 0) ? camera->fboID : 0;
+    int viewportW = (camera->fboID != 0) ? camera->textureWidth : 0;
+    int viewportH = (camera->fboID != 0) ? camera->textureHeight : 0;
+
+    if (targetFBO == 0) {
         int width, height;
         Application::GetInstance().window.get()->GetWindowSize(width, height);
-        glViewport(0, 0, width, height);
+        viewportW = width;
+        viewportH = height;
     }
+
+    // Setup Framebuffer
+    if (activePP) {
+        ResizePostProcessingBuffer(viewportW, viewportH);
+        glBindFramebuffer(GL_FRAMEBUFFER, postProcessFBO);
+    } else {
+        glBindFramebuffer(GL_FRAMEBUFFER, targetFBO);
+    }
+    glViewport(0, 0, viewportW, viewportH);
 
     //CLEAN BUFFERS
     glDisable(GL_SCISSOR_TEST);
@@ -510,6 +686,65 @@ bool Renderer::RenderScene(CameraLens* camera)
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glUseProgram(0);
+
+    // Apply Post Processing if active
+    if (activePP) {
+        glBindFramebuffer(GL_FRAMEBUFFER, targetFBO);
+        glViewport(0, 0, viewportW, viewportH);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+        postProcessShader->Use();
+        
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, postProcessTexture);
+        postProcessShader->SetInt("sceneTexture", 0);
+
+        // Color Grading
+        postProcessShader->SetBool("gradingEnabled", activePP->colorGrading.enabled);
+        postProcessShader->SetFloat("exposure", activePP->colorGrading.exposure);
+        postProcessShader->SetFloat("contrast", activePP->colorGrading.contrast);
+        postProcessShader->SetFloat("saturation", activePP->colorGrading.saturation);
+        postProcessShader->SetInt("toneMapper", activePP->colorGrading.toneMapper);
+        postProcessShader->SetFloat("gamma", activePP->colorGrading.gamma);
+        postProcessShader->SetFloat("temperature", activePP->colorGrading.temperature);
+        postProcessShader->SetFloat("tint", activePP->colorGrading.tint);
+        postProcessShader->SetVec3("colorFilter", activePP->colorGrading.colorFilter);
+
+        // Bloom
+        postProcessShader->SetBool("bloomEnabled", activePP->bloom.enabled);
+        postProcessShader->SetFloat("bloomIntensity", activePP->bloom.intensity);
+        postProcessShader->SetFloat("bloomThreshold", activePP->bloom.threshold);
+        postProcessShader->SetFloat("bloomSoftKnee", activePP->bloom.softKnee);
+        postProcessShader->SetVec3("bloomTint", activePP->bloom.tint);
+
+        // Lens
+        postProcessShader->SetBool("caEnabled", activePP->lens.chromaticAberrationEnabled);
+        postProcessShader->SetFloat("caIntensity", activePP->lens.chromaticAberrationIntensity);
+
+        postProcessShader->SetBool("vignetteEnabled", activePP->lens.vignetteEnabled);
+        postProcessShader->SetFloat("vignetteIntensity", activePP->lens.vignetteIntensity);
+        postProcessShader->SetFloat("vignetteSmoothness", activePP->lens.vignetteSmoothness);
+        postProcessShader->SetFloat("vignetteRoundness", activePP->lens.vignetteRoundness);
+        postProcessShader->SetVec3("vignetteColor", activePP->lens.vignetteColor);
+
+        // Grain
+        postProcessShader->SetBool("grainEnabled", activePP->grain.enabled);
+        postProcessShader->SetFloat("grainIntensity", activePP->grain.intensity);
+        postProcessShader->SetFloat("grainScale", std::max(0.001f, activePP->grain.scale));
+        float time = 0.0f;
+        if (activePP->grain.animated) {
+            time = Application::GetInstance().time->GetTotalTimeStatic();
+        }
+        postProcessShader->SetFloat("grainTime", time);
+
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
+
+        glBindVertexArray(quadVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(0);
+        glUseProgram(0);
+    }
 
     //UNBINF FRAMEBUFFER
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -799,8 +1034,16 @@ bool Renderer::CleanUp()
         glDeleteBuffers(1, &normalLinesVBO);
     }
 
+    if (postProcessFBO != 0) {
+        glDeleteFramebuffers(1, &postProcessFBO);
+        glDeleteTextures(1, &postProcessTexture);
+        glDeleteRenderbuffers(1, &postProcessRBO);
+    }
+    if (postProcessShader) postProcessShader->Delete();
+
     meshes.clear();
     activeCameras.clear();
+    postProcessingComponents.clear();
     opaqueList.clear();
     transparentList.clear();
     stencilList.clear();
@@ -814,6 +1057,34 @@ bool Renderer::CleanUp()
     return true;
 }
 
+void Renderer::ResizePostProcessingBuffer(int width, int height)
+{
+    if (postProcessFBO == 0) {
+        glGenFramebuffers(1, &postProcessFBO);
+        glGenTextures(1, &postProcessTexture);
+        glGenRenderbuffers(1, &postProcessRBO);
+    }
+
+    static int currentW = 0;
+    static int currentH = 0;
+
+    if (currentW != width || currentH != height) {
+        glBindFramebuffer(GL_FRAMEBUFFER, postProcessFBO);
+
+        glBindTexture(GL_TEXTURE_2D, postProcessTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, postProcessTexture, 0);
+
+        glBindRenderbuffer(GL_RENDERBUFFER, postProcessRBO);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, postProcessRBO);
+
+        currentW = width;
+        currentH = height;
+    }
+}
 
 void Renderer::CreateSkinningSSBOs(unsigned int& ssboGlobal, unsigned int& ssboOffset, const std::vector<glm::mat4>& offsets)
 {
@@ -1106,7 +1377,7 @@ UID Renderer::GetObjectInPixel(const CameraLens* camera, int x, int y)
         }
 
         glBindVertexArray(mesh.VAO);
-        glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, (GLsizei)mesh.indices.size(), GL_UNSIGNED_INT, 0);
     }
 
     int readX = x;

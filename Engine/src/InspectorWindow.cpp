@@ -53,6 +53,7 @@
 #include "ComponentScript.h"
 #include "ComponentNavigation.h"
 #include "NavMeshManager.h"
+#include "ComponentPostProcessing.h"
 #include <filesystem>
 #include <nlohmann/json.hpp>
 
@@ -251,6 +252,9 @@ void InspectorWindow::Draw()
             break;
         case ComponentType::ANIMATION:
             DrawAnimationComponent(component);
+            break;
+        case ComponentType::POSTPROCESSING:
+            DrawPostProcessingComponent(component);
             break;
 
             // --- FÍSICAS ---
@@ -2220,6 +2224,36 @@ void InspectorWindow::DrawAddComponentButton(GameObject* selectedObject)
             ImGui::EndTooltip();
         }
 
+        // Post Processing Component
+        bool hasPostProcessing = (selectedObject->GetComponent(ComponentType::POSTPROCESSING) != nullptr);
+        if (hasPostProcessing) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+
+        if (ImGui::Selectable("Post Processing", false, hasPostProcessing ? ImGuiSelectableFlags_Disabled : 0))
+        {
+            Component* newComp = selectedObject->CreateComponent(ComponentType::POSTPROCESSING);
+            if (newComp)
+                Application::GetInstance().editor->GetCommandHistory()->PushWithoutExecute(
+                    std::make_unique<AddComponentCommand>(selectedObject, newComp)
+                );
+            LOG_CONSOLE("[Inspector] Post Processing component added to: %s", selectedObject->GetName().c_str());
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (hasPostProcessing) ImGui::PopStyleColor();
+
+        if (ImGui::IsItemHovered() && !hasPostProcessing)
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Add a Post Processing component");
+            ImGui::EndTooltip();
+        }
+        else if (ImGui::IsItemHovered() && hasPostProcessing)
+        {
+            ImGui::BeginTooltip();
+            ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f), "Already has a Post Processing component");
+            ImGui::EndTooltip();
+        }
+
         bool hasAnimation = (selectedObject->GetComponent(ComponentType::ANIMATION) != nullptr);
 
         if (hasAnimation) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
@@ -2296,4 +2330,17 @@ void InspectorWindow::OnEvent(const Event& event)
 bool InspectorWindow::IsPendingRemoval(Component* comp) const
 {
     return std::find(m_PendingRemoval.begin(), m_PendingRemoval.end(), comp) != m_PendingRemoval.end();
+}
+
+void InspectorWindow::DrawPostProcessingComponent(Component* component)
+{
+    ComponentPostProcessing* postProcessing = static_cast<ComponentPostProcessing*>(component);
+    if (!postProcessing) return;
+
+    bool open = ImGui::CollapsingHeader("Post Processing", ImGuiTreeNodeFlags_DefaultOpen);
+    DrawComponentContextMenu(postProcessing, true);
+    if (open)
+    {
+        postProcessing->OnEditor();
+    }
 }

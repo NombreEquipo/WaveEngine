@@ -15,6 +15,7 @@ class GameObject;
 class ComponentMesh;
 class ComponentParticleSystem;
 class CameraLens;
+class ComponentPostProcessing;
 
 class Renderer : public Module
 {
@@ -62,6 +63,10 @@ public:
     // Camera management
     void AddCamera(CameraLens* camera);
     void RemoveCamera(CameraLens* camera);
+
+    // PostProcessing management
+    void AddPostProcessing(ComponentPostProcessing* component);
+    void RemovePostProcessing(ComponentPostProcessing* component);
 
     // Scene Rendering
     bool RenderScene(CameraLens* renderCamera);
@@ -187,6 +192,7 @@ private:
     std::vector<ComponentMesh*> meshes;
     std::vector<ComponentParticleSystem*> particles;
     std::vector<CameraLens*> activeCameras;
+    std::vector<ComponentPostProcessing*> postProcessingComponents;
 
     std::multimap<float, RenderObject> opaqueList;
     std::multimap<float, RenderObject> transparentList;
@@ -195,4 +201,11 @@ private:
     std::vector<RenderObject> normalsList;
     std::vector<RenderObject> meshLinesList;
     std::vector<RenderLine> linesList;
+
+    // Post Processing
+    GLuint postProcessFBO = 0;
+    GLuint postProcessTexture = 0;
+    GLuint postProcessRBO = 0;
+    std::unique_ptr<Shader> postProcessShader;
+    void ResizePostProcessingBuffer(int width, int height);
 };

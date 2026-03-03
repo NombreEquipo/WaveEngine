@@ -33,6 +33,7 @@
 #include "AudioSource.h"
 #include "AudioListener.h"
 #include "ReverbZone.h"
+#include "ComponentPostProcessing.h"
 #include <nlohmann/json.hpp>
 
 GameObject::GameObject(const std::string& name) : name(name), active(true), parent(nullptr) {
@@ -159,6 +160,9 @@ Component* GameObject::CreateComponent(ComponentType type) {
 	    break;
     case ComponentType::ANIMATION:
         newComponent = new ComponentAnimation(this);
+        break;
+    case ComponentType::POSTPROCESSING:
+        newComponent = new ComponentPostProcessing(this);
         break;
     default:
         LOG_DEBUG("ERROR: Unknown component type requested for GameObject '%s'", name.c_str());

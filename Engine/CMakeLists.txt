@@ -164,6 +164,8 @@ set(COMPONENTS_SRC
     src/ReverbZone.cpp
     src/ComponentAnimation.h
     src/ComponentAnimation.cpp
+    src/ComponentPostProcessing.h
+    src/ComponentPostProcessing.cpp
 )
 
 set(LOADERS_SRC 
@@ -508,7 +510,7 @@ target_link_libraries(Game PRIVATE
     "${WWISE_LIB_DIR}/AkStreamMgr.lib"
     "${WWISE_LIB_DIR}/AkSpatialAudio.lib"
     $<$<CONFIG:Debug>:${WWISE_LIB_DIR}/CommunicationCentral.lib>
-    $<$<NOT:<CONFIG:Release>>:${WWISE_LIB_DIR}/CommunicationCentral.lib>
+    $<$<NOT:$<CONFIG:Release>>:${WWISE_LIB_DIR}/CommunicationCentral.lib>
     "${WWISE_LIB_DIR}/AkRoomVerbFX.lib"
     ws2_32.lib 
     mswsock.lib 
