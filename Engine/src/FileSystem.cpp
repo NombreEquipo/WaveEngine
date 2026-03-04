@@ -355,7 +355,8 @@ GameObject* FileSystem::LoadFBXAsGameObject(const std::string& file_path)
 GameObject* FileSystem::ProcessNode(aiNode* node, const aiScene* scene, const std::string& directory, UID baseUID, int& meshCounter)
 {
     aiMatrix4x4 accumulatedTransform;
-    /*const aiNode* node = node;*/
+
+    int dummis = 0;
 
     if (std::string(node->mName.C_Str()).find("RootNode") == std::string::npos) {
         while (std::string(node->mName.C_Str()).find("_$AssimpFbx$_") != std::string::npos) {
@@ -364,30 +365,38 @@ GameObject* FileSystem::ProcessNode(aiNode* node, const aiScene* scene, const st
                 LOG_CONSOLE("WARNING: FBX dummy node has multiple children");
             }
             node = node->mChildren[0];
+            dummis++;
         }
     }
-    
-    
-   
 
     std::string nodeName = node->mName.C_Str();
     if (nodeName.empty()) nodeName = "Unnamed";
 
     GameObject* gameObject = new GameObject(nodeName);
     Transform* transform = static_cast<Transform*>(gameObject->GetComponent(ComponentType::TRANSFORM));
-    
-    // Combine transforms
-    aiMatrix4x4 localTransform = accumulatedTransform * node->mTransformation;
 
-    if (transform != nullptr)
+    if (dummis!=0)
+
     {
-        aiVector3D position, scaling;
-        aiQuaternion rotation;
-        localTransform.Decompose(scaling, rotation, position);
+        GameObject* transformGO = new GameObject(nodeName + "_accTransform");
+        Transform* transform = static_cast<Transform*>(transformGO->GetComponent(ComponentType::TRANSFORM));
 
-        transform->SetPosition(glm::vec3(position.x, position.y, position.z));
-        transform->SetScale(glm::vec3(scaling.x, scaling.y, scaling.z));
-        transform->SetRotationQuat(glm::quat(rotation.w, rotation.x, rotation.y, rotation.z));
+        // Combine transforms
+        aiMatrix4x4 localTransform = accumulatedTransform * node->mTransformation;
+
+        if (transform != nullptr)
+        {
+            aiVector3D position, scaling;
+            aiQuaternion rotation;
+            localTransform.Decompose(scaling, rotation, position);
+
+            transform->SetPosition(glm::vec3(position.x, position.y, position.z));
+            transform->SetScale(glm::vec3(scaling.x, scaling.y, scaling.z));
+            transform->SetRotationQuat(glm::quat(rotation.w, rotation.x, rotation.y, rotation.z));
+        }
+
+
+        transformGO->AddChild(gameObject);
     }
 
     // Process meshes for this node
@@ -524,6 +533,7 @@ GameObject* FileSystem::ProcessNode(aiNode* node, const aiScene* scene, const st
             }
         }
     }
+
 
     // Process child nodes recursively
     for (unsigned int i = 0; i < node->mNumChildren; i++)

@@ -392,7 +392,7 @@ void AudioSystem::ProcessReverbZones()
         Transform* lt = static_cast<Transform*>(listenerGO->GetComponent(ComponentType::TRANSFORM));
         if (lt) listenerPos = glm::vec3(lt->GetWorldMatrixRecursive()[3]);
 
-        //if (enableDebugLogs) LOG_DEBUG("Listener Pos: %.2f, %.2f, %.2f", listenerPos.x, listenerPos.y, listenerPos.z);
+        if (enableDebugLogs) LOG_DEBUG("Listener Pos: %.2f, %.2f, %.2f", listenerPos.x, listenerPos.y, listenerPos.z);
     }
 
     
@@ -522,11 +522,17 @@ void AudioSystem::SetGameObjectAuxSend(AkGameObjectID id, AkUniqueID busId, floa
     send.listenerID = listenerID;
     send.fControlValue = controlValue;
 
-    // apply the routing
-    AK::SoundEngine::SetGameObjectAuxSendValues(id, &send, 1);
 
-    // set the master reverb volume rtpc
-    SetRTPCValue(AK::GAME_PARAMETERS::REVERB_VOLUME, controlValue);
+
+    if (controlValue > 0) {
+        // apply the routing
+        AK::SoundEngine::SetGameObjectAuxSendValues(id, &send, 1);
+        SetRTPCValue(AK::GAME_PARAMETERS::REVERB_VOLUME, controlValue);
+    }
+    else {
+        AK::SoundEngine::SetGameObjectAuxSendValues(AK_INVALID_UNIQUE_ID, 0, 0);
+    }
+    
 
     if (enableDebugLogs) {
         LOG_DEBUG("SetGameObjectAuxSendByID: Applying Bus ID %u (Vol: %.2f) to GO %u",

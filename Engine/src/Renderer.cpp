@@ -1895,13 +1895,15 @@ void Renderer::DrawReverbBox(const glm::mat4& modelMatrix, const glm::vec3& exte
     ));
     glm::vec3 worldOffset = glm::vec3(rotOnly * glm::vec4(offset, 0.0f));
 
+    glm::mat4 noScaleWorldMat = glm::mat4(rotOnly);
+    noScaleWorldMat[3] = glm::vec4(glm::vec3(modelMatrix[3]), 1.0f); // translation only
 
-    // Transform corners to world space
     glm::vec3 worldCorners[8];
     for (int i = 0; i < 8; ++i)
     {
-        worldCorners[i] = glm::vec3(modelMatrix * glm::vec4(localCorners[i], 1.0f)) + worldOffset;
+        worldCorners[i] = glm::vec3(noScaleWorldMat * glm::vec4(localCorners[i], 1.0f)) + worldOffset;
     }
+
 
     // Build line list for edges (12 edges -> 24 points)
     std::vector<float> verts;

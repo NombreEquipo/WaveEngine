@@ -10,7 +10,7 @@
     "Type": "User",
     "GUID": "{7C55CBAC-5186-4208-888F-0BCE02308A98}",
     "Language": "SFX",
-    "Hash": "{2EE45C0A-F0D4-A1F5-B036-D240C6058E36}",
+    "Hash": "{A13495C8-9889-5FB7-F47D-CB72FFB9E1A7}",
     "ObjectPath": "\\SoundBanks\\Default Work Unit\\MainSoundBank",
     "ShortName": "MainSoundBank",
     "Path": "MainSoundBank.bnk",
@@ -32,14 +32,6 @@
       "CachePath": "EE/{EEBA906F-9817-9DC0-E2C0-B8D58079B757}.wem"
      },
      {
-      "Id": "146790378",
-      "Language": "SFX",
-      "Streaming": "false",
-      "Location": "Memory",
-      "ShortName": "radio-static.wav",
-      "CachePath": "44/{4423CA7D-EAEC-F92E-6D77-5A4C31819A68}.wem"
-     },
-     {
       "Id": "335686779",
       "Language": "SFX",
       "Streaming": "false",
@@ -56,14 +48,6 @@
       "CachePath": "2B/{2B154332-6CDB-A031-4D10-CA2E596ED15D}.wem"
      },
      {
-      "Id": "397602422",
-      "Language": "SFX",
-      "Streaming": "false",
-      "Location": "Memory",
-      "ShortName": "sans talking.wav",
-      "CachePath": "E4/{E450C7D6-9FBA-64F4-3E37-49018B425729}.wem"
-     },
-     {
       "Id": "516869498",
       "Language": "SFX",
       "Streaming": "false",
@@ -72,20 +56,20 @@
       "CachePath": "12/{12D22832-71FA-5C42-6CAD-FFA7A59033CD}.wem"
      },
      {
+      "Id": "977487009",
+      "Language": "SFX",
+      "Streaming": "false",
+      "Location": "Memory",
+      "ShortName": "Fire_Sound_Placeholder.wav",
+      "CachePath": "F7/{F72583FD-4156-AA6E-7A98-5AF029F527BC}.wem"
+     },
+     {
       "Id": "994023216",
       "Language": "SFX",
       "Streaming": "false",
       "Location": "Memory",
       "ShortName": "mansionAmbience.wav",
       "CachePath": "EA/{EABADB62-DAC5-87D8-AD5F-5D59E3617E1C}.wem"
-     },
-     {
-      "Id": "997234372",
-      "Language": "SFX",
-      "Streaming": "false",
-      "Location": "Memory",
-      "ShortName": "big man talking.wav",
-      "CachePath": "0E/{0E8963D8-B4A7-938D-CFBE-BCFDDAFF4B39}.wem"
      },
      {
       "Id": "1051818920",
@@ -192,19 +176,6 @@
       ]
      },
      {
-      "Id": "1527952419",
-      "Name": "Play_BigManTalkingSFX",
-      "ObjectPath": "\\Events\\Default Work Unit\\Play_BigManTalkingSFX",
-      "GUID": "{9CD2CCFE-FDBA-4F9B-AA7D-2C5F60B35903}",
-      "MaxAttenuation": "20",
-      "DurationType": "Infinite",
-      "MediaRefs": [
-       {
-        "Id": "997234372"
-       }
-      ]
-     },
-     {
       "Id": "2681289886",
       "Name": "Play_ClubPenguin",
       "ObjectPath": "\\Events\\Default Work Unit\\Play_ClubPenguin",
@@ -301,32 +272,6 @@
       ]
      },
      {
-      "Id": "111273809",
-      "Name": "Play_RadioStatic",
-      "ObjectPath": "\\Events\\Default Work Unit\\Play_RadioStatic",
-      "GUID": "{3551EEE5-E060-46CA-9383-5F51686E58F0}",
-      "MaxAttenuation": "20",
-      "DurationType": "Infinite",
-      "MediaRefs": [
-       {
-        "Id": "146790378"
-       }
-      ]
-     },
-     {
-      "Id": "3021003768",
-      "Name": "Play_SansTalkingSFX",
-      "ObjectPath": "\\Events\\Default Work Unit\\Play_SansTalkingSFX",
-      "GUID": "{A08F0DC8-4B98-48D7-86CD-7A2BD10BF58E}",
-      "MaxAttenuation": "20",
-      "DurationType": "Infinite",
-      "MediaRefs": [
-       {
-        "Id": "397602422"
-       }
-      ]
-     },
-     {
       "Id": "3711469543",
       "Name": "Play_TennaTalkingSFX",
       "ObjectPath": "\\Events\\Default Work Unit\\Play_TennaTalkingSFX",
@@ -336,6 +281,21 @@
       "MediaRefs": [
        {
         "Id": "335686779"
+       }
+      ]
+     },
+     {
+      "Id": "3738480268",
+      "Name": "Play_TorchFire",
+      "ObjectPath": "\\Events\\Default Work Unit\\Play_TorchFire",
+      "GUID": "{4D4D6F6C-67C1-4402-8A75-FA72D81AC19F}",
+      "MaxAttenuation": "20",
+      "DurationType": "OneShot",
+      "DurationMin": "35.477257",
+      "DurationMax": "35.477257",
+      "MediaRefs": [
+       {
+        "Id": "977487009"
        }
       ]
      }
@@ -528,6 +488,6 @@
     ]
    }
   ],
-  "FileHash": "{F5E3B643-3AE6-8816-E127-190AC0F118D8}"
+  "FileHash": "{66CC0D7F-E3F3-5026-09FE-6572B4064BC9}"
  }
 }

@@ -13,6 +13,7 @@
 						<Bus Name="Music Bus" ID="{698D2083-4775-48F4-99FC-21A2D5A77980}">
 							<PropertyList>
 								<Property Name="3DSpatialization" Type="int16" Value="1"/>
+								<Property Name="UseGameAuxSends" Type="bool" Value="True"/>
 							</PropertyList>
 							<ObjectLists>
 								<ObjectList Name="RTPC">
