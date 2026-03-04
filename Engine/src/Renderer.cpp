@@ -591,7 +591,9 @@ bool Renderer::RenderScene(CameraLens* camera)
     //Find active post-processing
     ComponentPostProcessing* activePP = nullptr;
     for (auto* pp : postProcessingComponents) {
-        if (pp->IsActive()) { activePP = pp; break; }
+        if (pp->IsActive() && pp->owner && pp->owner->IsActive()) {
+            activePP = pp; break;
+        }
     }
 
     //Viewport setup
@@ -607,14 +609,14 @@ bool Renderer::RenderScene(CameraLens* camera)
     //Priority --> PostProcess FBO > MSAA FBO > camera FBO > default
     bool usingMSAA = msaaEnabled && camera->msaaFBO != 0;
 
-    if (activePP) {
+    if (usingMSAA) {
+        glBindFramebuffer(GL_FRAMEBUFFER, camera->msaaFBO);
+        glEnable(GL_MULTISAMPLE);
+    }
+    else if (activePP) {
         ResizePostProcessingBuffer(width, height);
         glBindFramebuffer(GL_FRAMEBUFFER, postProcessFBO);
         glDisable(GL_MULTISAMPLE);
-    }
-    else if (usingMSAA) {
-        glBindFramebuffer(GL_FRAMEBUFFER, camera->msaaFBO);
-        glEnable(GL_MULTISAMPLE);
     }
     else {
         glBindFramebuffer(GL_FRAMEBUFFER, (camera->fboID != 0) ? camera->fboID : 0);
@@ -684,15 +686,18 @@ bool Renderer::RenderScene(CameraLens* camera)
     glBindTexture(GL_TEXTURE_2D, 0);
     glUseProgram(0);
 
-    // --- MSAA Blit (antes de post-process para que PP reciba la imagen resuelta) ---
-    if (usingMSAA && !activePP) {
-        GLuint targetFBO = (camera->fboID != 0) ? camera->fboID : 0;
+    //  MSAA Resolve if needed
+    if (usingMSAA) {
+        GLuint targetFBO = activePP ? postProcessFBO : ((camera->fboID != 0) ? camera->fboID : 0);
+        if (activePP) {
+            ResizePostProcessingBuffer(width, height);
+        }
         glBindFramebuffer(GL_READ_FRAMEBUFFER, camera->msaaFBO);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, targetFBO);
         glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
     }
 
-    // --- Post Processing ---
+    // Post-processing
     if (activePP) {
         GLuint targetFBO = (camera->fboID != 0) ? camera->fboID : 0;
         glBindFramebuffer(GL_FRAMEBUFFER, targetFBO);
@@ -851,10 +856,8 @@ void Renderer::DrawParticlesList(const CameraLens* camera)
 {
     if (particlesList.empty()) return;
 
-    // 1. IMPORTANTE: Desactivar cualquier shader activo para usar el pipeline fijo
     glUseProgram(0);
 
-    // 2. Configuraci�n de matrices legacy (necesaria para glBegin/glEnd)
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadMatrixf(glm::value_ptr(camera->GetProjectionMatrix()));
@@ -1082,9 +1085,15 @@ void Renderer::ResizePostProcessingBuffer(int width, int height)
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, postProcessRBO);
 
+        GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        if (status != GL_FRAMEBUFFER_COMPLETE)
+            LOG_DEBUG("ERROR: postProcessFBO incomplete: 0x%x", status);
+
         currentW = width;
         currentH = height;
     }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void Renderer::CreateSkinningSSBOs(unsigned int& ssboGlobal, unsigned int& ssboOffset, const std::vector<glm::mat4>& offsets)
