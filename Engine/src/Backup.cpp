@@ -3,6 +3,8 @@
 #include "Application.h"
 #include "Time.h"
 #include <filesystem>
+#include <sstream>
+
 Backup::Backup()
 {
 }
@@ -27,7 +29,7 @@ bool Backup::Start()
 
 	tempSceneDir = tempScenePath.string();
 	timeSinceLastBackup = 0.0f;
-	backupCounter = 0;
+	//backupCounter = 0;
 
 	return true;
 }
@@ -52,8 +54,8 @@ bool Backup::CleanUp()
 
 void Backup::PerformBackup() 
 {
-	backupCounter++;
-	std::string backupFilename = tempSceneDir + "/backup_" + std::to_string(backupCounter) + ".json";
+	std::string timestamp = GetTimestamp();
+	std::string backupFilename = tempSceneDir + "/backup_" + timestamp + ".json";
 
 	bool success = Application::GetInstance().scene->SaveScene(backupFilename);
 
@@ -65,4 +67,15 @@ void Backup::PerformBackup()
 	{
 		LOG_CONSOLE("[BACKUP] ERROR: Failed to save scene: %s", backupFilename.c_str());
 	}
+}
+
+std::string Backup::GetTimestamp()
+{
+	auto now = std::chrono::system_clock::now();
+	auto time = std::chrono::system_clock::to_time_t(now);
+
+	std::stringstream ss;
+	ss << std::put_time(std::localtime(&time), "%Y%m%d_%H%M%S");
+
+	return ss.str();
 }
