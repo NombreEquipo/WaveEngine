@@ -203,6 +203,7 @@ private:
     std::vector<RenderObject> meshLinesList;
     std::vector<RenderLine> linesList;
 
+
     // Post Processing
     int postProcessCurrentW = 0;
     int postProcessCurrentH = 0;
@@ -211,9 +212,12 @@ private:
     GLuint postProcessRBO = 0;
     std::unique_ptr<Shader> postProcessShader;
     void ResizePostProcessingBuffer(int width, int height);
+
     // ANTIALIAS
     bool msaaEnabled = false;
     unsigned int msaaFBO = 0;
     unsigned int msaaColorBuffer = 0;
     unsigned int msaaDepthStencilRBO = 0;
+
+
 };
