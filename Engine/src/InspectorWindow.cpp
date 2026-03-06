@@ -1232,9 +1232,12 @@ void InspectorWindow::DrawReverbZoneComponent(Component* component)
 void InspectorWindow::DrawNavigationComponent(Component* component)
 {
     ComponentNavigation* navComp = static_cast<ComponentNavigation*>(component);
+    if (navComp == nullptr) return;
 
-    if (navComp != nullptr)
+    if (ImGui::CollapsingHeader("Navigation & AI", ImGuiTreeNodeFlags_DefaultOpen))
     {
+        DrawComponentContextMenu(navComp, true);
+
         navComp->OnEditor();
     }
 }

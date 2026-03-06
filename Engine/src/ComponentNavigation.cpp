@@ -13,8 +13,6 @@ ComponentNavigation::ComponentNavigation(GameObject* owner)
 
 void ComponentNavigation::OnEditor()
 {
-    if (ImGui::CollapsingHeader("Navigation & AI", ImGuiTreeNodeFlags_DefaultOpen))
-    {
         ImGui::Checkbox("Navigation Static", &isStatic);
 
         //Select Type
@@ -135,9 +133,6 @@ void ComponentNavigation::OnEditor()
 
             }
         }
-     
-
-    }
 }
 
 bool ComponentNavigation::SetDestination(const glm::vec3& target)
