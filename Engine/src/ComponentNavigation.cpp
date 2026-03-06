@@ -80,8 +80,7 @@ void ComponentNavigation::OnEditor()
             // --- Drag Target ---
             if (ImGui::BeginDragDropTarget())
             {
-                if (const ImGuiPayload* payload =
-                    ImGui::AcceptDragDropPayload("HIERARCHY_GAMEOBJECT"))
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_GAMEOBJECT"))
                 {
                     GameObject* dropped =
                         *(GameObject**)payload->Data;
@@ -94,6 +93,7 @@ void ComponentNavigation::OnEditor()
                         if (nav && nav->type == NavType::SURFACE)
                         {
                             linkedSurface = dropped;
+                            tempSurfaceUID = dropped->GetUID();
                             LOG_CONSOLE("Agent linked to surface: %s", dropped->GetName().c_str());
                         }
                         else
@@ -228,4 +228,44 @@ void ComponentNavigation::Update(float dt)
 void ComponentNavigation::StopMovement()
 {
     moving = false; path.clear(); pathIndex = 0;
+}
+
+void ComponentNavigation::Serialize(nlohmann::json& componentObj) const {
+    componentObj["NavType"] = static_cast<int>(type);
+    componentObj["IsStatic"] = isStatic;
+    componentObj["MaxSlope"] = maxSlopeAngle;
+    componentObj["MoveSpeed"] = moveSpeed;
+    componentObj["ArrivalThreshold"] = arrivalThreshold;
+
+    if (linkedSurface) {
+        componentObj["LinkedSurfaceUID"] = linkedSurface->GetUID();
+    }
+}
+
+void ComponentNavigation::Deserialize(const nlohmann::json& componentObj) {
+    if (componentObj.contains("NavType"))
+        type = static_cast<NavType>(componentObj["NavType"]);
+
+    if (componentObj.contains("IsStatic"))
+        isStatic = componentObj["IsStatic"];
+
+    if (componentObj.contains("MaxSlope"))
+        maxSlopeAngle = componentObj["MaxSlope"];
+
+    if (componentObj.contains("MoveSpeed"))
+        moveSpeed = componentObj["MoveSpeed"];
+
+    if (componentObj.contains("ArrivalThreshold"))
+        arrivalThreshold = componentObj["ArrivalThreshold"];
+
+    if (componentObj.contains("LinkedSurfaceUID")) {
+        this->tempSurfaceUID = componentObj["LinkedSurfaceUID"];
+    }
+}
+
+void ComponentNavigation::SolveReferences() {
+    if (tempSurfaceUID != 0) {
+        this->linkedSurface = Application::GetInstance().scene->FindObject(this->tempSurfaceUID);
+        this->tempSurfaceUID = 0;
+    }
 }

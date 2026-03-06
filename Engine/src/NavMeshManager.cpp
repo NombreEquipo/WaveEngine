@@ -494,3 +494,37 @@ bool ModuleNavMesh::FindPath(GameObject* surface,
 
     return true;
 }
+
+bool ModuleNavMesh::SaveNavMesh(const char* path, GameObject* owner) {
+    NavMeshData* data = GetNavMeshData(owner);
+    if (!data || !data->navMesh) return false;
+
+    FILE* fp = fopen(path, "wb");
+    if (!fp) return false;
+
+    // 1. Guardar la configuración (header)
+    const dtNavMesh* mesh = data->navMesh;
+    for (int i = 0; i < mesh->getMaxTiles(); ++i) {
+        const dtMeshTile* tile = mesh->getTile(i);
+        if (!tile || !tile->header || !tile->dataSize) continue;
+
+        // Escribimos el tile ref y el tamaño de los datos
+        dtPolyRef tileRef = mesh->getTileRef(tile);
+        fwrite(&tileRef, sizeof(dtPolyRef), 1, fp);
+        fwrite(&tile->dataSize, sizeof(int), 1, fp);
+        fwrite(tile->data, 1, tile->dataSize, fp);
+    }
+    fclose(fp);
+    return true;
+}
+
+bool ModuleNavMesh::LoadNavMesh(const char* path, GameObject* owner) {
+    FILE* fp = fopen(path, "rb");
+    if (!fp) return false;
+
+    RemoveNavMesh(owner);
+
+    dtNavMesh* navMesh = dtAllocNavMesh();
+    fclose(fp);
+    return true;
+}

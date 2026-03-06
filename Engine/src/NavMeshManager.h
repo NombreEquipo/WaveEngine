@@ -46,6 +46,11 @@ public:
         const glm::vec3& end,
         std::vector<glm::vec3>& outPath);
 
+
+
+    bool SaveNavMesh(const char* path, GameObject* owner);
+    bool LoadNavMesh(const char* path, GameObject* owner);
+
 private:
 
     void RecollectGeometry(GameObject* obj, std::vector<float>& vertices, std::vector<int>& indices);
