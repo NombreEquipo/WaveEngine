@@ -17,6 +17,7 @@
 #include "ResourcePrefab.h"
 #include "ComponentCanvas.h"
 #include "ComponentCamera.h" 
+#include "Rigidbody.h"
 #include "Window.h"        
 #include "ModuleCamera.h"   
 #include <SDL3/SDL_scancode.h>
@@ -453,6 +454,138 @@ static int Lua_Navigation_Update(lua_State* L)
     return 0;
 }
 
+static int Lua_Navigation_GetCurrentWaypoint(lua_State* L)
+{
+    ComponentNavigation* nav = *static_cast<ComponentNavigation**>(lua_touserdata(L, 1));
+    if (!nav || nav->path.empty() || nav->pathIndex >= (int)nav->path.size())
+    {
+        lua_pushnil(L);
+        return 1;
+    }
+    const glm::vec3& wp = nav->path[nav->pathIndex];
+    lua_pushnumber(L, wp.x);
+    lua_pushnumber(L, wp.y);
+    lua_pushnumber(L, wp.z);
+    return 3;
+}
+
+static int Lua_Navigation_AdvanceWaypoint(lua_State* L)
+{
+    ComponentNavigation* nav = *static_cast<ComponentNavigation**>(lua_touserdata(L, 1));
+    float posX = static_cast<float>(luaL_checknumber(L, 2));
+    float posZ = static_cast<float>(luaL_checknumber(L, 3));
+    float threshold = static_cast<float>(luaL_optnumber(L, 4, 0.25));
+
+    if (!nav || nav->path.empty() || nav->pathIndex >= (int)nav->path.size())
+    {
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    const glm::vec3& wp = nav->path[nav->pathIndex];
+    float dx = posX - wp.x;
+    float dz = posZ - wp.z;
+    float dist = std::sqrt(dx * dx + dz * dz);
+
+    if (dist <= threshold)
+    {
+        nav->pathIndex++;
+        if (nav->pathIndex >= (int)nav->path.size())
+        {
+            nav->moving = false;
+            nav->path.clear();
+            nav->pathIndex = 0;
+            lua_pushboolean(L, false);
+            return 1;
+        }
+    }
+
+    lua_pushboolean(L, true);
+    return 1;
+}
+
+static int Lua_Rigidbody_SetLinearVelocity(lua_State* L)
+{
+    Rigidbody* rb = *static_cast<Rigidbody**>(luaL_checkudata(L, 1, "Rigidbody"));
+    float x = static_cast<float>(luaL_checknumber(L, 2));
+    float y = static_cast<float>(luaL_checknumber(L, 3));
+    float z = static_cast<float>(luaL_checknumber(L, 4));
+    if (rb) rb->SetLinearVelocity(glm::vec3(x, y, z));
+    return 0;
+}
+
+static int Lua_Rigidbody_GetLinearVelocity(lua_State* L)
+{
+    Rigidbody* rb = *static_cast<Rigidbody**>(luaL_checkudata(L, 1, "Rigidbody"));
+    if (!rb) { lua_pushnumber(L, 0); lua_pushnumber(L, 0); lua_pushnumber(L, 0); return 3; }
+    glm::vec3 v = rb->GetLinearVelocity();
+    lua_pushnumber(L, v.x);
+    lua_pushnumber(L, v.y);
+    lua_pushnumber(L, v.z);
+    return 3;
+}
+
+static int Lua_Rigidbody_AddForce(lua_State* L)
+{
+    Rigidbody* rb = *static_cast<Rigidbody**>(luaL_checkudata(L, 1, "Rigidbody"));
+    float x = static_cast<float>(luaL_checknumber(L, 2));
+    float y = static_cast<float>(luaL_checknumber(L, 3));
+    float z = static_cast<float>(luaL_checknumber(L, 4));
+    if (rb) rb->AddForce(glm::vec3(x, y, z));
+    return 0;
+}
+
+static int Lua_Navigation_GetMoveDirection(lua_State* L)
+{
+    ComponentNavigation* nav = *static_cast<ComponentNavigation**>(lua_touserdata(L, 1));
+    float threshold = static_cast<float>(luaL_optnumber(L, 2, 0.3));
+
+    if (!nav || !nav->moving || nav->path.empty())
+    {
+        lua_pushnumber(L, 0); lua_pushnumber(L, 0);
+        return 2;
+    }
+
+    // Leer posicion desde el Transform del propio owner (C++ interno)
+    Transform* t = (Transform*)nav->owner->GetComponent(ComponentType::TRANSFORM);
+    if (!t) { lua_pushnumber(L, 0); lua_pushnumber(L, 0); return 2; }
+
+    glm::vec3 pos = t->GetGlobalPosition();
+
+    // Avanzar waypoints si estamos cerca
+    while (nav->pathIndex < (int)nav->path.size())
+    {
+        const glm::vec3& wp = nav->path[nav->pathIndex];
+        float dx = pos.x - wp.x;
+        float dz = pos.z - wp.z;
+        if (std::sqrt(dx * dx + dz * dz) <= threshold)
+            nav->pathIndex++;
+        else
+            break;
+    }
+
+    // Path completado
+    if (nav->pathIndex >= (int)nav->path.size())
+    {
+        nav->moving = false;
+        nav->path.clear();
+        nav->pathIndex = 0;
+        lua_pushnumber(L, 0); lua_pushnumber(L, 0);
+        return 2;
+    }
+
+    // Dirección normalizada hacia el waypoint actual
+    const glm::vec3& wp = nav->path[nav->pathIndex];
+    float dx = wp.x - pos.x;
+    float dz = wp.z - pos.z;
+    float len = std::sqrt(dx * dx + dz * dz);
+    if (len < 0.001f) { lua_pushnumber(L, 0); lua_pushnumber(L, 0); return 2; }
+
+    lua_pushnumber(L, dx / len);
+    lua_pushnumber(L, dz / len);
+    return 2;
+}
+
 static int Lua_Camera_GetScreenToWorldPlane(lua_State* L) {
     int mouseX = static_cast<int>(luaL_checknumber(L, 1));
     int mouseY = static_cast<int>(luaL_checknumber(L, 2));
@@ -583,18 +716,33 @@ void ScriptManager::RegisterEngineFunctions() {
     luaL_newmetatable(L, "Navigation");
     lua_pushvalue(L, -1);
     lua_setfield(L, -2, "__index");
-
     lua_pushcfunction(L, Lua_Navigation_SetDestination);
     lua_setfield(L, -2, "SetDestination");
-
     lua_pushcfunction(L, Lua_Navigation_StopMovement);
     lua_setfield(L, -2, "StopMovement");
-
     lua_pushcfunction(L, Lua_Navigation_IsMoving);
     lua_setfield(L, -2, "IsMoving");
-
     lua_pushcfunction(L, Lua_Navigation_Update);
     lua_setfield(L, -2, "Update");
+    lua_pushcfunction(L, Lua_Navigation_GetCurrentWaypoint);
+    lua_setfield(L, -2, "GetCurrentWaypoint");
+    lua_pushcfunction(L, Lua_Navigation_AdvanceWaypoint);
+    lua_setfield(L, -2, "AdvanceWaypoint");
+    lua_pushcfunction(L, Lua_Navigation_GetMoveDirection);
+    lua_setfield(L, -2, "GetMoveDirection");
+
+    lua_pop(L, 1);
+
+    // Rigidbody metatable (nuevo)
+    luaL_newmetatable(L, "Rigidbody");
+    lua_pushvalue(L, -1);
+    lua_setfield(L, -2, "__index");
+    lua_pushcfunction(L, Lua_Rigidbody_SetLinearVelocity);
+    lua_setfield(L, -2, "SetLinearVelocity");
+    lua_pushcfunction(L, Lua_Rigidbody_GetLinearVelocity);
+    lua_setfield(L, -2, "GetLinearVelocity");
+    lua_pushcfunction(L, Lua_Rigidbody_AddForce);
+    lua_setfield(L, -2, "AddForce");
 
     lua_pop(L, 1);
 
@@ -1036,6 +1184,22 @@ static int Lua_GameObject_GetComponent(lua_State* L) {
         *udata = nav;
 
         luaL_getmetatable(L, "Navigation");
+        lua_setmetatable(L, -2);
+
+        return 1;
+    }
+    if (strcmp(componentType, "Rigidbody") == 0)
+    {
+        Component* comp = obj->GetComponent(ComponentType::RIGIDBODY);
+        Rigidbody* rb = static_cast<Rigidbody*>(comp);
+        if (!rb) { lua_pushnil(L); return 1; }
+
+        Rigidbody** udata = static_cast<Rigidbody**>(
+            lua_newuserdata(L, sizeof(Rigidbody*))
+            );
+        *udata = rb;
+
+        luaL_getmetatable(L, "Rigidbody");
         lua_setmetatable(L, -2);
 
         return 1;
