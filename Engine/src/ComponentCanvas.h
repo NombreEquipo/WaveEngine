@@ -29,6 +29,9 @@ public:
     void OnMouseButtonUp(int x, int y, Noesis::MouseButton button);
     void OnMouseWheel(int x, int y, int delta);
 
+    void OnKeyDown(Noesis::Key key) { OnGamepadButtonDown(key); }
+    void OnKeyUp(Noesis::Key key) { OnGamepadButtonUp(key); }
+
     void OnGamepadButtonDown(Noesis::Key key);
     void OnGamepadButtonUp(Noesis::Key key);
     void OnGamepadLeftStick(float x, float y);
@@ -44,6 +47,9 @@ public:
     unsigned int GetTextureID() const { return textureID; }
     GameObject* GetOwner() const { return owner; }
     const std::string& GetCurrentXAML() const { return currentXAML; }
+
+    void SetUILayer(int layer) { uiLayer = layer; }
+    int GetUILayer() const { return uiLayer; }
 
     float opacity = 1.0f;
 
@@ -70,4 +76,6 @@ private:
     static constexpr float  STICK_THRESHOLD = 0.5f;
     static constexpr double STICK_INITIAL_DELAY = 0.4;
     static constexpr double STICK_REPEAT_RATE = 0.15;
+    bool needsHookEvents = false;
+    int uiLayer = 0;
 };

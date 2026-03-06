@@ -8,6 +8,8 @@
 #include <nlohmann/json.hpp>
 #include <windows.h>
 #endif
+#include "UIManager.h"
+#include "ComponentScript.h"
 
 Application::Application() : isRunning(true), playState(PlayState::EDITING)
 {
@@ -22,25 +24,26 @@ Application::Application() : isRunning(true), playState(PlayState::EDITING)
     scene = std::make_shared<ModuleScene>();
     camera = std::make_shared<ModuleCamera>();
     audio = std::make_shared<ModuleAudio>();
-#ifndef WAVE_GAME
-    editor = std::make_shared<ModuleEditor>();
-    backup = std::make_shared<Backup>();
-#endif
     loader = std::make_shared<ModuleLoader>();
     time = std::make_shared<Time>();
     grid = std::make_shared<Grid>();
     resources = std::make_shared<ModuleResources>();
     ui = std::make_shared<UI>();
     scripts = std::make_shared<ScriptManager>();  
-    physics = std::make_shared<ModulePhysics>();  
+    physics = std::make_shared<ModulePhysics>();
     navMesh = std::make_shared<ModuleNavMesh>();
+#ifndef WAVE_GAME
+    editor = std::make_shared<ModuleEditor>();
+    backup = std::make_shared<Backup>();
+#else
+    game = std::make_shared<ModuleGame>();
+#endif
 
     AddModule(std::static_pointer_cast<Module>(window));
     AddModule(std::static_pointer_cast<Module>(events));
     AddModule(std::static_pointer_cast<Module>(input));
     AddModule(std::static_pointer_cast<Module>(physics));
     AddModule(std::static_pointer_cast<Module>(renderContext));
-    AddModule(std::static_pointer_cast<Module>(resources));
     AddModule(std::static_pointer_cast<Module>(scene));
     AddModule(std::static_pointer_cast<Module>(camera));
     AddModule(std::static_pointer_cast<Module>(audio));
@@ -55,6 +58,8 @@ Application::Application() : isRunning(true), playState(PlayState::EDITING)
 #ifndef WAVE_GAME
     AddModule(std::static_pointer_cast<Module>(editor));
     AddModule(std::static_pointer_cast<Backup>(backup));
+#else
+    AddModule(std::static_pointer_cast<Module>(game));
 #endif
 
     selectionManager = new SelectionManager();
@@ -247,6 +252,9 @@ bool Application::PostUpdate()
         }
     }
 
+    // Limpiar el estado de los botones pulsados en este frame
+    UIManager::GetInstance().ClearFrameClicks();
+
     if (result) {
         result = window->PostUpdate();
     }
@@ -256,13 +264,31 @@ bool Application::PostUpdate()
 
 void Application::Play()
 {
-    // Save
     if (playState == PlayState::EDITING) {
+        std::filesystem::create_directories("../Library/TempScene");
         LOG_CONSOLE("Saving initial scene state...");
         scene->SaveScene("../Library/TempScene/__temp_scene_state__.json");
     }
 
     playState = PlayState::PLAYING;
+
+    // Llamar Start en todos los scripts de la escena
+    std::function<void(GameObject*)> callStartOnAll = [&](GameObject* obj) {
+        if (!obj || !obj->IsActive()) return;
+        for (Component* comp : obj->GetComponents()) {
+            if (comp->GetType() == ComponentType::SCRIPT) {
+                ComponentScript* script = static_cast<ComponentScript*>(comp);
+                if (script->IsActive()) {
+                    script->CallStart();
+                }
+            }
+        }
+        for (GameObject* child : obj->GetChildren()) {
+            callStartOnAll(child);
+        }
+        };
+    callStartOnAll(scene->GetRoot());
+
     time->Resume();
     AK::SoundEngine::WakeupFromSuspend();
 }
@@ -334,7 +360,6 @@ bool Application::CleanUp()
     time.reset();
     loader.reset();
     scripts.reset();
-    resources.reset();
     renderContext.reset();
     physics.reset();
     input.reset();
