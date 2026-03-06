@@ -10,6 +10,8 @@
 #include "ComponentMesh.h"
 #include "ComponentMaterial.h"
 #include "ComponentScript.h"
+#include "ComponentNavigation.h"
+#include "NavMeshManager.h"
 #include "ModuleResources.h"
 #include "PrefabManager.h"
 #include "ResourcePrefab.h"
@@ -418,6 +420,39 @@ static int Lua_Time_GetDeltaTime(lua_State* L) {
     return 1;
 }
 
+static int Lua_Navigation_SetDestination(lua_State* L)
+{
+    ComponentNavigation* nav = *static_cast<ComponentNavigation**>(lua_touserdata(L, 1));
+    float x = static_cast<float>(luaL_checknumber(L, 2));
+    float y = static_cast<float>(luaL_checknumber(L, 3));
+    float z = static_cast<float>(luaL_checknumber(L, 4));
+    if (nav) { lua_pushboolean(L, nav->SetDestination(glm::vec3(x, y, z))); return 1; }
+    lua_pushboolean(L, false);
+    return 1;
+}
+
+static int Lua_Navigation_StopMovement(lua_State* L)
+{
+    ComponentNavigation* nav = *static_cast<ComponentNavigation**>(lua_touserdata(L, 1));
+    if (nav) nav->StopMovement();
+    return 0;
+}
+
+static int Lua_Navigation_IsMoving(lua_State* L)
+{
+    ComponentNavigation* nav = *static_cast<ComponentNavigation**>(lua_touserdata(L, 1));
+    lua_pushboolean(L, nav ? nav->IsMoving() : false);
+    return 1;
+}
+
+static int Lua_Navigation_Update(lua_State* L)
+{
+    ComponentNavigation* nav = *static_cast<ComponentNavigation**>(lua_touserdata(L, 1));
+    float dt = static_cast<float>(luaL_checknumber(L, 2));
+    if (nav) nav->Update(dt);
+    return 0;
+}
+
 static int Lua_Camera_GetScreenToWorldPlane(lua_State* L) {
     int mouseX = static_cast<int>(luaL_checknumber(L, 1));
     int mouseY = static_cast<int>(luaL_checknumber(L, 2));
@@ -543,6 +578,25 @@ void ScriptManager::RegisterEngineFunctions() {
     lua_pushcfunction(L, Lua_Camera_GetScreenToWorldPlane);
     lua_setfield(L, -2, "GetScreenToWorldPlane");
     lua_setglobal(L, "Camera");
+
+    //Navigation
+    luaL_newmetatable(L, "Navigation");
+    lua_pushvalue(L, -1);
+    lua_setfield(L, -2, "__index");
+
+    lua_pushcfunction(L, Lua_Navigation_SetDestination);
+    lua_setfield(L, -2, "SetDestination");
+
+    lua_pushcfunction(L, Lua_Navigation_StopMovement);
+    lua_setfield(L, -2, "StopMovement");
+
+    lua_pushcfunction(L, Lua_Navigation_IsMoving);
+    lua_setfield(L, -2, "IsMoving");
+
+    lua_pushcfunction(L, Lua_Navigation_Update);
+    lua_setfield(L, -2, "Update");
+
+    lua_pop(L, 1);
 
     LOG_CONSOLE("[ScriptManager] Engine functions registered: Engine, Input, Time, Camera");
 }
@@ -965,6 +1019,23 @@ static int Lua_GameObject_GetComponent(lua_State* L) {
         *udata = anim;
 
         luaL_getmetatable(L, "Animation");
+        lua_setmetatable(L, -2);
+
+        return 1;
+    }
+
+    if (strcmp(componentType, "Navigation") == 0)
+    {
+        Component* comp = obj->GetComponent(ComponentType::NAVIGATION);
+        ComponentNavigation* nav = static_cast<ComponentNavigation*>(comp);
+        if (!nav) { lua_pushnil(L); return 1; }
+
+        ComponentNavigation** udata = static_cast<ComponentNavigation**>(
+            lua_newuserdata(L, sizeof(ComponentNavigation*))
+            );
+        *udata = nav;
+
+        luaL_getmetatable(L, "Navigation");
         lua_setmetatable(L, -2);
 
         return 1;
