@@ -486,6 +486,10 @@ static int Lua_UI_WasClicked(lua_State* L) {
 }
 
 // Game API
+static int Lua_Game_Exit(lua_State* L) {
+    Application::GetInstance().RequestExit();
+    return 0;
+}
 static int Lua_Game_Pause(lua_State* L) {
     Application::GetInstance().Pause();
     return 0;
@@ -566,6 +570,8 @@ void ScriptManager::RegisterEngineFunctions() {
     lua_setfield(L, -2, "Pause");
     lua_pushcfunction(L, Lua_Game_Resume);
     lua_setfield(L, -2, "Resume");
+    lua_pushcfunction(L, Lua_Game_Exit);
+    lua_setfield(L, -2, "Exit");
     lua_setglobal(L, "Game");
 
 

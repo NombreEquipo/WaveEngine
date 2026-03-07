@@ -107,7 +107,7 @@ function Update(self, dt)
             NavigateTo("SettingsMenu.xaml")
         end
         if UI.WasClicked("ExitButton") then
-            Engine.Log("[Transition] EXIT pulsado")
+            Game.Exit()
         end
 
         -- Pause Menu
