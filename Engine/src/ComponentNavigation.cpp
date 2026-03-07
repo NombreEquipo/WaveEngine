@@ -137,7 +137,9 @@ void ComponentNavigation::OnEditor()
 
 bool ComponentNavigation::SetDestination(const glm::vec3& target)
 {
-    if (!linkedSurface) { LOG_CONSOLE("Sin superficie enlazada"); return false; }
+    if (!linkedSurface) { 
+        LOG_CONSOLE("Sin superficie enlazada"); 
+        return false; }
 
     Transform* t = (Transform*)owner->GetComponent(ComponentType::TRANSFORM);
     glm::vec3 start = t->GetGlobalPosition();
@@ -205,8 +207,22 @@ void ComponentNavigation::Update(float dt)
     }
 
     // Mover hacia el waypoint
-    glm::vec3 step = (dir / glm::length(dir)) * moveSpeed * dt;
+    glm::vec3 dirNorm = glm::normalize(glm::vec3(dir.x, 0.0f, dir.z));
+    glm::vec3 step = dirNorm * moveSpeed * dt;
     glm::vec3 newPos = currentPos + step;
+
+    float agentRadius = 0.5f;
+
+    // Bounding box del agente
+    glm::vec3 min = newPos - glm::vec3(agentRadius, 0.5f, agentRadius);
+    glm::vec3 max = newPos + glm::vec3(agentRadius, 0.5f, agentRadius);
+
+    // Comprobar obstáculos
+    if (Application::GetInstance().navMesh->IsBlockedByObstacle(min, max))
+    {
+        LOG_CONSOLE("Movimiento bloqueado por obstáculo");
+        return;
+    }
 
     // Anclar al navmesh — corrige la Y y valida que sigue en superficie
     if (!SnapPositionToNavMesh(newPos))
@@ -263,4 +279,44 @@ void ComponentNavigation::SolveReferences() {
         this->linkedSurface = Application::GetInstance().scene->FindObject(this->tempSurfaceUID);
         this->tempSurfaceUID = 0;
     }
+}
+
+void ComponentNavigation::GetMoveDirection(float threshold, float& dx, float& dz)
+{
+    dx = 0.0f;
+    dz = 0.0f;
+
+    if (type != NavType::AGENT) return;
+    if (!moving) return;
+    if (path.empty()) return;
+
+    Transform* t = (Transform*)owner->GetComponent(ComponentType::TRANSFORM);
+    glm::vec3 currentPos = t->GetGlobalPosition();
+
+    glm::vec3 target = path[pathIndex];
+    glm::vec3 dir = target - currentPos;
+
+    glm::vec3 dirFlat = { dir.x, 0.0f, dir.z };
+    float dist = glm::length(dirFlat);
+
+    if (dist <= threshold)
+    {
+        pathIndex++;
+
+        if (pathIndex >= (int)path.size())
+        {
+            moving = false;
+            path.clear();
+            pathIndex = 0;
+            return;
+        }
+
+        target = path[pathIndex];
+        dir = target - currentPos;
+    }
+
+    dirFlat = glm::normalize(glm::vec3(dir.x, 0.0f, dir.z));
+
+    dx = dirFlat.x;
+    dz = dirFlat.z;
 }

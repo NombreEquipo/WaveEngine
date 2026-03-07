@@ -93,14 +93,14 @@
                 {
                     "active": true,
                     "position": [
-                        0.0,
-                        0.6000000238418579,
-                        0.0
+                        -1.3069428205490112,
+                        0.5500021576881409,
+                        -0.6145139336585999
                     ],
                     "rotation": [
-                        0.0,
-                        0.0,
-                        0.0
+                        0.004540319554507732,
+                        2.5794270038604736,
+                        -0.0021712169982492924
                     ],
                     "scale": [
                         1.0,
@@ -171,7 +171,14 @@
                 },
                 {
                     "active": true,
-                    "scriptUID": 13391207988200622707,
+                    "publicVariables": [
+                        {
+                            "name": "moveSpeed",
+                            "type": 0,
+                            "value": 5.0
+                        }
+                    ],
+                    "scriptUID": 4305855626940192466,
                     "type": 6
                 }
             ],
@@ -203,7 +210,7 @@
                 },
                 {
                     "active": true,
-                    "aspectRatio": 1.0739725828170776,
+                    "aspectRatio": 4.722891330718994,
                     "farPlane": 1000.0,
                     "fov": 60.0,
                     "nearPlane": 0.30000001192092896,
@@ -212,6 +219,72 @@
             ],
             "name": "Camera",
             "uid": 8127797368703891033
+        },
+        {
+            "active": true,
+            "children": [],
+            "components": [
+                {
+                    "active": true,
+                    "position": [
+                        -1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "scale": [
+                        3.07800030708313,
+                        2.32200026512146,
+                        2.6460001468658447
+                    ],
+                    "type": 0
+                },
+                {
+                    "active": true,
+                    "primitiveType": "Cube",
+                    "type": 1
+                },
+                {
+                    "active": true,
+                    "hasMaterialProperties": false,
+                    "materialType": 0,
+                    "type": 3,
+                    "useCheckerboard": true
+                },
+                {
+                    "ArrivalThreshold": 0.25,
+                    "IsStatic": true,
+                    "MaxSlope": 35.0,
+                    "MoveSpeed": 5.0,
+                    "NavType": 2,
+                    "active": true,
+                    "type": 24
+                },
+                {
+                    "Center": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "DynamicFriction": 0.5,
+                    "Restitution": 0.6000000238418579,
+                    "Size": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "StaticFriction": 0.5,
+                    "Trigger": false,
+                    "active": true,
+                    "type": 10
+                }
+            ],
+            "name": "Cube",
+            "uid": 9444923990546023146
         }
     ],
     "version": 1

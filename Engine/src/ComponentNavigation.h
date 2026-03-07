@@ -47,6 +47,9 @@ public:
     int   pathIndex = 0;
     bool  moving = false;
 
+
+
+    void GetMoveDirection(float threshold, float& dx, float& dz);
 private:
     bool SnapPositionToNavMesh(glm::vec3& position);
     uint64_t tempSurfaceUID = 0; // Variable temporal para guardar el ID durante la carga
