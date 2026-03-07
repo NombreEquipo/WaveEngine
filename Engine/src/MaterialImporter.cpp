@@ -101,6 +101,9 @@ UID MaterialImporter::CreateNewMaterial(const std::string& directory, const std:
     else
         fileName = directory + "/NewMaterial_" + std::to_string(newUID) + ".mat";
 
+    if (std::filesystem::exists(fileName))
+        LOG_CONSOLE("Unable to create material, %s already exists", fileName.c_str());
+
     nlohmann::json j;
     j["Type"] = (int)defaultMat->GetType();
     j["Opacity"] = defaultMat->GetOpacity();
