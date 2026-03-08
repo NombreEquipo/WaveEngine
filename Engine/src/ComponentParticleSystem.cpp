@@ -8,6 +8,7 @@
 #include "ResourceTexture.h"
 #include "LibraryManager.h"
 #include "Time.h" 
+#include "ModuleScene.h"
 #include <fstream>
 #include <iomanip> 
 #include <imgui.h>
@@ -25,7 +26,6 @@ ComponentParticleSystem::ComponentParticleSystem(GameObject* owner)
 }
 
 ComponentParticleSystem::~ComponentParticleSystem() {
-    
     Application::GetInstance().renderer.get()->RemoveParticle(this);
     // Release texture resource reference
     if (textureResourceUID != 0) {
@@ -63,6 +63,10 @@ void ComponentParticleSystem::Update() {
 
     // Only update simulation on PLAY mode
     if (Application::GetInstance().GetPlayState() != Application::PlayState::PLAYING) return;
+    // Proximity activation
+    if (emitter->proximityActivation) {
+        UpdateProximityActivation();
+    }
 
     // Prewarm logic, instant simulation at start
     if (emitter->prewarm && emitter->systemTime == 0.0f) {
@@ -77,9 +81,44 @@ void ComponentParticleSystem::Update() {
     emitter->Update(dt);
 }
 
+void ComponentParticleSystem::UpdateProximityActivation() {
+    // If it's the first time it searches the target and saves it cached
+    if (!proximityTargetSearched) {
+        proximityTargetSearched = true;
+        proximityTargetCache = Application::GetInstance().scene->FindObject(emitter->proximityTarget);
+    }
+
+    if (!proximityTargetCache || proximityTargetCache->IsMarkedForDeletion()) {
+        // Target disappeared or not found
+        proximityTargetSearched = false;
+        proximityTargetCache = nullptr;
+        return;
+    }
+
+    Transform* targetTrans = static_cast<Transform*>(
+        proximityTargetCache->GetComponent(ComponentType::TRANSFORM));
+    if (!targetTrans) return;
+
+    float dist = glm::distance(emitter->ownerPosition,
+        glm::vec3(targetTrans->GetGlobalMatrix()[3]));
+
+    bool shouldBeActive = (dist <= emitter->activationRadius);
+
+    if (shouldBeActive && !emitter->active) {
+        // Player in the radius
+        emitter->Play();
+    }
+    else if (!shouldBeActive && emitter->active) {
+        // Player left the radius
+        emitter->Stop();
+    }
+}
+
 void ComponentParticleSystem::Draw(ComponentCamera* camera) {
-    
     if (!active || !emitter) return;
+
+    // Don't draw because there are no particles and every emitter is stopped
+    if (emitter->particles.empty() && !emitter->active) return;
 
     glUseProgram(0);
     glBindVertexArray(0);
@@ -102,46 +141,97 @@ void ComponentParticleSystem::Draw(ComponentCamera* camera) {
             glMultMatrixf(glm::value_ptr(trans->GetGlobalMatrix()));
         }
     }
-    // In WORLD, we don't apply the object's matrix Identity, because particles already have absolute world positions calculated in Update()
-    // Draw particles
+    // In WORLD: particles already have absolute world positions
     emitter->Draw(camera->owner->transform->GetGlobalPosition());
+}
+
+// Scripting
+void ComponentParticleSystem::Play() {
+    if (!emitter) return;
+    emitter->Play();
+    active = true;
+}
+
+void ComponentParticleSystem::Stop() {
+    if (!emitter) return;
+    emitter->Stop();
+}
+
+void ComponentParticleSystem::ScriptBurst(int count) {
+    if (!emitter) return;
+    // Burst called from script forces particles even if the emitter was stopped
+    bool wasActive = emitter->active;
+    emitter->active = true;
+    emitter->Burst(count);
+    emitter->active = wasActive;
+}
+
+void ComponentParticleSystem::SetEmissionRate(float rate) {
+    if (!emitter) return;
+    emitter->emissionRate = rate;
+}
+
+bool ComponentParticleSystem::IsPlaying() const {
+    return emitter && emitter->active && !emitter->stopEmittingFlag;
+}
+
+bool ComponentParticleSystem::IsAlive() const {
+    return emitter && emitter->IsAlive();
+}
+
+void ComponentParticleSystem::SetLooping(bool looping) {
+    if (!emitter) return;
+    emitter->looping = looping;
+    if (looping) emitter->stopEmittingFlag = false;
+}
+
+void ComponentParticleSystem::SetDuration(float seconds) {
+    if (!emitter) return;
+    emitter->duration = seconds;
+}
+
+void ComponentParticleSystem::SetOneShotMode(bool enabled, int count) {
+    if (!emitter) return;
+    emitter->oneShot = enabled;
+    emitter->oneShotCount = count;
+    emitter->oneShotFired = false;
 }
 
 void ComponentParticleSystem::OnEditor() {
 
-    #ifndef WAVE_GAME
-        // Control buttons
-        ImGui::Checkbox("Active", &active);
-        ImGui::SameLine();
-        if (ImGui::Button("Reset Simulation")) emitter->Reset(); // Clears particles in the scene
-        ImGui::SameLine();
-        if (ImGui::Button("Reset Values")) emitter->ResetValues(); // Resets to default
+#ifndef WAVE_GAME
+    // Control buttons
+    ImGui::Checkbox("Active", &active);
+    ImGui::SameLine();
+    if (ImGui::Button("Reset Simulation")) emitter->Reset();
+    ImGui::SameLine();
+    if (ImGui::Button("Reset Values")) emitter->ResetValues();
 
-        // Selector Texture
-        ImGui::Separator();
-        ImGui::Text("Texture & Animation");
-        std::string currentTexName = emitter->texturePath.empty() ? "None" : emitter->texturePath;
-        // Strip path to show only filename
-        size_t lastSlash = currentTexName.find_last_of("/\\");
-        if (lastSlash != std::string::npos) currentTexName = currentTexName.substr(lastSlash + 1);
+    // Selector Texture
+    ImGui::Separator();
+    ImGui::Text("Texture & Animation");
+    std::string currentTexName = emitter->texturePath.empty() ? "None" : emitter->texturePath;
+    // Strip path to show only filename
+    size_t lastSlash = currentTexName.find_last_of("/\\");
+    if (lastSlash != std::string::npos) currentTexName = currentTexName.substr(lastSlash + 1);
 
-        if (ImGui::BeginCombo("Texture", currentTexName.c_str())) {
-            const auto& allResources = Application::GetInstance().resources->GetAllResources();
-            if (ImGui::Selectable("None", emitter->texturePath.empty())) SetTexture("");
-            for (const auto& pair : allResources) {
-                Resource* res = pair.second;
-                if (res->GetType() == Resource::TEXTURE) {
-                    std::string path = res->GetAssetFile();
-                    std::string name = path;
-                    size_t slash = name.find_last_of("/\\");
-                    if (slash != std::string::npos) name = name.substr(slash + 1);
-                    bool isSelected = (emitter->texturePath == path);
-                    if (ImGui::Selectable(name.c_str(), isSelected)) SetTexture(path);
-                    if (isSelected) ImGui::SetItemDefaultFocus();
-                }
+    if (ImGui::BeginCombo("Texture", currentTexName.c_str())) {
+        const auto& allResources = Application::GetInstance().resources->GetAllResources();
+        if (ImGui::Selectable("None", emitter->texturePath.empty())) SetTexture("");
+        for (const auto& pair : allResources) {
+            Resource* res = pair.second;
+            if (res->GetType() == Resource::TEXTURE) {
+                std::string path = res->GetAssetFile();
+                std::string name = path;
+                size_t slash = name.find_last_of("/\\");
+                if (slash != std::string::npos) name = name.substr(slash + 1);
+                bool isSelected = (emitter->texturePath == path);
+                if (ImGui::Selectable(name.c_str(), isSelected)) SetTexture(path);
+                if (isSelected) ImGui::SetItemDefaultFocus();
             }
-            ImGui::EndCombo();
         }
+        ImGui::EndCombo();
+    }
 
         // Animation Settings
         ImGui::DragInt("Rows", &emitter->textureRows, 0.1f, 1, 16);
@@ -164,31 +254,70 @@ void ComponentParticleSystem::OnEditor() {
         ImGui::DragFloat("Emission Rate (Time)", &emitter->emissionRate, 0.1f, 0.0f, 1000.0f);
         ImGui::DragFloat("Emission Rate (Dist)", &emitter->emissionRateDistance, 0.1f, 0.0f, 100.0f);
 
-        // Bursts UI
-        if (ImGui::TreeNode("Bursts Configuration")) {
-            if (ImGui::Button("+ Add Burst")) {
-                emitter->bursts.push_back(Burst());
-            }
+    // Duration and Looping
+    ImGui::Separator();
+    ImGui::Text("Duration & Playback");
 
-            for (int i = 0; i < emitter->bursts.size(); ++i) {
-                ImGui::PushID(i);
-                ImGui::Text("Burst %d", i);
-                ImGui::SameLine();
-                if (ImGui::Button("X")) {
-                    emitter->bursts.erase(emitter->bursts.begin() + i);
-                    ImGui::PopID();
-                    continue;
-                }
+    ImGui::Checkbox("Looping", &emitter->looping);
+    if (!emitter->looping) {
+        ImGui::DragFloat("Duration (s)", &emitter->duration, 0.05f, 0.05f, 60.0f, "%.2f s");
+    }
 
-                ImGui::DragFloat("Time", &emitter->bursts[i].time, 0.1f, 0.0f, 10.0f);
-                ImGui::DragInt("Count", &emitter->bursts[i].count, 1, 1, 1000);
-                ImGui::DragInt("Cycles", &emitter->bursts[i].cycles, 1, 0, 100);
-                ImGui::DragFloat("Interval", &emitter->bursts[i].repeatInterval, 0.1f, 0.0f, 10.0f);
-                ImGui::Separator();
-                ImGui::PopID();
-            }
-            ImGui::TreePop();
+    // oneShot mode
+    ImGui::Checkbox("One Shot", &emitter->oneShot);
+    if (emitter->oneShot) {
+        ImGui::DragInt("One Shot Count", &emitter->oneShotCount, 1, 1, 1000);
+        ImGui::TextColored(ImVec4(1, 1, 0, 1),
+            "One-shot: fires %d particles once on Play()", emitter->oneShotCount);
+    }
+
+    // Proximity Activation
+    ImGui::Separator();
+    ImGui::Text("Proximity Activation");
+
+    ImGui::Checkbox("Enable Proximity Activation", &emitter->proximityActivation);
+    if (emitter->proximityActivation) {
+        static char proxBuf[64];
+        // Init buffer from current value
+        strncpy_s(proxBuf, emitter->proximityTarget.c_str(), sizeof(proxBuf) - 1);
+        if (ImGui::InputText("Target Name", proxBuf, sizeof(proxBuf))) {
+            emitter->proximityTarget = proxBuf;
+            // Reset cache so the new target is searched next frame
+            proximityTargetCache = nullptr;
+            proximityTargetSearched = false;
         }
+        ImGui::DragFloat("Activation Radius", &emitter->activationRadius,
+            0.5f, 0.5f, 200.0f, "%.1f u");
+        ImGui::TextColored(ImVec4(0.5f, 1.0f, 0.5f, 1.0f),
+            "Auto on/off when '%s' is within %.1f units",
+            emitter->proximityTarget.c_str(), emitter->activationRadius);
+    }
+
+    // Bursts UI
+    if (ImGui::TreeNode("Bursts Configuration")) {
+        if (ImGui::Button("+ Add Burst")) {
+            emitter->bursts.push_back(Burst());
+        }
+
+        for (int i = 0; i < (int)emitter->bursts.size(); ++i) {
+            ImGui::PushID(i);
+            ImGui::Text("Burst %d", i);
+            ImGui::SameLine();
+            if (ImGui::Button("X")) {
+                emitter->bursts.erase(emitter->bursts.begin() + i);
+                ImGui::PopID();
+                continue;
+            }
+
+            ImGui::DragFloat("Time", &emitter->bursts[i].time, 0.1f, 0.0f, 10.0f);
+            ImGui::DragInt("Count", &emitter->bursts[i].count, 1, 1, 1000);
+            ImGui::DragInt("Cycles", &emitter->bursts[i].cycles, 1, 0, 100);
+            ImGui::DragFloat("Interval", &emitter->bursts[i].repeatInterval, 0.1f, 0.0f, 10.0f);
+            ImGui::Separator();
+            ImGui::PopID();
+        }
+        ImGui::TreePop();
+    }
 
         ImGui::Checkbox("Additive Blending (Glow)", &emitter->additiveBlending);
 
@@ -196,138 +325,142 @@ void ComponentParticleSystem::OnEditor() {
         ModuleEmitterSpawn* spawner = nullptr;
         ModuleEmitterNoise* noise = nullptr;
 
-        // Find modules
-        for (auto m : emitter->modules) {
-            if (m->type == ParticleModuleType::SPAWNER) spawner = (ModuleEmitterSpawn*)m;
-            if (m->type == ParticleModuleType::NOISE) noise = (ModuleEmitterNoise*)m;
+    for (auto m : emitter->modules) {
+        if (m->type == ParticleModuleType::SPAWNER) spawner = (ModuleEmitterSpawn*)m;
+        if (m->type == ParticleModuleType::NOISE)   noise = (ModuleEmitterNoise*)m;
+    }
+
+    // Spawner UI
+    if (spawner && ImGui::CollapsingHeader("Spawner Module", ImGuiTreeNodeFlags_DefaultOpen)) {
+        const char* shapeItems[] = { "Box", "Sphere", "Cone", "Circle" };
+        int currentShape = (int)spawner->shape;
+        if (ImGui::Combo("Emitter Shape", &currentShape, shapeItems, IM_ARRAYSIZE(shapeItems))) {
+            spawner->shape = (EmitterShape)currentShape;
         }
 
-        // Spawner UI
-        if (spawner && ImGui::CollapsingHeader("Spawner Module", ImGuiTreeNodeFlags_DefaultOpen)) {
-            const char* shapeItems[] = { "Box", "Sphere", "Cone", "Circle" };
-            int currentShape = (int)spawner->shape;
-            if (ImGui::Combo("Emitter Shape", &currentShape, shapeItems, IM_ARRAYSIZE(shapeItems))) {
-                spawner->shape = (EmitterShape)currentShape;
+        // Dynamic parameters based on shape
+        if (spawner->shape == EmitterShape::BOX) {
+            ImGui::DragFloat3("Box Area", &spawner->emissionArea.x, 0.1f, 0.0f, 10.0f);
+        }
+        else if (spawner->shape == EmitterShape::SPHERE) {
+            ImGui::DragFloat("Radius", &spawner->emissionRadius, 0.1f, 0.0f, 10.0f);
+            ImGui::Checkbox("Emit From Shell", &spawner->emitFromShell);
+        }
+        else if (spawner->shape == EmitterShape::CONE) {
+            ImGui::DragFloat("Base Radius", &spawner->coneRadius, 0.1f);
+            ImGui::SliderFloat("Cone Angle", &spawner->coneAngle, 0.0f, 90.0f);
+            ImGui::Checkbox("Emit From Shell", &spawner->emitFromShell);
+        }
+        else if (spawner->shape == EmitterShape::CIRCLE) {
+            ImGui::DragFloat("Circle Radius", &spawner->circleRadius, 0.1f);
+            ImGui::Checkbox("Emit From Edge", &spawner->emitFromShell);
+        }
+
+        ImGui::Separator();
+        ImGui::Text("Lifecycle & Physics");
+        ImGui::DragFloat2("Lifetime (Min/Max)", &spawner->lifetimeMin, 0.1f, 0.1f, 10.0f);
+        ImGui::DragFloat2("Speed (Min/Max)", &spawner->speedMin, 0.1f, 0.0f, 50.0f);
+        ImGui::DragFloat("Size Start", &spawner->sizeStart, 0.01f, 0.0f, 10.0f);
+        ImGui::DragFloat("Size End", &spawner->sizeEnd, 0.01f, 0.0f, 10.0f);
+        ImGui::DragFloat2("Spin Speed (Min/Max)", &spawner->rotationSpeedMin, 1.0f, -360.0f, 360.0f);
+
+        ImGui::Separator();
+        ImGui::Text("Color over Lifetime");
+
+        ImGui::ColorEdit4("Start Color", &spawner->colorStart.r);
+        ImGui::ColorEdit4("End Color", &spawner->colorEnd.r);
+
+        if (ImGui::TreeNode("Advanced Gradient Editor")) {
+            if (ImGui::Button("Add Color Key")) {
+                ColorKey key;
+                key.time = 0.5f;
+                key.color = glm::vec4(1.0f);
+                spawner->colorGradient.push_back(key);
+
+                std::sort(spawner->colorGradient.begin(), spawner->colorGradient.end(),
+                    [](const ColorKey& a, const ColorKey& b) { return a.time < b.time; });
             }
 
-            // Dynamic parameters based on shape
-            if (spawner->shape == EmitterShape::BOX) {
-                ImGui::DragFloat3("Box Area", &spawner->emissionArea.x, 0.1f, 0.0f, 10.0f);
-            }
-            else if (spawner->shape == EmitterShape::SPHERE) {
-                ImGui::DragFloat("Radius", &spawner->emissionRadius, 0.1f, 0.0f, 10.0f);
-                ImGui::Checkbox("Emit From Shell", &spawner->emitFromShell);
-            }
-            else if (spawner->shape == EmitterShape::CONE) {
-                ImGui::DragFloat("Base Radius", &spawner->coneRadius, 0.1f);
-                ImGui::SliderFloat("Cone Angle", &spawner->coneAngle, 0.0f, 90.0f);
-                ImGui::Checkbox("Emit From Shell", &spawner->emitFromShell);
-            }
-            else if (spawner->shape == EmitterShape::CIRCLE) {
-                ImGui::DragFloat("Circle Radius", &spawner->circleRadius, 0.1f);
-                ImGui::Checkbox("Emit From Edge", &spawner->emitFromShell);
-            }
+            bool gradientChanged = false;
 
-            ImGui::Separator();
-            ImGui::Text("Lifecycle & Physics");
-            ImGui::DragFloat2("Lifetime (Min/Max)", &spawner->lifetimeMin, 0.1f, 0.1f, 10.0f);
-            ImGui::DragFloat2("Speed (Min/Max)", &spawner->speedMin, 0.1f, 0.0f, 50.0f);
-            ImGui::DragFloat("Size Start", &spawner->sizeStart, 0.01f, 0.0f, 10.0f);
-            ImGui::DragFloat("Size End", &spawner->sizeEnd, 0.01f, 0.0f, 10.0f);
-            ImGui::DragFloat2("Spin Speed (Min/Max)", &spawner->rotationSpeedMin, 1.0f, -360.0f, 360.0f);
+            for (int i = 0; i < (int)spawner->colorGradient.size(); i++) {
+                ImGui::PushID(i + 100);
 
-            // UI for color gradients
-            ImGui::Separator();
-            ImGui::Text("Color over Lifetime");
+                if (ImGui::SliderFloat("Time", &spawner->colorGradient[i].time, 0.0f, 1.0f))
+                    gradientChanged = true;
+                ImGui::ColorEdit4("Color", &spawner->colorGradient[i].color.r);
 
-            // Simple Mode
-            ImGui::ColorEdit4("Start Color", &spawner->colorStart.r);
-            ImGui::ColorEdit4("End Color", &spawner->colorEnd.r);
-
-            // Advanced mode, button to add keys
-            if (ImGui::TreeNode("Advanced Gradient Editor")) {
-                if (ImGui::Button("Add Color Key")) {
-                    ColorKey key;
-                    key.time = 0.5f;
-                    key.color = glm::vec4(1.0f);
-                    spawner->colorGradient.push_back(key);
-
-                    std::sort(spawner->colorGradient.begin(), spawner->colorGradient.end(),
-                        [](const ColorKey& a, const ColorKey& b) { return a.time < b.time; });
-                }
-
-                bool gradientChanged = false;
-
-                for (int i = 0; i < spawner->colorGradient.size(); i++) {
-                    ImGui::PushID(i + 100);
-
-                    if (ImGui::SliderFloat("Time", &spawner->colorGradient[i].time, 0.0f, 1.0f)) {
-                        gradientChanged = true;
-                    }
-                    ImGui::ColorEdit4("Color", &spawner->colorGradient[i].color.r);
-
-                    if (ImGui::Button("Remove")) {
-                        spawner->colorGradient.erase(spawner->colorGradient.begin() + i);
-                        ImGui::PopID();
-                        continue;
-                    }
+                if (ImGui::Button("Remove")) {
+                    spawner->colorGradient.erase(spawner->colorGradient.begin() + i);
                     ImGui::PopID();
+                    continue;
                 }
-
-                if (gradientChanged) {
-                    std::sort(spawner->colorGradient.begin(), spawner->colorGradient.end(),
-                        [](const ColorKey& a, const ColorKey& b) { return a.time < b.time; });
-                }
-                ImGui::TreePop();
+                ImGui::PopID();
             }
-        }
 
-        // Noise module UI
-        if (noise && ImGui::CollapsingHeader("Noise Module")) {
-            ImGui::Checkbox("Enable Noise Turbulence", &noise->active);
-            if (noise->active) {
-                ImGui::DragFloat("Noise Strength", &noise->strength, 0.1f, 0.0f, 50.0f);
-                ImGui::DragFloat("Noise Frequency", &noise->frequency, 0.01f, 0.0f, 10.0f);
+            if (gradientChanged) {
+                std::sort(spawner->colorGradient.begin(), spawner->colorGradient.end(),
+                    [](const ColorKey& a, const ColorKey& b) { return a.time < b.time; });
             }
+            ImGui::TreePop();
         }
+    }
 
-        // Movement module UI
-        if (ImGui::CollapsingHeader("Movement Module")) {
-            ModuleEmitterMovement* mov = nullptr;
-            for (auto m : emitter->modules) if (m->type == ParticleModuleType::MOVEMENT) mov = (ModuleEmitterMovement*)m;
-            if (mov) ImGui::DragFloat3("Gravity Vector", &mov->gravity.x, 0.1f);
+    // Noise module UI
+    if (noise && ImGui::CollapsingHeader("Noise Module")) {
+        ImGui::Checkbox("Enable Noise Turbulence", &noise->active);
+        if (noise->active) {
+            ImGui::DragFloat("Noise Strength", &noise->strength, 0.1f, 0.0f, 50.0f);
+            ImGui::DragFloat("Noise Frequency", &noise->frequency, 0.01f, 0.0f, 10.0f);
         }
+    }
 
-        // Presets
+    // Movement module UI
+    if (ImGui::CollapsingHeader("Movement Module")) {
+        ModuleEmitterMovement* mov = nullptr;
+        for (auto m : emitter->modules)
+            if (m->type == ParticleModuleType::MOVEMENT) mov = (ModuleEmitterMovement*)m;
+        if (mov) ImGui::DragFloat3("Gravity Vector", &mov->gravity.x, 0.1f);
+    }
+
+    // Presets
+    ImGui::Separator();
+    ImGui::Text("Presets (.particle)");
+    static char buf[64] = "new_effect";
+    ImGui::InputText("Filename", buf, 64);
+
+    std::string assetsRoot = LibraryManager::GetAssetsRoot();
+    if (assetsRoot.back() != '/' && assetsRoot.back() != '\\') assetsRoot += "/";
+    std::string particleFolder = assetsRoot + "Particles/";
+
+    if (ImGui::Button("Save Preset")) {
+        std::string path = particleFolder + std::string(buf) + ".particle";
+        SaveParticleFile(path);
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Load Preset")) {
+        std::string path = particleFolder + std::string(buf) + ".particle";
+        LoadParticleFile(path);
+    }
+
+    // Feedback
+    if (feedbackTimer > 0.0f) {
         ImGui::Separator();
-        ImGui::Text("Presets (.particle)");
-        static char buf[64] = "new_effect";
-        ImGui::InputText("Filename", buf, 64);
+        ImVec4 color = feedbackIsError ? ImVec4(1.0f, 0.3f, 0.3f, 1.0f) : ImVec4(0.3f, 1.0f, 0.3f, 1.0f);
+        ImGui::TextColored(color, "%s", feedbackMessage.c_str());
+    }
 
-        // Path using LibraryManager
-        std::string assetsRoot = LibraryManager::GetAssetsRoot();
-        if (assetsRoot.back() != '/' && assetsRoot.back() != '\\') assetsRoot += "/";
-        std::string particleFolder = assetsRoot + "Particles/";
-
-        if (ImGui::Button("Save Preset")) {
-            std::string path = particleFolder + std::string(buf) + ".particle";
-            SaveParticleFile(path);
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Load Preset")) {
-            std::string path = particleFolder + std::string(buf) + ".particle";
-            LoadParticleFile(path);
-        }
-
-        // Feedback
-        if (feedbackTimer > 0.0f) {
-            ImGui::Separator();
-            ImVec4 color = feedbackIsError ? ImVec4(1.0f, 0.3f, 0.3f, 1.0f) : ImVec4(0.3f, 1.0f, 0.3f, 1.0f);
-            ImGui::TextColored(color, "%s", feedbackMessage.c_str());
-        }
-        ImGui::Separator();
-        ImGui::TextColored(ImVec4(0, 1, 1, 1), "Particles Alive: %d", (int)emitter->particles.size());
-    #endif 
+    ImGui::Separator();
+    // Runtime status display
+    ImGui::TextColored(ImVec4(0, 1, 1, 1), "Particles Alive: %d", (int)emitter->particles.size());
+    ImGui::SameLine();
+    if (emitter->active && !emitter->stopEmittingFlag)
+        ImGui::TextColored(ImVec4(0.3f, 1.0f, 0.3f, 1.0f), "[EMITTING]");
+    else if (emitter->IsAlive())
+        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "[COOLING DOWN]");
+    else
+        ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "[STOPPED]");
+#endif 
 }
 
 void ComponentParticleSystem::SetTexture(const std::string& path) {
@@ -342,12 +475,10 @@ void ComponentParticleSystem::SetTexture(const std::string& path) {
     emitter->texturePath = path;
     if (path.empty()) return;
 
-    // Search and Request new resource
     const auto& allResources = Application::GetInstance().resources->GetAllResources();
     for (const auto& pair : allResources) {
         Resource* res = pair.second;
         if (res->GetType() == Resource::TEXTURE && res->GetAssetFile() == path) {
-            // Loaded form VRAM
             Resource* loadedRes = Application::GetInstance().resources->RequestResource(res->GetUID());
             if (loadedRes) {
                 const ResourceTexture* texRes = static_cast<const ResourceTexture*>(loadedRes);
@@ -376,6 +507,17 @@ void ComponentParticleSystem::Serialize(nlohmann::json& componentObj) const {
     componentObj["animSpeed"] = emitter->animationSpeed;
     componentObj["animLoop"] = emitter->animLoop;
 
+    // Duration / looping / oneShot
+    componentObj["looping"] = emitter->looping;
+    componentObj["duration"] = emitter->duration;
+    componentObj["oneShot"] = emitter->oneShot;
+    componentObj["oneShotCount"] = emitter->oneShotCount;
+
+    // Proximity activation
+    componentObj["proximityActivation"] = emitter->proximityActivation;
+    componentObj["activationRadius"] = emitter->activationRadius;
+    componentObj["proximityTarget"] = emitter->proximityTarget;
+
     // Serialize Bursts
     nlohmann::json burstsJson = nlohmann::json::array();
     for (const auto& b : emitter->bursts) {
@@ -399,7 +541,6 @@ void ComponentParticleSystem::Serialize(nlohmann::json& componentObj) const {
             componentObj["colorStart"] = { s->colorStart.r, s->colorStart.g, s->colorStart.b, s->colorStart.a };
             componentObj["colorEnd"] = { s->colorEnd.r, s->colorEnd.g, s->colorEnd.b, s->colorEnd.a };
 
-            // Serialize Gradient
             nlohmann::json gradJson = nlohmann::json::array();
             for (const auto& k : s->colorGradient) {
                 gradJson.push_back({
@@ -438,22 +579,37 @@ void ComponentParticleSystem::Deserialize(const nlohmann::json& componentObj) {
     if (componentObj.contains("emissionRateDist")) emitter->emissionRateDistance = componentObj["emissionRateDist"];
     if (componentObj.contains("simulationSpace")) emitter->simulationSpace = (SimulationSpace)componentObj["simulationSpace"];
     if (componentObj.contains("prewarm")) emitter->prewarm = componentObj["prewarm"];
+
     if (componentObj.contains("textureUID")) {
         UID uid = componentObj["textureUID"].get<UID>();
         if (uid != 0) {
             const auto& allResources = Application::GetInstance().resources->GetAllResources();
             auto it = allResources.find(uid);
-            if (it != allResources.end()) {
-                SetTexture(it->second->GetAssetFile());
-            }
+            if (it != allResources.end()) SetTexture(it->second->GetAssetFile());
         }
     }
-    if (emitter->textureID == 0 && componentObj.contains("texturePath")) SetTexture(componentObj["texturePath"]);
+    if (emitter->textureID == 0 && componentObj.contains("texturePath"))
+        SetTexture(componentObj["texturePath"]);
+
     if (componentObj.contains("additive")) emitter->additiveBlending = componentObj["additive"];
     if (componentObj.contains("textureRows")) emitter->textureRows = componentObj["textureRows"];
     if (componentObj.contains("textureCols")) emitter->textureCols = componentObj["textureCols"];
     if (componentObj.contains("animSpeed")) emitter->animationSpeed = componentObj["animSpeed"];
     if (componentObj.contains("animLoop")) emitter->animLoop = componentObj["animLoop"];
+
+    // Duration / looping / oneShot
+    if (componentObj.contains("looping")) emitter->looping = componentObj["looping"];
+    if (componentObj.contains("duration")) emitter->duration = componentObj["duration"];
+    if (componentObj.contains("oneShot")) emitter->oneShot = componentObj["oneShot"];
+    if (componentObj.contains("oneShotCount")) emitter->oneShotCount = componentObj["oneShotCount"];
+
+    // Proximity activation
+    if (componentObj.contains("proximityActivation"))
+        emitter->proximityActivation = componentObj["proximityActivation"];
+    if (componentObj.contains("activationRadius"))
+        emitter->activationRadius = componentObj["activationRadius"];
+    if (componentObj.contains("proximityTarget"))
+        emitter->proximityTarget = componentObj["proximityTarget"].get<std::string>();
 
     // Deserialize Bursts
     if (componentObj.contains("bursts")) {
@@ -477,9 +633,8 @@ void ComponentParticleSystem::Deserialize(const nlohmann::json& componentObj) {
             if (componentObj.contains("emitFromShell")) s->emitFromShell = componentObj["emitFromShell"];
 
             if (componentObj.contains("colorStart")) { auto c = componentObj["colorStart"]; s->colorStart = glm::vec4(c[0], c[1], c[2], c[3]); }
-            if (componentObj.contains("colorEnd")) { auto c = componentObj["colorEnd"]; s->colorEnd = glm::vec4(c[0], c[1], c[2], c[3]); }
+            if (componentObj.contains("colorEnd")) { auto c = componentObj["colorEnd"];   s->colorEnd = glm::vec4(c[0], c[1], c[2], c[3]); }
 
-            // Gradient
             if (componentObj.contains("colorGradient")) {
                 s->colorGradient.clear();
                 for (const auto& k : componentObj["colorGradient"]) {
@@ -495,12 +650,14 @@ void ComponentParticleSystem::Deserialize(const nlohmann::json& componentObj) {
             if (componentObj.contains("sizeEnd")) s->sizeEnd = componentObj["sizeEnd"];
             if (componentObj.contains("rotSpeedMin")) s->rotationSpeedMin = componentObj["rotSpeedMin"];
             if (componentObj.contains("rotSpeedMax")) s->rotationSpeedMax = componentObj["rotSpeedMax"];
-
             if (componentObj.contains("lifetimeMin")) s->lifetimeMin = componentObj["lifetimeMin"];
             if (componentObj.contains("lifetimeMax")) s->lifetimeMax = componentObj["lifetimeMax"];
             if (componentObj.contains("speedMin")) s->speedMin = componentObj["speedMin"];
             if (componentObj.contains("speedMax")) s->speedMax = componentObj["speedMax"];
-            if (componentObj.contains("emissionArea")) { auto a = componentObj["emissionArea"]; s->emissionArea = glm::vec3(a[0], a[1], a[2]); }
+            if (componentObj.contains("emissionArea")) {
+                auto a = componentObj["emissionArea"];
+                s->emissionArea = glm::vec3(a[0], a[1], a[2]);
+            }
         }
         else if (mod->type == ParticleModuleType::MOVEMENT) {
             ModuleEmitterMovement* m = static_cast<ModuleEmitterMovement*>(mod);

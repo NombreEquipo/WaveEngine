@@ -159,6 +159,30 @@ struct EmitterInstance {
     float emissionRate = 20.0f; // Time-based emission
     bool active = true;
 
+    // Duration and loops
+    // looping=true particles run always
+    // looping=false emits only for duration in seconds lasts then stop emitting
+    bool looping = true;
+    float duration = 5.0f;
+    // Internal flag to check is the emission has closed
+    bool stopEmittingFlag = false;
+
+    // OneShot Particle Mode
+    // oneShot=true emits one Burst of oneShotCount
+    bool oneShot = false;
+    // Number of Particles spawned by default
+    int  oneShotCount = 30;
+    // Prevent firing again instantly
+    bool oneShotFired = false;
+
+    // Proximity activation
+    // proximityActivation=true the emitter is auto enabled or disabled
+    bool  proximityActivation = false;
+    // World radius to activate
+    float activationRadius = 15.0f;
+    // Name of the GameObject tracked
+    std::string proximityTarget = "Player";
+
     // Simulation Settings
     SimulationSpace simulationSpace = SimulationSpace::LOCAL;
     float emissionRateDistance = 0.0f; // Emission per distance traveled
@@ -201,6 +225,11 @@ struct EmitterInstance {
     void ResetValues();
     void KillDeadParticles();
     void Burst(int count); // Explosion
+
+    // Lua Scripting
+    void Play();
+    void Stop();
+    bool IsAlive() const;
 
     // Helper for gradients
     glm::vec4 EvaluateGradient(float t, std::vector<ColorKey>& gradient);

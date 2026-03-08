@@ -33,13 +33,32 @@ public:
     void SaveParticleFile(const std::string& path);
     void LoadParticleFile(const std::string& path);
 
+    // Scripting
+    void Play();
+    void Stop();
+    void ScriptBurst(int count);
+    void SetEmissionRate(float rate);
+    bool IsPlaying() const;
+    bool IsAlive() const;
+    void SetLooping(bool looping);
+    void SetDuration(float seconds);
+    void SetOneShotMode(bool enabled, int count = 30);
+
 private:
     EmitterInstance* emitter = nullptr;
 
     // Resource Reference Counting
     unsigned long long textureResourceUID = 0;
 
+    // Proximity activation
+    // The pointer of the player is cached so it does not search every frame
+    GameObject* proximityTargetCache = nullptr;
+    // True after the first search attempt
+    bool proximityTargetSearched = false;
+
     std::string feedbackMessage = "";
     float feedbackTimer = 0.0f;
     bool feedbackIsError = false;
+
+    void UpdateProximityActivation();
 };

@@ -198,6 +198,9 @@ void EmitterInstance::Reset() {
     timeSinceLastEmit = 0.0f;
     systemTime = 0.0f;
 
+    stopEmittingFlag = false;
+    oneShotFired = false;
+
     // Reset burst counters
     for (auto& b : bursts) b.currentCycles = 0;
 }
@@ -217,6 +220,16 @@ void EmitterInstance::ResetValues() {
     animationSpeed = 1.0f;
     animLoop = false;
 
+    looping = true;
+    duration = 5.0f;
+    stopEmittingFlag = false;
+    oneShot = false;
+    oneShotCount = 30;
+    oneShotFired = false;
+    proximityActivation = false;
+    activationRadius = 15.0f;
+    proximityTarget = "Player";
+
     bursts.clear();
 
     // Reset Module Settings
@@ -225,26 +238,41 @@ void EmitterInstance::ResetValues() {
     }
 }
 
+// Scripting
+void EmitterInstance::Play() {
+    active = true;
+    stopEmittingFlag = false;
+    oneShotFired = false;
+    systemTime = 0.0f;
+    timeSinceLastEmit = 0.0f;
+    // Reset burst cycle counters so bursts fire again
+    for (auto& b : bursts) b.currentCycles = 0;
+}
+
+void EmitterInstance::Stop() {
+    // Halt new emission immediately; live particles finish their lifetime
+    stopEmittingFlag = true;
+    active = false;
+}
+
+bool EmitterInstance::IsAlive() const {
+    // True while there are still visible particles on screen
+    return !particles.empty();
+}
+
 // Gradient Interpolation
 glm::vec4 EmitterInstance::EvaluateGradient(float t, std::vector<ColorKey>& gradient) {
     if (gradient.empty()) return glm::vec4(1.0f);
     if (gradient.size() == 1) return gradient[0].color;
 
     // t must be between 0 and 1
-    t = glm::clamp(t, 0.0f, 1.0f);
-
-    // Find which two keys we are between
-    // case 1 before the first key
     if (t <= gradient.front().time) return gradient.front().color;
+    if (t >= gradient.back().time)  return gradient.back().color;
 
-    // Case 2 after the last key
-    if (t >= gradient.back().time) return gradient.back().color;
-
-    // Case 3 inmediate interpolation
-    for (size_t i = 0; i < gradient.size() - 1; ++i) {
+    for (size_t i = 0; i + 1 < gradient.size(); ++i) {
         if (t >= gradient[i].time && t <= gradient[i + 1].time) {
             float range = gradient[i + 1].time - gradient[i].time;
-            if (range <= 0.0001f) return gradient[i].color; // Avoid divisin by 0
+            if (range < 0.0001f) return gradient[i].color;
             float localT = (t - gradient[i].time) / range;
             return glm::mix(gradient[i].color, gradient[i + 1].color, localT);
         }
@@ -253,58 +281,86 @@ glm::vec4 EmitterInstance::EvaluateGradient(float t, std::vector<ColorKey>& grad
 }
 
 void EmitterInstance::Update(float dt) {
-    if (!active) return;
+    if (!active) {
+        if (!particles.empty()) {
+            ModuleEmitterSpawn* spawner = nullptr;
+            for (auto m : modules)
+                if (m->type == ParticleModuleType::SPAWNER) spawner = (ModuleEmitterSpawn*)m;
+
+            for (auto& p : particles) {
+                if (!p.active) continue;
+                p.lifetime -= dt;
+                if (p.lifetime <= 0.0f) { p.active = false; continue; }
+
+                float lifeRatio = 1.0f - (p.lifetime / p.maxLifetime);
+                if (spawner && !spawner->colorGradient.empty())
+                    p.color = EvaluateGradient(lifeRatio, spawner->colorGradient);
+                else
+                    p.color = glm::mix(p.colorStart, p.colorEnd, lifeRatio);
+
+                p.size = glm::mix(p.sizeStart, p.sizeEnd, lifeRatio);
+                p.rotation += p.angularVelocity * dt;
+                p.animationTime = lifeRatio * animationSpeed;
+            }
+            for (auto mod : modules) mod->Update(this, dt);
+            KillDeadParticles();
+        }
+        return;
+    }
 
     systemTime += dt;
-    if (emissionRateDistance > 0.0f && simulationSpace == SimulationSpace::WORLD) {
-        float dist = glm::distance(ownerPosition, lastPosition);
-        // Avoid calculation if we haven't moved or if it's the first frame
-        if (dist > 0.001f && dist < 100.0f) { // Upper limit to avoid teleport artifacts
-            int count = (int)(dist * emissionRateDistance);
 
-            // Limit the max particles by movement physics to avoid crash or saturing
+    if (!looping && !stopEmittingFlag && systemTime >= duration) {
+        stopEmittingFlag = true;
+    }
+
+    if (oneShot && !oneShotFired) {
+        Burst(oneShotCount);
+        oneShotFired = true;
+        stopEmittingFlag = true;
+    }
+
+    if (emissionRateDistance > 0.0f && simulationSpace == SimulationSpace::WORLD
+        && !stopEmittingFlag) {
+        float dist = glm::distance(ownerPosition, lastPosition);
+        if (dist > 0.001f && dist < 100.0f) {
+            int count = (int)(dist * emissionRateDistance);
             if (count > 200) count = 200;
 
-            // Interpolate positions to fill the gap
             glm::vec3 startPos = lastPosition;
             glm::vec3 endPos = ownerPosition;
 
-            // Temporary, modify ownerPosition to trick the Spawn function
             for (int i = 0; i < count; i++) {
                 if (particles.size() >= (size_t)maxParticles) break;
-
                 float t = (float)(i + 1) / (float)(count + 1);
                 ownerPosition = glm::mix(startPos, endPos, t);
-
                 Particle p;
                 for (auto mod : modules) mod->Spawn(this, &p);
                 particles.push_back(p);
             }
-            ownerPosition = endPos; // Restore real position
+            ownerPosition = endPos;
         }
     }
     lastPosition = ownerPosition;
 
-    float prevSystemTime = systemTime - dt; // Time before this frame
+    float prevSystemTime = systemTime - dt;
 
     for (auto& burst : bursts) {
         if (burst.cycles > 0 && burst.currentCycles >= burst.cycles) continue;
 
         float triggerTime = burst.time + (burst.repeatInterval * burst.currentCycles);
 
-        // Small window to detect the correct frame
         if (prevSystemTime <= triggerTime && systemTime > triggerTime) {
             Burst(burst.count);
             burst.currentCycles++;
         }
-        // if the trigger is 0.0 and is the first real frame
         else if (triggerTime == 0.0f && prevSystemTime <= 0.0f && systemTime > 0.0f) {
             Burst(burst.count);
             burst.currentCycles++;
         }
     }
 
-    if (emissionRate > 0.0f) {
+    if (emissionRate > 0.0f && !stopEmittingFlag) {
         timeSinceLastEmit += dt;
         float emitInterval = 1.0f / emissionRate;
         while (timeSinceLastEmit >= emitInterval) {
@@ -317,7 +373,6 @@ void EmitterInstance::Update(float dt) {
         }
     }
 
-    // Get pointer to Spawner to access the Gradient
     ModuleEmitterSpawn* spawner = nullptr;
     for (auto m : modules) if (m->type == ParticleModuleType::SPAWNER) spawner = (ModuleEmitterSpawn*)m;
 
@@ -332,25 +387,19 @@ void EmitterInstance::Update(float dt) {
 
         float lifeRatio = 1.0f - (p.lifetime / p.maxLifetime);
 
-        // Update Color (Gradient or simple interpolation)
-        if (spawner && !spawner->colorGradient.empty()) {
+        if (spawner && !spawner->colorGradient.empty())
             p.color = EvaluateGradient(lifeRatio, spawner->colorGradient);
-        }
-        else {
+        else
             p.color = glm::mix(p.colorStart, p.colorEnd, lifeRatio);
-        }
 
         p.size = glm::mix(p.sizeStart, p.sizeEnd, lifeRatio);
         p.rotation += p.angularVelocity * dt;
-
-        // Animation time
         p.animationTime = lifeRatio * animationSpeed;
     }
 
     // Update modules (Movement, Noise)
     for (auto mod : modules) mod->Update(this, dt);
 
-    // Cleanup
     KillDeadParticles();
 }
 
@@ -362,12 +411,9 @@ void EmitterInstance::KillDeadParticles() {
 
 // Explosion effect
 void EmitterInstance::Burst(int count) {
-    if (!active) return;
-
     for (int i = 0; i < count; ++i) {
         if (particles.size() < (size_t)maxParticles) {
             Particle p;
-            // Force spawn
             for (auto mod : modules) mod->Spawn(this, &p);
             particles.push_back(p);
         }
@@ -417,7 +463,6 @@ void EmitterInstance::Draw(glm::vec3 cameraPos) {
 
     for (const auto& p : particles) {
         // BILLBOARDING
-        // Coordinate system aligned with the camera
         glm::vec3 direction = glm::normalize(cameraPos - p.position);
         glm::vec3 worldUp = (glm::abs(direction.y) > 0.99f) ? glm::vec3(0, 0, 1) : glm::vec3(0, 1, 0);
         glm::vec3 baseRight = glm::normalize(glm::cross(worldUp, direction));
@@ -428,13 +473,11 @@ void EmitterInstance::Draw(glm::vec3 cameraPos) {
         float c = cos(rad);
         float s = sin(rad);
 
-        // Rotate Vectors
         glm::vec3 right = baseRight * c + baseUp * s;
         glm::vec3 up = baseRight * -s + baseUp * c;
 
         float halfSize = p.size * 0.5f;
 
-        // Vertex Positions
         glm::vec3 v1 = p.position - (right * halfSize) + (up * halfSize);
         glm::vec3 v2 = p.position + (right * halfSize) + (up * halfSize);
         glm::vec3 v3 = p.position + (right * halfSize) - (up * halfSize);
@@ -443,9 +486,8 @@ void EmitterInstance::Draw(glm::vec3 cameraPos) {
         // UV animation
         int currentFrame = 0;
         if (totalFrames > 1) {
-            if (animLoop) {
+            if (animLoop)
                 currentFrame = (int)(p.animationTime * totalFrames) % totalFrames;
-            }
             else {
                 currentFrame = (int)(p.animationTime * totalFrames);
                 if (currentFrame >= totalFrames) currentFrame = totalFrames - 1;
@@ -455,7 +497,6 @@ void EmitterInstance::Draw(glm::vec3 cameraPos) {
         int col = currentFrame % textureCols;
         int row = currentFrame / textureCols;
 
-        // Map UV coordinates based on grid position
         float uLeft = col * frameWidth;
         float uRight = uLeft + frameWidth;
         float vTop = 1.0f - (row * frameHeight);
@@ -464,9 +505,9 @@ void EmitterInstance::Draw(glm::vec3 cameraPos) {
         glColor4f(p.color.r, p.color.g, p.color.b, p.color.a);
 
         glTexCoord2f(uLeft, vTop);    glVertex3f(v1.x, v1.y, v1.z);
-        glTexCoord2f(uRight, vTop);   glVertex3f(v2.x, v2.y, v2.z);
+        glTexCoord2f(uRight, vTop);    glVertex3f(v2.x, v2.y, v2.z);
         glTexCoord2f(uRight, vBottom); glVertex3f(v3.x, v3.y, v3.z);
-        glTexCoord2f(uLeft, vBottom);  glVertex3f(v4.x, v4.y, v4.z);
+        glTexCoord2f(uLeft, vBottom); glVertex3f(v4.x, v4.y, v4.z);
     }
 
     glEnd();
