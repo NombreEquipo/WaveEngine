@@ -13,7 +13,7 @@ ResourceMesh::~ResourceMesh() {
 
 bool ResourceMesh::LoadInMemory() {
     
-    if (loadedInMemory) {
+    if (IsLoadedToMemory()) {
         return true;
     }
 
@@ -84,13 +84,11 @@ bool ResourceMesh::LoadInMemory() {
 
     glBindVertexArray(0);
 
-    loadedInMemory = true;
-
     return true;
 }
 
 void ResourceMesh::UnloadFromMemory() {
-    if (!loadedInMemory) {
+    if (!IsLoadedToMemory()) {
         return;
     }
 
@@ -113,6 +111,4 @@ void ResourceMesh::UnloadFromMemory() {
     mesh.indices.clear();
     mesh.textures.clear();
     mesh.bones.clear();
-
-    loadedInMemory = false;
 }

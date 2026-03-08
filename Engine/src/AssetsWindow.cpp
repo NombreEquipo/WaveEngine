@@ -749,7 +749,7 @@ void AssetsWindow::DrawAssetsList()
         ImGui::Spacing();
         if (ImGui::Button("Create", ImVec2(120, 0))) {
             UID newMatUID = MaterialImporter::CreateNewMaterial(currentPath, matName);
-            if (newMatUID != 0) {
+            if(newMatUID != 0) {
                 RefreshAssets();
             }
             ImGui::CloseCurrentPopup();

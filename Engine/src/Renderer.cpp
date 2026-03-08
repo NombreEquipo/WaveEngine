@@ -231,6 +231,9 @@ void Renderer::LoadMesh(Mesh& mesh)
     glEnableVertexAttribArray(4);
     glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, weights));
 
+    glEnableVertexAttribArray(5);
+    glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent));
+
     // Upload index data
     glGenBuffers(1, &mesh.EBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO);
@@ -519,7 +522,7 @@ void Renderer::BuildRenderLists(const CameraLens* camera)
             glm::vec3 aabbCenter = (globalAABB.min + globalAABB.max) * 0.5f;
             float distanceToCamera = glm::distance(aabbCenter, camera->position);
 
-            if (mesh->GetAttachedMaterial() && mesh->GetAttachedMaterial()->IsActive() && mesh->GetAttachedMaterial()->GetOpacity())
+            if (mesh->GetAttachedMaterial() && mesh->GetAttachedMaterial()->IsActive() && mesh->GetAttachedMaterial()->GetOpacity() != 1.0f)
             {
                 transparentList.emplace(distanceToCamera, renderObject);
             }
@@ -650,8 +653,8 @@ void Renderer::DrawRenderList(const std::multimap<float, RenderObject>& map, con
             Material* data = materialComp->GetMaterial();
 
             switch (data->GetType()) {
-            case MaterialType::STANDARD: currentShader = standardShader.get(); break;
-
+            case MaterialType::STANDARD: currentShader = standardShader.get(); 
+                break;
             }
         }
 

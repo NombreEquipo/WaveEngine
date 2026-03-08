@@ -40,7 +40,8 @@ Model ModelImporter::ImportFromFile(const std::string& file_path)
 
     unsigned int importFlags = aiProcess_Triangulate |
         aiProcess_JoinIdenticalVertices |
-        aiProcess_ValidateDataStructure;
+        aiProcess_ValidateDataStructure | 
+        aiProcess_CalcTangentSpace;
 
     if (meta.importSettings.generateNormals) {
         importFlags |= aiProcess_GenNormals;
