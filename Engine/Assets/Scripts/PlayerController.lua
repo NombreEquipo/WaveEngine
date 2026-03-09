@@ -29,7 +29,11 @@ public = {
     speed               = 10.0,
     rollDuration        = 0.05,
     sprintMultiplier    = 1.5,
-    stamina             = 4,
+    stamina             = 100.0,
+    speedIncrease       = 10,
+    staminaCost         = 0.5,
+    staminaRecover      = 0.1,
+    usingStamina        = false,
     tiredMultiplier     = 0.7
 }
 
@@ -50,7 +54,6 @@ local function GetMovementInput()
         moveX = gpX * INPUT_SCALE
         moveZ = gpZ * INPUT_SCALE
     end
-
     if Input.GetKey("W") then moveZ = moveZ - INPUT_SCALE end
     if Input.GetKey("S") then moveZ = moveZ + INPUT_SCALE end
     if Input.GetKey("A") then moveX = moveX - INPUT_SCALE end
@@ -124,6 +127,8 @@ States[State.WALK] = {
     end,
     
     Update = function(self, dt)
+        --Runing conditions
+        if Input.GetKey("LeftShift") and self.public.stamina > 10 then ChangeState(self, State.RUNNING) end
         local moveX, moveZ, inputLen = GetMovementInput()
         
         -- Save the last direction looking so the roll is on that direction
@@ -148,9 +153,36 @@ States[State.WALK] = {
 States[State.RUNNING] = {
     Enter = function(self)
         -- Anim running
+        local anim = self.gameObject:GetComponent("Animation")
+        if anim then anim:Play("Walking", 0.5) end
+
+        self.public.speed  = self.public.speed  + self.public.speedIncrease 
     end,
     Update = function(self, dt)
-        -- Logic running, muliply vel and stamina
+
+        if not Input.GetKey("LeftShift") then 
+            self.public.speed  = self.public.speed  - self.public.speedIncrease
+            ChangeState(self, State.Walking) 
+        end
+        local moveX, moveZ, inputLen = GetMovementInput()
+        
+        -- Save the last direction looking so the roll is on that direction
+        if inputLen > 1 then
+            Player.lastDirX = moveX / INPUT_SCALE
+            Player.lastDirZ = moveZ / INPUT_SCALE
+        end
+
+        --Stop When player run out of stamina
+        if self.public.stamina <=0 then
+            self.public.speed  = self.public.speed  - self.public.speedIncrease
+            ChangeState(self, State.Walking) 
+        end
+        --Stamina cost
+        self.public.stamina = self.public.stamina - 0.5
+
+        Engine.Log("[Player] STAMINA: " .. tostring(self.public.stamina))
+        
+        ApplyMovementAndRotation(self, dt, moveX, moveZ)
     end
 }
 
@@ -203,5 +235,6 @@ function Update(self, dt)
 
     if Player.currentState and States[Player.currentState] then
         States[Player.currentState].Update(self, dt)
+        if not self.public.usingStamina and self.public.stamina < 100 then self.public.stamina = self.public.stamina + self.public.staminaRecover end
     end
 end
