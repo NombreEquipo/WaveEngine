@@ -1,0 +1,44 @@
+{
+    "gameObjects": [
+        {
+            "active": true,
+            "children": [],
+            "components": [
+                {
+                    "active": true,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "scale": [
+                        18.239999771118164,
+                        18.239999771118164,
+                        18.239999771118164
+                    ],
+                    "type": 0
+                },
+                {
+                    "active": true,
+                    "primitiveType": "Plane",
+                    "type": 1
+                },
+                {
+                    "active": true,
+                    "hasMaterialProperties": false,
+                    "materialType": 0,
+                    "type": 3,
+                    "useCheckerboard": true
+                }
+            ],
+            "name": "Plane",
+            "uid": 14990970954832535959
+        }
+    ],
+    "version": 1
+}
