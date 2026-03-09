@@ -200,7 +200,7 @@ void SceneWindow::HandleAssetDropTarget()
                 break;
             }
 
-            case DragDropAssetType::TEXTURE:
+            case DragDropAssetType::MATERIAL:
             {
                 LOG_CONSOLE("Applying texture...");
 
@@ -208,7 +208,6 @@ void SceneWindow::HandleAssetDropTarget()
 
                 if (targetObject)
                 {
-                    // Apply texture to the specific object under the mouse
                     ComponentMaterial* material = static_cast<ComponentMaterial*>(
                         targetObject->GetComponent(ComponentType::MATERIAL)
                         );
@@ -219,6 +218,10 @@ void SceneWindow::HandleAssetDropTarget()
                             targetObject->CreateComponent(ComponentType::MATERIAL)
                             );
                     }
+
+                    if (material) 
+                        material->SetMaterial(dropData->assetUID);
+                    
                 }
                 else
                 {
@@ -248,7 +251,11 @@ void SceneWindow::HandleAssetDropTarget()
                                 obj->CreateComponent(ComponentType::MATERIAL)
                                 );
                         }
+
+                        if (material) material->SetMaterial(dropData->assetUID);
                     }
+
+
 
                     if (successCount > 0)
                     {

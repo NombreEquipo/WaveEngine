@@ -60,12 +60,12 @@ bool ShaderStandard::CreateShader()
         "uniform vec2  uTiling;\n"
         "uniform vec2  uOffset;\n"
         "uniform vec3  viewPos;\n"
-        "uniform vec3  lightDir;\n"        // <-- AÑADIDO, antes faltaba
+        "uniform vec3  lightDir;\n"
         "\n"
-        "uniform bool uUseNormalMap;\n"    // <-- AÑADIDO, para no samplear basura
-        "uniform bool uUseMetallicMap;\n"  // <-- AÑADIDO
-        "uniform bool uUseOcclusionMap;\n" // <-- AÑADIDO
-        "uniform bool uUseHeightMap;\n"    // <-- AÑADIDO
+        "uniform bool uUseNormalMap;\n"
+        "uniform bool uUseMetallicMap;\n"
+        "uniform bool uUseOcclusionMap;\n"
+        "uniform bool uUseHeightMap;\n"
         "\n"
         "vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {\n"
         "    float height = texture(uHeightMap, texCoords).r;\n"
@@ -111,12 +111,12 @@ bool ShaderStandard::CreateShader()
         "\n"
         "    // 4. LUZ DIRECCIONAL REAL (antes usaba viewDir como luz — bug)\n"
         "    vec3 lightColor = vec3(1.0);\n"
-        "    vec3 L = normalize(-lightDir);\n" // <-- negado porque lightDir apunta DESDE la luz
+        "    vec3 L = normalize(-lightDir);\n"
         "    float diffFactor = max(dot(normal, L), 0.0);\n"
         "\n"
         "    // 5. ESPECULAR con Blinn-Phong (más correcto que Phong para PBR fake)\n"
         "    float roughness = clamp(uRoughness, 0.05, 1.0);\n"
-        "    vec3 H = normalize(L + viewDir);\n" // <-- half-vector, antes usaba reflect()
+        "    vec3 H = normalize(L + viewDir);\n"
         "    float specFactor = pow(max(dot(normal, H), 0.0), (1.0 - roughness) * 128.0 + 1.0);\n"
         "\n"
         "    // Color del brillo (metal brilla con su propio albedo, dieléctrico con gris)\n"
@@ -133,16 +133,8 @@ bool ShaderStandard::CreateShader()
         "    vec3 result = ambient + (diffuse + specular) * ao;\n"
         "\n"
         "    // Gamma Correction\n"
-        "    result = pow(max(result, vec3(0.0)), vec3(1.0 / 2.2));\n" // <-- max() evita NaN en pow
+        "    result = pow(max(result, vec3(0.0)), vec3(1.0 / 2.2));\n"
         "\n"
-        // PARA DEBUGGEAR — pon UNA de estas y comenta la de result:
-        //"    FragColor = vec4(texture(uNormalMap,    uv).rgb, 1.0);\n"  // azulado si está bien
-        // "    FragColor = vec4(texture(uMetallicMap,  uv).rrr, 1.0);\n"
-        // "    FragColor = vec4(texture(uOcclusionMap, uv).rrr, 1.0);\n"
-        // "    FragColor = vec4(texture(uHeightMap,    uv).rrr, 1.0);\n"
-         //"    FragColor = vec4(uv, 0.0, 1.0);\n"
-
-        // COMENTA ESTA mientras debuggeas:
          "    FragColor = vec4(result, texColor.a * uColor.a);\n"
         "}\n";
 
