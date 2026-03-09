@@ -17,7 +17,7 @@ find_package(imgui REQUIRED)
 find_package(imguizmo CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(Tracy CONFIG REQUIRED)
-find_package(Lua REQUIRED)
+find_package(Lua REQUIRED)https://gemini.google.com/app/c0ceeae76e8b69c1?hl=es
 find_package(unofficial-omniverse-physx-sdk CONFIG REQUIRED)
 find_package(recastnavigation CONFIG REQUIRED)
 
@@ -160,6 +160,8 @@ set(UTILS_SRC
     src/Octree.cpp
     src/FileUtils.h
     src/FileUtils.cpp
+    src/Backup.h
+    src/Backup.cpp
 )
 
 set(GAMEOBJECTS_SRC 
@@ -307,6 +309,12 @@ set(NAVIGATION_SRC
     src/ComponentNavigation.h
 )
 
+set(UI_SRC
+    src/UI.h
+    src/UI.cpp
+    src/UiManager.h
+    src/UiManager.cpp
+)
 source_group("Source\\Core" FILES ${CORE_SRC})
 source_group("Source\\Events" FILES ${EVENTS_SRC})
 source_group("Source\\Rendering" FILES ${RENDERING_SRC})
@@ -322,6 +330,7 @@ source_group("Source\\Loaders\\Importers" FILES ${IMPORTERS_SRC})
 source_group("Scripting" FILES ${SCRIPTING_SRC})
 source_group("Source\\Physics" FILES ${PHYSICS_SRC})
 source_group("Source\\Navigation" FILES ${NAVIGATION_SRC})
+source_group("Source\\UI" FILES ${UI_SRC})
 
 set(SRCS ${CORE_SRC} ${RENDERING_SRC} ${VFX_SRC} ${SHADERS_SRC} ${AUDIO_SRC} ${UTILS_SRC} ${EDITOR_SRC} ${GAMEOBJECTS_SRC} ${COMPONENTS_SRC} ${LOADERS_SRC} ${IMPORTERS_SRC} ${SCRIPTING_SRC} ${PHYSICS_SRC} ${EVENTS_SRC} ${NAVIGATION_SRC})
 
@@ -516,7 +525,7 @@ endif()
 
 # =========== End NoesisGUI ===========
 # Game (standalone)
-set(GAME_SRC ${CORE_SRC} ${RENDERING_SRC} ${UTILS_SRC} ${GAMEOBJECTS_SRC} ${COMPONENTS_SRC} ${LOADERS_SRC} ${IMPORTERS_SRC} ${SCRIPTING_SRC} ${PHYSICS_SRC} ${VFX_SRC} ${AUDIO_SRC} ${EVENTS_SRC} ${NAVIGATION_SRC})
+set(GAME_SRC ${CORE_SRC} ${RENDERING_SRC} ${UTILS_SRC} ${UI_SRC} ${GAMEOBJECTS_SRC} ${COMPONENTS_SRC} ${LOADERS_SRC} ${IMPORTERS_SRC} ${SCRIPTING_SRC} ${PHYSICS_SRC} ${VFX_SRC} ${AUDIO_SRC} ${EVENTS_SRC} ${NAVIGATION_SRC})
 
 add_executable(Game ${GAME_SRC})
 
@@ -607,3 +616,8 @@ if(WIN32)
     )
 endif()
 
+add_custom_command(TARGET Engine POST_BUILD
+    COMMAND ${CMAKE_COMMAND} --build "${CMAKE_BINARY_DIR}" --target Game --config $<CONFIG>
+    COMMENT "[WaveEngine] Building Game..."
+    VERBATIM
+)

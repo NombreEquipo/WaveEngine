@@ -49,6 +49,9 @@ bool ModuleLoader::Start()
         Mesh pyramidMesh = Primitives::CreatePyramid();
         meshComp->SetMesh(pyramidMesh);
 
+        ComponentMaterial* material = static_cast<ComponentMaterial*>(pyramidObject->CreateComponent(ComponentType::MATERIAL));
+        material->CreateCheckerboardTexture();
+
         GameObject* root = Application::GetInstance().scene->GetRoot();
         root->AddChild(pyramidObject);
         Application::GetInstance().scene->RebuildOctree();
@@ -129,6 +132,9 @@ GameObject* ModuleLoader::LoadFbx(const std::string& fbxPath)
         ComponentMesh* meshComp = static_cast<ComponentMesh*>(pyramidObject->CreateComponent(ComponentType::MESH));
         Mesh pyramidMesh = Primitives::CreatePyramid();
         meshComp->SetMesh(pyramidMesh);
+
+        ComponentMaterial* material = static_cast<ComponentMaterial*>(pyramidObject->CreateComponent(ComponentType::MATERIAL));
+        material->CreateCheckerboardTexture();
 
         GameObject* root = Application::GetInstance().scene->GetRoot();
         root->AddChild(pyramidObject);
