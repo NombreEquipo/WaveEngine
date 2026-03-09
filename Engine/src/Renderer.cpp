@@ -449,7 +449,6 @@ bool Renderer::RenderScene(CameraLens* camera)
         defaultShader->Use();
     }
 
-    // --- Render ---
     glEnable(GL_STENCIL_TEST);
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
@@ -646,6 +645,18 @@ void Renderer::DrawRenderList(const std::multimap<float, RenderObject>& map, con
         RenderObject renderObject = pair->second;
         ComponentMesh* meshComp = renderObject.mesh;
         ComponentMaterial* materialComp = meshComp->GetAttachedMaterial();
+
+        if (meshComp->GetDrawNormals()) normalsList.push_back(renderObject);
+        if (meshComp->GetDrawMesh()) meshLinesList.push_back(renderObject);
+        if (meshComp->owner->IsSelected()) {
+            stencilList.push_back(renderObject);
+            glStencilFunc(GL_ALWAYS, 1, 0xFF);
+            glStencilMask(0xFF);
+        }
+        else {
+            glStencilFunc(GL_ALWAYS, 0, 0xFF);
+            glStencilMask(0x00);
+        }
 
         Shader* currentShader = defaultShader.get();
 
