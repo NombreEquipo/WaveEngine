@@ -47,16 +47,16 @@ float ComponentMaterial::GetOpacity() const {
 void ComponentMaterial::OnEditor()
 {
     float availableWidth = ImGui::GetContentRegionAvail().x;
-    const char* buttonText = "";
+    std::string buttonText = "";
     if (materialUID == 0) {
         buttonText = "Drop material here";
     }
     else {
         const Resource* res = Application::GetInstance().resources->PeekResource(materialUID);
-        buttonText = (res) ? res->GetAssetFile().c_str() : "Unknown Material";
+        buttonText = (res) ? GetFileNameNoExtension(res->GetAssetFile()) : "Unknown Material";
     }
         
-    ImGui::Button(buttonText, ImVec2(availableWidth, 20));
+    ImGui::Button(buttonText.c_str(), ImVec2(availableWidth, 20));
 
     if (ImGui::BeginDragDropTarget())
     {
