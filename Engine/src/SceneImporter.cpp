@@ -5,14 +5,14 @@
 #include <sstream>
 
 
-Scene SceneImporter::ImportFromFile(const std::string& file_path)
+bool SceneImporter::ImportFromFile(const std::string& file_path, const MetaFile& meta)
 {
     Scene scene;
 
     std::ifstream file(file_path);
     if (!file.is_open()) {
         LOG_DEBUG("[SceneImporter] ERROR: Could not open file: %s", file_path.c_str());
-        return scene;
+        return false;
     }
 
     try {
@@ -25,7 +25,7 @@ Scene SceneImporter::ImportFromFile(const std::string& file_path)
         LOG_DEBUG("[SceneImporter] JSON Parse Error: %s", e.what());
     }
 
-    return scene;
+    return SaveToCustomFormat(scene, meta.uid);
 }
 
 bool SceneImporter::SaveToCustomFormat(const Scene& scene, const UID& uid)

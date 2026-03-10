@@ -565,8 +565,6 @@ bool ModuleResources::LoadResourceMetadata(UID uid) {
 
 bool ModuleResources::ImportTexture(Resource* resource, const std::string& assetPath) {
     
-    std::string libraryPath = LibraryManager::GetLibraryPathFromUID(resource->GetUID());
-
     std::string metaPath = assetPath + ".meta";
     MetaFile meta;
 
@@ -590,20 +588,7 @@ bool ModuleResources::ImportTexture(Resource* resource, const std::string& asset
         meta.Save(metaPath);
     }
 
-    TextureData textureData = TextureImporter::ImportFromFile(assetPath, meta.importSettings);
-
-    if (!textureData.IsValid()) {
-        LOG_CONSOLE("ERROR: Failed to import texture: %s", assetPath.c_str());
-        return false;
-    }
-
-    if (!TextureImporter::SaveToCustomFormat(textureData, meta.uid)) {
-        LOG_CONSOLE("ERROR: Failed to save texture to Library");
-        return false;
-    }
-
-    resource->SetLibraryFile(libraryPath);
-    return true;
+    return TextureImporter::ImportFromFile(assetPath, meta);
 }
 
 bool ModuleResources::ImportMesh(Resource* resource, const std::string& assetPath) {
@@ -611,10 +596,8 @@ bool ModuleResources::ImportMesh(Resource* resource, const std::string& assetPat
     return false;
 }
 
-bool ModuleResources::ImportMaterial(Resource* resource, const std::string& assetPath) {
-    
-    std::string libraryPath = LibraryManager::GetLibraryPathFromUID(resource->GetUID());
-
+bool ModuleResources::ImportMaterial(Resource* resource, const std::string& assetPath) 
+{
     std::string metaPath = assetPath + ".meta";
     MetaFile meta;
 
@@ -626,15 +609,12 @@ bool ModuleResources::ImportMaterial(Resource* resource, const std::string& asse
         meta.Save(metaPath);
     }
 
-    if (MaterialImporter::ImportMaterial(assetPath, meta.uid))
-        resource->SetLibraryFile(libraryPath);
+    if (MaterialImporter::ImportMaterial(assetPath, meta))
     
     return true;
 }
 
 bool ModuleResources::ImportModel(Resource* resource, const std::string& assetPath) {
-    
-    std::string libraryPath = LibraryManager::GetLibraryPathFromUID(resource->GetUID());
 
     std::string metaPath = assetPath + ".meta";
     MetaFile meta;
@@ -647,24 +627,45 @@ bool ModuleResources::ImportModel(Resource* resource, const std::string& assetPa
         meta.Save(metaPath);
     }
 
-    Model modelData = ModelImporter::ImportFromFile(assetPath);
-
-    if (!modelData.IsValid()) {
-        LOG_CONSOLE("ERROR: Failed to import model: %s", assetPath.c_str());
-        return false;
-    }
-
-    if (!ModelImporter::SaveToCustomFormat(modelData, meta.uid)) {
-        LOG_CONSOLE("ERROR: Failed to save model to Library");
-        return false;
-    }
-
-    resource->SetLibraryFile(libraryPath);
-    return true;
+    return ModelImporter::ImportFromFile(assetPath, meta);
 }
 
 bool ModuleResources::ImportScene(Resource* resource, const std::string& assetPath) {
     
+    std::string metaPath = assetPath + ".meta";
+    MetaFile meta;
+
+    if (std::filesystem::exists(metaPath)) {
+        meta = MetaFile::Load(metaPath);
+    }
+    else {
+        meta = MetaFileManager::GetOrCreateMeta(assetPath);
+        meta.Save(metaPath);
+    }
+
+    return SceneImporter::ImportFromFile(assetPath, meta);
+}
+
+bool ModuleResources::ImportScript(Resource* resource, const std::string& assetPath) 
+{    
+    // Scripts don't need importing - they stay in Assets/
+    // Just verify the file exists
+    if (!std::filesystem::exists(assetPath)) {
+        LOG_CONSOLE("ERROR: Script file not found: %s", assetPath.c_str());
+        return false;
+    }
+
+    resource->SetAssetFile(assetPath);
+    resource->SetLibraryFile(assetPath);  // Scripts reference themselves
+
+    LOG_CONSOLE("[ModuleResources] Script registered: %s (UID: %llu)",
+        assetPath.c_str(), resource->GetUID());
+
+    return true;
+}
+
+bool ModuleResources::ImportPrefab(Resource* resource, const std::string& assetPath) {
+
     std::string libraryPath = LibraryManager::GetLibraryPathFromUID(resource->GetUID());
 
     std::string metaPath = assetPath + ".meta";
@@ -678,20 +679,7 @@ bool ModuleResources::ImportScene(Resource* resource, const std::string& assetPa
         meta.Save(metaPath);
     }
 
-    Scene sceneData = SceneImporter::ImportFromFile(assetPath);
-
-    if (!sceneData.IsValid()) {
-        LOG_CONSOLE("ERROR: Failed to import scene: %s", assetPath.c_str());
-        return false;
-    }
-
-    if (!SceneImporter::SaveToCustomFormat(sceneData, meta.uid)) {
-        LOG_CONSOLE("ERROR: Failed to save scene to Library");
-        return false;
-    }
-
-    resource->SetLibraryFile(libraryPath);
-    return true;
+    return PrefabImporter::ImportFromFile(assetPath, meta);
 }
 
 bool ModuleResources::GetResourceInfo(UID uid, std::string& outAssetPath, std::string& outLibraryPath) {
@@ -778,50 +766,3 @@ const Resource* ModuleResources::GetResource(UID uid) const {
     return it->second;
 }
 
-bool ModuleResources::ImportScript(Resource* resource, const std::string& assetPath) {
-    // Scripts don't need importing - they stay in Assets/
-    // Just verify the file exists
-    if (!std::filesystem::exists(assetPath)) {
-        LOG_CONSOLE("ERROR: Script file not found: %s", assetPath.c_str());
-        return false;
-    }
-
-    resource->SetAssetFile(assetPath);
-    resource->SetLibraryFile(assetPath);  // Scripts reference themselves
-
-    LOG_CONSOLE("[ModuleResources] Script registered: %s (UID: %llu)",
-        assetPath.c_str(), resource->GetUID());
-
-    return true;
-}
-
-bool ModuleResources::ImportPrefab(Resource* resource, const std::string& assetPath) {
-    
-    std::string libraryPath = LibraryManager::GetLibraryPathFromUID(resource->GetUID());
-
-    std::string metaPath = assetPath + ".meta";
-    MetaFile meta;
-
-    if (std::filesystem::exists(metaPath)) {
-        meta = MetaFile::Load(metaPath);
-    }
-    else {
-        meta = MetaFileManager::GetOrCreateMeta(assetPath);
-        meta.Save(metaPath);
-    }
-
-    Prefab prefabData = PrefabImporter::ImportFromFile(assetPath);
-
-    if (!prefabData.IsValid()) {
-        LOG_CONSOLE("ERROR: Failed to import scene: %s", assetPath.c_str());
-        return false;
-    }
-
-    if (!PrefabImporter::SaveToCustomFormat(prefabData, meta.uid)) {
-        LOG_CONSOLE("ERROR: Failed to save scene to Library");
-        return false;
-    }
-
-    resource->SetLibraryFile(libraryPath);
-    return true;
-}

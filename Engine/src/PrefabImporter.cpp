@@ -5,14 +5,14 @@
 #include <sstream>
 
 
-Prefab PrefabImporter::ImportFromFile(const std::string& file_path)
+bool PrefabImporter::ImportFromFile(const std::string& file_path, const MetaFile& meta)
 {
     Prefab prefab;
 
     std::ifstream file(file_path);
     if (!file.is_open()) {
         LOG_DEBUG("[SceneImporter] ERROR: Could not open file: %s", file_path.c_str());
-        return prefab;
+        return false;
     }
 
     try {
@@ -25,7 +25,7 @@ Prefab PrefabImporter::ImportFromFile(const std::string& file_path)
         LOG_DEBUG("[SceneImporter] JSON Parse Error: %s", e.what());
     }
 
-    return prefab;
+    return SaveToCustomFormat(prefab, meta.uid);
 }
 
 bool PrefabImporter::SaveToCustomFormat(const Prefab& prefab, const UID& uid)
