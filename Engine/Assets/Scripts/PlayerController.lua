@@ -11,7 +11,8 @@ local attackTimer = 0
 
 _PlayerController_triggerCameraShake = false
 _PlayerController_shakeDuration      = 0.4
-_PlayerController_shakeMagnitude     = 0.3
+_PlayerController_shakeMagnitude     = 4.0
+_PlayerController_lastAttack         = ""
 
 local INPUT_SCALE = 10
 
@@ -119,6 +120,7 @@ end
 
 States[State.IDLE] = {
     Enter = function(self)
+        _PlayerController_lastAttack = ""
         local anim = self.gameObject:GetComponent("Animation")
         if anim then anim:Play("Idle", 0.5) end
     end,
@@ -210,6 +212,7 @@ States[State.ATTACK_HEAVY] = {
 States[State.ATTACK_LIGHT] = {
     Enter = function(self)
         -- Anim attacklight
+        _PlayerController_lastAttack = "light"
         attackTimer = 0
         if attackCol then attackCol:Enable() end
     end,
@@ -255,26 +258,5 @@ end
 function OnTriggerEnter(self, other)
     if other:CompareTag("Enemy") then
         Engine.Log("[Player] Hit an enemy: " .. other.name)
-
-        _PlayerController_shakeDuration  = self.public.hitShakeDuration
-        _PlayerController_shakeMagnitude = self.public.hitShakeMagnitude
-        _PlayerController_triggerCameraShake = true
-
-        local rb = other:GetComponent("Rigidbody")
-        if rb then
-            local playerPos = self.transform.worldPosition
-            local enemyPos  = other.transform.worldPosition
-
-            local dx = enemyPos.x - playerPos.x
-            local dz = enemyPos.z - playerPos.z
-
-            local len = math.sqrt(dx*dx + dz*dz)
-            if len > 0.001 then
-                dx = dx / len
-                dz = dz / len
-            end
-
-            rb:AddForce(dx * self.public.knockbackForce, 1, dz * self.public.knockbackForce, 2)
-        end
     end
 end
