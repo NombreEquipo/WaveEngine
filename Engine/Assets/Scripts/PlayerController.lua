@@ -62,12 +62,13 @@ local function GetMovementInput()
     return moveX, moveZ, inputLen
 end
 
-local function ApplyMovementAndRotation(self, dt, moveX, moveZ)
+local function ApplyMovementAndRotation(self, dt, moveX, moveZ, speedOverride)
     local pos = self.transform.position
-    
+    local speed = speedOverride or self.public.speed
+
     -- Calculates the new pos
-    local nextX = pos.x + (moveX / INPUT_SCALE) * self.public.speed * dt
-    local nextZ = pos.z + (moveZ / INPUT_SCALE) * self.public.speed * dt
+    local nextX = pos.x + (moveX / INPUT_SCALE) * speed * dt
+    local nextZ = pos.z + (moveZ / INPUT_SCALE) * speed * dt
 
     self.transform:SetPosition(nextX, pos.y, nextZ)
 
@@ -110,7 +111,11 @@ States[State.IDLE] = {
         
         -- TRANSITION, se usa 0.1 por el drift
         if inputLen > 0.1 then
-            ChangeState(self, State.WALK)
+            if Input.GetKey("LeftShift") then
+                ChangeState(self, State.RUNNING)
+            else
+                ChangeState(self, State.WALK)
+            end
         end
         
         -- Check if can trasition to Roll, AttackLight, Charging y todo eso
@@ -138,6 +143,11 @@ States[State.WALK] = {
             return
         end
         
+        if Input.GetKey("LeftShift") then
+            ChangeState(self, State.RUNNING)
+            return
+        end
+
         -- Check if can trasition to Roll, AttackLight, Charging y todo eso
         
         -- Movement and rotation
@@ -150,7 +160,25 @@ States[State.RUNNING] = {
         -- Anim running
     end,
     Update = function(self, dt)
-        -- Logic running, muliply vel and stamina
+        local moveX, moveZ, inputLen = GetMovementInput()
+
+        if inputLen <= 0.1 then
+            ChangeState(self, State.IDLE)
+            return
+        end
+
+        if not Input.GetKey("LeftShift") then
+            ChangeState(self, State.WALK)
+            return
+        end
+
+        if inputLen > 0.1 then
+            Player.lastDirX = moveX / INPUT_SCALE
+            Player.lastDirZ = moveZ / INPUT_SCALE
+        end
+
+        local sprintSpeed = self.public.speed * self.public.sprintMultiplier
+        ApplyMovementAndRotation(self, dt, moveX, moveZ, sprintSpeed)
     end
 }
 
