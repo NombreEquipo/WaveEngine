@@ -10,7 +10,33 @@ CubemapImporter::~CubemapImporter() {}
 
 bool CubemapImporter::ImportCubemap(const std::string& path, const UID& uid)
 {
+    std::ifstream file(path);
+    if (!file.is_open()) return false;
 
+    nlohmann::json j;
+    try {
+        file >> j;
+    }
+    catch (nlohmann::json::parse_error& e) {
+        return false;
+    }
+
+    MaterialType type = (MaterialType)j.value("Type", (int)MaterialType::STANDARD);
+
+    Material* mat = nullptr;
+    switch (type) {
+    case MaterialType::STANDARD: mat = new MaterialStandard(type); break;
+    }
+
+    if (mat) {
+        mat->SetOpacity(j.value("Opacity", 1.0f));
+        mat->LoadFromJson(j);
+
+        bool succes = SaveToCustomFormat(*mat, uid);
+
+        delete mat;
+        return succes;
+    }
 
     return false;
 }

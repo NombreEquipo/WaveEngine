@@ -1,4 +1,5 @@
 #include "ResourceCubemap.h"
+#include "CubemapImporter.h"
 
 ResourceCubemap::ResourceCubemap(UID uid)
     : Resource(uid, Resource::CUBEMAP) {

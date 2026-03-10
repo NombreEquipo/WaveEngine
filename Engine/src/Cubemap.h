@@ -9,7 +9,7 @@ class Shader;
 class Cubemap
 {
 public:
-	Cubemap(const std::vector<Texture>& faceTextures) {}
+	Cubemap() {}
 	virtual ~Cubemap() = default;
 
 	virtual void Bind(Shader* shader) = 0;
@@ -22,5 +22,6 @@ public:
 
 private:
 	std::string name;
-	std::vector<Texture> faceTextures;
+	std::vector<ResourceTexture*> faceTextures;
+
 };
