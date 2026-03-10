@@ -13,6 +13,7 @@ _PlayerController_triggerCameraShake = false
 _PlayerController_shakeDuration      = 0.4
 _PlayerController_shakeMagnitude     = 4.0
 _PlayerController_lastAttack         = ""
+_impactFrameTimer                    = 0
 
 local INPUT_SCALE = 10
 
@@ -252,6 +253,14 @@ function Update(self, dt)
 
     if Player.currentState and States[Player.currentState] then
         States[Player.currentState].Update(self, dt)
+    end
+
+    if _impactFrameTimer > 0 then
+        _impactFrameTimer = _impactFrameTimer - dt
+        if _impactFrameTimer <= 0 then
+            _impactFrameTimer = 0
+            Game.SetTimeScale(1.0)
+        end
     end
 end
 

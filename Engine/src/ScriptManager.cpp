@@ -571,6 +571,21 @@ void ScriptManager::RegisterEngineFunctions() {
     lua_setfield(L, -2, "Pause");
     lua_pushcfunction(L, Lua_Game_Resume);
     lua_setfield(L, -2, "Resume");
+
+    //time scale
+    lua_pushcfunction(L, +[](lua_State* L) -> int {
+        float scale = (float)luaL_checknumber(L, 1);
+        Application::GetInstance().time->SetTimeScale(scale);
+        return 0;
+        });
+    lua_setfield(L, -2, "SetTimeScale");
+
+    lua_pushcfunction(L, +[](lua_State* L) -> int {
+        lua_pushnumber(L, Application::GetInstance().time->GetTimeScale());
+        return 1;
+        });
+    lua_setfield(L, -2, "GetTimeScale");
+
     lua_pushcfunction(L, Lua_Game_Exit);
     lua_setfield(L, -2, "Exit");
     lua_setglobal(L, "Game");

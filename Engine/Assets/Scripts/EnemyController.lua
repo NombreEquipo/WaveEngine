@@ -40,6 +40,8 @@ local function TakeDamage(self, amount, attackerPos)
     if hp <= 0 then
         isDead = true
         Engine.Log("[Enemy] DEAD")
+        Game.SetTimeScale(0.2)
+        _impactFrameTimer = 0.07
         self:Destroy()
     end
 end
