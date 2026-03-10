@@ -40,6 +40,7 @@
 #include "ShaderEditorWindow.h"
 #include "ScriptEditorWindow.h"
 #include "MaterialEditorWindow.h"
+#include "CubemapEditorWindow.h"
 #include "DeleteCommand.h"
 #include "CreateCommand.h"
 #include "CompositeCommand.h"
@@ -100,6 +101,7 @@ bool ModuleEditor::Start()
     assetsWindow = std::make_unique<AssetsWindow>();
     shaderEditorWindow = std::make_unique<ShaderEditorWindow>();
     materialEditorWindow = std::make_unique<MaterialEditorWindow>();
+    cubemapEditorWindow = std::make_unique<CubemapEditorWindow>();
     scriptEditorWindow = std::make_unique<ScriptEditorWindow>();
     commandHistory = std::make_unique<CommandHistory>();
     editorCamera = new EditorCamera();
@@ -160,6 +162,7 @@ bool ModuleEditor::Update()
     inspectorWindow->Draw();
     assetsWindow->Draw();
     materialEditorWindow->Draw();
+    cubemapEditorWindow->Draw();
     shaderEditorWindow->Draw();
     scriptEditorWindow->Draw();
 
@@ -389,6 +392,12 @@ void ModuleEditor::ShowMenuBar()
             if (ImGui::MenuItem("Material Editor", NULL, &materialEditorOpen))
             {
                 materialEditorWindow->SetOpen(materialEditorOpen);
+            }
+
+            bool cubemapEditorOpen = cubemapEditorWindow->IsOpen();
+            if (ImGui::MenuItem("Cubemap Editor", NULL, &cubemapEditorOpen))
+            {
+                cubemapEditorWindow->SetOpen(cubemapEditorOpen);
             }
             
             bool scriptEditorOpen = scriptEditorWindow->IsOpen();

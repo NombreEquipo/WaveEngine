@@ -49,7 +49,8 @@ enum class DragDropAssetType
     SCRIPT,         // Lua script
     PREFAB,
     ANIMATION,
-    MATERIAL
+    MATERIAL,
+    CUBEMAP
 };
 
 // Payload para drag & drop interno

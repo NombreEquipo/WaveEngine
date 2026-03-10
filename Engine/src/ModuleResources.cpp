@@ -423,6 +423,9 @@ Resource* ModuleResources::CreateNewResourceWithUID(const char* assetsFile, Reso
     case Resource::MATERIAL:
         resource = new ResourceMaterial(uid);
         break;
+    case Resource::CUBEMAP:
+        resource = new ResourceCubemap(uid);
+        break;
     default:
         LOG_CONSOLE("ERROR: Unsupported resource type");
         return nullptr;

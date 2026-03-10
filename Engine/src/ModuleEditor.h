@@ -20,6 +20,7 @@ struct Mesh;
 class AssetsWindow;
 class ShaderEditorWindow;
 class MaterialEditorWindow;
+class CubemapEditorWindow;
 class ScriptEditorWindow;
 class EditorCamera;
 
@@ -59,6 +60,7 @@ public:
     EditorCamera* GetEditorCamera() const { return editorCamera; }
     CommandHistory* GetCommandHistory() { return commandHistory.get(); }
     MaterialEditorWindow* GetMaterialEditor() { return materialEditorWindow.get(); }
+    CubemapEditorWindow* GetCubemapEditor() { return cubemapEditorWindow.get(); }
     ScriptEditorWindow* GetScriptEditor() { return scriptEditorWindow.get(); }
 
     ImVec2 sceneViewportPos = ImVec2(0, 0);
@@ -115,6 +117,7 @@ private:
     std::unique_ptr<AssetsWindow> assetsWindow;
     std::unique_ptr<ShaderEditorWindow> shaderEditorWindow;
     std::unique_ptr<MaterialEditorWindow> materialEditorWindow;
+    std::unique_ptr<CubemapEditorWindow> cubemapEditorWindow;
     std::unique_ptr<ScriptEditorWindow> scriptEditorWindow;
 
     // About window state

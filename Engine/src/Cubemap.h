@@ -28,6 +28,13 @@ public:
 	void SetFrontFaceTex(UID uid);
 	void SetBackFaceTex(UID uid);
 
+	UID GetRightFaceUID() const { return rightFaceUID; }
+	UID GetLeftFaceUID()  const { return leftFaceUID; }
+	UID GetTopFaceUID()   const { return topFaceUID; }
+	UID GetBottomFaceUID() const { return bottomFaceUID; }
+	UID GetFrontFaceUID() const { return frontFaceUID; }
+	UID GetBackFaceUID()  const { return backFaceUID; }
+
 private:
 	std::string name;
 

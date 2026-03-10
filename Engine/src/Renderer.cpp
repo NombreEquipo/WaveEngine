@@ -565,6 +565,11 @@ void Renderer::BuildRenderLists(const CameraLens* camera)
     }
 }
 
+void Renderer::DrawSkybox(const CameraLens* camera)
+{
+
+}
+
 void Renderer::DrawPostProcessing(const CameraLens* camera)
 {
     if (!camera->IsUsingPostProcessing()) return;

@@ -232,6 +232,8 @@ set(EDITOR_SRC
     src/ScriptEditorWindow.cpp
     src/MaterialEditorWindow.h
     src/MaterialEditorWindow.cpp
+    src/CubemapEditorWindow.h
+    src/CubemapEditorWindow.cpp
     src/TextEditor.h
     src/TextEditor.cpp
     src/Editorcommand.h
@@ -264,6 +266,8 @@ set(IMPORTERS_SRC
     src/ModelImporter.h 
     src/MaterialImporter.cpp 
     src/MaterialImporter.h 
+    src/CubemapImporter.cpp 
+    src/CubemapImporter.h 
     src/ModuleResources.cpp 
     src/ModuleResources.h 
     src/ResourceMesh.cpp 
@@ -281,6 +285,10 @@ set(IMPORTERS_SRC
     src/ResourceMaterial.cpp
     src/ResourceMaterial.h
     src/Material.h
+    src/ResourceCubemap.cpp
+    src/ResourceCubemap.h
+    src/Cubemap.h
+    src/Cubemap.cpp
     src/MaterialStandard.cpp
     src/MaterialStandard.h
 ) 

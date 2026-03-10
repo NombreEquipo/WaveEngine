@@ -144,6 +144,7 @@ private:
     void DrawMeshLinesList(const CameraLens* camera);
     void DrawCanvasList(const CameraLens* camera);
     void DrawPostProcessing(const CameraLens* camera);
+    void DrawSkybox(const CameraLens* camera);
     void BuildRenderLists(const CameraLens* camera);
 
     // Shaders

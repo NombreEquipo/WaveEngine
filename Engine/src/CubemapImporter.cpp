@@ -108,7 +108,7 @@ Cubemap* CubemapImporter::CloneCubemap(const Cubemap* source) {
     nlohmann::json tmp;
     source->SaveToJson(tmp);
 
-    Cubemap* copy = nullptr;
+    Cubemap* copy = new Cubemap();
 
     if (copy) {
         copy->LoadFromJson(tmp);
