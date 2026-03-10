@@ -173,6 +173,7 @@ private:
     bool ImportModel(Resource* resource, const std::string& assetPath);
     bool ImportPrefab(Resource* resource, const std::string& assetPath);
     bool ImportMaterial(Resource* resource, const std::string& assetPath);
+    bool ImportCubemap(Resource* resource, const std::string& assetPath);
 
 
 private:

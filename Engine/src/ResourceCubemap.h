@@ -2,6 +2,8 @@
 
 #include "ModuleResources.h"
 
+class Cubemap;
+
 class ResourceCubemap : public Resource {
 public:
 	ResourceCubemap(UID uid);

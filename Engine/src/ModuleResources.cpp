@@ -9,11 +9,13 @@
 #include "ModelImporter.h"
 #include "MeshImporter.h"
 #include "MaterialImporter.h"
+#include "CubemapImporter.h"
 #include "Log.h"
 #include "ResourceScript.h"
 #include "ResourcePrefab.h"
 #include "ResourceAnimation.h"
 #include "ResourceMaterial.h"
+#include "ResourceCubemap.h"
 #include <filesystem>
 #include <random>
 
@@ -250,6 +252,18 @@ void ModuleResources::LoadResourcesFromMetaFiles() {
                 registered++;
             }
             break;
+        case AssetType::CUBEMAP:
+
+            resourceType = Resource::CUBEMAP;
+            resource = new ResourceCubemap(meta.uid);
+
+            if (resource) {
+                resource->SetAssetFile(assetPath);
+                resource->SetLibraryFile(assetPath);
+                resources[meta.uid] = resource;
+                registered++;
+            }
+            break;
         default:
             continue;
         }
@@ -347,6 +361,10 @@ UID ModuleResources::ImportFile(const char* newFileInAssets, bool forceReimport)
     }
     case Resource::MATERIAL: {
         importSuccess = ImportMaterial(resource, newFileInAssets);
+        break;
+    }
+    case Resource::CUBEMAP: {
+        importSuccess = ImportCubemap(resource, newFileInAssets);
         break;
     }
     default:
@@ -534,6 +552,9 @@ Resource::Type ModuleResources::GetResourceTypeFromExtension(const std::string& 
     if (ext == ".mat") { 
         return Resource::MATERIAL;
     }
+    if (ext == ".cubemap") {
+        return Resource::CUBEMAP;
+    }
 
     return Resource::UNKNOWN;
 }
@@ -625,6 +646,27 @@ bool ModuleResources::ImportMaterial(Resource* resource, const std::string& asse
     if (MaterialImporter::ImportMaterial(assetPath, meta.uid))
         resource->SetLibraryFile(libraryPath);
     
+    return true;
+}
+
+bool ModuleResources::ImportCubemap(Resource* resource, const std::string& assetPath) {
+
+    std::string libraryPath = LibraryManager::GetLibraryPathFromUID(resource->GetUID());
+
+    std::string metaPath = assetPath + ".meta";
+    MetaFile meta;
+
+    if (std::filesystem::exists(metaPath)) {
+        meta = MetaFile::Load(metaPath);
+    }
+    else {
+        meta = MetaFileManager::GetOrCreateMeta(assetPath);
+        meta.Save(metaPath);
+    }
+
+    if (CubemapImporter::ImportCubemap(assetPath, meta.uid))
+        resource->SetLibraryFile(libraryPath);
+
     return true;
 }
 

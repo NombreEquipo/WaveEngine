@@ -25,7 +25,8 @@ AssetType MetaFile::GetAssetType(const std::string& extension) {
     if (ext == ".glsl") return AssetType::SHADER_GLSL;
     if (ext == ".lua") return AssetType::SCRIPT_LUA;
     if (ext == ".prefab") return AssetType::PREFAB; 
-    if (ext == ".mat") return AssetType::MATERIAL; 
+    if (ext == ".mat") return AssetType::MATERIAL;
+    if (ext == ".cubemap") return AssetType::CUBEMAP;
 
     return AssetType::UNKNOWN;
 }

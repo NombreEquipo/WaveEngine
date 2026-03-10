@@ -1,4 +1,7 @@
 #include "CubemapImporter.h"
+#include "Cubemap.h"
+#include "LibraryManager.h"
+#include "Application.h"
 #include "ModuleResources.h"
 #include "Globals.h"
 
@@ -21,41 +24,81 @@ bool CubemapImporter::ImportCubemap(const std::string& path, const UID& uid)
         return false;
     }
 
-    MaterialType type = (MaterialType)j.value("Type", (int)MaterialType::STANDARD);
+    Cubemap* cubemap = new Cubemap();
 
-    Material* mat = nullptr;
-    switch (type) {
-    case MaterialType::STANDARD: mat = new MaterialStandard(type); break;
-    }
+    if (cubemap) {
+        cubemap->LoadFromJson(j);
 
-    if (mat) {
-        mat->SetOpacity(j.value("Opacity", 1.0f));
-        mat->LoadFromJson(j);
+        bool succes = SaveToCustomFormat(*cubemap, uid);
 
-        bool succes = SaveToCustomFormat(*mat, uid);
+        delete cubemap;
 
-        delete mat;
         return succes;
     }
 
     return false;
 }
 
-bool CubemapImporter::SaveToCustomFormat(const Cubemap& mat, const UID& uid)
+bool CubemapImporter::SaveToCustomFormat(const Cubemap& cubemap, const UID& uid)
 {
+    std::string fullPath = LibraryManager::GetLibraryPathFromUID(uid);
+    std::ofstream file(fullPath, std::ios::binary);
+
+    if (!file.is_open()) return false;
+
+    cubemap.SaveCustomData(file);
+
+    file.close();
 
     return true;
 }
 
 Cubemap* CubemapImporter::LoadFromCustomFormat(const UID& uid)
 {
+    std::string fullPath = LibraryManager::GetLibraryPathFromUID(uid);
+    std::ifstream file(fullPath, std::ios::binary);
 
-    return ;
+    if (!file.is_open()) return nullptr;
+
+    Cubemap* cubemap = new Cubemap();
+
+    if (cubemap) {
+        cubemap->LoadCustomData(file);
+    }
+
+    file.close();
+
+    return cubemap;
 }
 
-UID CubemapImporter::CreateNewCubemap(const std::string& directory, const std::string& name) {
+UID CubemapImporter::CreateNewCubemap(const std::string& directory, const std::string& name)
+{
+    Cubemap* cubemap = new Cubemap();
+    UID newUID = GenerateUID();
+    std::string fileName = "";
+    if (name.size() != 0)
+        fileName = directory + "/" + name + ".cubemap";
+    else
+        fileName = directory + "/NewSkybox_" + std::to_string(newUID) + ".cubemap";
 
-    
+    if (std::filesystem::exists(fileName))
+        LOG_CONSOLE("Unable to create cubemap, %s already exists", fileName.c_str());
+
+    nlohmann::json j;
+    cubemap->SaveToJson(j);
+
+    bool success = false;
+    std::ofstream file(fileName);
+    if (file.is_open()) {
+        file << j.dump(4);
+        file.close();
+        success = true;
+    }
+
+    Application::GetInstance().resources.get()->ImportFile(fileName.c_str(), true);
+
+    delete cubemap;
+
     return success ? newUID : 0;
 }
 
@@ -63,14 +106,9 @@ Cubemap* CubemapImporter::CloneCubemap(const Cubemap* source) {
     if (!source) return nullptr;
 
     nlohmann::json tmp;
-    tmp["Type"] = (int)source->GetType();
-    tmp["Opacity"] = source->GetOpacity();
     source->SaveToJson(tmp);
 
-    Material* copy = nullptr;
-    switch (source->GetType()) {
-    case MaterialType::STANDARD: copy = new MaterialStandard(MaterialType::STANDARD); break;
-    }
+    Cubemap* copy = nullptr;
 
     if (copy) {
         copy->LoadFromJson(tmp);
