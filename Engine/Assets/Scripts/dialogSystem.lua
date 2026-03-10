@@ -21,29 +21,15 @@ local state = {
 local function loadDialogs()
     if allDialogs then return true end
 
-    local rutas = {
-        "Assets\\Scripts\\dialogs.lua",
-        "Assets/Scripts/dialogs.lua",
-        "../Assets/Scripts/dialogs.lua",
-        "dialogs.lua",
-        "Scripts/dialogs.lua",
-    }
-
-    local ok, result = false, nil
-    for _, ruta in ipairs(rutas) do
-        ok, result = pcall(dofile, ruta)
-        if ok and result then
-            Engine.Log("[DialogSystem] Found at: " .. ruta)
-            allDialogs = result
-            Engine.Log("[DialogSystem] Dialogs loaded")
-            return true
-        else
-            Engine.Log("[DialogSystem] Not found: " .. ruta)
-        end
+    local ok, result = pcall(dofile, "../Assets/Scripts/dialogs.lua")
+    if not ok or not result then
+        Engine.Log("[DialogSystem] ERROR loading dialogs.lua: " .. tostring(result))
+        return false
     end
 
-    Engine.Log("[DialogSystem] ERROR: dialogs.lua not found in any path")
-    return false
+    allDialogs = result
+    Engine.Log("[DialogSystem] Dialogs loaded")
+    return true
 end
 
 local function updateUI()
