@@ -2,6 +2,7 @@
 
 #include "Component.h"
 #include "ModuleResources.h"
+#include "GameObject.h"
 #include <string>
 #include <vector>
 #include <variant>
@@ -14,18 +15,20 @@ extern "C" {
 }
 
 class Transform;
+class GameObject;
 
 enum class ScriptVarType {
     NUMBER,
     STRING,
     BOOLEAN,
-    VEC3
+    VEC3,
+    GAMEOBJECT
 };
 
 struct ScriptVariable {
     std::string name;
     ScriptVarType type;
-    std::variant<float, std::string, bool, glm::vec3> value;
+    std::variant<float, std::string, bool, glm::vec3, GameObject*> value;
 
     ScriptVariable(const std::string& n, float v)
         : name(n), type(ScriptVarType::NUMBER), value(v) {
@@ -41,6 +44,10 @@ struct ScriptVariable {
 
     ScriptVariable(const std::string& n, const glm::vec3& v)
         : name(n), type(ScriptVarType::VEC3), value(v) {
+    }
+
+    ScriptVariable(const std::string& n, GameObject* v)
+        : name(n), type(ScriptVarType::GAMEOBJECT), value(v) {
     }
 };
 
@@ -104,6 +111,8 @@ private:
 
     std::vector<ScriptVariable> publicVariables;
     std::vector<std::string> variableOrder;  
+
+    std::variant<float, std::string, bool, glm::vec3, GameObject*> value;
 
     bool pendingDestroy = false;
 };
