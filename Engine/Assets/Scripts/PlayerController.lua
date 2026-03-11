@@ -41,6 +41,14 @@ local function UpdatePotionUI(potions)
     end
 end
 
+-- MASKS
+local Mask = {
+    NONE   = "None",
+    APOLLO = "Apollo",
+    HERMES = "Hermes",
+    ARES   = "Ares"
+}
+
 -- STATES
 local State = {
     IDLE         = "Idle",
@@ -49,11 +57,13 @@ local State = {
     ROLL         = "Roll",
     CHARGING     = "Charging",
     ATTACK_LIGHT = "AttackLight",
-    ATTACK_HEAVY = "AttackHeavy"
+    ATTACK_HEAVY = "AttackHeavy",
+    DEAD         = "Dead"
 }
 
 local Player = {
     currentState    = nil,
+    currentMask     = nil,
     lastDirX        = 0,
     lastDirZ        = 1,
 
@@ -82,9 +92,9 @@ public = {
     hpRecover           = 0.2,  
     attackDuration      = 0.5,
     attackCooldown      = 0.5,
-    knockbackForce      = 0.2,
+    knockbackForce      = 14.0,
     hitShakeDuration    = 0.3,
-    hitShakeMagnitude   = 0.4
+    hitShakeMagnitude   = 6.0
 }
 
 local function normalizeInput(x, z)
@@ -156,6 +166,23 @@ local function ChangeState(self, newState)
         States[newState].Enter(self)
     end
 end
+
+local function EquipMask(self, newMask)
+    if Player.currentMask == newMask then return end
+
+    if newMask == Mask.NONE then
+        Engine.Log("[Player] Unequipping mask")
+    else
+        Engine.Log("[Player] EQUIPPING MASK: " .. tostring(newMask))
+    end
+    
+    Player.currentMask = newMask
+end
+
+States[State.DEAD] = {
+    Enter  = function(self) end,
+    Update = function(self, dt) end
+}
 
 States[State.IDLE] = {
     Enter = function(self)
@@ -312,6 +339,7 @@ function Start(self)
     if attackCol then attackCol:Disable() end 
 
     ChangeState(self, State.IDLE)
+    EquipMask(self, Mask.NONE)
     UpdatePotionUI(Player.potionCount)
 end
 
@@ -381,5 +409,17 @@ end
 function OnTriggerEnter(self, other)
     if other:CompareTag("Enemy") then
         Engine.Log("[Player] Hit an enemy: " .. other.name)
+    end
+end
+
+function OnCollisionEnter(self, other)
+    if other:CompareTag("Water") then
+        if Player.currentMask ~= Mask.HERMES and Player.currentState ~= States.DEAD then
+            self.public.health = 0
+            Engine.Log("[Player] Player is drowning")
+            ChangeState(self, State.DEAD)
+        else
+            Engine.Log("[Player] Player not drowning")
+        end
     end
 end
