@@ -9,11 +9,14 @@
 #include "ModelImporter.h"
 #include "MeshImporter.h"
 #include "MaterialImporter.h"
+#include "XAMLImporter.h"
 #include "Log.h"
 #include "ResourceScript.h"
 #include "ResourcePrefab.h"
 #include "ResourceAnimation.h"
 #include "ResourceMaterial.h"
+#include "ResourceXAML.h"
+
 #include <filesystem>
 #include <random>
 
@@ -250,8 +253,20 @@ void ModuleResources::LoadResourcesFromMetaFiles() {
                 registered++;
             }
             break;
-        default:
+        case AssetType::XAML:
+        resource = new ResourceXAML(meta.uid);
+         if (resource)
+            {
+                resource->SetAssetFile(assetPath);
+                resource->SetLibraryFile(LibraryManager::GetLibraryPathFromUID(meta.uid));
+                resources[meta.uid] = resource;
+                registered++;
+            }
+            break;
+
+            default:
             continue;
+        
         }
     }
 
@@ -349,6 +364,10 @@ UID ModuleResources::ImportFile(const char* newFileInAssets, bool forceReimport)
         importSuccess = ImportMaterial(resource, newFileInAssets);
         break;
     }
+    case Resource::XAML: {
+        importSuccess = ImportXAML(resource, newFileInAssets);
+        break;
+    }
     default:
         LOG_CONSOLE("ERROR: Import not implemented for this type");
         break;
@@ -405,6 +424,9 @@ Resource* ModuleResources::CreateNewResourceWithUID(const char* assetsFile, Reso
     case Resource::MATERIAL:
         resource = new ResourceMaterial(uid);
         break;
+    case Resource:: XAML:
+        resource = new ResourceXAML(uid);
+        break;
     default:
         LOG_CONSOLE("ERROR: Unsupported resource type");
         return nullptr;
@@ -423,6 +445,8 @@ Resource* ModuleResources::CreateNewResourceWithUID(const char* assetsFile, Reso
         else if (type == Resource::MESH) {
             resource->SetLibraryFile(LibraryManager::GetLibraryPathFromUID(uid));
         }
+        else if (type == Resource::XAML)
+            resource->SetLibraryFile(LibraryManager::GetLibraryPathFromUID(uid));
 
         resources[uid] = resource;
     }
@@ -533,6 +557,9 @@ Resource::Type ModuleResources::GetResourceTypeFromExtension(const std::string& 
     }
     if (ext == ".mat") { 
         return Resource::MATERIAL;
+    }
+    if (ext == ".xaml") {
+        return Resource::XAML;
     }
 
     return Resource::UNKNOWN;
@@ -682,6 +709,10 @@ bool ModuleResources::GetResourceInfo(UID uid, std::string& outAssetPath, std::s
         case AssetType::MODEL_FBX:
             outLibraryPath = LibraryManager::GetLibraryPathFromUID(uid);
             break;
+        case AssetType::XAML:
+            outLibraryPath = LibraryManager::GetLibraryPathFromUID(uid);
+            break;
+            
         default:
             outLibraryPath = "";
             break;
@@ -790,5 +821,38 @@ bool ModuleResources::ImportPrefab(Resource* resource, const std::string& assetP
     LOG_CONSOLE("[ModuleResources] Prefab registered: %s (UID: %llu)",
         assetPath.c_str(), resource->GetUID());
 
+    return true;
+}
+
+bool ModuleResources::ImportXAML(Resource* resource, const std::string& assetPath)
+{
+    std::string libraryPath = LibraryManager::GetLibraryPathFromUID(resource->GetUID());
+
+    std::string metaPath = assetPath + ".meta";
+    MetaFile meta;
+
+    if (std::filesystem::exists(metaPath))
+        meta = MetaFile::Load(metaPath);
+    else
+    {
+        meta = MetaFileManager::GetOrCreateMeta(assetPath);
+        meta.Save(metaPath);
+    }
+
+    XAMLData xamlData = XAMLImporter::ImportFromFile(assetPath);
+
+    if (!xamlData.IsValid())
+    {
+        LOG_CONSOLE("ERROR: Failed to import XAML: %s", assetPath.c_str());
+        return false;
+    }
+
+    if (!XAMLImporter::SaveToCustomFormat(xamlData, meta.uid))
+    {
+        LOG_CONSOLE("ERROR: Failed to save XAML binary to Library");
+        return false;
+    }
+
+    resource->SetLibraryFile(libraryPath);
     return true;
 }
