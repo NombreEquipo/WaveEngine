@@ -622,6 +622,15 @@ static int Lua_Rigidbody_MovePosition(lua_State* L) {
     return 0;
 }
 
+static int Lua_Rigidbody_SetRotation(lua_State* L) {
+    Rigidbody* rb = *static_cast<Rigidbody**>(luaL_checkudata(L, 1, "Rigidbody"));
+    float x = static_cast<float>(luaL_checknumber(L, 2));
+    float y = static_cast<float>(luaL_checknumber(L, 3));
+    float z = static_cast<float>(luaL_checknumber(L, 4));
+    if (rb) rb->SetRotation(glm::vec3(x, y, z));
+    return 0;
+}
+
 // Animation
 
 static int Lua_Animation_Play(lua_State* L)
@@ -1437,6 +1446,8 @@ void ScriptManager::RegisterComponentAPI() {
     lua_setfield(L, -2, "AddForce");
     lua_pushcfunction(L, Lua_Rigidbody_MovePosition);
     lua_setfield(L, -2, "MovePosition");
+    lua_pushcfunction(L, Lua_Rigidbody_SetRotation);
+    lua_setfield(L, -2, "SetRotation");
     lua_pop(L, 1);
 
     // Animation metatable separada

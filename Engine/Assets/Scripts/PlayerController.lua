@@ -7,6 +7,7 @@ local atan2 = math.atan
 local pi    = math.pi
 
 local INPUT_SCALE = 10
+local ROTATION_SPEED = 360
 
 local STAMINA_BAR_MAX_HEIGHT = 68.0 
 local HEALTH_BAR_MAX_HEIGHT  = 68.0 
@@ -117,12 +118,15 @@ local function ApplyMovementAndRotation(self, dt, moveX, moveZ, speedOverride)
     end
 
     if abs(faceDirX) > 0.01 or abs(faceDirZ) > 0.01 then
-        local angleDeg = atan2(faceDirX, faceDirZ) * (180.0 / pi)
-        local diff = math.abs(angleDeg - Player.lastAngle)
-        if diff > 0.5 then
-            Player.lastAngle = angleDeg
-            self.transform:SetRotation(0, angleDeg, 0)
+        local targetAngle = atan2(faceDirX, faceDirZ) * (180.0 / pi)
+        local delta = ((targetAngle - Player.lastAngle + 180) % 360) - 180
+        local maxStep = ROTATION_SPEED * dt
+        if math.abs(delta) <= maxStep then
+            Player.lastAngle = targetAngle
+        else
+            Player.lastAngle = Player.lastAngle + (delta > 0 and maxStep or -maxStep)
         end
+        Player.rb:SetRotation(0, Player.lastAngle, 0)
     end
 
     if Player.rb then
