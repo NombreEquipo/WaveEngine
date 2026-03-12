@@ -205,10 +205,12 @@ static const std::unordered_map<std::string, SDL_Scancode> keyMap = {
     {"D", SDL_SCANCODE_D}, {"Q", SDL_SCANCODE_Q}, {"E", SDL_SCANCODE_E},
     {"Space", SDL_SCANCODE_SPACE}, {"Escape", SDL_SCANCODE_ESCAPE},
     {"LeftShift", SDL_SCANCODE_LSHIFT}, {"RightShift", SDL_SCANCODE_RSHIFT},
-    {"5", SDL_SCANCODE_5}, {"6", SDL_SCANCODE_6}, {"7", SDL_SCANCODE_7}, 
-    {"8", SDL_SCANCODE_8}, {"9", SDL_SCANCODE_9}, {"0", SDL_SCANCODE_0}, 
-    {"1", SDL_SCANCODE_1},{"2", SDL_SCANCODE_2}, {"3", SDL_SCANCODE_3}, 
-    {"4", SDL_SCANCODE_4},{"P", SDL_SCANCODE_P},
+    {"LeftCtrl", SDL_SCANCODE_LCTRL}, {"RightCtrl", SDL_SCANCODE_RCTRL},
+    {"G", SDL_SCANCODE_G},
+    {"1", SDL_SCANCODE_1}, {"2", SDL_SCANCODE_2}, {"3", SDL_SCANCODE_3},
+    {"4", SDL_SCANCODE_4}, {"5", SDL_SCANCODE_5}, {"6", SDL_SCANCODE_6},
+    {"7", SDL_SCANCODE_7}, {"8", SDL_SCANCODE_8}, {"9", SDL_SCANCODE_9},
+    {"0", SDL_SCANCODE_0}, {"P", SDL_SCANCODE_P},
 };
 
 static int Lua_Input_GetKey(lua_State* L) {
@@ -638,6 +640,59 @@ void ScriptManager::RegisterEngineFunctions() {
 
     LOG_CONSOLE("[ScriptManager] Engine functions registered: Engine, Input, Time, Camera, UI, Game");
 }
+
+// -------------------------- GAMEOBJECT API -------------------------------------
+
+// Rigidbody
+
+static int Lua_Rigidbody_SetLinearVelocity(lua_State* L) {
+    Rigidbody* rb = *static_cast<Rigidbody**>(luaL_checkudata(L, 1, "Rigidbody"));
+    float x = static_cast<float>(luaL_checknumber(L, 2));
+    float y = static_cast<float>(luaL_checknumber(L, 3));
+    float z = static_cast<float>(luaL_checknumber(L, 4));
+    if (rb) rb->SetLinearVelocity(glm::vec3(x, y, z));
+    return 0;
+}
+
+static int Lua_Rigidbody_GetLinearVelocity(lua_State* L) {
+    Rigidbody* rb = *static_cast<Rigidbody**>(luaL_checkudata(L, 1, "Rigidbody"));
+    glm::vec3 vel(0.0f);
+    if (rb) vel = rb->GetLinearVelocity();
+    lua_newtable(L);
+    lua_pushnumber(L, vel.x); lua_setfield(L, -2, "x");
+    lua_pushnumber(L, vel.y); lua_setfield(L, -2, "y");
+    lua_pushnumber(L, vel.z); lua_setfield(L, -2, "z");
+    return 1;
+}
+
+static int Lua_Rigidbody_AddForce(lua_State* L) {
+    Rigidbody* rb = *static_cast<Rigidbody**>(luaL_checkudata(L, 1, "Rigidbody"));
+    float x = static_cast<float>(luaL_checknumber(L, 2));
+    float y = static_cast<float>(luaL_checknumber(L, 3));
+    float z = static_cast<float>(luaL_checknumber(L, 4));
+    if (rb) rb->AddForce(glm::vec3(x, y, z), Rigidbody::FORCE);
+    return 0;
+}
+
+static int Lua_Rigidbody_MovePosition(lua_State* L) {
+    Rigidbody* rb = *static_cast<Rigidbody**>(luaL_checkudata(L, 1, "Rigidbody"));
+    float x = static_cast<float>(luaL_checknumber(L, 2));
+    float y = static_cast<float>(luaL_checknumber(L, 3));
+    float z = static_cast<float>(luaL_checknumber(L, 4));
+    if (rb) rb->MovePosition(glm::vec3(x, y, z));
+    return 0;
+}
+
+static int Lua_Rigidbody_SetRotation(lua_State* L) {
+    Rigidbody* rb = *static_cast<Rigidbody**>(luaL_checkudata(L, 1, "Rigidbody"));
+    float x = static_cast<float>(luaL_checknumber(L, 2));
+    float y = static_cast<float>(luaL_checknumber(L, 3));
+    float z = static_cast<float>(luaL_checknumber(L, 4));
+    if (rb) rb->SetRotation(glm::vec3(x, y, z));
+    return 0;
+}
+
+// Animation
 
 // GAMEOBJECT API
 static int Lua_Animation_Play(lua_State* L)
@@ -1175,7 +1230,7 @@ static int Lua_GameObject_GetComponent(lua_State* L) {
         if (strcmp(componentType, "Capsule Collider") == 0)  ctype = ComponentType::CAPSULE_COLLIDER;
 
         Component* comp = obj->GetComponent(ctype);
-        if (!comp) 
+        if (!comp)
         {
             lua_pushnil(L);
             return 1;
@@ -1202,19 +1257,13 @@ static int Lua_GameObject_GetComponent(lua_State* L) {
             return 1;
         }
 
-        lua_newtable(L);
+        Rigidbody** udata = static_cast<Rigidbody**>(
+            lua_newuserdata(L, sizeof(Rigidbody*))
+        );
+        *udata = rb;
 
-        lua_pushlightuserdata(L, rb);
-        lua_pushcclosure(L, Lua_Rigidbody_AddForce, 1);
-        lua_setfield(L, -2, "AddForce");
-
-        lua_pushlightuserdata(L, rb);
-        lua_pushcclosure(L, Lua_Rigidbody_AddTorque, 1);
-        lua_setfield(L, -2, "AddTorque");
-
-        lua_pushlightuserdata(L, rb);
-        lua_pushcclosure(L, Lua_Rigidbody_GetLinearVelocity, 1);
-        lua_setfield(L, -2, "GetLinearVelocity");
+        luaL_getmetatable(L, "Rigidbody");
+        lua_setmetatable(L, -2);
 
         return 1;
     }
@@ -1577,6 +1626,22 @@ void ScriptManager::RegisterComponentAPI() {
     luaL_newmetatable(L, "Transform");
     lua_pushcfunction(L, Lua_Transform_Index);
     lua_setfield(L, -2, "__index");
+    lua_pop(L, 1);
+
+    // Rigidbody metatable
+    luaL_newmetatable(L, "Rigidbody");
+    lua_pushvalue(L, -1);
+    lua_setfield(L, -2, "__index");
+    lua_pushcfunction(L, Lua_Rigidbody_SetLinearVelocity);
+    lua_setfield(L, -2, "SetLinearVelocity");
+    lua_pushcfunction(L, Lua_Rigidbody_GetLinearVelocity);
+    lua_setfield(L, -2, "GetLinearVelocity");
+    lua_pushcfunction(L, Lua_Rigidbody_AddForce);
+    lua_setfield(L, -2, "AddForce");
+    lua_pushcfunction(L, Lua_Rigidbody_MovePosition);
+    lua_setfield(L, -2, "MovePosition");
+    lua_pushcfunction(L, Lua_Rigidbody_SetRotation);
+    lua_setfield(L, -2, "SetRotation");
     lua_pop(L, 1);
 
     // Animation metatable separada

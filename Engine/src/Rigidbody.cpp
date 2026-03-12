@@ -531,6 +531,21 @@ void Rigidbody::MoveRotation(const glm::quat& rotation) {
     hasKinematicTarget = true;
 }
 
+void Rigidbody::SetRotation(const glm::vec3& eulerDegrees) {
+    auto* dyn = GetDynamic();
+    if (!dyn) return;
+
+    glm::quat q = glm::quat(glm::radians(eulerDegrees));
+    physx::PxTransform pose = dyn->getGlobalPose();
+    pose.q = physx::PxQuat(q.x, q.y, q.z, q.w);
+
+    physx::PxVec3 linVel = dyn->getLinearVelocity();
+    physx::PxVec3 angVel = dyn->getAngularVelocity();
+    dyn->setGlobalPose(pose);
+    dyn->setLinearVelocity(linVel);
+    dyn->setAngularVelocity(angVel);
+}
+
 void Rigidbody::SetLinearVelocity(const glm::vec3& velocity) {
     
     if (auto* dyn = GetDynamic()) dyn->setLinearVelocity(physx::PxVec3(velocity.x, velocity.y, velocity.z));
@@ -649,7 +664,6 @@ void Rigidbody::SyncToTransform() {
         physx::PxRigidDynamic* dyn = actor->is<physx::PxRigidDynamic>();
         if (dyn) {
             dyn->wakeUp();
-
             dyn->setLinearVelocity(physx::PxVec3(0.0f));
             dyn->setAngularVelocity(physx::PxVec3(0.0f));
         }
