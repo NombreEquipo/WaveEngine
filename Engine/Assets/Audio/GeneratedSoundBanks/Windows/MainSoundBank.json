@@ -10,50 +10,26 @@
     "Type": "User",
     "GUID": "{7C55CBAC-5186-4208-888F-0BCE02308A98}",
     "Language": "SFX",
-    "Hash": "{25C30FE0-A68F-D554-F91F-9AE493A50858}",
+    "Hash": "{0BA9F1D0-9589-1CBA-C5D0-6A2AEE8FD464}",
     "ObjectPath": "\\SoundBanks\\Default Work Unit\\MainSoundBank",
     "ShortName": "MainSoundBank",
     "Path": "MainSoundBank.bnk",
     "Media": [
      {
-      "Id": "60684799",
+      "Id": "117517246",
       "Language": "SFX",
       "Streaming": "false",
       "Location": "Memory",
-      "ShortName": "animalCrossingTalking.wav",
-      "CachePath": "DF/{DF60B5D6-E183-80D8-F9F9-17969D1694ED}.wem"
+      "ShortName": "In The Blood Hades.wav",
+      "CachePath": "77/{77DC3B2C-C429-11E2-762E-359D20698C41}.wem"
      },
      {
-      "Id": "63924214",
+      "Id": "146545938",
       "Language": "SFX",
       "Streaming": "false",
       "Location": "Memory",
-      "ShortName": "Lookin' Fresh (Hotlantis)_stereo.wav",
-      "CachePath": "EE/{EEBA906F-9817-9DC0-E2C0-B8D58079B757}.wem"
-     },
-     {
-      "Id": "335686779",
-      "Language": "SFX",
-      "Streaming": "false",
-      "Location": "Memory",
-      "ShortName": "tenna talking.wav",
-      "CachePath": "3A/{3A4D06D9-395A-5903-26CE-370498E6703B}.wem"
-     },
-     {
-      "Id": "352851221",
-      "Language": "SFX",
-      "Streaming": "false",
-      "Location": "Memory",
-      "ShortName": "coffeeShop.wav",
-      "CachePath": "2B/{2B154332-6CDB-A031-4D10-CA2E596ED15D}.wem"
-     },
-     {
-      "Id": "516869498",
-      "Language": "SFX",
-      "Streaming": "false",
-      "Location": "Memory",
-      "ShortName": "Charlies Here - Pizza Parlor _ Club Penguin OST.wav",
-      "CachePath": "12/{12D22832-71FA-5C42-6CAD-FFA7A59033CD}.wem"
+      "ShortName": "Dark Sanctuary_DELTARUNE Chapter 3+4.wav",
+      "CachePath": "28/{287B7E35-8F52-6A09-710A-B184A8DD8B73}.wem"
      },
      {
       "Id": "647640996",
@@ -61,7 +37,15 @@
       "Streaming": "false",
       "Location": "Memory",
       "ShortName": "Fire_Sound_Placeholder.wav",
-      "CachePath": "20/{20DABBE4-F077-B298-C8B6-0B4896B582A5}.wem"
+      "CachePath": "92/{922EE9CB-FA52-7412-0CE8-4E88583F4725}.wem"
+     },
+     {
+      "Id": "861383735",
+      "Language": "SFX",
+      "Streaming": "false",
+      "Location": "Memory",
+      "ShortName": "The Underworld_EPIC The Musical.wav",
+      "CachePath": "DF/{DFE0C5F5-20FD-2365-01E7-7A5942CCD726}.wem"
      },
      {
       "Id": "994023216",
@@ -69,15 +53,7 @@
       "Streaming": "false",
       "Location": "Memory",
       "ShortName": "mansionAmbience.wav",
-      "CachePath": "EA/{EABADB62-DAC5-87D8-AD5F-5D59E3617E1C}.wem"
-     },
-     {
-      "Id": "1051818920",
-      "Language": "SFX",
-      "Streaming": "false",
-      "Location": "Memory",
-      "ShortName": "Lookin' Fresh (Shrimp Kicks)_stereo.wav",
-      "CachePath": "D9/{D9640CFF-5305-D424-6B0B-03D6AC8E899D}.wem"
+      "CachePath": "68/{6897335D-343C-DA09-0C5A-B425F621D239}.wem"
      }
     ],
     "Plugins": {
@@ -150,9 +126,9 @@
     },
     "Events": [
      {
-      "Id": "647372087",
-      "Name": "MUS_ClubPenguin",
-      "ObjectPath": "\\Events\\Default Work Unit\\MUS_ClubPenguin",
+      "Id": "638756417",
+      "Name": "MUS_BGM",
+      "ObjectPath": "\\Events\\Default Work Unit\\MUS_BGM",
       "GUID": "{6921382D-4CAF-4D5A-B5F9-AF66E9C46744}",
       "DurationType": "Infinite",
       "SwitchContainers": [
@@ -160,60 +136,12 @@
         "SwitchValue": {
          "GroupType": "State",
          "GroupId": "3086301423",
-         "Id": "1814469713",
-         "GUID": "{B4515133-463C-4D09-8EF9-F32B7B62A759}"
-        },
-        "MediaRefs": [
-         {
-          "Id": "516869498"
-         }
-        ]
-       },
-       {
-        "SwitchValue": {
-         "GroupType": "State",
-         "GroupId": "3086301423",
-         "Id": "931153941",
-         "GUID": "{234D10A0-6799-4EF8-8F4E-A9C817848F9C}"
-        },
-        "MediaRefs": [
-         {
-          "Id": "352851221"
-         }
-        ]
-       },
-       {
-        "SwitchValue": {
-         "GroupType": "State",
-         "GroupId": "3086301423",
          "Id": "0",
-         "GUID": "{212BF06F-B611-45DB-82D2-933EE818AAFE}"
+         "GUID": "{944A03FA-98D6-4C56-80F7-CCC73D2C2AB5}"
         },
         "MediaRefs": [
          {
-          "Id": "352851221"
-         }
-        ]
-       }
-      ]
-     },
-     {
-      "Id": "453068243",
-      "Name": "MUS_LookinFresh",
-      "ObjectPath": "\\Events\\Default Work Unit\\MUS_LookinFresh",
-      "GUID": "{07EE1789-027B-4146-8C7E-47FC4E87AA00}",
-      "DurationType": "Infinite",
-      "SwitchContainers": [
-       {
-        "SwitchValue": {
-         "GroupType": "State",
-         "GroupId": "3086301423",
-         "Id": "931153941",
-         "GUID": "{234D10A0-6799-4EF8-8F4E-A9C817848F9C}"
-        },
-        "MediaRefs": [
-         {
-          "Id": "63924214"
+          "Id": "117517246"
          }
         ]
        },
@@ -221,12 +149,12 @@
         "SwitchValue": {
          "GroupType": "State",
          "GroupId": "3086301423",
-         "Id": "1814469713",
-         "GUID": "{B4515133-463C-4D09-8EF9-F32B7B62A759}"
+         "Id": "2678230382",
+         "GUID": "{495B01E3-93BA-4138-9316-9B6959D77A51}"
         },
         "MediaRefs": [
          {
-          "Id": "1051818920"
+          "Id": "146545938"
          }
         ]
        },
@@ -234,27 +162,27 @@
         "SwitchValue": {
          "GroupType": "State",
          "GroupId": "3086301423",
-         "Id": "0",
-         "GUID": "{212BF06F-B611-45DB-82D2-933EE818AAFE}"
+         "Id": "2678230381",
+         "GUID": "{91CE0840-BDD8-4746-8ABF-A04924C51C9C}"
         },
         "MediaRefs": [
          {
-          "Id": "63924214"
+          "Id": "861383735"
          }
         ]
-       }
-      ]
-     },
-     {
-      "Id": "2015472893",
-      "Name": "SFX_ACTalking",
-      "ObjectPath": "\\Events\\Default Work Unit\\SFX_ACTalking",
-      "GUID": "{2408F51F-9869-4000-BE1D-F416FC96603E}",
-      "MaxAttenuation": "20",
-      "DurationType": "Infinite",
-      "MediaRefs": [
+       },
        {
-        "Id": "60684799"
+        "SwitchValue": {
+         "GroupType": "State",
+         "GroupId": "3086301423",
+         "Id": "3604647259",
+         "GUID": "{6B52073D-149A-4EA8-A359-1E2C5B4056DB}"
+        },
+        "MediaRefs": [
+         {
+          "Id": "117517246"
+         }
+        ]
        }
       ]
      },
@@ -268,19 +196,6 @@
       "MediaRefs": [
        {
         "Id": "994023216"
-       }
-      ]
-     },
-     {
-      "Id": "5886630",
-      "Name": "SFX_TennaTalkingSFX",
-      "ObjectPath": "\\Events\\Default Work Unit\\SFX_TennaTalkingSFX",
-      "GUID": "{B940BB59-F169-47D8-A29E-CD694FB17130}",
-      "MaxAttenuation": "20",
-      "DurationType": "Infinite",
-      "MediaRefs": [
-       {
-        "Id": "335686779"
        }
       ]
      },
@@ -461,31 +376,37 @@
       "Id": "3086301423",
       "Name": "BGM_State",
       "ObjectPath": "\\States\\Default Work Unit\\BGM_State",
-      "GUID": "{212BF06F-B611-45DB-82D2-933EE818AAFE}",
+      "GUID": "{944A03FA-98D6-4C56-80F7-CCC73D2C2AB5}",
       "States": [
        {
         "Id": "748895195",
         "Name": "None",
         "ObjectPath": "\\States\\Default Work Unit\\BGM_State\\None",
-        "GUID": "{59F33362-CF7E-4453-975B-0B83B84E7D38}"
+        "GUID": "{FF3A9A9C-03B3-4931-9DCD-C964AAFDB20D}"
        },
        {
-        "Id": "931153941",
-        "Name": "CoffeeShop",
-        "ObjectPath": "\\States\\Default Work Unit\\BGM_State\\CoffeeShop",
-        "GUID": "{234D10A0-6799-4EF8-8F4E-A9C817848F9C}"
+        "Id": "2678230381",
+        "Name": "Level2",
+        "ObjectPath": "\\States\\Default Work Unit\\BGM_State\\Level2",
+        "GUID": "{91CE0840-BDD8-4746-8ABF-A04924C51C9C}"
        },
        {
-        "Id": "1814469713",
-        "Name": "PizzaParlor",
-        "ObjectPath": "\\States\\Default Work Unit\\BGM_State\\PizzaParlor",
-        "GUID": "{B4515133-463C-4D09-8EF9-F32B7B62A759}"
+        "Id": "2678230382",
+        "Name": "Level1",
+        "ObjectPath": "\\States\\Default Work Unit\\BGM_State\\Level1",
+        "GUID": "{495B01E3-93BA-4138-9316-9B6959D77A51}"
+       },
+       {
+        "Id": "3604647259",
+        "Name": "MainMenu",
+        "ObjectPath": "\\States\\Default Work Unit\\BGM_State\\MainMenu",
+        "GUID": "{6B52073D-149A-4EA8-A359-1E2C5B4056DB}"
        }
       ]
      }
     ]
    }
   ],
-  "FileHash": "{3AD4B64E-2844-C8A8-EAD9-7F8670526589}"
+  "FileHash": "{78915E27-BB66-E5EF-58F9-DF9F9F695140}"
  }
 }

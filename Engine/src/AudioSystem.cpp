@@ -47,6 +47,8 @@ bool AudioSystem::InitEngine() {
 
     if (enableDebugLogs) LOG_DEBUG("# Initializing Audio Engine...");
 
+    LibraryManager::Initialize(); // otherwise the soundbank paths can't be retrieved
+
     //Wwise submodules must be initialized in the following order:
     if (!InitMemoryManager()) {
         LOG_CONSOLE("Failed to initialize Wwise's Memory Manager");
@@ -295,6 +297,19 @@ void AudioSystem::PauseEvent(AkUniqueID event, AkGameObjectID goID) {
 void AudioSystem::ResumeEvent(AkUniqueID event, AkGameObjectID goID) {
     AK::SoundEngine::ExecuteActionOnEvent(event, AK::SoundEngine::AkActionOnEventType::AkActionOnEventType_Resume, gameObjectIDs[goID]);
     if (enableDebugLogs) LOG_DEBUG("Resuming event from %d audiogameobject", goID);
+}
+
+AudioComponent* AudioSystem::GetAudioCompByID(AkGameObjectID goID) {
+    bool found = false;
+    for (AudioComponent* comp : audioComponents) {
+        if (goID == comp->goID) {
+            found = true;
+            return comp;
+        }
+    }
+    if (!found) {
+        LOG_DEBUG("Could not find the corresponding GameObject from the given ID");
+    }
 }
 
 void AudioSystem::SetState(AkStateGroupID stateGroup, AkStateID state)
@@ -683,10 +698,11 @@ void AudioSystem::DiscoverEvents() {
     // Clear existing names to avoid duplicates
     eventNames.clear();
     std::string path = LibraryManager::GetAssetsRoot() + "\\Audio\\GeneratedSoundBanks\\Windows\\MainSoundBank.json";
-
+    
+        
     std::ifstream file(path);
     if (!file.is_open()) {
-        LOG_CONSOLE("Audio Error: Could not open MainSoundBank.json at %s", path.c_str());
+        LOG_CONSOLE("Audio Error: Could not open MainSoundBank.json at %s", path.c_str()); 
         return;
     }
 

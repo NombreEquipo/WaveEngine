@@ -13,11 +13,8 @@ namespace AK
 {
     namespace EVENTS
     {
-        static const AkUniqueID MUS_CLUBPENGUIN = 647372087U;
-        static const AkUniqueID MUS_LOOKINFRESH = 453068243U;
-        static const AkUniqueID SFX_ACTALKING = 2015472893U;
+        static const AkUniqueID MUS_BGM = 638756417U;
         static const AkUniqueID SFX_AMBIENCE = 3583497273U;
-        static const AkUniqueID SFX_TENNATALKINGSFX = 5886630U;
         static const AkUniqueID SFX_TORCHFIRE = 3020549885U;
     } // namespace EVENTS
 
@@ -29,9 +26,10 @@ namespace AK
 
             namespace STATE
             {
-                static const AkUniqueID COFFEESHOP = 931153941U;
+                static const AkUniqueID LEVEL1 = 2678230382U;
+                static const AkUniqueID LEVEL2 = 2678230381U;
+                static const AkUniqueID MAINMENU = 3604647259U;
                 static const AkUniqueID NONE = 748895195U;
-                static const AkUniqueID PIZZAPARLOR = 1814469713U;
             } // namespace STATE
         } // namespace BGM_STATE
 

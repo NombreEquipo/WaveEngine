@@ -1,8 +1,5 @@
 Event	ID	Name			Wwise Object Path	Notes
-	5886630	SFX_TennaTalkingSFX			\Default Work Unit\SFX_TennaTalkingSFX	
-	453068243	MUS_LookinFresh			\Default Work Unit\MUS_LookinFresh	
-	647372087	MUS_ClubPenguin			\Default Work Unit\MUS_ClubPenguin	
-	2015472893	SFX_ACTalking			\Default Work Unit\SFX_ACTalking	
+	638756417	MUS_BGM			\Default Work Unit\MUS_BGM	
 	3020549885	SFX_TorchFire			\Default Work Unit\SFX_TorchFire	
 	3583497273	SFX_Ambience			\Default Work Unit\SFX_Ambience	
 
@@ -11,8 +8,9 @@ State Group	ID	Name			Wwise Object Path	Notes
 
 State	ID	Name	State Group			Notes
 	748895195	None	BGM_State			
-	931153941	CoffeeShop	BGM_State			
-	1814469713	PizzaParlor	BGM_State			
+	2678230381	Level2	BGM_State			
+	2678230382	Level1	BGM_State			
+	3604647259	MainMenu	BGM_State			
 
 Game Parameter	ID	Name			Wwise Object Path	Notes
 	1006694123	Music_Volume			\Default Work Unit\Music_Volume	
@@ -47,12 +45,9 @@ Effect plug-ins	ID	Name	Type				Notes
 	3442768367	Hall_Large_Dark	Wwise RoomVerb			
 
 In Memory Audio	ID	Name	Audio source file		Wwise Object Path	Notes	Data Size
-	60684799	animalCrossingTalking	.cache\DF\{DF60B5D6-E183-80D8-F9F9-17969D1694ED}.wem		\Containers\Default Work Unit\Objects\animalCrossingTalking		1764096
-	63924214	Lookin' Fresh (Hotlantis)_stereo	.cache\EE\{EEBA906F-9817-9DC0-E2C0-B8D58079B757}.wem		\Containers\Default Work Unit\LookinFresh_Switch\Lookin' Fresh (Hotlantis)_stereo\Lookin' Fresh (Hotlantis)_stereo		15978592
-	335686779	tennaTalking	.cache\3A\{3A4D06D9-395A-5903-26CE-370498E6703B}.wem		\Containers\Default Work Unit\Objects\tennaTalking		2703456
-	352851221	coffeeShop	.cache\2B\{2B154332-6CDB-A031-4D10-CA2E596ED15D}.wem		\Containers\Default Work Unit\CPMusic_Switch\coffeeShop\coffeeShop		558934
-	516869498	Charlies Here - Pizza Parlor _ Club Penguin OST	.cache\12\{12D22832-71FA-5C42-6CAD-FFA7A59033CD}.wem		\Containers\Default Work Unit\CPMusic_Switch\pizzaParlor\Charlies Here - Pizza Parlor _ Club Penguin OST		29114464
-	647640996	torchFire	.cache\20\{20DABBE4-F077-B298-C8B6-0B4896B582A5}.wem		\Containers\Default Work Unit\Objects\torchFire		6258284
-	994023216	mansionAmbience	.cache\EA\{EABADB62-DAC5-87D8-AD5F-5D59E3617E1C}.wem		\Containers\Default Work Unit\Objects\mansionAmbience		9346668
-	1051818920	Lookin' Fresh (Shrimp Kicks)_stereo	.cache\D9\{D9640CFF-5305-D424-6B0B-03D6AC8E899D}.wem		\Containers\Default Work Unit\LookinFresh_Switch\Lookin' Fresh (Shrimp Kicks)_stereo\Lookin' Fresh (Shrimp Kicks)_stereo		16162912
+	117517246	In The Blood Hades	.cache\77\{77DC3B2C-C429-11E2-762E-359D20698C41}.wem		\Containers\Default Work Unit\BGM_Switch\MainMenu\In The Blood Hades		1355624
+	146545938	Dark Sanctuary_Deltarune Ch 3-4	.cache\28\{287B7E35-8F52-6A09-710A-B184A8DD8B73}.wem		\Containers\Default Work Unit\BGM_Switch\Level1\Dark Sanctuary_Deltarune Ch 3-4		5460560
+	647640996	torchFire	.cache\92\{922EE9CB-FA52-7412-0CE8-4E88583F4725}.wem		\Containers\Default Work Unit\Objects\torchFire		1760264
+	861383735	The Underworld_EPIC The Musical	.cache\DF\{DFE0C5F5-20FD-2365-01E7-7A5942CCD726}.wem		\Containers\Default Work Unit\BGM_Switch\Level2\The Underworld_EPIC The Musical		1431512
+	994023216	mansionAmbience	.cache\68\{6897335D-343C-DA09-0C5A-B425F621D239}.wem		\Containers\Default Work Unit\Objects\mansionAmbience		2415248
 

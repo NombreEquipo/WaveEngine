@@ -52,13 +52,10 @@ public:
 
     void SetSFXVolume(float volume);
 
-    //for drawing reverbZones on editor
-    void DrawReverbZones();
-
     //for switching bg music
-    void SwitchBGM();
-    float musicTimer = 0.0f;
-    bool music1 = true;
+    //void SwitchBGM();
+    //float musicTimer = 0.0f;
+    //bool music1 = true;
 
     std::unique_ptr<AudioSystem> audioSystem;
 };

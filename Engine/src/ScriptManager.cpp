@@ -6,6 +6,7 @@
 #include "Transform.h"
 #include "GameObject.h"
 #include "Component.h"
+#include "AudioListener.h"
 #include "ModuleScene.h"
 #include "ComponentMesh.h"
 #include "ComponentMaterial.h"
@@ -491,10 +492,16 @@ static int Lua_Audio_SetMusicState(lua_State* L) {
     /*stateName = std::toupper(stateName.c_str());*/
     Application::GetInstance().audio.get()->audioSystem->SetState(stateGroupName, stateName);
     AK::SoundEngine::RenderAudio();
-    return 1;
+    return 0;
 }
 
+static int Lua_Audio_PlayAudioEvent(lua_State* L) {
+    lua_getfield(L, 1, "ptr");  // get "ptr" from the table (slot 1)
+    AudioSource* source = *static_cast<AudioSource**>(lua_touserdata(L, -1));
 
+    Application::GetInstance().audio.get()->audioSystem->PlayEvent( (const wchar_t*)(source->eventName).c_str(), source->goID);
+    return 0;
+}
 // UI
 // UI.WasClicked("ButtonName") → bool
 static int Lua_UI_WasClicked(lua_State* L) {
@@ -548,8 +555,9 @@ static int Lua_Game_Exit(lua_State* L) {
     Application::GetInstance().RequestExit();
     return 0;
 }
+
 static int Lua_Game_Pause(lua_State* L) {
-    Application::GetInstance().Pause();
+    Application::GetInstance().PauseGameOnly();
     return 0;
 }
 
@@ -620,7 +628,11 @@ void ScriptManager::RegisterEngineFunctions() {
     lua_newtable(L);
     lua_pushcfunction(L, Lua_Audio_SetMusicState);
     lua_setfield(L, -2, "SetMusicState");
+    lua_pushcfunction(L, Lua_Audio_PlayAudioEvent);
+    lua_setfield(L, -2, "PlayAudioEvent");
     lua_setglobal(L, "Audio");
+
+
 
     
     //UI
@@ -1115,7 +1127,7 @@ static int Lua_GameObject_GetComponent(lua_State* L) {
 
     if (strcmp(componentType, "Material") == 0) {
         Component* comp = obj->GetComponent(ComponentType::MATERIAL);
-        ComponentMaterial* mat = static_cast<ComponentMaterial*>(comp);
+        ComponentMaterial* mat = static_cast<ComponentMaterial*>(comp); 
         if (!mat) {
             lua_pushnil(L);
             return 1;
@@ -1239,6 +1251,39 @@ static int Lua_GameObject_GetComponent(lua_State* L) {
         lua_pushcclosure(L, Lua_Rigidbody_GetLinearVelocity, 1);
         lua_setfield(L, -2, "GetLinearVelocity");
 
+        return 1;
+    }
+
+    if (strcmp(componentType, "Audio Source") == 0) {
+        Component* comp = obj->GetComponent(ComponentType::AUDIOSOURCE);
+        AudioSource* source = static_cast<AudioSource*>(comp);
+        if (!source) {
+            lua_pushnil(L);
+            return 1;
+        }
+
+        lua_newtable(L);
+
+        AudioSource** ud = (AudioSource**)lua_newuserdata(L, sizeof(AudioSource*));
+        *ud = source;
+        lua_setfield(L, -2, "ptr");  // store userdata in table as "ptr"
+
+        lua_pushcfunction(L, Lua_Audio_PlayAudioEvent);  // no upvalue, just a plain function
+        lua_setfield(L, -2, "PlayAudioEvent");
+
+        return 1;
+    }
+
+    if (strcmp(componentType, "Audio Listener") == 0) {
+        Component* comp = obj->GetComponent(ComponentType::LISTENER);
+        AudioListener* listener = static_cast<AudioListener*>(comp);
+        if (!listener) {
+            lua_pushnil(L);
+            return 1;
+        }
+        // Store it as a pointer-to-pointer (full userdata)
+        AudioListener** list = (AudioListener**)lua_newuserdata(L, sizeof(AudioListener*));
+        *list = listener;
         return 1;
     }
 

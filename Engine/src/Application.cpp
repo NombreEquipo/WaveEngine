@@ -141,14 +141,7 @@ bool Application::Start()
         }
 
         std::string scenePath = (projectRoot / "Scene" / startupScene).string();
-        if (scene->in(scenePath))
-        {
-            LOG_CONSOLE("[Game] Loaded scene: %s", scenePath.c_str());
-        }
-        else
-        {
-            LOG_CONSOLE("[Game] WARNING: Could not load scene: %s", scenePath.c_str());
-        }
+       
 
         std::function<void(GameObject*)> callStartOnAll = [&](GameObject* obj) {
             if (!obj || !obj->IsActive()) return;
@@ -326,6 +319,14 @@ void Application::Pause()
     time->Pause();
 
     AK::SoundEngine::Suspend();
+}
+
+void Application::PauseGameOnly()
+{
+    playState = PlayState::PAUSED;
+
+    time->Pause();
+    AK::SoundEngine::RenderAudio();
 }
 
 void Application::Stop()
