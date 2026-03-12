@@ -25,7 +25,7 @@
                 },
                 {
                     "active": true,
-                    "aspectRatio": 0.6491862535476685,
+                    "aspectRatio": 0.8616636395454407,
                     "farPlane": 1000.0,
                     "fov": 60.0,
                     "nearPlane": 0.30000001192092896,
@@ -41,14 +41,9 @@
                     "active": true,
                     "publicVariables": [
                         {
-                            "name": "followSpeed",
+                            "name": "shakeFrequency",
                             "type": 0,
-                            "value": 5.0
-                        },
-                        {
-                            "name": "zoomMax",
-                            "type": 0,
-                            "value": 3.0
+                            "value": 25.0
                         },
                         {
                             "name": "shakeMagnitude",
@@ -61,9 +56,14 @@
                             "value": 0.30000001192092896
                         },
                         {
-                            "name": "shakeFrequency",
+                            "name": "zoomMax",
                             "type": 0,
-                            "value": 25.0
+                            "value": 3.0
+                        },
+                        {
+                            "name": "shakeDuration",
+                            "type": 0,
+                            "value": 0.4000000059604645
                         },
                         {
                             "name": "zoomSpeed",
@@ -76,9 +76,9 @@
                             "value": "Player"
                         },
                         {
-                            "name": "shakeDuration",
+                            "name": "followSpeed",
                             "type": 0,
-                            "value": 0.4000000059604645
+                            "value": 5.0
                         }
                     ],
                     "scriptUID": 3302217500676688058,
@@ -17009,7 +17009,7 @@
                                 }
                             ],
                             "name": "Plane__8_",
-                            "tag": "",
+                            "tag": "Water",
                             "uid": 2288984453051350055
                         },
                         {
@@ -32553,14 +32553,19 @@
                     "active": true,
                     "publicVariables": [
                         {
-                            "name": "sprintMultiplier",
+                            "name": "hpRecover",
                             "type": 0,
-                            "value": 1.5
+                            "value": 0.20000000298023224
                         },
                         {
-                            "name": "usingStamina",
-                            "type": 2,
-                            "value": false
+                            "name": "health",
+                            "type": 0,
+                            "value": 100.0
+                        },
+                        {
+                            "name": "speed",
+                            "type": 0,
+                            "value": 10.0
                         },
                         {
                             "name": "attackCooldown",
@@ -32573,14 +32578,9 @@
                             "value": 0.10000000149011612
                         },
                         {
-                            "name": "hitShakeDuration",
+                            "name": "attackDuration",
                             "type": 0,
-                            "value": 0.30000001192092896
-                        },
-                        {
-                            "name": "health",
-                            "type": 0,
-                            "value": 100.0
+                            "value": 0.5
                         },
                         {
                             "name": "staminaRecover",
@@ -32588,24 +32588,34 @@
                             "value": 0.10000000149011612
                         },
                         {
-                            "name": "speed",
-                            "type": 0,
-                            "value": 10.0
-                        },
-                        {
                             "name": "speedIncrease",
                             "type": 0,
                             "value": 10.0
                         },
                         {
+                            "name": "usingStamina",
+                            "type": 2,
+                            "value": false
+                        },
+                        {
                             "name": "hitShakeMagnitude",
                             "type": 0,
-                            "value": 4.0
+                            "value": 6.0
+                        },
+                        {
+                            "name": "hpLossCost",
+                            "type": 0,
+                            "value": 0.20000000298023224
+                        },
+                        {
+                            "name": "hitShakeDuration",
+                            "type": 0,
+                            "value": 0.30000001192092896
                         },
                         {
                             "name": "knockbackForce",
                             "type": 0,
-                            "value": 12.0
+                            "value": 14.0
                         },
                         {
                             "name": "tiredMultiplier",
@@ -32615,27 +32625,17 @@
                         {
                             "name": "stamina",
                             "type": 0,
-                            "value": 4.0
+                            "value": 100.0
                         },
                         {
-                            "name": "hpLossCost",
+                            "name": "sprintMultiplier",
                             "type": 0,
-                            "value": 0.20000000298023224
-                        },
-                        {
-                            "name": "attackDuration",
-                            "type": 0,
-                            "value": 0.5
+                            "value": 1.5
                         },
                         {
                             "name": "rollDuration",
                             "type": 0,
                             "value": 0.05000000074505806
-                        },
-                        {
-                            "name": "hpRecover",
-                            "type": 0,
-                            "value": 0.20000000298023224
                         }
                     ],
                     "scriptUID": 8002383071243665151,
@@ -33384,14 +33384,14 @@
                     "active": true,
                     "publicVariables": [
                         {
-                            "name": "knockbackForce",
-                            "type": 0,
-                            "value": 12.0
-                        },
-                        {
                             "name": "maxHp",
                             "type": 0,
                             "value": 30.0
+                        },
+                        {
+                            "name": "knockbackForce",
+                            "type": 0,
+                            "value": 12.0
                         }
                     ],
                     "scriptUID": 5308739127978175246,
