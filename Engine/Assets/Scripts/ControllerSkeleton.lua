@@ -8,11 +8,16 @@ local abs    = math.abs
 
 local hp
 local isDead = false
+local alreadyHit = false
+
+local DAMAGE_LIGHT = 10
+local DAMAGE_HEAVY = 25
 
 -- States
 local State = {
     IDLE   = "Idle",
     WANDER = "Wander",
+    DEAD   = "Dead"
 }
 
 local Enemy = {
@@ -34,7 +39,8 @@ public = {
     moveSpeed       = 10.0,
     rotationSpeed   = 15.0,
     dirSmoothing    = 12.0,
-    stopSmoothing   = 10.0
+    stopSmoothing   = 10.0,
+    knockbackForce  = 5.0
 }
 
 -- HELPERS
@@ -51,9 +57,44 @@ local function shortAngleDiff(a, b)
     return d
 end
 
+-- DAMAGE SYSTEM
+local function TakeDamage(self, amount, attackerPos)
+    if isDead then return end
+
+    hp = hp - amount
+    Engine.Log("[Enemy] HP left: " .. hp .. "/" .. self.public.maxHp)
+
+    _PlayerController_triggerCameraShake = true
+
+    local rb = self.gameObject:GetComponent("Rigidbody")
+    if rb and attackerPos then
+        local enemyPos = self.transform.worldPosition
+
+        local dx = enemyPos.x - attackerPos.x
+        local dz = enemyPos.z - attackerPos.z
+
+        local len = math.sqrt(dx*dx + dz*dz)
+        if len > 0.001 then
+            dx = dx / len
+            dz = dz / len
+        end
+
+        rb:AddForce(dx * self.public.knockbackForce, 0, dz * self.public.knockbackForce, 2)
+    end
+
+    if hp <= 0 then
+        isDead = true
+        Enemy.currentState = State.DEAD
+        Engine.Log("[Enemy] DEAD")
+        Game.SetTimeScale(0.2)
+        _impactFrameTimer = 0.07
+        self:Destroy()
+    end
+end
+
 -- MOVEMENT FUNCTION
 
-local function movement(self, dt) 
+local function Movement(self, dt) 
     if not Enemy.nav or not Enemy.rb then return false, 0 end
 
     local vel = Enemy.rb:GetLinearVelocity()
@@ -119,7 +160,7 @@ end
 function Update(self, dt)
     if isDead then return end
 
-    local isMoving, speed = movement(self, dt)
+    local isMoving, speed = Movement(self, dt)
 
     -- State Machine
     if Enemy.currentState == State.IDLE then
@@ -146,5 +187,30 @@ function Update(self, dt)
             Enemy.currentState = State.IDLE
             Engine.Log("[SKELETON] He llegado. Descansando.")
         end
+    end
+end
+
+function OnTriggerEnter(self, other)
+    if isDead then return end
+    if alreadyHit then return end
+
+    if other:CompareTag("Player") then
+        local attack = _PlayerController_lastAttack
+        if attack == "" then return end
+
+        alreadyHit = true
+        local attackerPos = other.transform.worldPosition
+
+        if attack == "light" then
+            TakeDamage(self, DAMAGE_LIGHT, attackerPos)
+        elseif attack == "heavy" then
+            TakeDamage(self, DAMAGE_HEAVY, attackerPos)
+        end
+    end
+end
+
+function OnTriggerExit(self, other)
+    if other:CompareTag("Player") then
+        alreadyHit = false
     end
 end
