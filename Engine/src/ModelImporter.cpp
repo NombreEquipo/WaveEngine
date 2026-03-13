@@ -516,17 +516,15 @@ void ModelImporter::FillMaterialTextures(const aiScene* scene, aiMaterial* aiMat
                     std::string embeddedName = fileName.empty() ? (slotName + "_Embedded." + extension) : fileName;
                     finalPath = modelDirectory + "/" + embeddedName;
 
-                    if (!DoesFileExist(finalPath)) {
-                        std::ofstream out(finalPath, std::ios::binary);
-                        if (embeddedTex->mHeight == 0) {
-                            out.write((char*)embeddedTex->pcData, embeddedTex->mWidth);
-                        }
-                        else {
-                            out.write((char*)embeddedTex->pcData, embeddedTex->mWidth * embeddedTex->mHeight * 4);
-                        }
-                        out.close();
-                        LOG_DEBUG("Extracted embedded texture to: %s", finalPath.c_str());
+                    std::ofstream out(finalPath, std::ios::binary);
+                    if (embeddedTex->mHeight == 0) {
+                        out.write((char*)embeddedTex->pcData, embeddedTex->mWidth);
                     }
+                    else {
+                        out.write((char*)embeddedTex->pcData, embeddedTex->mWidth * embeddedTex->mHeight * 4);
+                    }
+                    out.close();
+                    LOG_DEBUG("Extracted embedded texture to: %s", finalPath.c_str());
                 }
                 else
                 {

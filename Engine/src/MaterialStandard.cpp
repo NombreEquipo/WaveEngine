@@ -180,62 +180,41 @@ void MaterialStandard::LoadFromJson(const nlohmann::json& j) {
 }
 
 void MaterialStandard::SetAlbedoMap(UID uid) {
-
     if (albedoMapUID != 0) {
         Application::GetInstance().resources->ReleaseResource(albedoMapUID);
-        albedoMapUID = 0;
     }
-
-    albedoMap = (ResourceTexture*)Application::GetInstance().resources.get()->RequestResource(uid);
-
-    if (albedoMap) albedoMapUID = uid;
+    albedoMapUID = uid;
+    albedoMap = (albedoMapUID != 0) ? (ResourceTexture*)Application::GetInstance().resources->RequestResource(albedoMapUID) : nullptr;
 }
 
 void MaterialStandard::SetHeightMap(UID uid) {
-
     if (heightMapUID != 0) {
         Application::GetInstance().resources->ReleaseResource(heightMapUID);
-        heightMapUID = 0;
     }
-
-    heightMap = (ResourceTexture*) Application::GetInstance().resources.get()->RequestResource(uid);
-
-    if (heightMap) heightMapUID = uid;
+    heightMapUID = uid;
+    heightMap = (heightMapUID != 0) ? (ResourceTexture*)Application::GetInstance().resources->RequestResource(heightMapUID) : nullptr;
 }
 
 void MaterialStandard::SetNormalMap(UID uid) {
-
     if (normalMapUID != 0) {
         Application::GetInstance().resources->ReleaseResource(normalMapUID);
-        normalMapUID = 0;
     }
-
-    normalMap = (ResourceTexture*) Application::GetInstance().resources.get()->RequestResource(uid);
-
-    if (normalMap) normalMapUID = uid;
+    normalMapUID = uid;
+    normalMap = (normalMapUID != 0) ? (ResourceTexture*)Application::GetInstance().resources->RequestResource(normalMapUID) : nullptr;
 }
 
 void MaterialStandard::SetMetallicMap(UID uid) {
-
     if (metallicMapUID != 0) {
         Application::GetInstance().resources->ReleaseResource(metallicMapUID);
-        metallicMapUID = 0;
     }
-
-    metallicMap = (ResourceTexture*) Application::GetInstance().resources.get()->RequestResource(uid);
-
-    if (metallicMap) metallicMapUID = uid;
+    metallicMapUID = uid;
+    metallicMap = (metallicMapUID != 0) ? (ResourceTexture*)Application::GetInstance().resources->RequestResource(metallicMapUID) : nullptr;
 }
 
 void MaterialStandard::SetOcclusionMap(UID uid) {
-
     if (occlusionMapUID != 0) {
         Application::GetInstance().resources->ReleaseResource(occlusionMapUID);
-        occlusionMapUID = 0;
     }
-
-    occlusionMap = (ResourceTexture*) Application::GetInstance().resources.get()->RequestResource(uid);
-
-    if (occlusionMap) occlusionMapUID = uid;
+    occlusionMapUID = uid;
+    occlusionMap = (occlusionMapUID != 0) ? (ResourceTexture*)Application::GetInstance().resources->RequestResource(occlusionMapUID) : nullptr;
 }
-

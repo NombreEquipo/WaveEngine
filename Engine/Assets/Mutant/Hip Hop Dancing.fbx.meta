@@ -1,6 +1,6 @@
 {
     "animations": {
-        "mixamo.com": 4088288891600950796
+        "mixamo.com": 7999120646828700446
     },
     "fileHash": 3927119390,
     "importSettings": {
@@ -12,8 +12,8 @@
         "upAxis": 0
     },
     "meshes": {
-        "MutantMesh": 13919874331015993463
+        "MutantMesh": 7260440395984466450
     },
     "type": 1,
-    "uid": 16336097251654784293
+    "uid": 16166148670092581090
 }
