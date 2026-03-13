@@ -1181,42 +1181,17 @@ void ModuleEditor::BuildGame()
             LOG_CONSOLE("[Build] WARNING: Library folder not found");
         }
 
-        // Copy entire Scene/ folder
-        fs::create_directories(dest / "Scene");
-        fs::path projectRoot = fs::path(LibraryManager::GetLibraryRoot()).parent_path();
-        fs::path sceneSrcFolder = projectRoot / "Scene";
-        int sceneCopyCount = 0;
-        if (fs::exists(sceneSrcFolder))
-        {
-            fs::copy(sceneSrcFolder, dest / "Scene",
-                fs::copy_options::overwrite_existing | fs::copy_options::recursive);
-            for (const auto& entry : fs::recursive_directory_iterator(sceneSrcFolder))
-                if (entry.is_regular_file()) sceneCopyCount++;
-            LOG_CONSOLE("[Build] Copied Scene/ folder (%d file(s))", sceneCopyCount);
-        }
-        else
-        {
-            LOG_CONSOLE("[Build] WARNING: Scene folder not found at %s", sceneSrcFolder.string().c_str());
-        }
-
         // Ask the user to pick the startup scene from the copied Scene/ folder
-        std::string startupSceneName;
-        std::string sceneSrc = OpenLoadFile((dest / "Scene").string());
-        if (!sceneSrc.empty())
+        UID startupSceneUID = 0;
+        std::string sceneSrc = OpenLoadFile(LibraryManager::GetAssetsRoot());
+        if (!sceneSrc.empty() && DoesFileExist(GetMetaPath(sceneSrc)))
         {
-            startupSceneName = fs::path(sceneSrc).filename().string();
-            LOG_CONSOLE("[Build] Startup scene set to '%s'", startupSceneName.c_str());
-        }
-        else
-        {
-            startupSceneName = "game_scene.scene";
-            std::string sceneDestPath = (dest / "Scene" / startupSceneName).string();
-            Application::GetInstance().loader->SaveScene(sceneDestPath);
-            LOG_CONSOLE("[Build] No scene selected, saved current scene");
+            startupSceneUID = MetaFileManager::GetUIDFromAsset(sceneSrc);
+            LOG_CONSOLE("[Build] Startup scene set to '%s'", sceneSrc.c_str());
         }
 
         nlohmann::json config;
-        config["startup_scene"] = startupSceneName;
+        config["startup_scene"] = startupSceneUID;
         std::ofstream configFile(dest / "build_config.json");
         configFile << config.dump(4);
         LOG_CONSOLE("[Build] Export complete %s", destFolder.c_str());
