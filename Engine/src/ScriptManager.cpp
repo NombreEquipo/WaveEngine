@@ -1492,6 +1492,34 @@ static int Lua_GameObject_GetComponent(lua_State* L) {
         return 1;
     }
 
+    if (strcmp(componentType, "Box Collider") == 0 ||
+        strcmp(componentType, "Sphere Collider") == 0 ||
+        strcmp(componentType, "Capsule Collider") == 0)
+    {
+        ComponentType ctype = ComponentType::BOX_COLLIDER;
+        if (strcmp(componentType, "Sphere Collider") == 0)   ctype = ComponentType::SPHERE_COLLIDER;
+        if (strcmp(componentType, "Capsule Collider") == 0)  ctype = ComponentType::CAPSULE_COLLIDER;
+
+        Component* comp = obj->GetComponent(ctype);
+        if (!comp)
+        {
+            lua_pushnil(L);
+            return 1;
+        }
+
+        lua_newtable(L);
+
+        lua_pushlightuserdata(L, comp);
+        lua_pushcclosure(L, Lua_Collider_Enable, 1);
+        lua_setfield(L, -2, "Enable");
+
+        lua_pushlightuserdata(L, comp);
+        lua_pushcclosure(L, Lua_Collider_Disable, 1);
+        lua_setfield(L, -2, "Disable");
+
+        return 1;
+    }
+
     lua_pushnil(L);
     return 1;
 }
