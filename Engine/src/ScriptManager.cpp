@@ -30,7 +30,6 @@
 #include "Application.h"
 #include "ComponentAnimation.h"
 #include "UIManager.h"
-#include "Rigidbody.h"
 #include "LibraryManager.h"
 
 #include <filesystem>
@@ -115,14 +114,14 @@ bool ScriptManager::LoadScript(const std::string& filepath) {
         LOG_CONSOLE("[ScriptManager] ERROR: Script not found: %s", filepath.c_str());
 
         // Activar flash de error
-        #ifndef WAVE_GAME
+#ifndef WAVE_GAME
         Application& app = Application::GetInstance();
         if (app.editor && app.editor->GetConsoleWindow()) {
             app.editor->GetConsoleWindow()->FlashError();
         }
 
         return false;
-        #endif 
+#endif 
     }
 
     int result = luaL_dofile(L, filepath.c_str());
@@ -132,13 +131,13 @@ bool ScriptManager::LoadScript(const std::string& filepath) {
         LOG_CONSOLE("[ScriptManager] ERROR: %s", error);
         lua_pop(L, 1);
 
-        #ifndef WAVE_GAME
+#ifndef WAVE_GAME
         // Activar flash de error
         Application& app = Application::GetInstance();
         if (app.editor && app.editor->GetConsoleWindow()) {
             app.editor->GetConsoleWindow()->FlashError();
         }
-        #endif // !1
+#endif // !1
         return false;
     }
 
@@ -158,13 +157,13 @@ void ScriptManager::CallGlobalStart() {
             LOG_CONSOLE("[ScriptManager] ERROR in Start(): %s", error);
             lua_pop(L, 1);
 
-            #ifndef WAVE_GAME
+#ifndef WAVE_GAME
             // Activar flash de error
             auto& app = Application::GetInstance();
             if (app.editor && app.editor->GetConsoleWindow()) {
                 app.editor->GetConsoleWindow()->FlashError();
             }
-            #endif
+#endif
         }
     }
     else {
@@ -182,13 +181,13 @@ void ScriptManager::CallGlobalUpdate(float deltaTime) {
             const char* error = lua_tostring(L, -1);
             LOG_CONSOLE("[ScriptManager] ERROR in Update(): %s", error);
             lua_pop(L, 1);
-            #ifndef WAVE_GAME
+#ifndef WAVE_GAME
             // Activar flash de error
             auto& app = Application::GetInstance();
             if (app.editor && app.editor->GetConsoleWindow()) {
                 app.editor->GetConsoleWindow()->FlashError();
             }
-            #endif // !1
+#endif // !1
         }
     }
     else {
@@ -261,7 +260,7 @@ static int Lua_Input_GetMousePosition(lua_State* L) {
     int rawX = raw.x;
     int rawY = raw.y;
 
-    #ifndef WAVE_GAME
+#ifndef WAVE_GAME
     auto& app = Application::GetInstance();
 
     // Get the Game window directly
@@ -272,7 +271,7 @@ static int Lua_Input_GetMousePosition(lua_State* L) {
 
         ImVec2 viewportPos = gameWindow->GetViewportPos();
         ImVec2 viewportSize = gameWindow->GetViewportSize();
-        
+
         // Convert to viewport-relative coordinates
         int relativeX = rawX - static_cast<int>(viewportPos.x);
         int relativeY = rawY - static_cast<int>(viewportPos.y);
@@ -285,11 +284,11 @@ static int Lua_Input_GetMousePosition(lua_State* L) {
             return 2;
         }
     }
-    #else 
-        lua_pushnumber(L, static_cast<lua_Number>(rawX));
-        lua_pushnumber(L, static_cast<lua_Number>(rawY));
-        return 2;
-    #endif
+#else 
+    lua_pushnumber(L, static_cast<lua_Number>(rawX));
+    lua_pushnumber(L, static_cast<lua_Number>(rawY));
+    return 2;
+#endif
 
     // If not in game window, return nil
     lua_pushnil(L);
@@ -529,37 +528,6 @@ static int Lua_Navigation_AdvanceWaypoint(lua_State* L)
     return 1;
 }
 
-static int Lua_Rigidbody_SetLinearVelocity(lua_State* L)
-{
-    Rigidbody* rb = *static_cast<Rigidbody**>(luaL_checkudata(L, 1, "Rigidbody"));
-    float x = static_cast<float>(luaL_checknumber(L, 2));
-    float y = static_cast<float>(luaL_checknumber(L, 3));
-    float z = static_cast<float>(luaL_checknumber(L, 4));
-    if (rb) rb->SetLinearVelocity(glm::vec3(x, y, z));
-    return 0;
-}
-
-static int Lua_Rigidbody_GetLinearVelocity(lua_State* L)
-{
-    Rigidbody* rb = *static_cast<Rigidbody**>(luaL_checkudata(L, 1, "Rigidbody"));
-    if (!rb) { lua_pushnumber(L, 0); lua_pushnumber(L, 0); lua_pushnumber(L, 0); return 3; }
-    glm::vec3 v = rb->GetLinearVelocity();
-    lua_pushnumber(L, v.x);
-    lua_pushnumber(L, v.y);
-    lua_pushnumber(L, v.z);
-    return 3;
-}
-
-static int Lua_Rigidbody_AddForce(lua_State* L)
-{
-    Rigidbody* rb = *static_cast<Rigidbody**>(luaL_checkudata(L, 1, "Rigidbody"));
-    float x = static_cast<float>(luaL_checknumber(L, 2));
-    float y = static_cast<float>(luaL_checknumber(L, 3));
-    float z = static_cast<float>(luaL_checknumber(L, 4));
-    if (rb) rb->AddForce(glm::vec3(x, y, z));
-    return 0;
-}
-
 static int Lua_Navigation_GetMoveDirection(lua_State* L)
 {
     ComponentNavigation** navPtr =
@@ -643,18 +611,18 @@ static int Lua_Camera_GetScreenToWorldPlane(lua_State* L) {
     int screenWidth = 800;
     int screenHeight = 600;
 
-    #ifndef WAVE_GAME
+#ifndef WAVE_GAME
     GameWindow* gameWindow = app.editor->GetGameWindow();
     if (gameWindow) {
         ImVec2 viewportSize = gameWindow->GetViewportSize();
         screenWidth = static_cast<int>(viewportSize.x);
         screenHeight = static_cast<int>(viewportSize.y);
     }
-    #else 
-    
+#else 
+
     app.window->GetWindowSize(screenWidth, screenHeight);
 
-    #endif
+#endif
     ComponentCamera* camera = nullptr;
 
 
@@ -717,7 +685,7 @@ static int Lua_UI_SetElementHeight(lua_State* L) {
     float height = static_cast<float>(luaL_checknumber(L, 2));
     Application::GetInstance().scripts->EnqueueOperation([name, height]() {
         UIManager::GetInstance().SetElementHeight(name, height);
-    });
+        });
     return 0;
 }
 
@@ -727,7 +695,7 @@ static int Lua_UI_SetElementWidth(lua_State* L) {
     float width = static_cast<float>(luaL_checknumber(L, 2));
     Application::GetInstance().scripts->EnqueueOperation([name, width]() {
         UIManager::GetInstance().SetElementWidth(name, width);
-    });
+        });
     return 0;
 }
 
@@ -737,7 +705,7 @@ static int Lua_UI_SetElementText(lua_State* L) {
     std::string text(luaL_checkstring(L, 2));
     Application::GetInstance().scripts->EnqueueOperation([name, text]() {
         UIManager::GetInstance().SetElementText(name, text);
-    });
+        });
     return 0;
 }
 
@@ -747,7 +715,7 @@ static int Lua_UI_SetElementVisibility(lua_State* L) {
     bool visible = lua_toboolean(L, 2) != 0;
     Application::GetInstance().scripts->EnqueueOperation([name, visible]() {
         UIManager::GetInstance().SetElementVisibility(name, visible);
-    });
+        });
     return 0;
 }
 
@@ -766,6 +734,11 @@ static int Lua_Game_Resume(lua_State* L) {
     return 0;
 }
 
+
+// Forward declarations
+static int Lua_Rigidbody_SetLinearVelocity(lua_State* L);
+static int Lua_Rigidbody_GetLinearVelocity(lua_State* L);
+static int Lua_Rigidbody_AddForce(lua_State* L);
 
 void ScriptManager::RegisterEngineFunctions() {
     if (!L) {
@@ -791,7 +764,7 @@ void ScriptManager::RegisterEngineFunctions() {
     lua_setfield(L, -2, "GetKey");
     lua_pushcfunction(L, Lua_Input_GetKeyDown);
     lua_setfield(L, -2, "GetKeyDown");
-   lua_pushcfunction(L, Lua_Input_GetMousePosition);
+    lua_pushcfunction(L, Lua_Input_GetMousePosition);
     lua_setfield(L, -2, "GetMousePosition");
     // Gamepad
     lua_pushcfunction(L, Lua_Input_GetGamepadButton);
@@ -863,8 +836,7 @@ void ScriptManager::RegisterEngineFunctions() {
     lua_pop(L, 1);
 
     LOG_CONSOLE("[ScriptManager] Engine functions registered: Engine, Input, Time, Camera");
-}
-// GAMEOBJECT API
+    // GAMEOBJECT API
     //UI
     lua_newtable(L);
     lua_pushcfunction(L, Lua_UI_WasClicked);            lua_setfield(L, -2, "WasClicked");
@@ -940,7 +912,7 @@ static int Lua_Rigidbody_AddForce(lua_State* L) {
     if (rb) {
         Application::GetInstance().scripts->EnqueueOperation([rb, x, y, z, mode]() {
             rb->AddForce(glm::vec3(x, y, z), mode);
-        });
+            });
     }
     return 0;
 }
@@ -1163,7 +1135,7 @@ static int Lua_GameObject_AddComponent_MeshRenderer(lua_State* L) {
     auto& app = Application::GetInstance();
     app.scripts->EnqueueOperation([obj]() {
         if (!obj->IsMarkedForDeletion()) {
-            obj->CreateComponent(ComponentType::MESH); 
+            obj->CreateComponent(ComponentType::MESH);
         }
         });
 
@@ -1186,7 +1158,7 @@ static int Lua_GameObject_AddComponent_Material(lua_State* L) {
     auto& app = Application::GetInstance();
     app.scripts->EnqueueOperation([obj]() {
         if (!obj->IsMarkedForDeletion()) {
-            obj->CreateComponent(ComponentType::MATERIAL); 
+            obj->CreateComponent(ComponentType::MATERIAL);
         }
         });
 
@@ -1334,7 +1306,7 @@ static int Lua_ComponentCanvas_SetOpacity(lua_State* L) {
 
 static int Lua_Collider_Enable(lua_State* L) {
     Component* comp = static_cast<Component*>(lua_touserdata(L, lua_upvalueindex(1)));
-    if (comp) 
+    if (comp)
     {
         Application::GetInstance().scripts->EnqueueOperation([comp]() {
             comp->Enable();
@@ -1346,12 +1318,12 @@ static int Lua_Collider_Enable(lua_State* L) {
 
 static int Lua_Collider_Disable(lua_State* L) {
     Component* comp = static_cast<Component*>(lua_touserdata(L, lua_upvalueindex(1)));
-    if (comp) 
+    if (comp)
     {
-        Application::GetInstance().scripts->EnqueueOperation([comp]() 
+        Application::GetInstance().scripts->EnqueueOperation([comp]()
             {
-            comp->Disable();
-            comp->SetActive(false);
+                comp->Disable();
+                comp->SetActive(false);
             });
     }
     return 0;
@@ -1430,7 +1402,7 @@ static int Lua_GameObject_GetComponent(lua_State* L) {
         lua_pushcclosure(L, [](lua_State* L) -> int {
             ComponentCanvas* canvas = static_cast<ComponentCanvas*>(
                 lua_touserdata(L, lua_upvalueindex(1)));
-            const char* xamlPath = luaL_checkstring(L, 2); 
+            const char* xamlPath = luaL_checkstring(L, 2);
             std::string path(xamlPath);
             Application::GetInstance().scripts->EnqueueOperation([canvas, path]() {
                 canvas->LoadXAML(path.c_str());
@@ -1452,7 +1424,7 @@ static int Lua_GameObject_GetComponent(lua_State* L) {
 
         ComponentAnimation** udata = static_cast<ComponentAnimation**>(
             lua_newuserdata(L, sizeof(ComponentAnimation*))
-        );
+            );
         *udata = anim;
 
         luaL_getmetatable(L, "Animation");
@@ -1470,10 +1442,10 @@ static int Lua_GameObject_GetComponent(lua_State* L) {
             *udata = nav;
             luaL_getmetatable(L, "Navigation");
             lua_setmetatable(L, -2);
-            return 1; 
+            return 1;
         }
 
-    
+
     }
     if (strcmp(componentType, "Rigidbody") == 0)
     {
@@ -1906,7 +1878,7 @@ void ScriptManager::RegisterComponentAPI() {
     lua_setfield(L, -2, "IsPlaying");
     lua_pushcfunction(L, Lua_Animation_IsPlayingAnimation);
     lua_setfield(L, -2, "IsPlayingAnimation");
-    lua_pop(L, 1); 
+    lua_pop(L, 1);
 }
 
 // PREFAB API
@@ -2028,8 +2000,8 @@ void ScriptManager::RegisterPrefabAPI() {
 }
 
 static GameWindow* GetGameWindow() {
-    #ifndef WAVE_GAME
+#ifndef WAVE_GAME
     GameWindow* window = Application::GetInstance().editor->GetGameWindow();
     return window;
-    #endif // !1
+#endif // !1
 }

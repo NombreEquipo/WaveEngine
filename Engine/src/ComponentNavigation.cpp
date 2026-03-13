@@ -192,77 +192,7 @@ bool ComponentNavigation::SnapPositionToNavMesh(glm::vec3& position)
 // 3. En Update — reemplazar el bloque de movimiento libre por moveAlongSurface
 void ComponentNavigation::Update(float dt)
 {
-    if (type != NavType::AGENT || !moving || path.empty()) return;
-
-    Transform* t = (Transform*)owner->GetComponent(ComponentType::TRANSFORM);
-    glm::vec3 currentPos = t->GetGlobalPosition();
-    glm::vec3 target = path[pathIndex];
-    glm::vec3 dir = target - currentPos;
-
-    glm::vec3 dirFlat = { dir.x, 0.0f, dir.z };
-    float dist = glm::length(dirFlat);
-
-    if (dist <= arrivalThreshold)
-    {
-        ++pathIndex;
-        if (pathIndex >= (int)path.size())
-        {
-            moving = false;
-            path.clear();
-            pathIndex = 0;
-            currentPolyRef = 0;
-        }
-        return;
-    }
-
-    glm::vec3 dirNorm = glm::normalize(dirFlat);
-
-    // --- NUEVO: moveAlongSurface en lugar de lerp libre ---
-    auto* navData = Application::GetInstance().navMesh->GetNavMeshData(linkedSurface);
-    if (!navData || !navData->navQuery || currentPolyRef == 0)
-    {
-        // Fallback: intentar recuperar el poly ref
-        if (navData && navData->navQuery)
-        {
-            dtQueryFilter filter;
-            filter.setIncludeFlags(0xFFFF);
-            float extents[3] = { 2.f, 4.f, 2.f };
-            float posF[3] = { currentPos.x, currentPos.y, currentPos.z };
-            float nearPt[3];
-            navData->navQuery->findNearestPoly(posF, extents, &filter, &currentPolyRef, nearPt);
-        }
-        return;
-    }
-
-    float startF[3] = { currentPos.x, currentPos.y, currentPos.z };
-    float desiredF[3] = {
-        currentPos.x + dirNorm.x * moveSpeed * dt,
-        currentPos.y,
-        currentPos.z + dirNorm.z * moveSpeed * dt
-    };
-
-    float resultPos[3];
-    dtPolyRef visited[16];
-    int nVisited = 0;
-
-    dtQueryFilter filter;
-    filter.setIncludeFlags(0xFFFF);
-
-    // moveAlongSurface garantiza que el resultado respeta el navmesh erosionado
-    // (incluido walkableRadius) y desliza el agente a lo largo de las paredes
-    navData->navQuery->moveAlongSurface(
-        currentPolyRef, startF, desiredF, &filter,
-        resultPos, visited, &nVisited, 16);
-
-    if (nVisited > 0)
-        currentPolyRef = visited[nVisited - 1];   // Actualizar al último poly visitado
-
-    glm::vec3 newPos = { resultPos[0], resultPos[1], resultPos[2] };
-
-    // Snap de Y: ajustar altura al detalle del navmesh
-    SnapPositionToNavMesh(newPos);
-
-    t->SetGlobalPosition(newPos);
+    
 }
 
 // 2. En StopMovement — resetear el poly ref

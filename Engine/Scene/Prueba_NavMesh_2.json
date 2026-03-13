@@ -30,10 +30,8 @@
                 },
                 {
                     "active": true,
-                    "hasMaterialProperties": false,
-                    "materialType": 0,
-                    "type": 3,
-                    "useCheckerboard": true
+                    "materialUID": 0,
+                    "type": 3
                 },
                 {
                     "Center": [
@@ -84,6 +82,7 @@
                 }
             ],
             "name": "Floor",
+            "tag": "",
             "uid": 7746080295447878532
         },
         {
@@ -93,14 +92,14 @@
                 {
                     "active": true,
                     "position": [
-                        1.0485475063323975,
+                        3.0485475063323975,
                         0.5561531186103821,
                         1.762776255607605
                     ],
                     "rotation": [
-                        16.53172492980957,
-                        89.96043395996094,
-                        16.601085662841797
+                        16.66259765625,
+                        89.96573638916016,
+                        16.732404708862305
                     ],
                     "scale": [
                         1.0,
@@ -116,10 +115,8 @@
                 },
                 {
                     "active": true,
-                    "hasMaterialProperties": false,
-                    "materialType": 0,
-                    "type": 3,
-                    "useCheckerboard": true
+                    "materialUID": 0,
+                    "type": 3
                 },
                 {
                     "AngularDamping": 0.0,
@@ -173,9 +170,24 @@
                     "active": true,
                     "publicVariables": [
                         {
+                            "name": "dirSmoothing",
+                            "type": 0,
+                            "value": 12.0
+                        },
+                        {
+                            "name": "stopSmoothing",
+                            "type": 0,
+                            "value": 10.0
+                        },
+                        {
                             "name": "moveSpeed",
                             "type": 0,
                             "value": 5.0
+                        },
+                        {
+                            "name": "rotationSpeed",
+                            "type": 0,
+                            "value": 15.0
                         }
                     ],
                     "scriptUID": 4305855626940192466,
@@ -183,6 +195,7 @@
                 }
             ],
             "name": "Player",
+            "tag": "",
             "uid": 6519575916255965980
         },
         {
@@ -210,14 +223,17 @@
                 },
                 {
                     "active": true,
-                    "aspectRatio": 0.9679012298583984,
+                    "aspectRatio": 3.014925479888916,
                     "farPlane": 1000.0,
                     "fov": 60.0,
                     "nearPlane": 0.30000001192092896,
-                    "type": 4
+                    "type": 4,
+                    "uiCullingMask": 0,
+                    "usesPostProcessing": false
                 }
             ],
             "name": "Camera",
+            "tag": "",
             "uid": 8127797368703891033
         },
         {
@@ -250,10 +266,8 @@
                 },
                 {
                     "active": true,
-                    "hasMaterialProperties": false,
-                    "materialType": 0,
-                    "type": 3,
-                    "useCheckerboard": true
+                    "materialUID": 0,
+                    "type": 3
                 },
                 {
                     "ArrivalThreshold": 0.25,
@@ -304,6 +318,7 @@
                 }
             ],
             "name": "Cube",
+            "tag": "",
             "uid": 9444923990546023146
         }
     ],

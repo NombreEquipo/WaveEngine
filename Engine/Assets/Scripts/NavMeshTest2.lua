@@ -1,4 +1,3 @@
-
 local atan2  = math.atan
 local pi     = math.pi
 local sqrt   = math.sqrt
@@ -74,6 +73,8 @@ function Update(self, dt)
 
     -- Si nav está en movimiento pero GetMoveDirection devuelve 0
     -- (transición entre waypoints), conservamos la última dirección suavizada
+
+    Engine.Log("DIR = " .. dx .. " , " .. dz .. " | moving=" .. tostring(isMoving))
     local hasFreshDir = (dx ~= 0 or dz ~= 0)
 
     if hasFreshDir then
@@ -120,7 +121,12 @@ function Update(self, dt)
         local speed = self.public.moveSpeed
         local vFinalX = (self.smoothDx / sMag) * speed
         local vFinalZ = (self.smoothDz / sMag) * speed
-        self.rb:SetLinearVelocity(vFinalX, vy, vFinalZ)
+        local pos = self.transform.position
+        self.transform:SetPosition(
+            pos.x + vFinalX * dt,
+            pos.y,
+            pos.z + vFinalZ * dt
+        )
 
         Engine.Log(string.format(
             vFinalX, vFinalZ,
