@@ -47,8 +47,8 @@ Application::Application() : isRunning(true), playState(PlayState::EDITING)
     AddModule(std::static_pointer_cast<Module>(renderContext));
     AddModule(std::static_pointer_cast<Module>(scene));
     AddModule(std::static_pointer_cast<Module>(camera));
-    AddModule(std::static_pointer_cast<Module>(audio));
     AddModule(std::static_pointer_cast<Module>(resources));
+    AddModule(std::static_pointer_cast<Module>(audio));
     AddModule(std::static_pointer_cast<Module>(navMesh));
     AddModule(std::static_pointer_cast<Module>(scripts));  
     AddModule(std::static_pointer_cast<Module>(loader));

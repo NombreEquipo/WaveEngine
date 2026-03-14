@@ -49,6 +49,7 @@ public:
 
 	// ---------------------- SWITCHES ---------------------- //
 	void SetSwitch(AkSwitchGroupID switchGroup, AkSwitchStateID switchState, AkGameObjectID goID);
+	void SetSwitch(const char* switchGroup, const char* switchState, AkGameObjectID goID);
 
 	// ------------------------ RTPC ------------------------ //
 	void SetRTPCValue(const char* name, int value);

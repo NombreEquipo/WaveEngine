@@ -15,6 +15,7 @@ namespace AK
     {
         static const AkUniqueID MUS_BGM = 638756417U;
         static const AkUniqueID SFX_AMBIENCE = 3583497273U;
+        static const AkUniqueID SFX_PLAYERFOOTSTEPS = 724467519U;
         static const AkUniqueID SFX_TORCHFIRE = 3020549885U;
     } // namespace EVENTS
 
@@ -34,6 +35,33 @@ namespace AK
         } // namespace BGM_STATE
 
     } // namespace STATES
+
+    namespace SWITCHES
+    {
+        namespace PLAYER_SPEED
+        {
+            static const AkUniqueID GROUP = 1062779386U;
+
+            namespace SWITCH
+            {
+                static const AkUniqueID RUN = 712161704U;
+                static const AkUniqueID WALK = 2108779966U;
+            } // namespace SWITCH
+        } // namespace PLAYER_SPEED
+
+        namespace SURFACE_TYPE
+        {
+            static const AkUniqueID GROUP = 4064446173U;
+
+            namespace SWITCH
+            {
+                static const AkUniqueID DIRT = 2195636714U;
+                static const AkUniqueID GRASS = 4248645337U;
+                static const AkUniqueID WATER = 2654748154U;
+            } // namespace SWITCH
+        } // namespace SURFACE_TYPE
+
+    } // namespace SWITCHES
 
     namespace GAME_PARAMETERS
     {

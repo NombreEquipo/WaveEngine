@@ -46,8 +46,8 @@ AudioSystem::~AudioSystem() {
 bool AudioSystem::InitEngine() {
 
     if (enableDebugLogs) LOG_DEBUG("# Initializing Audio Engine...");
-
-    LibraryManager::Initialize(); // otherwise the soundbank paths can't be retrieved
+    
+    //LibraryManager::Initialize(); 
 
     //Wwise submodules must be initialized in the following order:
     if (!InitMemoryManager()) {
@@ -326,6 +326,12 @@ void AudioSystem::SetState(const char* stateGroup, const char* state)
 
 
 void AudioSystem::SetSwitch(AkSwitchGroupID switchGroup, AkSwitchStateID switchState, AkGameObjectID goID)
+{
+    AK::SoundEngine::SetSwitch(switchGroup, switchState, goID);
+    if (enableDebugLogs) LOG_DEBUG("Setting wwise switch");
+}
+
+void AudioSystem::SetSwitch(const char* switchGroup, const char* switchState, AkGameObjectID goID)
 {
     AK::SoundEngine::SetSwitch(switchGroup, switchState, goID);
     if (enableDebugLogs) LOG_DEBUG("Setting wwise switch");

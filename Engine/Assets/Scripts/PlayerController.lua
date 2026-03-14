@@ -8,6 +8,8 @@ local pi    = math.pi
 
 local attackCol
 local attackTimer = 0
+local stepTimer = 0.5
+
 
 _PlayerController_triggerCameraShake = false
 _PlayerController_shakeDuration      = 0.4
@@ -57,6 +59,11 @@ local Player = {
     lastDirX        = 0,
     lastDirZ        = 1,
 
+    -- Audio
+    stepSFX = nil,
+	currentSurface = "",
+    
+
     -- Potion state
     potionCount         = 4,
     potionHealing       = false,   -- ¿está recuperando vida ahora mismo?
@@ -84,8 +91,13 @@ public = {
     attackCooldown      = 0.5,
     knockbackForce      = 0.2,
     hitShakeDuration    = 0.3,
-    hitShakeMagnitude   = 0.4
+    hitShakeMagnitude   = 0.4,
+	
 }
+
+
+
+
 
 local function normalizeInput(x, z)
     local len = sqrt(x*x + z*z)
@@ -181,8 +193,16 @@ States[State.IDLE] = {
 States[State.WALK] = {
     Enter = function(self)
         local anim = self.gameObject:GetComponent("Animation")
+        
+
         self.public.usingStamina = false
-        if anim then anim:Play("Walking", 0.5) end
+
+        if anim then 
+            anim:Play("Walking", 0.5) 
+            anim:SetSpeed("Walking", 1.0)
+        end
+
+        
     end,
     
     Update = function(self, dt)
@@ -207,6 +227,16 @@ States[State.WALK] = {
         end
         -- Check if can trasition to Roll, AttackLight, Charging y todo eso
         
+        if Player.stepSFX then
+            stepTimer = stepTimer + dt
+            if stepTimer >= 0.5 then
+				stepTimer = 0
+                Audio.SetSwitch("Player_Speed", "Walk", Player.stepSFX)
+                --Engine.Log("Playing Walk FootSteps SFX")
+                Player.stepSFX:PlayAudioEvent()
+            end
+        end
+        
         -- Movement and rotation
         ApplyMovementAndRotation(self, dt, moveX, moveZ)
     end
@@ -215,9 +245,13 @@ States[State.WALK] = {
 States[State.RUNNING] = {
     Enter = function(self)
         local anim = self.gameObject:GetComponent("Animation")
-        if anim then anim:Play("Walking", 0.5) end
+        if anim then 
+            anim:Play("Walking", 0.5) 
+            anim:SetSpeed("Walking", 2.0)
+        end
         self.public.usingStamina = true
         self.public.speed = self.public.speed + self.public.speedIncrease
+
     end,
     Update = function(self, dt)
         if not Input.GetKey("LeftShift") then 
@@ -239,6 +273,16 @@ States[State.RUNNING] = {
         self.public.stamina = self.public.stamina - self.public.staminaCost
 
         Engine.Log("[Player] STAMINA: " .. tostring(self.public.stamina))
+
+        if Player.stepSFX then
+            stepTimer = stepTimer + dt
+            if stepTimer >= 0.25 then
+				stepTimer = 0
+                Audio.SetSwitch("Player_Speed", "Run", Player.stepSFX)
+                --Engine.Log("Playing Run FootSteps SFX")
+                Player.stepSFX:PlayAudioEvent()
+            end
+        end
         
         ApplyMovementAndRotation(self, dt, moveX, moveZ)
     end
@@ -305,6 +349,11 @@ function Start(self)
     self.public.stamina = 100
     self.public.health  = 100
     Player.potionCount  = 4
+
+	--steps
+    self.stepTimer = 0
+    Player.stepSFX = self.gameObject:GetComponent("Audio Source")
+    Player.currentSurface = "Dirt" --default surface
 
     --attack
     attackCooldown = 0
@@ -376,6 +425,11 @@ function Update(self, dt)
             Game.SetTimeScale(1.0)
         end
     end
+
+    --Set switch for surface type in footstep SFX
+    Audio.SetSwitch("Surface_Type", Player.currentSurface, Player.stepSFX)
+
+
 end
 
 function OnTriggerEnter(self, other)
@@ -383,3 +437,32 @@ function OnTriggerEnter(self, other)
         Engine.Log("[Player] Hit an enemy: " .. other.name)
     end
 end
+
+--- surfaces
+local surfaces = {"Grass", "Water", "Dirt"}
+
+
+function OnCollisionEnter(self, other)
+	-- step surface variations
+	if other:CompareTag("Grass") then
+		--Engine.Log("Player stepping on grass")
+		Player.currentSurface = "Grass"
+
+	elseif other:CompareTag("Water") then
+		--Engine.Log("Player stepping on water")
+		Player.currentSurface = "Water"
+
+	elseif other:CompareTag("Dirt") then
+		--Engine.Log("Player stepping on dirt")
+		Player.currentSurface = "Dirt"
+	end
+end
+
+
+
+
+
+
+
+
+

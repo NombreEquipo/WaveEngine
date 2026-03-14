@@ -490,7 +490,21 @@ static int Lua_Audio_SetMusicState(lua_State* L) {
     const char* stateName = luaL_checkstring(L, 1);
     const char* stateGroupName = "BGM_State";
     /*stateName = std::toupper(stateName.c_str());*/
+    
     Application::GetInstance().audio.get()->audioSystem->SetState(stateGroupName, stateName);
+    AK::SoundEngine::RenderAudio();
+    return 0;
+}
+
+//Audio Switches
+static int Lua_Audio_SetSwitch(lua_State* L) {
+    
+    const char* switchGroupName = luaL_checkstring(L, 1);
+    const char* switchStateName = luaL_checkstring(L, 2);
+    lua_getfield(L, 3, "ptr");                             // slot 3: the table (component)
+    AudioSource* source = *static_cast<AudioSource**>(lua_touserdata(L, -1));
+
+    Application::GetInstance().audio.get()->audioSystem->SetSwitch(switchGroupName, switchStateName, source->goID);
     AK::SoundEngine::RenderAudio();
     return 0;
 }
@@ -498,8 +512,9 @@ static int Lua_Audio_SetMusicState(lua_State* L) {
 static int Lua_Audio_PlayAudioEvent(lua_State* L) {
     lua_getfield(L, 1, "ptr");  // get "ptr" from the table (slot 1)
     AudioSource* source = *static_cast<AudioSource**>(lua_touserdata(L, -1));
-
-    Application::GetInstance().audio.get()->audioSystem->PlayEvent( (const wchar_t*)(source->eventName).c_str(), source->goID);
+    std::wstring wEventName(source->eventName.begin(), source->eventName.end());
+    Application::GetInstance().audio.get()->audioSystem->PlayEvent(wEventName.c_str(), source->goID);
+    AK::SoundEngine::RenderAudio();
     return 0;
 }
 // UI
@@ -630,6 +645,8 @@ void ScriptManager::RegisterEngineFunctions() {
     lua_setfield(L, -2, "SetMusicState");
     lua_pushcfunction(L, Lua_Audio_PlayAudioEvent);
     lua_setfield(L, -2, "PlayAudioEvent");
+    lua_pushcfunction(L, Lua_Audio_SetSwitch);
+    lua_setfield(L, -2, "SetSwitch");
     lua_setglobal(L, "Audio");
 
 
@@ -686,6 +703,19 @@ static int Lua_Animation_Play(lua_State* L)
     if (anim)
     {
         anim->Play(std::string(animName), blendTime);
+    }
+
+    return 0;
+}
+
+static int Lua_Animation_SetAnimSpeed(lua_State* L) {
+    ComponentAnimation* anim = *static_cast<ComponentAnimation**>(lua_touserdata(L, 1));
+    std::string animName = luaL_checkstring(L, 2);
+    float newSpeed = luaL_checknumber(L, 3);
+    
+
+    if (anim) {
+        anim->SetAnimationSpeed(animName, newSpeed);
     }
 
     return 0;
@@ -1653,12 +1683,15 @@ void ScriptManager::RegisterComponentAPI() {
     lua_setfield(L, -2, "__index");
     lua_pushcfunction(L, Lua_Animation_Play);
     lua_setfield(L, -2, "Play");
+    lua_pushcfunction(L, Lua_Animation_SetAnimSpeed);
+    lua_setfield(L, -2, "SetSpeed");
     lua_pushcfunction(L, Lua_Animation_Stop);
     lua_setfield(L, -2, "Stop");
     lua_pushcfunction(L, Lua_Animation_IsPlaying);
     lua_setfield(L, -2, "IsPlaying");
     lua_pushcfunction(L, Lua_Animation_IsPlayingAnimation);
     lua_setfield(L, -2, "IsPlayingAnimation");
+
     lua_pop(L, 1); 
 }
 
