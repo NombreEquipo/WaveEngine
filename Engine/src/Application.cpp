@@ -330,8 +330,6 @@ void Application::Pause()
 
 void Application::Stop()
 {
-    time->SetTimeScale(1.0f);
-
     // Procesar operaciones pendientes de scripts ANTES de restaurar
     if (scripts) {
         scripts->PostUpdate();

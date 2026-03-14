@@ -18,7 +18,6 @@ _impactFrameTimer                    = 0
 local INPUT_SCALE = 10
 local STAMINA_BAR_MAX_HEIGHT = 68.0 
 local HEALTH_BAR_MAX_HEIGHT  = 68.0 
-local HERMES_GRACE_TIME      = 0.2
 
 local function UpdateStaminaBar(stamina)
     local fill = (stamina / 100.0) * STAMINA_BAR_MAX_HEIGHT
@@ -103,10 +102,6 @@ local Player = {
     potionHealRate      = 15.0,    -- vida por segundo que se recupera
     potionCooldown      = 0.0,     -- cooldown para evitar spam de la tecla 3
     potionCooldownMax   = 0.5,
-
-    -- Hermes mask
-    isDrowning       = false,
-    hermesGraceTimer = 0.0,
 }
 
 public = {
@@ -117,7 +112,6 @@ public = {
     stamina             = 100.0,
     health              = 100.0,
     speedIncrease       = 10.0,
-    speedHermesBonus    = 15.0,
     staminaCost         = 0.1,
     staminaRecover      = 0.1,
     rollStaminaCost     = 25,
@@ -217,22 +211,6 @@ end
 local function EquipMask(self, newMask)
     if Player.currentMask == newMask then return end
 
-    --HERMES
-    if Player.currentMask == Mask.HERMES then
-        self.public.speedIncrease = self.public.speedIncrease - self.public.speedHermesBonus
-        Player.hermesGraceTimer   = 0
-        Player.isDrowning         = false
-        if Player.currentState == State.RUNNING then
-            self.public.speed = self.public.speed - self.public.speedHermesBonus
-        end
-    end
-    if newMask == Mask.HERMES then
-        self.public.speedIncrease = self.public.speedIncrease + self.public.speedHermesBonus
-        if Player.currentState == State.RUNNING then
-            self.public.speed = self.public.speed + self.public.speedHermesBonus
-        end
-    end
-
     if newMask == Mask.NONE then
         Engine.Log("[Player] Unequipping mask")
     else
@@ -243,10 +221,7 @@ local function EquipMask(self, newMask)
 end
 
 States[State.DEAD] = {
-    Enter  = function(self)
-        Engine.Log("[Player] Player is DEAD")
-        if Player.rb then Player.rb:SetLinearVelocity(0, 0, 0) end
-    end,
+    Enter  = function(self) end,
     Update = function(self, dt) end
 }
 
@@ -448,42 +423,10 @@ local function UpdatePotionHeal(self, dt)
     end
 end
 
-local function TakeDamage(self, amount, attackerPos)
-    if Player.currentState == State.DEAD then return end
-    if Player.godMode then return end
-
-    self.public.health = math.max(0, self.public.health - amount)
-    Engine.Log("[Player] HP left: " .. tostring(self.public.health) .. "/100")
-
-    _PlayerController_triggerCameraShake = true
-    _PlayerController_shakeDuration      = self.public.hitShakeDuration
-    _PlayerController_shakeMagnitude     = self.public.hitShakeMagnitude
-
-    if self.public.health > 0 and Player.rb and attackerPos then
-        local playerPos = self.transform.worldPosition
-        local dx = playerPos.x - attackerPos.x
-        local dz = playerPos.z - attackerPos.z
-        local len = sqrt(dx*dx + dz*dz)
-        if len > 0.001 then dx = dx / len; dz = dz / len end
-        Player.rb:AddForce(dx * self.public.knockbackForce, 0, dz * self.public.knockbackForce, 2)
-    end
-
-    UpdateHealthBar(self.public.health)
-
-    if self.public.health <= 0 then
-        Engine.Log("[Player] DEAD")
-        Game.SetTimeScale(0.2)
-        _impactFrameTimer = 0.17
-        ChangeState(self, State.DEAD)
-    end
-end
-
 function Start(self)
     Engine.Log("Player inicializado")
 
     --stamina
-    _impactFrameTimer = 0
-
     self.public.stamina = 100
     self.public.health  = 100
     Player.potionCount  = 4
@@ -499,10 +442,6 @@ function Start(self)
         Engine.Log("[Player] No rigidbody found")
     end
     
-    --masks
-    Player.isDrowning       = false
-    Player.hermesGraceTimer = 0
-
     ChangeState(self, State.IDLE)
     EquipMask(self, Mask.NONE)
     UpdatePotionUI(Player.potionCount)
@@ -511,12 +450,6 @@ end
 function Update(self, dt)
     if attackCooldown > 0 then
         attackCooldown = attackCooldown - dt
-    end
-
-    if _PlayerController_pendingDamage > 0 then
-        TakeDamage(self, _PlayerController_pendingDamage, _PlayerController_pendingDamagePos)
-        _PlayerController_pendingDamage    = 0
-        _PlayerController_pendingDamagePos = nil
     end
 
     if not Player.currentState then
@@ -578,27 +511,6 @@ function Update(self, dt)
     UpdateStaminaBar(self.public.stamina)
     UpdateHealthBar(self.public.health)
 
-    --hermes
-    if Input.GetKeyDown("8") then EquipMask(self, Mask.HERMES) end --debug
-    if Input.GetKeyDown("9") then EquipMask(self, Mask.NONE) end --debug
-
-    if Player.isDrowning and Player.currentMask == Mask.HERMES and Player.currentState ~= State.DEAD then
-        if Player.currentState == State.RUNNING then
-            Player.hermesGraceTimer = HERMES_GRACE_TIME
-        else
-            if self.public.stamina <= 0 then
-                Player.hermesGraceTimer = 0
-            end
-            if Player.hermesGraceTimer > 0 then
-                Player.hermesGraceTimer = Player.hermesGraceTimer - dt
-            else
-                self.public.health = 0
-                Engine.Log("[Player] Out of hermes :( )")
-                ChangeState(self, State.DEAD)
-            end
-        end
-    end
-
     if _impactFrameTimer > 0 then
         _impactFrameTimer = _impactFrameTimer - dt
         if _impactFrameTimer <= 0 then
@@ -608,29 +520,20 @@ function Update(self, dt)
     end
 end
 
-function OnTriggerEnter(self, other) end
-function OnTriggerExit(self, other) end
+function OnTriggerEnter(self, other)
+    if other:CompareTag("Enemy") then
+        Engine.Log("[Player] Hit an enemy: " .. other.name)
+    end
+end
 
 function OnCollisionEnter(self, other)
     if other:CompareTag("Water") then
-        if Player.currentMask == Mask.HERMES then
-            Player.isDrowning       = true
-            Player.hermesGraceTimer = HERMES_GRACE_TIME
-            Engine.Log("[Player] Hermes on water")
-        elseif Player.currentState ~= State.DEAD then
+        if Player.currentMask ~= Mask.HERMES and Player.currentState ~= States.DEAD then
             self.public.health = 0
             Engine.Log("[Player] Player is drowning")
             ChangeState(self, State.DEAD)
         else
             Engine.Log("[Player] Player not drowning")
         end
-    end
-end
-
-function OnCollisionExit(self, other)
-    if other:CompareTag("Water") then
-        Player.isDrowning       = false
-        Player.hermesGraceTimer = 0
-        Engine.Log("[Player] Player out of water")
     end
 end
