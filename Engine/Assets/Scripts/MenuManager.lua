@@ -13,6 +13,7 @@ local history   = {}
 local current   = nil
 local audioPlayed = false  
 
+
 local function EaseInOutQuad(t)
     if t < 0.5 then
         return 2 * t * t
@@ -46,6 +47,8 @@ end
 
 function Start(self)
     canvas = self.gameObject:GetComponent("Canvas")
+	
+
     if not canvas then
         Engine.Log("[Transition] ERROR: No tiene ComponentCanvas")
         return
@@ -188,3 +191,4 @@ function Update(self, dt)
 
 
 end
+

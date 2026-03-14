@@ -67,7 +67,8 @@ function Update(self, dt)
     end
 
     -- ── Movimiento ────────────────────────────────────────────────────────
-    local _, vy, _ = self.rb:GetLinearVelocity()
+    local vel = self.rb:GetLinearVelocity()
+	local vy = vel.y or 0
     local isMoving  = self.nav:IsMoving()
     local dx, dz    = self.nav:GetMoveDirection(0.3)
 
@@ -135,4 +136,9 @@ function Update(self, dt)
             tostring(hasFreshDir)
         ))
     end
+
+
+
+
 end
+

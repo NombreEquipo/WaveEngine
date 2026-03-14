@@ -92,14 +92,14 @@
                 {
                     "active": true,
                     "position": [
-                        3.0485475063323975,
+                        5.048547744750977,
                         0.5561531186103821,
                         1.762776255607605
                     ],
                     "rotation": [
-                        16.66259765625,
-                        89.96573638916016,
-                        16.732404708862305
+                        9.148797035217285,
+                        89.94065856933594,
+                        9.220888137817383
                     ],
                     "scale": [
                         1.0,
@@ -115,7 +115,7 @@
                 },
                 {
                     "active": true,
-                    "materialUID": 0,
+                    "materialUID": 8227335941818663295,
                     "type": 3
                 },
                 {
@@ -170,11 +170,6 @@
                     "active": true,
                     "publicVariables": [
                         {
-                            "name": "dirSmoothing",
-                            "type": 0,
-                            "value": 12.0
-                        },
-                        {
                             "name": "stopSmoothing",
                             "type": 0,
                             "value": 10.0
@@ -182,7 +177,12 @@
                         {
                             "name": "moveSpeed",
                             "type": 0,
-                            "value": 5.0
+                            "value": 6.300000190734863
+                        },
+                        {
+                            "name": "dirSmoothing",
+                            "type": 0,
+                            "value": 12.0
                         },
                         {
                             "name": "rotationSpeed",
@@ -191,6 +191,25 @@
                         }
                     ],
                     "scriptUID": 4305855626940192466,
+                    "type": 6
+                },
+                {
+                    "active": true,
+                    "eventName": "SFX_SkeletonSteps",
+                    "playOnAwake": false,
+                    "type": 26,
+                    "volume": 100.0
+                },
+                {
+                    "active": true,
+                    "publicVariables": [
+                        {
+                            "name": "timeInterval",
+                            "type": 0,
+                            "value": 0.25
+                        }
+                    ],
+                    "scriptUID": 15410812857215491476,
                     "type": 6
                 }
             ],
@@ -206,11 +225,11 @@
                     "active": true,
                     "position": [
                         0.0,
-                        10.0,
+                        13.0,
                         0.0
                     ],
                     "rotation": [
-                        -90.0,
+                        -89.99998474121094,
                         0.0,
                         0.0
                     ],
@@ -223,13 +242,18 @@
                 },
                 {
                     "active": true,
-                    "aspectRatio": 3.014925479888916,
+                    "aspectRatio": 1.085760474205017,
                     "farPlane": 1000.0,
                     "fov": 60.0,
                     "nearPlane": 0.30000001192092896,
                     "type": 4,
                     "uiCullingMask": 0,
                     "usesPostProcessing": false
+                },
+                {
+                    "active": true,
+                    "isDefault": true,
+                    "type": 25
                 }
             ],
             "name": "Camera",
@@ -248,8 +272,8 @@
                         1.0
                     ],
                     "rotation": [
-                        0.0,
-                        0.0,
+                        0.03426402062177658,
+                        -0.0,
                         0.0
                     ],
                     "scale": [
@@ -266,7 +290,7 @@
                 },
                 {
                     "active": true,
-                    "materialUID": 0,
+                    "materialUID": 6276816286734726111,
                     "type": 3
                 },
                 {
