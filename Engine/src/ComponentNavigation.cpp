@@ -13,8 +13,6 @@ ComponentNavigation::ComponentNavigation(GameObject* owner)
 
 void ComponentNavigation::OnEditor()
 {
-    if (ImGui::CollapsingHeader("Navigation & AI", ImGuiTreeNodeFlags_DefaultOpen))
-    {
         ImGui::Checkbox("Navigation Static", &isStatic);
 
         //Select Type
@@ -80,8 +78,7 @@ void ComponentNavigation::OnEditor()
             // --- Drag Target ---
             if (ImGui::BeginDragDropTarget())
             {
-                if (const ImGuiPayload* payload =
-                    ImGui::AcceptDragDropPayload("HIERARCHY_GAMEOBJECT"))
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_GAMEOBJECT"))
                 {
                     GameObject* dropped =
                         *(GameObject**)payload->Data;
@@ -94,6 +91,7 @@ void ComponentNavigation::OnEditor()
                         if (nav && nav->type == NavType::SURFACE)
                         {
                             linkedSurface = dropped;
+                            tempSurfaceUID = dropped->GetUID();
                             LOG_CONSOLE("Agent linked to surface: %s", dropped->GetName().c_str());
                         }
                         else
@@ -135,11 +133,9 @@ void ComponentNavigation::OnEditor()
 
             }
         }
-     
-
-    }
 }
 
+// 1. En SetDestination — inicializar currentPolyRef tras encontrar el camino
 bool ComponentNavigation::SetDestination(const glm::vec3& target)
 {
     if (!linkedSurface) { LOG_CONSOLE("Sin superficie enlazada"); return false; }
@@ -149,8 +145,19 @@ bool ComponentNavigation::SetDestination(const glm::vec3& target)
 
     std::vector<glm::vec3> newPath;
     bool found = Application::GetInstance().navMesh->FindPath(linkedSurface, start, target, newPath);
-
     if (!found) { LOG_CONSOLE("No se encontró camino"); return false; }
+
+    // Inicializar el polígono actual para moveAlongSurface
+    auto* navData = Application::GetInstance().navMesh->GetNavMeshData(linkedSurface);
+    if (navData && navData->navQuery)
+    {
+        dtQueryFilter filter;
+        filter.setIncludeFlags(0xFFFF);
+        float extents[3] = { 2.f, 4.f, 2.f };
+        float startF[3] = { start.x, start.y, start.z };
+        float nearPt[3];
+        navData->navQuery->findNearestPoly(startF, extents, &filter, &currentPolyRef, nearPt);
+    }
 
     path = std::move(newPath);
     pathIndex = 0;
@@ -182,50 +189,97 @@ bool ComponentNavigation::SnapPositionToNavMesh(glm::vec3& position)
     return true;
 }
 
+// 3. En Update — reemplazar el bloque de movimiento libre por moveAlongSurface
 void ComponentNavigation::Update(float dt)
 {
-    if (type != NavType::AGENT || !moving || path.empty()) return;
+    
+}
+
+// 2. En StopMovement — resetear el poly ref
+void ComponentNavigation::StopMovement()
+{
+    moving = false;
+    path.clear();
+    pathIndex = 0;
+    currentPolyRef = 0;
+}
+
+void ComponentNavigation::Serialize(nlohmann::json& componentObj) const {
+    componentObj["NavType"] = static_cast<int>(type);
+    componentObj["IsStatic"] = isStatic;
+    componentObj["MaxSlope"] = maxSlopeAngle;
+    componentObj["MoveSpeed"] = moveSpeed;
+    componentObj["ArrivalThreshold"] = arrivalThreshold;
+
+    if (linkedSurface) {
+        componentObj["LinkedSurfaceUID"] = linkedSurface->GetUID();
+    }
+}
+
+void ComponentNavigation::Deserialize(const nlohmann::json& componentObj) {
+    if (componentObj.contains("NavType"))
+        type = static_cast<NavType>(componentObj["NavType"]);
+
+    if (componentObj.contains("IsStatic"))
+        isStatic = componentObj["IsStatic"];
+
+    if (componentObj.contains("MaxSlope"))
+        maxSlopeAngle = componentObj["MaxSlope"];
+
+    if (componentObj.contains("MoveSpeed"))
+        moveSpeed = componentObj["MoveSpeed"];
+
+    if (componentObj.contains("ArrivalThreshold"))
+        arrivalThreshold = componentObj["ArrivalThreshold"];
+
+    if (componentObj.contains("LinkedSurfaceUID")) {
+        this->tempSurfaceUID = componentObj["LinkedSurfaceUID"];
+    }
+}
+
+void ComponentNavigation::SolveReferences() {
+    if (tempSurfaceUID != 0) {
+        this->linkedSurface = Application::GetInstance().scene->FindObject(this->tempSurfaceUID);
+        this->tempSurfaceUID = 0;
+    }
+}
+
+void ComponentNavigation::GetMoveDirection(float threshold, float& dx, float& dz)
+{
+    dx = 0.0f;
+    dz = 0.0f;
+
+    if (type != NavType::AGENT) return;
+    if (!moving) return;
+    if (path.empty()) return;
 
     Transform* t = (Transform*)owner->GetComponent(ComponentType::TRANSFORM);
     glm::vec3 currentPos = t->GetGlobalPosition();
+
     glm::vec3 target = path[pathIndex];
     glm::vec3 dir = target - currentPos;
 
-    // Ignorar diferencia en Y para calcular distancia horizontal
     glm::vec3 dirFlat = { dir.x, 0.0f, dir.z };
     float dist = glm::length(dirFlat);
 
-    if (dist <= arrivalThreshold)
+    if (dist <= threshold)
     {
-        t->SetGlobalPosition(target);
-        ++pathIndex;
+        pathIndex++;
 
         if (pathIndex >= (int)path.size())
         {
             moving = false;
             path.clear();
             pathIndex = 0;
+            return;
         }
-        return;
+
+        target = path[pathIndex];
+        dir = target - currentPos;
     }
 
-    // Mover hacia el waypoint
-    glm::vec3 step = (dir / glm::length(dir)) * moveSpeed * dt;
-    glm::vec3 newPos = currentPos + step;
+    dirFlat = glm::normalize(glm::vec3(dir.x, 0.0f, dir.z));
 
-    // Anclar al navmesh — corrige la Y y valida que sigue en superficie
-    if (!SnapPositionToNavMesh(newPos))
-    {
-        // Si sale del navmesh, no mover
-        LOG_CONSOLE("Agente fuera del navmesh, movimiento bloqueado.");
-        moving = false;
-        return;
-    }
-
-    t->SetGlobalPosition(newPos);
-}
-
-void ComponentNavigation::StopMovement()
-{
-    moving = false; path.clear(); pathIndex = 0;
+    dx = dirFlat.x;
+    dz = dirFlat.z;
 }
