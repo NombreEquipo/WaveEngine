@@ -8,6 +8,7 @@
 #include <functional>
 #include "ComponentMesh.h"
 #include "ComponentCamera.h"
+#include "ComponentNavigation.h"
 #include <nlohmann/json.hpp>
 #include <fstream>
 
@@ -315,7 +316,27 @@ bool ModuleScene::LoadScene(const std::string& filepath)
     if (root) 
         root->SolveReferences();
 
-    // Force full rebuild after loading scene
+    LOG_CONSOLE("Iniciando Auto-Bake de NavMeshes...");
+
+    std::function<void(GameObject*)> autoBakeNav = [&](GameObject* obj) {
+        if (!obj) return;
+
+        ComponentNavigation* nav = static_cast<ComponentNavigation*>(obj->GetComponent(ComponentType::NAVIGATION));
+
+        if (nav && nav->type == NavType::SURFACE) {
+            LOG_CONSOLE("Auto-Baking superficie: %s", obj->GetName().c_str());
+            Application::GetInstance().navMesh->Bake(obj);
+        }
+
+        for (GameObject* child : obj->GetChildren()) {
+            autoBakeNav(child);
+        }
+        };
+
+    if (root) {
+        autoBakeNav(root);
+    }
+
     needsOctreeRebuild = true;
 
     LOG_CONSOLE("Scene loaded successfully");
@@ -347,6 +368,10 @@ void ModuleScene::ClearScene()
     if (!root) return;
 
     // Selection
+    if (Application::GetInstance().navMesh) {
+        Application::GetInstance().navMesh->CleanUp();
+    }
+
     Application::GetInstance().selectionManager->ClearSelection();
 
     // Childrens
