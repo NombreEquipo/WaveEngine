@@ -8,6 +8,8 @@
 #include <functional>
 #include "ComponentMesh.h"
 #include "ComponentCamera.h"
+//#include "ComponentNavigation.h"
+//#include <nlohmann/json.hpp>
 #include <fstream>
 
 ModuleScene::ModuleScene() : Module()
@@ -159,7 +161,9 @@ bool ModuleScene::LoadScene(const nlohmann::json& sceneHierarchy)
     if (root)
         root->SolveReferences();
 
+
     LOG_CONSOLE("Scene loaded successfully from JSON");
+
     return true;
 }
 
@@ -188,6 +192,10 @@ void ModuleScene::ClearScene()
     if (!root) return;
 
     // Selection
+    if (Application::GetInstance().navMesh) {
+        Application::GetInstance().navMesh->CleanUp();
+    }
+
     Application::GetInstance().selectionManager->ClearSelection();
 
     // Childrens

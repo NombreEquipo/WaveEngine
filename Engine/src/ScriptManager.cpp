@@ -6,17 +6,22 @@
 #include "Transform.h"
 #include "GameObject.h"
 #include "Component.h"
+#include "AudioListener.h"
 #include "ModuleScene.h"
 #include "ComponentMesh.h"
 #include "ComponentMaterial.h"
 #include "ComponentScript.h"
+#include "ComponentNavigation.h"
+#include "NavMeshManager.h"
 #include "ModuleResources.h"
 #include "PrefabManager.h"
 #include "ResourcePrefab.h"
 #include "ComponentCanvas.h"
 #include "ComponentCamera.h" 
+#include "Rigidbody.h"
 #include "Window.h"        
-#include "ModuleCamera.h"   
+#include "ModuleCamera.h"  
+#include "ModuleAudio.h"
 #include <SDL3/SDL_scancode.h>
 #include "GameWindow.h"
 #ifndef WAVE_GAME
@@ -27,7 +32,6 @@
 #include "Application.h"
 #include "ComponentAnimation.h"
 #include "UIManager.h"
-#include "Rigidbody.h"
 #include "LibraryManager.h"
 
 #include <filesystem>
@@ -112,14 +116,14 @@ bool ScriptManager::LoadScript(const std::string& filepath) {
         LOG_CONSOLE("[ScriptManager] ERROR: Script not found: %s", filepath.c_str());
 
         // Activar flash de error
-        #ifndef WAVE_GAME
+#ifndef WAVE_GAME
         Application& app = Application::GetInstance();
         if (app.editor && app.editor->GetConsoleWindow()) {
             app.editor->GetConsoleWindow()->FlashError();
         }
 
         return false;
-        #endif 
+#endif 
     }
 
     int result = luaL_dofile(L, filepath.c_str());
@@ -129,13 +133,13 @@ bool ScriptManager::LoadScript(const std::string& filepath) {
         LOG_CONSOLE("[ScriptManager] ERROR: %s", error);
         lua_pop(L, 1);
 
-        #ifndef WAVE_GAME
+#ifndef WAVE_GAME
         // Activar flash de error
         Application& app = Application::GetInstance();
         if (app.editor && app.editor->GetConsoleWindow()) {
             app.editor->GetConsoleWindow()->FlashError();
         }
-        #endif // !1
+#endif // !1
         return false;
     }
 
@@ -155,13 +159,13 @@ void ScriptManager::CallGlobalStart() {
             LOG_CONSOLE("[ScriptManager] ERROR in Start(): %s", error);
             lua_pop(L, 1);
 
-            #ifndef WAVE_GAME
+#ifndef WAVE_GAME
             // Activar flash de error
             auto& app = Application::GetInstance();
             if (app.editor && app.editor->GetConsoleWindow()) {
                 app.editor->GetConsoleWindow()->FlashError();
             }
-            #endif
+#endif
         }
     }
     else {
@@ -179,13 +183,13 @@ void ScriptManager::CallGlobalUpdate(float deltaTime) {
             const char* error = lua_tostring(L, -1);
             LOG_CONSOLE("[ScriptManager] ERROR in Update(): %s", error);
             lua_pop(L, 1);
-            #ifndef WAVE_GAME
+#ifndef WAVE_GAME
             // Activar flash de error
             auto& app = Application::GetInstance();
             if (app.editor && app.editor->GetConsoleWindow()) {
                 app.editor->GetConsoleWindow()->FlashError();
             }
-            #endif // !1
+#endif // !1
         }
     }
     else {
@@ -258,7 +262,7 @@ static int Lua_Input_GetMousePosition(lua_State* L) {
     int rawX = raw.x;
     int rawY = raw.y;
 
-    #ifndef WAVE_GAME
+#ifndef WAVE_GAME
     auto& app = Application::GetInstance();
 
     // Get the Game window directly
@@ -269,7 +273,7 @@ static int Lua_Input_GetMousePosition(lua_State* L) {
 
         ImVec2 viewportPos = gameWindow->GetViewportPos();
         ImVec2 viewportSize = gameWindow->GetViewportSize();
-        
+
         // Convert to viewport-relative coordinates
         int relativeX = rawX - static_cast<int>(viewportPos.x);
         int relativeY = rawY - static_cast<int>(viewportPos.y);
@@ -282,11 +286,11 @@ static int Lua_Input_GetMousePosition(lua_State* L) {
             return 2;
         }
     }
-    #else 
-        lua_pushnumber(L, static_cast<lua_Number>(rawX));
-        lua_pushnumber(L, static_cast<lua_Number>(rawY));
-        return 2;
-    #endif
+#else 
+    lua_pushnumber(L, static_cast<lua_Number>(rawX));
+    lua_pushnumber(L, static_cast<lua_Number>(rawY));
+    return 2;
+#endif
 
     // If not in game window, return nil
     lua_pushnil(L);
@@ -428,6 +432,171 @@ static int Lua_Time_GetDeltaTime(lua_State* L) {
     return 1;
 }
 
+static int Lua_Navigation_SetDestination(lua_State* L)
+{
+
+    ComponentNavigation** navPtr =
+        static_cast<ComponentNavigation**>(luaL_checkudata(L, 1, "Navigation"));
+
+    ComponentNavigation* nav = *navPtr;
+
+    float x = (float)luaL_checknumber(L, 2);
+    float y = (float)luaL_checknumber(L, 3);
+    float z = (float)luaL_checknumber(L, 4);
+
+    bool ok = nav->SetDestination(glm::vec3(x, y, z));
+
+    lua_pushboolean(L, ok);
+    return 1;
+
+}
+
+static int Lua_Navigation_StopMovement(lua_State* L)
+{
+    ComponentNavigation** navPtr = static_cast<ComponentNavigation**>(
+        luaL_checkudata(L, 1, "Navigation")
+        );
+
+    ComponentNavigation* nav = *navPtr;
+
+    nav->StopMovement();
+
+    return 0;
+
+}
+
+static int Lua_Navigation_IsMoving(lua_State* L)
+{
+    ComponentNavigation* nav = *static_cast<ComponentNavigation**>(lua_touserdata(L, 1));
+    lua_pushboolean(L, nav ? nav->IsMoving() : false);
+    return 1;
+}
+
+static int Lua_Navigation_Update(lua_State* L)
+{
+    ComponentNavigation* nav = *static_cast<ComponentNavigation**>(lua_touserdata(L, 1));
+    float dt = static_cast<float>(luaL_checknumber(L, 2));
+    if (nav) nav->Update(dt);
+    return 0;
+}
+
+static int Lua_Navigation_GetCurrentWaypoint(lua_State* L)
+{
+    ComponentNavigation* nav = *static_cast<ComponentNavigation**>(lua_touserdata(L, 1));
+    if (!nav || nav->path.empty() || nav->pathIndex >= (int)nav->path.size())
+    {
+        lua_pushnil(L);
+        return 1;
+    }
+    const glm::vec3& wp = nav->path[nav->pathIndex];
+    lua_pushnumber(L, wp.x);
+    lua_pushnumber(L, wp.y);
+    lua_pushnumber(L, wp.z);
+    return 3;
+}
+
+static int Lua_Navigation_AdvanceWaypoint(lua_State* L)
+{
+    ComponentNavigation* nav = *static_cast<ComponentNavigation**>(lua_touserdata(L, 1));
+    float posX = static_cast<float>(luaL_checknumber(L, 2));
+    float posZ = static_cast<float>(luaL_checknumber(L, 3));
+    float threshold = static_cast<float>(luaL_optnumber(L, 4, 0.25));
+
+    if (!nav || nav->path.empty() || nav->pathIndex >= (int)nav->path.size())
+    {
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    const glm::vec3& wp = nav->path[nav->pathIndex];
+    float dx = posX - wp.x;
+    float dz = posZ - wp.z;
+    float dist = std::sqrt(dx * dx + dz * dz);
+
+    if (dist <= threshold)
+    {
+        nav->pathIndex++;
+        if (nav->pathIndex >= (int)nav->path.size())
+        {
+            nav->moving = false;
+            nav->path.clear();
+            nav->pathIndex = 0;
+            lua_pushboolean(L, false);
+            return 1;
+        }
+    }
+
+    lua_pushboolean(L, true);
+    return 1;
+}
+
+static int Lua_Navigation_GetMoveDirection(lua_State* L)
+{
+    ComponentNavigation** navPtr =
+        static_cast<ComponentNavigation**>(luaL_checkudata(L, 1, "Navigation"));
+
+    ComponentNavigation* nav = *navPtr;
+
+    float threshold = (float)luaL_optnumber(L, 2, 0.3f);
+
+    float dx = 0.0f;
+    float dz = 0.0f;
+
+    nav->GetMoveDirection(threshold, dx, dz);
+
+    lua_pushnumber(L, dx);
+    lua_pushnumber(L, dz);
+    return 2;
+
+    //ComponentNavigation* nav = *static_cast<ComponentNavigation**>(lua_touserdata(L, 1));
+    //float threshold = static_cast<float>(luaL_optnumber(L, 2, 0.3));
+
+    //if (!nav || !nav->moving || nav->path.empty())
+    //{
+    //    lua_pushnumber(L, 0); lua_pushnumber(L, 0);
+    //    return 2;
+    //}
+
+    //// Leer posicion desde el Transform del propio owner (C++ interno)
+    //Transform* t = (Transform*)nav->owner->GetComponent(ComponentType::TRANSFORM);
+    //if (!t) { lua_pushnumber(L, 0); lua_pushnumber(L, 0); return 2; }
+
+    //glm::vec3 pos = t->GetGlobalPosition();
+
+    //// Avanzar waypoints si estamos cerca
+    //while (nav->pathIndex < (int)nav->path.size())
+    //{
+    //    const glm::vec3& wp = nav->path[nav->pathIndex];
+    //    float dx = pos.x - wp.x;
+    //    float dz = pos.z - wp.z;
+    //    if (std::sqrt(dx * dx + dz * dz) <= threshold)
+    //        nav->pathIndex++;
+    //    else
+    //        break;
+    //}
+
+    //// Path completado
+    //if (nav->pathIndex >= (int)nav->path.size())
+    //{
+    //    nav->moving = false;
+    //    nav->path.clear();
+    //    nav->pathIndex = 0;
+    //    lua_pushnumber(L, 0); lua_pushnumber(L, 0);
+    //    return 2;
+    //}
+
+    //// Dirección normalizada hacia el waypoint actual
+    //const glm::vec3& wp = nav->path[nav->pathIndex];
+    //float dx = wp.x - pos.x;
+    //float dz = wp.z - pos.z;
+    //float len = std::sqrt(dx * dx + dz * dz);
+    //if (len < 0.001f) { lua_pushnumber(L, 0); lua_pushnumber(L, 0); return 2; }
+
+    //lua_pushnumber(L, dx / len);
+    //lua_pushnumber(L, dz / len);
+    //return 2;
+}
+
 static int Lua_Time_GetRealDeltaTime(lua_State* L) {
     lua_pushnumber(L, Time::GetRealDeltaTimeStatic());
     return 1;
@@ -444,18 +613,18 @@ static int Lua_Camera_GetScreenToWorldPlane(lua_State* L) {
     int screenWidth = 800;
     int screenHeight = 600;
 
-    #ifndef WAVE_GAME
+#ifndef WAVE_GAME
     GameWindow* gameWindow = app.editor->GetGameWindow();
     if (gameWindow) {
         ImVec2 viewportSize = gameWindow->GetViewportSize();
         screenWidth = static_cast<int>(viewportSize.x);
         screenHeight = static_cast<int>(viewportSize.y);
     }
-    #else 
-    
+#else 
+
     app.window->GetWindowSize(screenWidth, screenHeight);
 
-    #endif
+#endif
     ComponentCamera* camera = nullptr;
 
 
@@ -504,6 +673,40 @@ static int Lua_Camera_GetScreenToWorldPlane(lua_State* L) {
     return 2;
 }
 
+
+//Audio
+//BGM Transitions
+static int Lua_Audio_SetMusicState(lua_State* L) {
+    const char* stateName = luaL_checkstring(L, 1);
+    const char* stateGroupName = "BGM_State";
+    /*stateName = std::toupper(stateName.c_str());*/
+    
+    Application::GetInstance().audio.get()->audioSystem->SetState(stateGroupName, stateName);
+    AK::SoundEngine::RenderAudio();
+    return 0;
+}
+
+//Audio Switches
+static int Lua_Audio_SetSwitch(lua_State* L) {
+    
+    const char* switchGroupName = luaL_checkstring(L, 1);
+    const char* switchStateName = luaL_checkstring(L, 2);
+    lua_getfield(L, 3, "ptr");                             // slot 3: the table (component)
+    AudioSource* source = *static_cast<AudioSource**>(lua_touserdata(L, -1));
+
+    Application::GetInstance().audio.get()->audioSystem->SetSwitch(switchGroupName, switchStateName, source->goID);
+    AK::SoundEngine::RenderAudio();
+    return 0;
+}
+
+static int Lua_Audio_PlayAudioEvent(lua_State* L) {
+    lua_getfield(L, 1, "ptr");  // get "ptr" from the table (slot 1)
+    AudioSource* source = *static_cast<AudioSource**>(lua_touserdata(L, -1));
+    std::wstring wEventName(source->eventName.begin(), source->eventName.end());
+    Application::GetInstance().audio.get()->audioSystem->PlayEvent(wEventName.c_str(), source->goID);
+    AK::SoundEngine::RenderAudio();
+    return 0;
+}
 // UI
 // UI.WasClicked("ButtonName") → bool
 static int Lua_UI_WasClicked(lua_State* L) {
@@ -518,7 +721,7 @@ static int Lua_UI_SetElementHeight(lua_State* L) {
     float height = static_cast<float>(luaL_checknumber(L, 2));
     Application::GetInstance().scripts->EnqueueOperation([name, height]() {
         UIManager::GetInstance().SetElementHeight(name, height);
-    });
+        });
     return 0;
 }
 
@@ -528,7 +731,7 @@ static int Lua_UI_SetElementWidth(lua_State* L) {
     float width = static_cast<float>(luaL_checknumber(L, 2));
     Application::GetInstance().scripts->EnqueueOperation([name, width]() {
         UIManager::GetInstance().SetElementWidth(name, width);
-    });
+        });
     return 0;
 }
 
@@ -538,7 +741,7 @@ static int Lua_UI_SetElementText(lua_State* L) {
     std::string text(luaL_checkstring(L, 2));
     Application::GetInstance().scripts->EnqueueOperation([name, text]() {
         UIManager::GetInstance().SetElementText(name, text);
-    });
+        });
     return 0;
 }
 
@@ -548,7 +751,7 @@ static int Lua_UI_SetElementVisibility(lua_State* L) {
     bool visible = lua_toboolean(L, 2) != 0;
     Application::GetInstance().scripts->EnqueueOperation([name, visible]() {
         UIManager::GetInstance().SetElementVisibility(name, visible);
-    });
+        });
     return 0;
 }
 
@@ -557,8 +760,9 @@ static int Lua_Game_Exit(lua_State* L) {
     Application::GetInstance().RequestExit();
     return 0;
 }
+
 static int Lua_Game_Pause(lua_State* L) {
-    Application::GetInstance().Pause();
+    Application::GetInstance().PauseGameOnly();
     return 0;
 }
 
@@ -567,6 +771,11 @@ static int Lua_Game_Resume(lua_State* L) {
     return 0;
 }
 
+
+// Forward declarations
+static int Lua_Rigidbody_SetLinearVelocity(lua_State* L);
+static int Lua_Rigidbody_GetLinearVelocity(lua_State* L);
+static int Lua_Rigidbody_AddForce(lua_State* L);
 
 void ScriptManager::RegisterEngineFunctions() {
     if (!L) {
@@ -629,6 +838,51 @@ void ScriptManager::RegisterEngineFunctions() {
     lua_setfield(L, -2, "GetScreenToWorldPlane");
     lua_setglobal(L, "Camera");
 
+    //Audio
+    lua_newtable(L);
+    lua_pushcfunction(L, Lua_Audio_SetMusicState);
+    lua_setfield(L, -2, "SetMusicState");
+    lua_pushcfunction(L, Lua_Audio_PlayAudioEvent);
+    lua_setfield(L, -2, "PlayAudioEvent");
+    lua_pushcfunction(L, Lua_Audio_SetSwitch);
+    lua_setfield(L, -2, "SetSwitch");
+    lua_setglobal(L, "Audio");
+
+    
+    //Navigation
+    luaL_newmetatable(L, "Navigation");
+    lua_pushvalue(L, -1);
+    lua_setfield(L, -2, "__index");
+    lua_pushcfunction(L, Lua_Navigation_SetDestination);
+    lua_setfield(L, -2, "SetDestination");
+    lua_pushcfunction(L, Lua_Navigation_StopMovement);
+    lua_setfield(L, -2, "StopMovement");
+    lua_pushcfunction(L, Lua_Navigation_IsMoving);
+    lua_setfield(L, -2, "IsMoving");
+    lua_pushcfunction(L, Lua_Navigation_Update);
+    lua_setfield(L, -2, "Update");
+    lua_pushcfunction(L, Lua_Navigation_GetCurrentWaypoint);
+    lua_setfield(L, -2, "GetCurrentWaypoint");
+    lua_pushcfunction(L, Lua_Navigation_AdvanceWaypoint);
+    lua_setfield(L, -2, "AdvanceWaypoint");
+    lua_pushcfunction(L, Lua_Navigation_GetMoveDirection);
+    lua_setfield(L, -2, "GetMoveDirection");
+
+    lua_pop(L, 1);
+
+    // Rigidbody metatable (nuevo)
+    luaL_newmetatable(L, "Rigidbody");
+    lua_pushvalue(L, -1);
+    lua_setfield(L, -2, "__index");
+    lua_pushcfunction(L, Lua_Rigidbody_SetLinearVelocity);
+    lua_setfield(L, -2, "SetLinearVelocity");
+    lua_pushcfunction(L, Lua_Rigidbody_GetLinearVelocity);
+    lua_setfield(L, -2, "GetLinearVelocity");
+    lua_pushcfunction(L, Lua_Rigidbody_AddForce);
+    lua_setfield(L, -2, "AddForce");
+
+    lua_pop(L, 1);
+
     //UI
     lua_newtable(L);
     lua_pushcfunction(L, Lua_UI_WasClicked);            lua_setfield(L, -2, "WasClicked");
@@ -638,6 +892,8 @@ void ScriptManager::RegisterEngineFunctions() {
     lua_pushcfunction(L, Lua_UI_SetElementVisibility);  lua_setfield(L, -2, "SetElementVisibility");
     lua_setglobal(L, "UI");
 
+
+    // GAMEOBJECT API
     // Game
     lua_newtable(L);
     lua_pushcfunction(L, Lua_Game_Pause);
@@ -663,7 +919,7 @@ void ScriptManager::RegisterEngineFunctions() {
     lua_setfield(L, -2, "Exit");
     lua_setglobal(L, "Game");
 
-    LOG_CONSOLE("[ScriptManager] Engine functions registered: Engine, Input, Time, Camera, UI, Game");
+    LOG_CONSOLE("[ScriptManager] Engine functions registered: Engine, Input, Time, Camera, Audio, Navigation, UI, Game");
 }
 
 // -------------------------- GAMEOBJECT API -------------------------------------
@@ -704,7 +960,7 @@ static int Lua_Rigidbody_AddForce(lua_State* L) {
     if (rb) {
         Application::GetInstance().scripts->EnqueueOperation([rb, x, y, z, mode]() {
             rb->AddForce(glm::vec3(x, y, z), mode);
-        });
+            });
     }
     return 0;
 }
@@ -741,6 +997,19 @@ static int Lua_Animation_Play(lua_State* L)
     if (anim)
     {
         anim->Play(std::string(animName), blendTime);
+    }
+
+    return 0;
+}
+
+static int Lua_Animation_SetAnimSpeed(lua_State* L) {
+    ComponentAnimation* anim = *static_cast<ComponentAnimation**>(lua_touserdata(L, 1));
+    std::string animName = luaL_checkstring(L, 2);
+    float newSpeed = luaL_checknumber(L, 3);
+    
+
+    if (anim) {
+        anim->SetAnimationSpeed(animName, newSpeed);
     }
 
     return 0;
@@ -927,7 +1196,7 @@ static int Lua_GameObject_AddComponent_MeshRenderer(lua_State* L) {
     auto& app = Application::GetInstance();
     app.scripts->EnqueueOperation([obj]() {
         if (!obj->IsMarkedForDeletion()) {
-            obj->CreateComponent(ComponentType::MESH); 
+            obj->CreateComponent(ComponentType::MESH);
         }
         });
 
@@ -950,7 +1219,7 @@ static int Lua_GameObject_AddComponent_Material(lua_State* L) {
     auto& app = Application::GetInstance();
     app.scripts->EnqueueOperation([obj]() {
         if (!obj->IsMarkedForDeletion()) {
-            obj->CreateComponent(ComponentType::MATERIAL); 
+            obj->CreateComponent(ComponentType::MATERIAL);
         }
         });
 
@@ -1098,7 +1367,7 @@ static int Lua_ComponentCanvas_SetOpacity(lua_State* L) {
 
 static int Lua_Collider_Enable(lua_State* L) {
     Component* comp = static_cast<Component*>(lua_touserdata(L, lua_upvalueindex(1)));
-    if (comp) 
+    if (comp)
     {
         Application::GetInstance().scripts->EnqueueOperation([comp]() {
             comp->Enable();
@@ -1110,12 +1379,12 @@ static int Lua_Collider_Enable(lua_State* L) {
 
 static int Lua_Collider_Disable(lua_State* L) {
     Component* comp = static_cast<Component*>(lua_touserdata(L, lua_upvalueindex(1)));
-    if (comp) 
+    if (comp)
     {
-        Application::GetInstance().scripts->EnqueueOperation([comp]() 
+        Application::GetInstance().scripts->EnqueueOperation([comp]()
             {
-            comp->Disable();
-            comp->SetActive(false);
+                comp->Disable();
+                comp->SetActive(false);
             });
     }
     return 0;
@@ -1151,7 +1420,7 @@ static int Lua_GameObject_GetComponent(lua_State* L) {
 
     if (strcmp(componentType, "Material") == 0) {
         Component* comp = obj->GetComponent(ComponentType::MATERIAL);
-        ComponentMaterial* mat = static_cast<ComponentMaterial*>(comp);
+        ComponentMaterial* mat = static_cast<ComponentMaterial*>(comp); 
         if (!mat) {
             lua_pushnil(L);
             return 1;
@@ -1194,7 +1463,7 @@ static int Lua_GameObject_GetComponent(lua_State* L) {
         lua_pushcclosure(L, [](lua_State* L) -> int {
             ComponentCanvas* canvas = static_cast<ComponentCanvas*>(
                 lua_touserdata(L, lua_upvalueindex(1)));
-            const char* xamlPath = luaL_checkstring(L, 2); 
+            const char* xamlPath = luaL_checkstring(L, 2);
             std::string path(xamlPath);
             Application::GetInstance().scripts->EnqueueOperation([canvas, path]() {
                 canvas->LoadXAML(path.c_str());
@@ -1216,10 +1485,42 @@ static int Lua_GameObject_GetComponent(lua_State* L) {
 
         ComponentAnimation** udata = static_cast<ComponentAnimation**>(
             lua_newuserdata(L, sizeof(ComponentAnimation*))
-        );
+            );
         *udata = anim;
 
         luaL_getmetatable(L, "Animation");
+        lua_setmetatable(L, -2);
+
+        return 1;
+    }
+
+    if (strcmp(componentType, "Navigation") == 0)
+    {
+        ComponentNavigation* nav = (ComponentNavigation*)obj->GetComponent(ComponentType::NAVIGATION);
+
+        if (nav) {
+            ComponentNavigation** udata = (ComponentNavigation**)lua_newuserdata(L, sizeof(ComponentNavigation*));
+            *udata = nav;
+            luaL_getmetatable(L, "Navigation");
+            lua_setmetatable(L, -2);
+            return 1;
+        }
+
+    }
+   
+   
+    if (strcmp(componentType, "Rigidbody") == 0)
+    {
+        Component* comp = obj->GetComponent(ComponentType::RIGIDBODY);
+        Rigidbody* rb = static_cast<Rigidbody*>(comp);
+        if (!rb) { lua_pushnil(L); return 1; }
+
+        Rigidbody** udata = static_cast<Rigidbody**>(
+            lua_newuserdata(L, sizeof(Rigidbody*))
+            );
+        *udata = rb;
+
+        luaL_getmetatable(L, "Rigidbody");
         lua_setmetatable(L, -2);
 
         return 1;
@@ -1269,6 +1570,39 @@ static int Lua_GameObject_GetComponent(lua_State* L) {
         luaL_getmetatable(L, "Rigidbody");
         lua_setmetatable(L, -2);
 
+        return 1;
+    }
+
+    if (strcmp(componentType, "Audio Source") == 0) {
+        Component* comp = obj->GetComponent(ComponentType::AUDIOSOURCE);
+        AudioSource* source = static_cast<AudioSource*>(comp);
+        if (!source) {
+            lua_pushnil(L);
+            return 1;
+        }
+
+        lua_newtable(L);
+
+        AudioSource** ud = (AudioSource**)lua_newuserdata(L, sizeof(AudioSource*));
+        *ud = source;
+        lua_setfield(L, -2, "ptr");  // store userdata in table as "ptr"
+
+        lua_pushcfunction(L, Lua_Audio_PlayAudioEvent);  // no upvalue, just a plain function
+        lua_setfield(L, -2, "PlayAudioEvent");
+
+        return 1;
+    }
+
+    if (strcmp(componentType, "Audio Listener") == 0) {
+        Component* comp = obj->GetComponent(ComponentType::LISTENER);
+        AudioListener* listener = static_cast<AudioListener*>(comp);
+        if (!listener) {
+            lua_pushnil(L);
+            return 1;
+        }
+        // Store it as a pointer-to-pointer (full userdata)
+        AudioListener** list = (AudioListener**)lua_newuserdata(L, sizeof(AudioListener*));
+        *list = listener;
         return 1;
     }
 
@@ -1396,8 +1730,6 @@ void ScriptManager::RegisterGameObjectAPI() {
 
     lua_pushcfunction(L, Lua_GameObject_Find);
     lua_setfield(L, -2, "Find");
-
-    lua_setglobal(L, "GameObject");
 
     LOG_CONSOLE("[ScriptManager] GameObject API registered");
 }
@@ -1654,13 +1986,17 @@ void ScriptManager::RegisterComponentAPI() {
     lua_setfield(L, -2, "__index");
     lua_pushcfunction(L, Lua_Animation_Play);
     lua_setfield(L, -2, "Play");
+    lua_pushcfunction(L, Lua_Animation_SetAnimSpeed);
+    lua_setfield(L, -2, "SetSpeed");
     lua_pushcfunction(L, Lua_Animation_Stop);
     lua_setfield(L, -2, "Stop");
     lua_pushcfunction(L, Lua_Animation_IsPlaying);
     lua_setfield(L, -2, "IsPlaying");
     lua_pushcfunction(L, Lua_Animation_IsPlayingAnimation);
     lua_setfield(L, -2, "IsPlayingAnimation");
+
     lua_pop(L, 1); 
+
 }
 
 // PREFAB API
@@ -1768,6 +2104,7 @@ static int Lua_Prefab_Instantiate(lua_State* L) {
     return 1;
 }
 
+
 void ScriptManager::RegisterPrefabAPI() {
     lua_newtable(L);
 
@@ -1781,9 +2118,11 @@ void ScriptManager::RegisterPrefabAPI() {
 
 }
 
+
+
 static GameWindow* GetGameWindow() {
-    #ifndef WAVE_GAME
+#ifndef WAVE_GAME
     GameWindow* window = Application::GetInstance().editor->GetGameWindow();
     return window;
-    #endif // !1
+#endif // !1
 }
