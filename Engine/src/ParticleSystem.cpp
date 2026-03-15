@@ -27,6 +27,7 @@ void ModuleEmitterSpawn::ResetDefaults() {
 
     // Interpolation
     sizeStart = 0.5f; sizeEnd = 0.0f;
+    sizeCurve.clear();
     colorStart = glm::vec4(1.0f);
     colorEnd = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
     colorGradient.clear();
@@ -280,6 +281,30 @@ glm::vec4 EmitterInstance::EvaluateGradient(float t, std::vector<ColorKey>& grad
     return gradient.back().color;
 }
 
+float EmitterInstance::EvaluateSizeCurve(float t, ModuleEmitterSpawn* spawner) {
+    if (!spawner || spawner->sizeCurve.empty()) {
+        // If theres no curve defined for the size, fall back to linear interpolation
+        if (spawner) return glm::mix(spawner->sizeStart, spawner->sizeEnd, t);
+        return 0.5f;
+    }
+
+    const auto& curve = spawner->sizeCurve;
+    t = glm::clamp(t, 0.0f, 1.0f);
+
+    if (t <= curve.front().time) return curve.front().size;
+    if (t >= curve.back().time)  return curve.back().size;
+
+    for (size_t i = 0; i + 1 < curve.size(); ++i) {
+        if (t >= curve[i].time && t <= curve[i + 1].time) {
+            float range = curve[i + 1].time - curve[i].time;
+            if (range <= 0.0001f) return curve[i].size;
+            float localT = (t - curve[i].time) / range;
+            return glm::mix(curve[i].size, curve[i + 1].size, localT);
+        }
+    }
+    return curve.back().size;
+}
+
 void EmitterInstance::Update(float dt) {
     if (!active) {
         if (!particles.empty()) {
@@ -298,7 +323,7 @@ void EmitterInstance::Update(float dt) {
                 else
                     p.color = glm::mix(p.colorStart, p.colorEnd, lifeRatio);
 
-                p.size = glm::mix(p.sizeStart, p.sizeEnd, lifeRatio);
+                p.size = EvaluateSizeCurve(lifeRatio, spawner);
                 p.rotation += p.angularVelocity * dt;
                 p.animationTime = lifeRatio * animationSpeed;
             }
@@ -392,7 +417,7 @@ void EmitterInstance::Update(float dt) {
         else
             p.color = glm::mix(p.colorStart, p.colorEnd, lifeRatio);
 
-        p.size = glm::mix(p.sizeStart, p.sizeEnd, lifeRatio);
+        p.size = EvaluateSizeCurve(lifeRatio, spawner);
         p.rotation += p.angularVelocity * dt;
         p.animationTime = lifeRatio * animationSpeed;
     }

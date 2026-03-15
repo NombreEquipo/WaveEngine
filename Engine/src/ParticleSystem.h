@@ -12,6 +12,12 @@ struct ColorKey {
     glm::vec4 color;
 };
 
+// Gradient Size
+struct SizeKey {
+    float time = 0.0f;
+    float size = 0.5f;
+};
+
 // Repeated Burst
 struct Burst {
     float time = 0.0f; // Time at which it occurs
@@ -112,9 +118,12 @@ public:
     // Interpolation
     float sizeStart = 0.5f, sizeEnd = 0.0f;
 
+    // Size curve is optional
+    std::vector<SizeKey> sizeCurve;
+
     // Color Simple
     glm::vec4 colorStart = glm::vec4(1.0f);
-    glm::vec4 colorEnd = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f); // Color fade to transparent by default
+    glm::vec4 colorEnd = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f); // Color fade to transparent by default
 
     // Advanced interpolation with color gradients
     std::vector<ColorKey> colorGradient;
@@ -233,4 +242,7 @@ struct EmitterInstance {
 
     // Helper for gradients
     glm::vec4 EvaluateGradient(float t, std::vector<ColorKey>& gradient);
+
+   // Helper for size curve
+    float EvaluateSizeCurve(float t, ModuleEmitterSpawn* spawner);
 };

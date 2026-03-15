@@ -233,26 +233,26 @@ void ComponentParticleSystem::OnEditor() {
         ImGui::EndCombo();
     }
 
-        // Animation Settings
-        ImGui::DragInt("Rows", &emitter->textureRows, 0.1f, 1, 16);
-        ImGui::DragInt("Columns", &emitter->textureCols, 0.1f, 1, 16);
-        ImGui::DragFloat("Animation Speed", &emitter->animationSpeed, 0.05f, 0.0f, 10.0f, "%.2fx");
-        ImGui::Checkbox("Loop Animation", &emitter->animLoop);
+    // Animation Settings
+    ImGui::DragInt("Rows", &emitter->textureRows, 0.1f, 1, 16);
+    ImGui::DragInt("Columns", &emitter->textureCols, 0.1f, 1, 16);
+    ImGui::DragFloat("Animation Speed", &emitter->animationSpeed, 0.05f, 0.0f, 10.0f, "%.2fx");
+    ImGui::Checkbox("Loop Animation", &emitter->animLoop);
 
-        // Global Settings
-        ImGui::Separator();
-        ImGui::Text("System Settings");
+    // Global Settings
+    ImGui::Separator();
+    ImGui::Text("System Settings");
 
-        const char* spaceItems[] = { "Local", "World" };
-        int currentSpace = (int)emitter->simulationSpace;
-        if (ImGui::Combo("Simulation Space", &currentSpace, spaceItems, IM_ARRAYSIZE(spaceItems))) {
-            emitter->simulationSpace = (SimulationSpace)currentSpace;
-        }
+    const char* spaceItems[] = { "Local", "World" };
+    int currentSpace = (int)emitter->simulationSpace;
+    if (ImGui::Combo("Simulation Space", &currentSpace, spaceItems, IM_ARRAYSIZE(spaceItems))) {
+        emitter->simulationSpace = (SimulationSpace)currentSpace;
+    }
 
-        ImGui::Checkbox("Prewarm", &emitter->prewarm);
-        ImGui::DragInt("Max Particles", &emitter->maxParticles, 1, 0, 10000);
-        ImGui::DragFloat("Emission Rate (Time)", &emitter->emissionRate, 0.1f, 0.0f, 1000.0f);
-        ImGui::DragFloat("Emission Rate (Dist)", &emitter->emissionRateDistance, 0.1f, 0.0f, 100.0f);
+    ImGui::Checkbox("Prewarm", &emitter->prewarm);
+    ImGui::DragInt("Max Particles", &emitter->maxParticles, 1, 0, 10000);
+    ImGui::DragFloat("Emission Rate (Time)", &emitter->emissionRate, 0.1f, 0.0f, 1000.0f);
+    ImGui::DragFloat("Emission Rate (Dist)", &emitter->emissionRateDistance, 0.1f, 0.0f, 100.0f);
 
     // Duration and Looping
     ImGui::Separator();
@@ -268,7 +268,7 @@ void ComponentParticleSystem::OnEditor() {
     if (emitter->oneShot) {
         ImGui::DragInt("One Shot Count", &emitter->oneShotCount, 1, 1, 1000);
         ImGui::TextColored(ImVec4(1, 1, 0, 1),
-            "One-shot: fires %d particles once on Play()", emitter->oneShotCount);
+            "One-shot: %d particles on Play()", emitter->oneShotCount);
     }
 
     // Proximity Activation
@@ -319,11 +319,11 @@ void ComponentParticleSystem::OnEditor() {
         ImGui::TreePop();
     }
 
-        ImGui::Checkbox("Additive Blending (Glow)", &emitter->additiveBlending);
+    ImGui::Checkbox("Additive Blending (Glow)", &emitter->additiveBlending);
 
-        // Module settings
-        ModuleEmitterSpawn* spawner = nullptr;
-        ModuleEmitterNoise* noise = nullptr;
+    // Module settings
+    ModuleEmitterSpawn* spawner = nullptr;
+    ModuleEmitterNoise* noise = nullptr;
 
     for (auto m : emitter->modules) {
         if (m->type == ParticleModuleType::SPAWNER) spawner = (ModuleEmitterSpawn*)m;
@@ -364,11 +364,64 @@ void ComponentParticleSystem::OnEditor() {
         ImGui::DragFloat("Size End", &spawner->sizeEnd, 0.01f, 0.0f, 10.0f);
         ImGui::DragFloat2("Spin Speed (Min/Max)", &spawner->rotationSpeedMin, 1.0f, -360.0f, 360.0f);
 
+        // The size curve settings overrides Start/End when is not empty
+        if (ImGui::TreeNode("Size Curve Editor")) {
+            if (!spawner->sizeCurve.empty())
+                ImGui::TextColored(ImVec4(0.3f, 1.0f, 0.3f, 1.0f), "[ACTIVE] Overrides Start/End values");
+            else
+                ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "[INACTIVE] Using linear Start -> End");
+
+            if (ImGui::Button("+ Add Key")) {
+                SizeKey key;
+                key.time = spawner->sizeCurve.empty() ? 0.5f
+                    : glm::clamp(spawner->sizeCurve.back().time + 0.2f, 0.0f, 1.0f);
+                key.size = spawner->sizeStart > 0.0f ? spawner->sizeStart : 0.5f;
+                spawner->sizeCurve.push_back(key);
+                std::sort(spawner->sizeCurve.begin(), spawner->sizeCurve.end(),
+                    [](const SizeKey& a, const SizeKey& b) { return a.time < b.time; });
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Clear Curve"))
+                spawner->sizeCurve.clear();
+            ImGui::SameLine();
+            if (ImGui::Button("Preset: 0 - 1 - 0 Size")) {
+                spawner->sizeCurve.clear();
+                float peak = spawner->sizeStart > 0.0f ? spawner->sizeStart : 0.5f;
+                spawner->sizeCurve.push_back({ 0.0f,  0.0f });
+                spawner->sizeCurve.push_back({ 0.35f, peak });
+                spawner->sizeCurve.push_back({ 1.0f,  0.0f });
+            }
+
+            bool curveChanged = false;
+            for (int i = 0; i < (int)spawner->sizeCurve.size(); ++i) {
+                ImGui::PushID(i + 200);
+                ImGui::SetNextItemWidth(120.0f);
+                if (ImGui::SliderFloat("t", &spawner->sizeCurve[i].time, 0.0f, 1.0f))
+                    curveChanged = true;
+                ImGui::SameLine();
+                ImGui::SetNextItemWidth(100.0f);
+                ImGui::DragFloat("size", &spawner->sizeCurve[i].size, 0.01f, 0.0f, 20.0f);
+                ImGui::SameLine();
+                if (ImGui::Button("X")) {
+                    spawner->sizeCurve.erase(spawner->sizeCurve.begin() + i);
+                    ImGui::PopID();
+                    continue;
+                }
+                ImGui::PopID();
+            }
+            if (curveChanged) {
+                std::sort(spawner->sizeCurve.begin(), spawner->sizeCurve.end(),
+                    [](const SizeKey& a, const SizeKey& b) { return a.time < b.time; });
+            }
+            ImGui::TreePop();
+        }
+
         ImGui::Separator();
         ImGui::Text("Color over Lifetime");
 
         ImGui::ColorEdit4("Start Color", &spawner->colorStart.r);
-        ImGui::ColorEdit4("End Color", &spawner->colorEnd.r);
+        ImGui::ColorEdit4("End Color", &spawner->colorEnd.r,
+            ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_AlphaPreview);
 
         if (ImGui::TreeNode("Advanced Gradient Editor")) {
             if (ImGui::Button("Add Color Key")) {
@@ -550,6 +603,11 @@ void ComponentParticleSystem::Serialize(nlohmann::json& componentObj) const {
             }
             componentObj["colorGradient"] = gradJson;
 
+            nlohmann::json sizeJson = nlohmann::json::array();
+            for (const auto& k : s->sizeCurve)
+                sizeJson.push_back({ {"time", k.time}, {"size", k.size} });
+            componentObj["sizeCurve"] = sizeJson;
+
             componentObj["sizeStart"] = s->sizeStart;
             componentObj["sizeEnd"] = s->sizeEnd;
             componentObj["rotSpeedMin"] = s->rotationSpeedMin;
@@ -643,6 +701,16 @@ void ComponentParticleSystem::Deserialize(const nlohmann::json& componentObj) {
                     auto c = k["color"];
                     key.color = glm::vec4(c[0], c[1], c[2], c[3]);
                     s->colorGradient.push_back(key);
+                }
+            }
+
+            if (componentObj.contains("sizeCurve")) {
+                s->sizeCurve.clear();
+                for (const auto& k : componentObj["sizeCurve"]) {
+                    SizeKey key;
+                    key.time = k["time"];
+                    key.size = k["size"];
+                    s->sizeCurve.push_back(key);
                 }
             }
 
