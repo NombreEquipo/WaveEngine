@@ -342,7 +342,7 @@ States[State.WALK] = {
         
         if Player.stepSFX then
             stepTimer = stepTimer + dt
-            if stepTimer >= 0.5 then
+            if stepTimer >= (0.5/self.public.sprintMultiplier) then
 				stepTimer = 0
                 Audio.SetSwitch("Player_Speed", "Walk", Player.stepSFX)
                 --Engine.Log("Playing Walk FootSteps SFX")
@@ -406,7 +406,7 @@ States[State.RUNNING] = {
 
         if Player.stepSFX then
             stepTimer = stepTimer + dt
-            if stepTimer >= 0.25 then
+            if stepTimer >= (0.25/self.public.sprintMultiplier) then
 				stepTimer = 0
                 Audio.SetSwitch("Player_Speed", "Run", Player.stepSFX)
                 --Engine.Log("Playing Run FootSteps SFX")
@@ -663,11 +663,21 @@ function Update(self, dt)
 
 end
 
-function OnTriggerEnter(self, other) end
+
+local surfaces = {"Grass", "Water", "Dirt"}
+
+function OnTriggerEnter(self, other)
+	for i, surface in ipairs(surfaces) do
+		if other:CompareTag(surface) then 
+			Player.currentSurface = surface
+		end
+	end
+
+end
 function OnTriggerExit(self, other) end
 
 
---local surfaces = {"Grass", "Water", "Dirt"}
+
 
 function OnCollisionEnter(self, other)
     if other:CompareTag("Water") then
@@ -686,11 +696,17 @@ function OnCollisionEnter(self, other)
             Engine.Log("[Player] Player not drowning")
         end
     end
-	if other:CompareTag("Grass") then
-		Player.currentSurface = "Grass"
-	elseif other:CompareTag("Dirt") then
-		Player.currentSurface = "Dirt"
+
+	for i, surface in ipairs(surfaces) do
+		if other:CompareTag(surface) then 
+			Player.currentSurface = surface
+		end
 	end
+	--if other:CompareTag("Grass") then
+	--	Player.currentSurface = "Grass"
+	--elseif other:CompareTag("Dirt") then
+	--	Player.currentSurface = "Dirt"
+	--end
 end
 
 function OnCollisionExit(self, other)
@@ -700,6 +716,9 @@ function OnCollisionExit(self, other)
         Engine.Log("[Player] Player out of water")
     end
 end
+
+
+
 
 
 

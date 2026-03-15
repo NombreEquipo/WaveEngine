@@ -10,7 +10,7 @@
     "Type": "User",
     "GUID": "{7C55CBAC-5186-4208-888F-0BCE02308A98}",
     "Language": "SFX",
-    "Hash": "{8E5FD4BA-CD6E-B3E5-D941-BE04917D6E53}",
+    "Hash": "{A40386A9-D5E8-463C-97C4-A0AA62CB6C83}",
     "ObjectPath": "\\SoundBanks\\Default Work Unit\\MainSoundBank",
     "ShortName": "MainSoundBank",
     "Path": "MainSoundBank.bnk",
@@ -182,6 +182,14 @@
       "Location": "Memory",
       "ShortName": "BAS_Player_Footstep_dirt_run_03.wav",
       "CachePath": "FB/{FB0A822C-DE17-43BA-B57A-8091FBBE30F7}.wem"
+     },
+     {
+      "Id": "590521573",
+      "Language": "SFX",
+      "Streaming": "false",
+      "Location": "Memory",
+      "ShortName": "BAS_Pickup_WeaponType_Sword_01.wav",
+      "CachePath": "35/{35217225-7F43-07CC-5B33-841A1CF0FA16}.wem"
      },
      {
       "Id": "599602142",
@@ -362,6 +370,14 @@
     ],
     "Plugins": {
      "Custom": [
+      {
+       "Id": "51119534",
+       "Name": "Time Stretch (Custom)",
+       "ObjectPath": "\\Containers\\Default Work Unit\\Objects\\Skeleton\\skeleton_Slashes\\skeleton_longSlash\\[Effect Slot [0]: (Time Stretch)]\\Time Stretch (Custom)",
+       "GUID": "{2F244BA0-5E52-4290-8FE7-2B80DF9E7A80}",
+       "LibName": "Wwise Time Stretch",
+       "LibId": "8519683"
+      },
       {
        "Id": "765864838",
        "Name": "Time Stretch (Custom)",
@@ -770,6 +786,28 @@
       ]
      },
      {
+      "Id": "1619547218",
+      "Name": "SFX_SkeletonSwordSlash",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX_SkeletonSwordSlash",
+      "GUID": "{C82EF090-9042-46C0-BD2A-E42CC9C63497}",
+      "MaxAttenuation": "20",
+      "DurationType": "OneShot",
+      "DurationMin": "0.7080322",
+      "DurationMax": "0.94510955",
+      "MediaRefs": [
+       {
+        "Id": "590521573"
+       }
+      ],
+      "PluginRefs": {
+       "Custom": [
+        {
+         "Id": "51119534"
+        }
+       ]
+      }
+     },
+     {
       "Id": "3020549885",
       "Name": "SFX_TorchFire",
       "ObjectPath": "\\Events\\Default Work Unit\\SFX_TorchFire",
@@ -1025,6 +1063,6 @@
     ]
    }
   ],
-  "FileHash": "{10C94C88-2F37-1F22-C243-40CC6EDBDE4E}"
+  "FileHash": "{EFEF7FDB-2C8E-CE81-8BA3-38078B461771}"
  }
 }

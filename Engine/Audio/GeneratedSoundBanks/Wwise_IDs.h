@@ -18,6 +18,7 @@ namespace AK
         static const AkUniqueID SFX_PLAYERFOOTSTEPS = 724467519U;
         static const AkUniqueID SFX_SKELETONDIE = 1939684258U;
         static const AkUniqueID SFX_SKELETONSTEPS = 2660566025U;
+        static const AkUniqueID SFX_SKELETONSWORDSLASH = 1619547218U;
         static const AkUniqueID SFX_TORCHFIRE = 3020549885U;
     } // namespace EVENTS
 

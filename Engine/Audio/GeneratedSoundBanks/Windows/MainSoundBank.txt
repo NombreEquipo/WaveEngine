@@ -1,6 +1,7 @@
 Event	ID	Name			Wwise Object Path	Notes
 	638756417	MUS_BGM			\Default Work Unit\MUS_BGM	
 	724467519	SFX_PlayerFootSteps			\Default Work Unit\SFX_PlayerFootSteps	
+	1619547218	SFX_SkeletonSwordSlash			\Default Work Unit\SFX_SkeletonSwordSlash	
 	1939684258	SFX_SkeletonDie			\Default Work Unit\SFX_SkeletonDie	
 	2660566025	SFX_SkeletonSteps			\Default Work Unit\SFX_SkeletonSteps	
 	3020549885	SFX_TorchFire			\Default Work Unit\SFX_TorchFire	
@@ -50,6 +51,7 @@ Auxiliary Bus	ID	Name			Wwise Object Path	Notes
 
 Effect plug-ins	ID	Name	Type				Notes
 	48620415	Have_U_Ever_Been_Outside	Wwise RoomVerb			
+	51119534	Time Stretch (Custom)	Wwise Time Stretch			
 	765864838	Time Stretch (Custom)	Wwise Time Stretch			
 	1144018367	Plate_Large	Wwise RoomVerb			
 	2891462749	Room_Medium_High_Absorbtion	Wwise RoomVerb			
@@ -81,6 +83,7 @@ In Memory Audio	ID	Name	Audio source file		Wwise Object Path	Notes	Data Size
 	459666570	water_run_02	.cache\0A\{0A14F15D-4E4B-5E81-5CBC-E695385257C9}.wem		\Containers\Default Work Unit\Objects\Footstep_Surface\Footstep_Water\Water_Run\water_run_02		7244
 	486410471	grass_run_04	.cache\86\{864B6EF1-4ABF-65D0-C4A8-C71F62FFD6BE}.wem		\Containers\Default Work Unit\Objects\Footstep_Surface\Footstep_Grass\Grass_Run\grass_run_04		7424
 	558767652	dirt_run_03	.cache\FB\{FB0A822C-DE17-43BA-B57A-8091FBBE30F7}.wem		\Containers\Default Work Unit\Objects\Footstep_Surface\Footstep_Dirt\Dirt_Run\dirt_run_03		7532
+	590521573	skeleton_longSlash	.cache\35\{35217225-7F43-07CC-5B33-841A1CF0FA16}.wem		\Containers\Default Work Unit\Objects\Skeleton\skeleton_Slashes\skeleton_longSlash		19808
 	599602142	dirt_run_06	.cache\3F\{3F3B2D8E-433F-4FBB-63F3-6F54BCE29836}.wem		\Containers\Default Work Unit\Objects\Footstep_Surface\Footstep_Dirt\Dirt_Run\dirt_run_06		7352
 	611337934	water_run_01	.cache\32\{326D9B66-5780-432B-7402-570F2DCA37FC}.wem		\Containers\Default Work Unit\Objects\Footstep_Surface\Footstep_Water\Water_Run\water_run_01		7604
 	642231808	grass_run_02	.cache\AD\{AD62AB3C-7BDF-5173-5EA1-5D20D082709F}.wem		\Containers\Default Work Unit\Objects\Footstep_Surface\Footstep_Grass\Grass_Run\grass_run_02		7244
