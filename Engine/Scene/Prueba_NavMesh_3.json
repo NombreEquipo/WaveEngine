@@ -117,14 +117,59 @@
                     "active": true,
                     "publicVariables": [
                         {
+                            "name": "stamina",
+                            "type": 0,
+                            "value": 100.0
+                        },
+                        {
+                            "name": "rollStaminaCost",
+                            "type": 0,
+                            "value": 25.0
+                        },
+                        {
+                            "name": "sprintMultiplier",
+                            "type": 0,
+                            "value": 1.5
+                        },
+                        {
+                            "name": "rollMultiplier",
+                            "type": 0,
+                            "value": 2.5
+                        },
+                        {
+                            "name": "hitShakeMagnitude",
+                            "type": 0,
+                            "value": 6.0
+                        },
+                        {
+                            "name": "ROTATION_SPEED",
+                            "type": 0,
+                            "value": 780.0
+                        },
+                        {
+                            "name": "attackDuration",
+                            "type": 0,
+                            "value": 0.5
+                        },
+                        {
+                            "name": "speedIncrease",
+                            "type": 0,
+                            "value": 10.0
+                        },
+                        {
+                            "name": "attackCooldown",
+                            "type": 0,
+                            "value": 0.5
+                        },
+                        {
+                            "name": "hitShakeDuration",
+                            "type": 0,
+                            "value": 0.30000001192092896
+                        },
+                        {
                             "name": "speed",
                             "type": 0,
                             "value": 15.0
-                        },
-                        {
-                            "name": "usingStamina",
-                            "type": 2,
-                            "value": false
                         },
                         {
                             "name": "health",
@@ -137,74 +182,9 @@
                             "value": 0.20000000298023224
                         },
                         {
-                            "name": "hitShakeDuration",
-                            "type": 0,
-                            "value": 0.30000001192092896
-                        },
-                        {
-                            "name": "hitShakeMagnitude",
-                            "type": 0,
-                            "value": 6.0
-                        },
-                        {
-                            "name": "rollMultiplier",
-                            "type": 0,
-                            "value": 2.5
-                        },
-                        {
-                            "name": "stamina",
-                            "type": 0,
-                            "value": 100.0
-                        },
-                        {
                             "name": "staminaRecover",
                             "type": 0,
                             "value": 0.10000000149011612
-                        },
-                        {
-                            "name": "rollDuration",
-                            "type": 0,
-                            "value": 0.4000000059604645
-                        },
-                        {
-                            "name": "sprintMultiplier",
-                            "type": 0,
-                            "value": 1.5
-                        },
-                        {
-                            "name": "tiredMultiplier",
-                            "type": 0,
-                            "value": 0.699999988079071
-                        },
-                        {
-                            "name": "ROTATION_SPEED",
-                            "type": 0,
-                            "value": 780.0
-                        },
-                        {
-                            "name": "attackCooldown",
-                            "type": 0,
-                            "value": 0.5
-                        },
-                        {
-                            "name": "knockbackForce",
-                            "type": 0,
-                            "value": 14.0
-                        },
-                        {
-                            "name": "attackDuration",
-                            "type": 0,
-                            "value": 0.5
-                        },
-                        {
-                            "name": "hpLossCost",
-                            "type": 0,
-                            "value": 0.20000000298023224
-                        },
-                        {
-                            "name": "rollStaminaCost",
-                            "type": 0,
-                            "value": 25.0
                         },
                         {
                             "name": "staminaCost",
@@ -212,9 +192,29 @@
                             "value": 0.10000000149011612
                         },
                         {
-                            "name": "speedIncrease",
+                            "name": "knockbackForce",
                             "type": 0,
-                            "value": 10.0
+                            "value": 14.0
+                        },
+                        {
+                            "name": "hpLossCost",
+                            "type": 0,
+                            "value": 0.20000000298023224
+                        },
+                        {
+                            "name": "tiredMultiplier",
+                            "type": 0,
+                            "value": 0.699999988079071
+                        },
+                        {
+                            "name": "usingStamina",
+                            "type": 2,
+                            "value": false
+                        },
+                        {
+                            "name": "rollDuration",
+                            "type": 0,
+                            "value": 0.4000000059604645
                         }
                     ],
                     "scriptUID": 8002383071243665151,
@@ -288,7 +288,7 @@
                 },
                 {
                     "active": true,
-                    "aspectRatio": 5.686747074127197,
+                    "aspectRatio": 4.881889820098877,
                     "farPlane": 1000.0,
                     "fov": 60.0,
                     "nearPlane": 0.30000001192092896,
@@ -300,24 +300,9 @@
                     "active": true,
                     "publicVariables": [
                         {
-                            "name": "zoomMin",
+                            "name": "followSpeed",
                             "type": 0,
-                            "value": 0.30000001192092896
-                        },
-                        {
-                            "name": "zoomMax",
-                            "type": 0,
-                            "value": 3.0
-                        },
-                        {
-                            "name": "shakeFrequency",
-                            "type": 0,
-                            "value": 25.0
-                        },
-                        {
-                            "name": "shakeMagnitude",
-                            "type": 0,
-                            "value": 0.30000001192092896
+                            "value": 5.0
                         },
                         {
                             "name": "playerName",
@@ -325,9 +310,19 @@
                             "value": "MC"
                         },
                         {
-                            "name": "followSpeed",
+                            "name": "zoomMin",
                             "type": 0,
-                            "value": 5.0
+                            "value": 0.30000001192092896
+                        },
+                        {
+                            "name": "zoomSpeed",
+                            "type": 0,
+                            "value": 3.0
+                        },
+                        {
+                            "name": "shakeMagnitude",
+                            "type": 0,
+                            "value": 0.30000001192092896
                         },
                         {
                             "name": "shakeDuration",
@@ -335,7 +330,12 @@
                             "value": 0.4000000059604645
                         },
                         {
-                            "name": "zoomSpeed",
+                            "name": "shakeFrequency",
+                            "type": 0,
+                            "value": 25.0
+                        },
+                        {
+                            "name": "zoomMax",
                             "type": 0,
                             "value": 3.0
                         }
@@ -350,79 +350,7 @@
         },
         {
             "active": true,
-            "children": [
-                {
-                    "active": true,
-                    "children": [],
-                    "components": [
-                        {
-                            "active": true,
-                            "position": [
-                                -1.0,
-                                0.0,
-                                0.0
-                            ],
-                            "rotation": [
-                                0.0,
-                                0.0,
-                                0.0
-                            ],
-                            "scale": [
-                                2.200000047683716,
-                                0.10000000149011612,
-                                1.0
-                            ],
-                            "type": 0
-                        },
-                        {
-                            "active": true,
-                            "primitiveType": "Cube",
-                            "type": 1
-                        },
-                        {
-                            "AngularDamping": 0.0,
-                            "FreezePos": [
-                                false,
-                                false,
-                                false
-                            ],
-                            "FreezeRot": [
-                                false,
-                                false,
-                                false
-                            ],
-                            "LinearDamping": 0.0,
-                            "Mass": 1.0,
-                            "Type": 0,
-                            "UseCCD": false,
-                            "UseGravity": true,
-                            "active": true,
-                            "type": 8
-                        },
-                        {
-                            "Center": [
-                                0.0,
-                                0.0,
-                                0.0
-                            ],
-                            "DynamicFriction": 0.5,
-                            "Restitution": 0.6000000238418579,
-                            "Size": [
-                                1.0,
-                                1.0,
-                                1.0
-                            ],
-                            "StaticFriction": 0.5,
-                            "Trigger": true,
-                            "active": true,
-                            "type": 10
-                        }
-                    ],
-                    "name": "Cube",
-                    "tag": "",
-                    "uid": 374220832605991873
-                }
-            ],
+            "children": [],
             "components": [
                 {
                     "active": true,
@@ -456,12 +384,12 @@
                         false
                     ],
                     "FreezeRot": [
-                        true,
-                        true,
-                        true
+                        false,
+                        false,
+                        false
                     ],
                     "LinearDamping": 0.0,
-                    "Mass": 1.0,
+                    "Mass": 2.0,
                     "Type": 1,
                     "UseCCD": false,
                     "UseGravity": true,
@@ -482,7 +410,7 @@
                         1.0
                     ],
                     "StaticFriction": 0.5,
-                    "Trigger": false,
+                    "Trigger": true,
                     "active": true,
                     "type": 10
                 },
@@ -500,19 +428,14 @@
                     "active": true,
                     "publicVariables": [
                         {
-                            "name": "maxHp",
-                            "type": 0,
-                            "value": 30.0
-                        },
-                        {
                             "name": "knockbackForce",
                             "type": 0,
                             "value": 5.0
                         },
                         {
-                            "name": "dirSmoothing",
+                            "name": "moveSpeed",
                             "type": 0,
-                            "value": 12.0
+                            "value": 10.0
                         },
                         {
                             "name": "patrolRadius",
@@ -520,32 +443,50 @@
                             "value": 5.0
                         },
                         {
-                            "name": "stopSmoothing",
-                            "type": 0,
-                            "value": 10.0
-                        },
-                        {
-                            "name": "idleWaitTime",
-                            "type": 0,
-                            "value": 3.0
-                        },
-                        {
                             "name": "rotationSpeed",
                             "type": 0,
                             "value": 15.0
                         },
                         {
-                            "name": "moveSpeed",
+                            "name": "stopSmoothing",
                             "type": 0,
                             "value": 10.0
+                        },
+                        {
+                            "name": "maxHp",
+                            "type": 0,
+                            "value": 30.0
+                        },
+                        {
+                            "name": "dirSmoothing",
+                            "type": 0,
+                            "value": 12.0
+                        },
+                        {
+                            "name": "idleWaitTime",
+                            "type": 0,
+                            "value": 3.0
                         }
                     ],
                     "scriptUID": 8078106257694236375,
                     "type": 6
+                },
+                {
+                    "Center": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "DynamicFriction": 0.5,
+                    "Restitution": 0.6000000238418579,
+                    "StaticFriction": 0.5,
+                    "Trigger": false,
+                    "active": true,
+                    "type": 16
                 }
             ],
             "name": "Enemy",
-            "tag": "",
+            "tag": "Enemy",
             "uid": 6258348128855052274
         }
     ],

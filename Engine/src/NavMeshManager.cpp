@@ -12,6 +12,7 @@
 #include "DetourNavMeshQuery.h"
 ModuleNavMesh::ModuleNavMesh() : Module() {
     name = "ModuleNavMesh";
+    baked = false;
 }
 
 ModuleNavMesh::~ModuleNavMesh() {
@@ -20,10 +21,31 @@ ModuleNavMesh::~ModuleNavMesh() {
 
 bool ModuleNavMesh::Start() {
     LOG_CONSOLE("NavMesh Manager Started");
+
+    GameObject* root = Application::GetInstance().scene->GetRoot();
+    if (root) {
+        Bake(root);
+    }
+
     return true;
 }
 
 bool ModuleNavMesh::Update() {
+    Application::PlayState currentState = Application::GetInstance().GetPlayState();
+
+    if (currentState == Application::PlayState::PLAYING && !baked) {
+        GameObject* root = Application::GetInstance().scene->GetRoot();
+        if (root) {
+            LOG_CONSOLE("NavMesh: Detectado modo Play, bakeando...");
+            Bake(root);
+            baked = true;
+        }
+    }
+
+    if (currentState == Application::PlayState::EDITING && baked) {
+        baked = false;
+    }
+
     DrawDebug(); // Llamamos a la función de dibujo
     return true;
 }

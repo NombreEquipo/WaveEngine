@@ -71,4 +71,6 @@ private:
     float sampleDist = 6.0f; 
     float sampleMaxError = 1.0f;
 
+    bool baked = false;
+
 };
