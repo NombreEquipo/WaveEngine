@@ -425,6 +425,25 @@ static int Lua_Input_StopRumble(lua_State* L)
     return 0;
 }
 
+static int Lua_Navigation_GetRandomPoint(lua_State* L)
+{
+    luaL_checkudata(L, 1, "Navigation");
+
+    glm::vec3 point;
+    bool ok = Application::GetInstance().navMesh->GetRandomPoint(point);
+
+    if (ok)
+    {
+        lua_pushnumber(L, point.x);
+        lua_pushnumber(L, point.y);
+        lua_pushnumber(L, point.z);
+        return 3;
+    }
+
+    lua_pushnil(L);
+    return 1;
+}
+
 static int Lua_Time_GetDeltaTime(lua_State* L) {
     lua_pushnumber(L, Time::GetDeltaTimeStatic());
     return 1;
@@ -819,6 +838,8 @@ void ScriptManager::RegisterEngineFunctions() {
     lua_setfield(L, -2, "AdvanceWaypoint");
     lua_pushcfunction(L, Lua_Navigation_GetMoveDirection);
     lua_setfield(L, -2, "GetMoveDirection");
+    lua_pushcfunction(L, Lua_Navigation_GetRandomPoint);
+    lua_setfield(L, -2, "GetRandomPoint");
 
     lua_pop(L, 1);
 
@@ -1616,6 +1637,8 @@ void ScriptManager::RegisterGameObjectAPI() {
 
     lua_pushcfunction(L, Lua_GameObject_Find);
     lua_setfield(L, -2, "Find");
+
+    lua_setglobal(L, "GameObject");
 
     LOG_CONSOLE("[ScriptManager] GameObject API registered");
 }

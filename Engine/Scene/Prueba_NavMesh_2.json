@@ -170,14 +170,19 @@
                     "active": true,
                     "publicVariables": [
                         {
-                            "name": "dirSmoothing",
+                            "name": "chaseRange",
                             "type": 0,
-                            "value": 12.0
+                            "value": 15.0
                         },
                         {
                             "name": "stopSmoothing",
                             "type": 0,
                             "value": 10.0
+                        },
+                        {
+                            "name": "chaseUpdateRate",
+                            "type": 0,
+                            "value": 0.5
                         },
                         {
                             "name": "rotationSpeed",
@@ -188,13 +193,18 @@
                             "name": "moveSpeed",
                             "type": 0,
                             "value": 5.0
+                        },
+                        {
+                            "name": "dirSmoothing",
+                            "type": 0,
+                            "value": 12.0
                         }
                     ],
                     "scriptUID": 4305855626940192466,
                     "type": 6
                 }
             ],
-            "name": "Player",
+            "name": "Enemy",
             "tag": "",
             "uid": 6519575916255965980
         },
@@ -223,7 +233,7 @@
                 },
                 {
                     "active": true,
-                    "aspectRatio": 1.0294784307479858,
+                    "aspectRatio": 1.462686538696289,
                     "farPlane": 1000.0,
                     "fov": 60.0,
                     "nearPlane": 0.30000001192092896,
@@ -349,7 +359,6 @@
                         },
                         {
                             "active": true,
-                            "meshUID": 788295992332583825,
                             "type": 1
                         },
                         {
@@ -387,7 +396,6 @@
                         },
                         {
                             "active": true,
-                            "meshUID": 9480725920349706783,
                             "type": 1
                         },
                         {
@@ -425,7 +433,6 @@
                         },
                         {
                             "active": true,
-                            "meshUID": 14512281886041227014,
                             "type": 1
                         },
                         {
@@ -463,7 +470,6 @@
                         },
                         {
                             "active": true,
-                            "meshUID": 9657943228499093342,
                             "type": 1
                         },
                         {
@@ -501,7 +507,6 @@
                         },
                         {
                             "active": true,
-                            "meshUID": 12509036274848996589,
                             "type": 1
                         },
                         {
@@ -539,7 +544,6 @@
                         },
                         {
                             "active": true,
-                            "meshUID": 10348829723204214619,
                             "type": 1
                         },
                         {
@@ -577,7 +581,6 @@
                         },
                         {
                             "active": true,
-                            "meshUID": 4337712949738252458,
                             "type": 1
                         },
                         {
@@ -615,7 +618,6 @@
                         },
                         {
                             "active": true,
-                            "meshUID": 6653601114375585891,
                             "type": 1
                         },
                         {
@@ -653,7 +655,6 @@
                         },
                         {
                             "active": true,
-                            "meshUID": 16138584297006922909,
                             "type": 1
                         },
                         {
@@ -691,7 +692,6 @@
                         },
                         {
                             "active": true,
-                            "meshUID": 16182684948215385824,
                             "type": 1
                         },
                         {
@@ -729,7 +729,6 @@
                         },
                         {
                             "active": true,
-                            "meshUID": 16760108068097417740,
                             "type": 1
                         },
                         {
@@ -794,7 +793,6 @@
                                                                                                 },
                                                                                                 {
                                                                                                     "active": true,
-                                                                                                    "meshUID": 14947300925685506884,
                                                                                                     "type": 1
                                                                                                 },
                                                                                                 {
@@ -1126,6 +1124,77 @@
             "name": "Cube_copy",
             "tag": "",
             "uid": 14448585805385135779
+        },
+        {
+            "active": true,
+            "children": [],
+            "components": [
+                {
+                    "active": true,
+                    "position": [
+                        -21.0,
+                        1.0,
+                        20.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "type": 0
+                },
+                {
+                    "active": true,
+                    "primitiveType": "Cube",
+                    "type": 1
+                },
+                {
+                    "AngularDamping": 0.0,
+                    "FreezePos": [
+                        false,
+                        false,
+                        false
+                    ],
+                    "FreezeRot": [
+                        false,
+                        false,
+                        false
+                    ],
+                    "LinearDamping": 0.0,
+                    "Mass": 1.0,
+                    "Type": 1,
+                    "UseCCD": false,
+                    "UseGravity": true,
+                    "active": true,
+                    "type": 8
+                },
+                {
+                    "Center": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "DynamicFriction": 0.5,
+                    "Restitution": 0.6000000238418579,
+                    "Size": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "StaticFriction": 0.5,
+                    "Trigger": false,
+                    "active": true,
+                    "type": 10
+                }
+            ],
+            "name": "Player",
+            "tag": "",
+            "uid": 676240002099167784
         }
     ],
     "version": 1
