@@ -12,6 +12,7 @@
 #include "DetourNavMeshQuery.h"
 ModuleNavMesh::ModuleNavMesh() : Module() {
     name = "ModuleNavMesh";
+    baked = false;
 }
 
 ModuleNavMesh::~ModuleNavMesh() {
@@ -24,6 +25,21 @@ bool ModuleNavMesh::Start() {
 }
 
 bool ModuleNavMesh::Update() {
+
+    Application::PlayState currentState = Application::GetInstance().GetPlayState();
+
+    if (currentState == Application::PlayState::PLAYING && !baked) {
+        GameObject* root = Application::GetInstance().scene->GetRoot();
+        if (root) {
+            Bake(root);
+            baked = true;
+        }
+    }
+
+    if (currentState == Application::PlayState::EDITING && baked) {
+        baked = false;
+    }
+
     DrawDebug(); // Llamamos a la función de dibujo
     return true;
 }
