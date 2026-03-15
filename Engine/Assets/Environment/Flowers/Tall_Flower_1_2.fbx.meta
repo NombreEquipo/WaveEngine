@@ -1,5 +1,5 @@
 {
-    "fileHash": 3650731171,
+    "fileHash": 3050436763,
     "importSettings": {
         "flipUVs": true,
         "frontAxis": 0,
@@ -9,8 +9,8 @@
         "upAxis": 0
     },
     "meshes": {
-        "arco_piedra": 16819695898067767622
+        "Plane.029": 10242404683807811288
     },
     "type": 1,
-    "uid": 8777524850598958482
+    "uid": 9053550580884667955
 }
