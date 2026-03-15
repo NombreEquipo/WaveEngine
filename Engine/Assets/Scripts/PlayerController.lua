@@ -187,7 +187,7 @@ local function ApplyMovementAndRotation(self, dt, moveX, moveZ, speedOverride)
         else
             Player.lastAngle = Player.lastAngle + (delta > 0 and maxStep or -maxStep)
         end
-        Player.rb:SetRotation(0, Player.lastAngle, 0)
+        if Player.rb then Player.rb:SetRotation(0, Player.lastAngle, 0) end
     end
 
     if Player.rb then
@@ -247,7 +247,16 @@ States[State.DEAD] = {
         Engine.Log("[Player] Player is DEAD")
         if Player.rb then Player.rb:SetLinearVelocity(0, 0, 0) end
     end,
-    Update = function(self, dt) end
+    Update = function(self, dt)
+        if Player.rb then Player.rb:SetLinearVelocity(0, 0, 0) end
+        if Input.GetKeyDown("1") then
+            self.public.health  = 100
+            self.public.stamina = 100
+            local p = Player.spawnPos
+            self.transform:SetPosition(p.x, p.y, p.z)
+            ChangeState(self, State.IDLE)
+        end
+    end
 }
 
 States[State.IDLE] = {
@@ -481,6 +490,10 @@ end
 function Start(self)
     Engine.Log("Player inicializado")
 
+    --respawn debug
+    local spawnPos = self.transform.worldPosition
+    Player.spawnPos = spawnPos
+    
     --stamina
     _impactFrameTimer = 0
 
@@ -492,6 +505,8 @@ function Start(self)
     attackCooldown = 0
     attackCol = self.gameObject:GetComponent("Box Collider")
     if attackCol then attackCol:Disable() end 
+    _PlayerController_pendingDamage    = 0
+    _PlayerController_pendingDamagePos = nil
 
     --rigidbody
     Player.rb = self.gameObject:GetComponent("Rigidbody")
@@ -513,11 +528,11 @@ function Update(self, dt)
         attackCooldown = attackCooldown - dt
     end
 
-    -- if _PlayerController_pendingDamage > 0 then
-    --     TakeDamage(self, _PlayerController_pendingDamage, _PlayerController_pendingDamagePos)
-    --     _PlayerController_pendingDamage    = 0
-    --     _PlayerController_pendingDamagePos = nil
-    -- end
+    if _PlayerController_pendingDamage and _PlayerController_pendingDamage > 0 then
+        TakeDamage(self, _PlayerController_pendingDamage, _PlayerController_pendingDamagePos)
+        _PlayerController_pendingDamage    = 0
+        _PlayerController_pendingDamagePos = nil
+    end
 
     if not Player.currentState then
         Engine.Log("[Player] Update")
