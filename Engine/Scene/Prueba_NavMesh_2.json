@@ -17,9 +17,9 @@
                         0.0
                     ],
                     "scale": [
-                        20.0,
+                        122.0,
                         0.10000000149011612,
-                        20.0
+                        110.0
                     ],
                     "type": 0
                 },
@@ -180,14 +180,14 @@
                             "value": 10.0
                         },
                         {
-                            "name": "moveSpeed",
-                            "type": 0,
-                            "value": 5.0
-                        },
-                        {
                             "name": "rotationSpeed",
                             "type": 0,
                             "value": 15.0
+                        },
+                        {
+                            "name": "moveSpeed",
+                            "type": 0,
+                            "value": 5.0
                         }
                     ],
                     "scriptUID": 4305855626940192466,
@@ -206,11 +206,11 @@
                     "active": true,
                     "position": [
                         0.0,
-                        10.0,
+                        83.0,
                         0.0
                     ],
                     "rotation": [
-                        -90.0,
+                        -89.99998474121094,
                         0.0,
                         0.0
                     ],
@@ -223,7 +223,7 @@
                 },
                 {
                     "active": true,
-                    "aspectRatio": 3.014925479888916,
+                    "aspectRatio": 1.0294784307479858,
                     "farPlane": 1000.0,
                     "fov": 60.0,
                     "nearPlane": 0.30000001192092896,
@@ -243,9 +243,9 @@
                 {
                     "active": true,
                     "position": [
-                        -1.0,
-                        1.0,
-                        1.0
+                        -29.0,
+                        6.0,
+                        -17.0
                     ],
                     "rotation": [
                         0.0,
@@ -253,9 +253,9 @@
                         0.0
                     ],
                     "scale": [
-                        3.07800030708313,
-                        2.32200026512146,
-                        2.6460001468658447
+                        18.160202026367188,
+                        10.216801643371582,
+                        19.580400466918945
                     ],
                     "type": 0
                 },
@@ -320,6 +320,812 @@
             "name": "Cube",
             "tag": "",
             "uid": 9444923990546023146
+        },
+        {
+            "active": true,
+            "children": [
+                {
+                    "active": true,
+                    "children": [],
+                    "components": [
+                        {
+                            "active": true,
+                            "position": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "scale": [
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "type": 0
+                        },
+                        {
+                            "active": true,
+                            "meshUID": 788295992332583825,
+                            "type": 1
+                        },
+                        {
+                            "active": true,
+                            "materialUID": 9165979267114726737,
+                            "type": 3
+                        }
+                    ],
+                    "name": "Brazo_der",
+                    "tag": "",
+                    "uid": 4471033900657151375
+                },
+                {
+                    "active": true,
+                    "children": [],
+                    "components": [
+                        {
+                            "active": true,
+                            "position": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "scale": [
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "type": 0
+                        },
+                        {
+                            "active": true,
+                            "meshUID": 9480725920349706783,
+                            "type": 1
+                        },
+                        {
+                            "active": true,
+                            "materialUID": 9644640588788362142,
+                            "type": 3
+                        }
+                    ],
+                    "name": "Brazo_izq",
+                    "tag": "",
+                    "uid": 3034423254125189391
+                },
+                {
+                    "active": true,
+                    "children": [],
+                    "components": [
+                        {
+                            "active": true,
+                            "position": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "scale": [
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "type": 0
+                        },
+                        {
+                            "active": true,
+                            "meshUID": 14512281886041227014,
+                            "type": 1
+                        },
+                        {
+                            "active": true,
+                            "materialUID": 9502943625202691985,
+                            "type": 3
+                        }
+                    ],
+                    "name": "Cabeza",
+                    "tag": "",
+                    "uid": 14925112607230244603
+                },
+                {
+                    "active": true,
+                    "children": [],
+                    "components": [
+                        {
+                            "active": true,
+                            "position": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "scale": [
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "type": 0
+                        },
+                        {
+                            "active": true,
+                            "meshUID": 9657943228499093342,
+                            "type": 1
+                        },
+                        {
+                            "active": true,
+                            "materialUID": 12886227872772543475,
+                            "type": 3
+                        }
+                    ],
+                    "name": "Falda",
+                    "tag": "",
+                    "uid": 16425305407839780780
+                },
+                {
+                    "active": true,
+                    "children": [],
+                    "components": [
+                        {
+                            "active": true,
+                            "position": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "scale": [
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "type": 0
+                        },
+                        {
+                            "active": true,
+                            "meshUID": 12509036274848996589,
+                            "type": 1
+                        },
+                        {
+                            "active": true,
+                            "materialUID": 12872485788835919091,
+                            "type": 3
+                        }
+                    ],
+                    "name": "Mano_der",
+                    "tag": "",
+                    "uid": 13921417426557341418
+                },
+                {
+                    "active": true,
+                    "children": [],
+                    "components": [
+                        {
+                            "active": true,
+                            "position": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "scale": [
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "type": 0
+                        },
+                        {
+                            "active": true,
+                            "meshUID": 10348829723204214619,
+                            "type": 1
+                        },
+                        {
+                            "active": true,
+                            "materialUID": 15290348172183615789,
+                            "type": 3
+                        }
+                    ],
+                    "name": "Mano_izq",
+                    "tag": "",
+                    "uid": 5188020081926437966
+                },
+                {
+                    "active": true,
+                    "children": [],
+                    "components": [
+                        {
+                            "active": true,
+                            "position": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "scale": [
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "type": 0
+                        },
+                        {
+                            "active": true,
+                            "meshUID": 4337712949738252458,
+                            "type": 1
+                        },
+                        {
+                            "active": true,
+                            "materialUID": 2141283816087270455,
+                            "type": 3
+                        }
+                    ],
+                    "name": "Pie_der",
+                    "tag": "",
+                    "uid": 18363346959185473515
+                },
+                {
+                    "active": true,
+                    "children": [],
+                    "components": [
+                        {
+                            "active": true,
+                            "position": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "scale": [
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "type": 0
+                        },
+                        {
+                            "active": true,
+                            "meshUID": 6653601114375585891,
+                            "type": 1
+                        },
+                        {
+                            "active": true,
+                            "materialUID": 13688963932808210946,
+                            "type": 3
+                        }
+                    ],
+                    "name": "Pie_izq",
+                    "tag": "",
+                    "uid": 2786643089417693363
+                },
+                {
+                    "active": true,
+                    "children": [],
+                    "components": [
+                        {
+                            "active": true,
+                            "position": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "scale": [
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "type": 0
+                        },
+                        {
+                            "active": true,
+                            "meshUID": 16138584297006922909,
+                            "type": 1
+                        },
+                        {
+                            "active": true,
+                            "materialUID": 5792692074869104602,
+                            "type": 3
+                        }
+                    ],
+                    "name": "Pierna_der",
+                    "tag": "",
+                    "uid": 14732484048006729507
+                },
+                {
+                    "active": true,
+                    "children": [],
+                    "components": [
+                        {
+                            "active": true,
+                            "position": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "scale": [
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "type": 0
+                        },
+                        {
+                            "active": true,
+                            "meshUID": 16182684948215385824,
+                            "type": 1
+                        },
+                        {
+                            "active": true,
+                            "materialUID": 13362557972159915570,
+                            "type": 3
+                        }
+                    ],
+                    "name": "Pierna_izq",
+                    "tag": "",
+                    "uid": 16282973529040263629
+                },
+                {
+                    "active": true,
+                    "children": [],
+                    "components": [
+                        {
+                            "active": true,
+                            "position": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "rotation": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "scale": [
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "type": 0
+                        },
+                        {
+                            "active": true,
+                            "meshUID": 16760108068097417740,
+                            "type": 1
+                        },
+                        {
+                            "active": true,
+                            "materialUID": 77732869298681267,
+                            "type": 3
+                        }
+                    ],
+                    "name": "torso",
+                    "tag": "",
+                    "uid": 13358955821133485758
+                },
+                {
+                    "active": true,
+                    "children": [
+                        {
+                            "active": true,
+                            "children": [
+                                {
+                                    "active": true,
+                                    "children": [
+                                        {
+                                            "active": true,
+                                            "children": [
+                                                {
+                                                    "active": true,
+                                                    "children": [
+                                                        {
+                                                            "active": true,
+                                                            "children": [
+                                                                {
+                                                                    "active": true,
+                                                                    "children": [
+                                                                        {
+                                                                            "active": true,
+                                                                            "children": [
+                                                                                {
+                                                                                    "active": true,
+                                                                                    "children": [
+                                                                                        {
+                                                                                            "active": true,
+                                                                                            "children": [],
+                                                                                            "components": [
+                                                                                                {
+                                                                                                    "active": true,
+                                                                                                    "position": [
+                                                                                                        0.0,
+                                                                                                        0.0,
+                                                                                                        0.0
+                                                                                                    ],
+                                                                                                    "rotation": [
+                                                                                                        0.0,
+                                                                                                        0.0,
+                                                                                                        0.0
+                                                                                                    ],
+                                                                                                    "scale": [
+                                                                                                        1.0,
+                                                                                                        1.0,
+                                                                                                        1.0
+                                                                                                    ],
+                                                                                                    "type": 0
+                                                                                                },
+                                                                                                {
+                                                                                                    "active": true,
+                                                                                                    "meshUID": 14947300925685506884,
+                                                                                                    "type": 1
+                                                                                                },
+                                                                                                {
+                                                                                                    "active": true,
+                                                                                                    "materialUID": 14589594342367886782,
+                                                                                                    "type": 3
+                                                                                                }
+                                                                                            ],
+                                                                                            "name": "Cresta",
+                                                                                            "tag": "",
+                                                                                            "uid": 5107989374223479058
+                                                                                        }
+                                                                                    ],
+                                                                                    "components": [
+                                                                                        {
+                                                                                            "active": true,
+                                                                                            "position": [
+                                                                                                -0.0007253522053360939,
+                                                                                                -0.3719160556793213,
+                                                                                                -0.026868712157011032
+                                                                                            ],
+                                                                                            "rotation": [
+                                                                                                0.0,
+                                                                                                0.0,
+                                                                                                0.0
+                                                                                            ],
+                                                                                            "scale": [
+                                                                                                1.0,
+                                                                                                1.0,
+                                                                                                1.0
+                                                                                            ],
+                                                                                            "type": 0
+                                                                                        }
+                                                                                    ],
+                                                                                    "name": "Cresta_$AssimpFbx$_ScalingPivotInverse",
+                                                                                    "tag": "",
+                                                                                    "uid": 15884402627793507393
+                                                                                }
+                                                                            ],
+                                                                            "components": [
+                                                                                {
+                                                                                    "active": true,
+                                                                                    "position": [
+                                                                                        0.0,
+                                                                                        0.0,
+                                                                                        0.0
+                                                                                    ],
+                                                                                    "rotation": [
+                                                                                        0.0,
+                                                                                        0.0,
+                                                                                        0.0
+                                                                                    ],
+                                                                                    "scale": [
+                                                                                        109.66216278076172,
+                                                                                        109.66216278076172,
+                                                                                        109.66216278076172
+                                                                                    ],
+                                                                                    "type": 0
+                                                                                }
+                                                                            ],
+                                                                            "name": "Cresta_$AssimpFbx$_Scaling",
+                                                                            "tag": "",
+                                                                            "uid": 2076631708532328671
+                                                                        }
+                                                                    ],
+                                                                    "components": [
+                                                                        {
+                                                                            "active": true,
+                                                                            "position": [
+                                                                                0.0007253522053360939,
+                                                                                0.3719160556793213,
+                                                                                0.026868712157011032
+                                                                            ],
+                                                                            "rotation": [
+                                                                                0.0,
+                                                                                0.0,
+                                                                                0.0
+                                                                            ],
+                                                                            "scale": [
+                                                                                1.0,
+                                                                                1.0,
+                                                                                1.0
+                                                                            ],
+                                                                            "type": 0
+                                                                        }
+                                                                    ],
+                                                                    "name": "Cresta_$AssimpFbx$_ScalingPivot",
+                                                                    "tag": "",
+                                                                    "uid": 15422701598666499218
+                                                                }
+                                                            ],
+                                                            "components": [
+                                                                {
+                                                                    "active": true,
+                                                                    "position": [
+                                                                        0.07881833612918854,
+                                                                        40.413204193115234,
+                                                                        2.919612407684326
+                                                                    ],
+                                                                    "rotation": [
+                                                                        0.0,
+                                                                        0.0,
+                                                                        0.0
+                                                                    ],
+                                                                    "scale": [
+                                                                        1.0,
+                                                                        1.0,
+                                                                        1.0
+                                                                    ],
+                                                                    "type": 0
+                                                                }
+                                                            ],
+                                                            "name": "Cresta_$AssimpFbx$_ScalingOffset",
+                                                            "tag": "",
+                                                            "uid": 9456012155539130106
+                                                        }
+                                                    ],
+                                                    "components": [
+                                                        {
+                                                            "active": true,
+                                                            "position": [
+                                                                -0.07954368740320206,
+                                                                -40.785118103027344,
+                                                                -2.9464809894561768
+                                                            ],
+                                                            "rotation": [
+                                                                0.0,
+                                                                0.0,
+                                                                0.0
+                                                            ],
+                                                            "scale": [
+                                                                1.0,
+                                                                1.0,
+                                                                1.0
+                                                            ],
+                                                            "type": 0
+                                                        }
+                                                    ],
+                                                    "name": "Cresta_$AssimpFbx$_RotationPivotInverse",
+                                                    "tag": "",
+                                                    "uid": 1498281705687059451
+                                                }
+                                            ],
+                                            "components": [
+                                                {
+                                                    "active": true,
+                                                    "position": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "rotation": [
+                                                        -90.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "scale": [
+                                                        1.0,
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "type": 0
+                                                }
+                                            ],
+                                            "name": "Cresta_$AssimpFbx$_Rotation",
+                                            "tag": "",
+                                            "uid": 13323979119485654344
+                                        }
+                                    ],
+                                    "components": [
+                                        {
+                                            "active": true,
+                                            "position": [
+                                                0.07954368740320206,
+                                                40.785118103027344,
+                                                2.9464809894561768
+                                            ],
+                                            "rotation": [
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "scale": [
+                                                1.0,
+                                                1.0,
+                                                1.0
+                                            ],
+                                            "type": 0
+                                        }
+                                    ],
+                                    "name": "Cresta_$AssimpFbx$_RotationPivot",
+                                    "tag": "",
+                                    "uid": 14478471205102974186
+                                }
+                            ],
+                            "components": [
+                                {
+                                    "active": true,
+                                    "position": [
+                                        0.0,
+                                        -37.83863830566406,
+                                        -43.73160171508789
+                                    ],
+                                    "rotation": [
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "scale": [
+                                        1.0,
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "type": 0
+                                }
+                            ],
+                            "name": "Cresta_$AssimpFbx$_RotationOffset",
+                            "tag": "",
+                            "uid": 7473269932823864728
+                        }
+                    ],
+                    "components": [
+                        {
+                            "active": true,
+                            "position": [
+                                -0.007008470594882965,
+                                78.51583099365234,
+                                32.76156997680664
+                            ],
+                            "rotation": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "scale": [
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "type": 0
+                        }
+                    ],
+                    "name": "Cresta_$AssimpFbx$_Translation",
+                    "tag": "",
+                    "uid": 11505254592000347755
+                }
+            ],
+            "components": [
+                {
+                    "active": true,
+                    "position": [
+                        5.0,
+                        0.0,
+                        5.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "scale": [
+                        0.05257595703005791,
+                        0.05257595703005791,
+                        0.05257595703005791
+                    ],
+                    "type": 0
+                }
+            ],
+            "name": "Enemigo_Esqueleto",
+            "tag": "",
+            "uid": 16185584792426692404
+        },
+        {
+            "active": true,
+            "children": [],
+            "components": [
+                {
+                    "active": true,
+                    "position": [
+                        27.0,
+                        6.0,
+                        3.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "scale": [
+                        18.160202026367188,
+                        10.216801643371582,
+                        19.580400466918945
+                    ],
+                    "type": 0
+                },
+                {
+                    "active": true,
+                    "primitiveType": "Cube",
+                    "type": 1
+                },
+                {
+                    "Center": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "DynamicFriction": 0.5,
+                    "Restitution": 0.6000000238418579,
+                    "Size": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "StaticFriction": 0.5,
+                    "Trigger": false,
+                    "active": true,
+                    "type": 10
+                },
+                {
+                    "ArrivalThreshold": 0.25,
+                    "IsStatic": true,
+                    "MaxSlope": 35.0,
+                    "MoveSpeed": 5.0,
+                    "NavType": 2,
+                    "active": true,
+                    "type": 24
+                }
+            ],
+            "name": "Cube_copy",
+            "tag": "",
+            "uid": 14448585805385135779
         }
     ],
     "version": 1
