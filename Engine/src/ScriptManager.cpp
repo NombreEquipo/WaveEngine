@@ -8,6 +8,7 @@
 #include "Component.h"
 #include "AudioListener.h"
 #include "ModuleScene.h"
+#include "ModuleLoader.h"
 #include "ComponentMesh.h"
 #include "ComponentMaterial.h"
 #include "ComponentScript.h"
@@ -88,7 +89,8 @@ bool ScriptManager::PostUpdate() {
     if (!pendingSceneLoad.empty()) {
         std::string path = pendingSceneLoad;
         pendingSceneLoad.clear();
-        Application::GetInstance().scene->LoadScene(path);
+       
+        Application::GetInstance().loader->LoadScene(path);
     }
 
     return true;
@@ -234,16 +236,38 @@ static int Lua_Input_GetKey(lua_State* L) {
 }
 
 static int Lua_Engine_LoadScene(lua_State* L) {
-    const char* path = luaL_checkstring(L, 1);
-    Application::GetInstance().scripts->pendingSceneLoad = std::string(path);
+    const char* scenesPath = luaL_checkstring(L, 1);
+    const char* relativePath = luaL_checkstring(L, 2);
+    std::string normalizedPath = relativePath;
+    
+    std::replace(normalizedPath.begin(), normalizedPath.end(), '/', '\\');
+  
+
+    while (normalizedPath.rfind("../", 0) == 0)
+        normalizedPath.erase(0, 2);
+
+    //std::replace(normalizedPath.begin(), normalizedPath.end(), '/', '\\');
+
+    std::string absolutePath = std::string(scenesPath).append(normalizedPath);
+
+    
+    Application::GetInstance().scripts->pendingSceneLoad = absolutePath;
     return 0;
 }
 
 static int Lua_Engine_GetScenesPath(lua_State* L) {
-    std::string path = (std::filesystem::path(LibraryManager::GetLibraryRoot()).parent_path() / "Scene").string();
+    std::string path = (std::filesystem::path(LibraryManager::GetAssetsRoot()) / "Scenes").string();
     lua_pushstring(L, path.c_str());
     return 1;
 }
+
+static int Lua_Engine_GetAssetsPath(lua_State* L) {
+    std::string path = (std::filesystem::path(LibraryManager::GetAssetsRoot())).string();
+    lua_pushstring(L, path.c_str());
+    return 1;
+}
+
+
 
 
 
@@ -793,6 +817,8 @@ void ScriptManager::RegisterEngineFunctions() {
     lua_setfield(L, -2, "LoadScene");
     lua_pushcfunction(L, Lua_Engine_GetScenesPath);
     lua_setfield(L, -2, "GetScenesPath");
+    lua_pushcfunction(L, Lua_Engine_GetAssetsPath);
+    lua_setfield(L, -2, "GetAssetsPath");
     lua_setglobal(L, "Engine");
 
     // Input

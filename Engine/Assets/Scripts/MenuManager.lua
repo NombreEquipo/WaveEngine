@@ -1,6 +1,8 @@
 local NEXT_XAML     = "HUD.xaml"
 local FADE_DURATION = 0.4
 
+local assetsPath = Engine.GetAssetsPath()
+
 public = {
     updateWhenPaused = true
 }
@@ -178,6 +180,7 @@ function Update(self, dt)
         if current == "HUD.xaml" then
             Game.Resume()
             Audio.SetMusicState("Level1")
+			Engine.LoadScene(assetsPath, "../Scenes/Level1-audio.scene")
         else
             Game.Pause()
             Audio.SetMusicState("MainMenu")
@@ -191,4 +194,5 @@ function Update(self, dt)
 
 
 end
+
 

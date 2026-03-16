@@ -5,14 +5,16 @@ public = {
     temp2 = { type = "Scene", value = "" }
 }
 
-local scenesPath = Engine.GetScenesPath()
+local assetsPath = Engine.GetAssetsPath()
+
 
 function Update(self, dt)
     if Input.GetKeyDown("1") then
-        Engine.LoadScene(self.public.temp1)
+        Engine.LoadScene(assetsPath, self.public.temp1)
+    
     end
     if Input.GetKeyDown("2") then
-        Engine.LoadScene(self.public.temp2)
+        Engine.LoadScene(assetsPath, self.public.temp2)
     end
 end
 
