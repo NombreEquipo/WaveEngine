@@ -1149,11 +1149,19 @@ void InspectorWindow::DrawCanvasComponent(Component* component)
     DrawComponentContextMenu(canvasComp, true);
     if (!open) return;
 
-    // Scan valid XAML files (skip ResourceDictionary files)
+    char buffer[MAX_PATH];
+    GetModuleFileNameA(NULL, buffer, MAX_PATH);
+    std::filesystem::path exeDir = std::filesystem::path(buffer).parent_path();
+
+    std::filesystem::path uiDir = exeDir / "Assets" / "UI";
+    if (!std::filesystem::exists(uiDir))
+        uiDir = exeDir / "../../Assets/UI";
+
+    // Scan valid XAML files
     std::vector<std::string> xamlFiles;
-    if (std::filesystem::exists("../Assets/UI"))
+    if (std::filesystem::exists(uiDir))
     {
-        for (const auto& entry : std::filesystem::directory_iterator("../Assets/UI"))
+        for (const auto& entry : std::filesystem::directory_iterator(uiDir))
         {
             if (!entry.is_regular_file() || entry.path().extension() != ".xaml") continue;
             std::ifstream file(entry.path());
@@ -1183,15 +1191,21 @@ void InspectorWindow::DrawCanvasComponent(Component* component)
     ImGui::SetNextItemWidth(-1);
     if (ImGui::BeginCombo("##XAMLSelector", currentName.c_str()))
     {
-        if (ImGui::Selectable("None", canvasComp->GetCurrentXAML().empty())) canvasComp->UnloadXAML();
+        if (ImGui::Selectable("None", canvasComp->GetCurrentXAML().empty()))
+            canvasComp->UnloadXAML();
+
         for (const auto& file : xamlFiles)
         {
             bool sel = (currentName == file);
             if (ImGui::Selectable(file.c_str(), sel))
-                LOG_CONSOLE(canvasComp->LoadXAML(file.c_str()) ? "[Canvas] Loaded: %s" : "[Canvas] Failed: %s", file.c_str());
+                LOG_CONSOLE(canvasComp->LoadXAML(file.c_str()) ?
+                    "[Canvas] Loaded: %s" : "[Canvas] Failed: %s", file.c_str());
             if (sel) ImGui::SetItemDefaultFocus();
         }
-        if (xamlFiles.empty()) ImGui::TextDisabled("No valid .xaml files found");
+
+        if (xamlFiles.empty())
+            ImGui::TextDisabled("No valid .xaml files found in: %s", uiDir.string().c_str());
+
         ImGui::EndCombo();
     }
 
@@ -1200,9 +1214,7 @@ void InspectorWindow::DrawCanvasComponent(Component* component)
 
     int UILayer = canvasComp->GetUILayer();
     if (ImGui::InputInt("UI Layer", &UILayer))
-    {
         canvasComp->SetUILayer(UILayer);
-    }
 
     ImGui::Separator();
 
