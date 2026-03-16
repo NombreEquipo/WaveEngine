@@ -2,49 +2,50 @@
     "activationRadius": 20.0,
     "active": true,
     "additive": true,
+    "luminance": false,
     "animLoop": false,
     "animSpeed": 1.0,
     "bursts": [],
     "circleRadius": 1.0,
     "colorEnd": [
-        0.9139999747276306,
-        0.800000011920929,
-        0.4819999933242798,
+        0.914,
+        0.800,
+        0.482,
         0.0
     ],
     "colorGradient": [
         {
             "color": [
-                0.9139999747276306,
-                0.800000011920929,
-                0.4819999933242798,
+                0.914,
+                0.800,
+                0.482,
                 0.0
             ],
             "time": 0.0
         },
         {
             "color": [
-                0.9139999747276306,
-                0.800000011920929,
-                0.4819999933242798,
+                0.914,
+                0.800,
+                0.482,
                 1.0
             ],
-            "time": 0.3499999940395355
+            "time": 0.35
         },
         {
             "color": [
-                0.27399998903274536,
-                0.23999999463558197,
-                0.14499999582767487,
+                0.274,
+                0.240,
+                0.145,
                 0.0
             ],
             "time": 1.0
         }
     ],
     "colorStart": [
-        0.6269999742507935,
-        0.4309999942779541,
-        0.0,
+        0.914,
+        0.800,
+        0.482,
         1.0
     ],
     "coneAngle": 25.0,
@@ -55,30 +56,30 @@
         0.0,
         3.0
     ],
-    "emissionRadius": 1.100000023841858,
+    "emissionRadius": 1.1,
     "emissionRate": 12.0,
     "emissionRateDist": 0.0,
     "emitFromShell": true,
     "gravity": [
         0.0,
-        -4.5,
+        0.0,
         0.0
     ],
-    "lifetimeMax": 0.8999999761581421,
-    "lifetimeMin": 0.4000000059604645,
+    "lifetimeMax": 0.9,
+    "lifetimeMin": 0.4,
     "looping": true,
     "maxParticles": 40,
     "noiseActive": true,
-    "noiseFreq": 0.800000011920929,
-    "noiseStrength": 0.30000001192092896,
+    "noiseFreq": 0.8,
+    "noiseStrength": 0.3,
     "oneShot": false,
     "oneShotCount": 30,
     "prewarm": false,
     "proximityActivation": true,
     "proximityTarget": "Player",
-    "rotSpeedMax": 0.0,
-    "rotSpeedMin": 0.0,
-    "shape": 0,
+    "rotSpeedMax": 180.0,
+    "rotSpeedMin": -180.0,
+    "shape": 1,
     "simulationSpace": 0,
     "sizeCurve": [
         {
@@ -86,16 +87,16 @@
             "time": 0.0
         },
         {
-            "size": 1.399999976158142,
-            "time": 0.7059999704360962
+            "size": 0.2,
+            "time": 0.35
         },
         {
-            "size": 3.0,
+            "size": 0.0,
             "time": 1.0
         }
     ],
     "sizeEnd": 0.0,
-    "sizeStart": 0.20000000298023224,
+    "sizeStart": 0.2,
     "speedMax": 0.25,
     "speedMin": 0.0,
     "textureCols": 1,

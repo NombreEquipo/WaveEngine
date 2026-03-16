@@ -2,6 +2,7 @@
     "activationRadius": 15.0,
     "active": false,
     "additive": false,
+    "luminance": true,
     "animLoop": false,
     "animSpeed": 1.0,
     "bursts": [],

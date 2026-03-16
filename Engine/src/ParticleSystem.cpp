@@ -216,6 +216,7 @@ void EmitterInstance::ResetValues() {
     prewarm = false;
 
     additiveBlending = false;
+    luminanceBlending = false;
     textureRows = 1;
     textureCols = 1;
     animationSpeed = 1.0f;
@@ -460,8 +461,11 @@ void EmitterInstance::Draw(glm::vec3 cameraPos) {
     glDisable(GL_CULL_FACE);
 
     // Blending Mode
-    if (additiveBlending) {
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE); // Glow
+    if (luminanceBlending) {
+        glBlendFunc(GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR);
+    }
+    else if (additiveBlending) {
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE); // Glow/fire/sparks
     }
     else {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // Standard Alpha

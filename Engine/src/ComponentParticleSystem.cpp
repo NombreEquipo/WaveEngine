@@ -138,10 +138,16 @@ void ComponentParticleSystem::Draw(ComponentCamera* camera) {
         // In LOCAL, we apply the object's matrix. Particles move with it
         Transform* trans = dynamic_cast<Transform*>(owner->GetComponent(ComponentType::TRANSFORM));
         if (trans) {
-            glMultMatrixf(glm::value_ptr(trans->GetGlobalMatrix()));
+            glm::mat4 globalMat = trans->GetGlobalMatrix();
+            glMultMatrixf(glm::value_ptr(globalMat));
+            glm::mat4 invGlobal = glm::inverse(globalMat);
+            glm::vec3 camWorld = camera->owner->transform->GetGlobalPosition();
+            glm::vec3 camLocal = glm::vec3(invGlobal * glm::vec4(camWorld, 1.0f));
+            emitter->Draw(camLocal);
+            return;
         }
     }
-    // In WORLD: particles already have absolute world positions
+    // WORLD space: camera and particle positions are both world-space, pass directly
     emitter->Draw(camera->owner->transform->GetGlobalPosition());
 }
 
@@ -320,6 +326,8 @@ void ComponentParticleSystem::OnEditor() {
     }
 
     ImGui::Checkbox("Additive Blending (Glow)", &emitter->additiveBlending);
+    ImGui::SameLine();
+    ImGui::Checkbox("Luminance Blending (Black&White texture)", &emitter->luminanceBlending);
 
     // Module settings
     ModuleEmitterSpawn* spawner = nullptr;
@@ -555,6 +563,7 @@ void ComponentParticleSystem::Serialize(nlohmann::json& componentObj) const {
     componentObj["texturePath"] = emitter->texturePath;
     if (textureResourceUID != 0) componentObj["textureUID"] = textureResourceUID;
     componentObj["additive"] = emitter->additiveBlending;
+    componentObj["luminance"] = emitter->luminanceBlending;
     componentObj["textureRows"] = emitter->textureRows;
     componentObj["textureCols"] = emitter->textureCols;
     componentObj["animSpeed"] = emitter->animationSpeed;
@@ -650,6 +659,7 @@ void ComponentParticleSystem::Deserialize(const nlohmann::json& componentObj) {
         SetTexture(componentObj["texturePath"]);
 
     if (componentObj.contains("additive")) emitter->additiveBlending = componentObj["additive"];
+    if (componentObj.contains("luminance")) emitter->luminanceBlending = componentObj["luminance"];
     if (componentObj.contains("textureRows")) emitter->textureRows = componentObj["textureRows"];
     if (componentObj.contains("textureCols")) emitter->textureCols = componentObj["textureCols"];
     if (componentObj.contains("animSpeed")) emitter->animationSpeed = componentObj["animSpeed"];
