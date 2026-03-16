@@ -6,12 +6,17 @@
 #include "Log.h"
 #include "NavMeshManager.h"
 #include "ComponentNavigation.h"
+#include <cstdlib>
 
 #include "DetourNavMesh.h"
 #include "DetourNavMeshBuilder.h"
 #include "DetourNavMeshQuery.h"
+
+static float NavRand() { return static_cast<float>(rand()) / static_cast<float>(RAND_MAX); }
+
 ModuleNavMesh::ModuleNavMesh() : Module() {
     name = "ModuleNavMesh";
+    baked = false;
 }
 
 ModuleNavMesh::~ModuleNavMesh() {
@@ -24,6 +29,21 @@ bool ModuleNavMesh::Start() {
 }
 
 bool ModuleNavMesh::Update() {
+
+    Application::PlayState currentState = Application::GetInstance().GetPlayState();
+
+    if (currentState == Application::PlayState::PLAYING && !baked) {
+        GameObject* root = Application::GetInstance().scene->GetRoot();
+        if (root) {
+            Bake(root);
+            baked = true;
+        }
+    }
+
+    if (currentState == Application::PlayState::EDITING && baked) {
+        baked = false;
+    }
+
     DrawDebug(); // Llamamos a la función de dibujo
     return true;
 }
@@ -546,4 +566,27 @@ bool ModuleNavMesh::LoadNavMesh(const char* path, GameObject* owner) {
     dtNavMesh* navMesh = dtAllocNavMesh();
     fclose(fp);
     return true;
+}
+
+bool ModuleNavMesh::GetRandomPoint(glm::vec3& outPoint)
+{
+    for (auto& data : navMeshes)
+    {
+        if (!data.navQuery) continue;
+
+        dtQueryFilter filter;
+        filter.setIncludeFlags(0xFFFF);
+
+        dtPolyRef randomRef = 0;
+        float     randomPt[3] = {};
+
+        dtStatus status = data.navQuery->findRandomPoint(&filter, NavRand, &randomRef, randomPt);
+
+        if (dtStatusSucceed(status))
+        {
+            outPoint = { randomPt[0], randomPt[1], randomPt[2] };
+            return true;
+        }
+    }
+    return false;
 }

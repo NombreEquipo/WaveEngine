@@ -10,8 +10,8 @@
 #include "ComponentMesh.h"
 #include "ComponentMaterial.h"
 #include "ComponentScript.h"
-#include "ComponentNavigation.h"
 #include "NavMeshManager.h"
+#include "ComponentNavigation.h"
 #include "ModuleResources.h"
 #include "PrefabManager.h"
 #include "ResourcePrefab.h"
@@ -425,6 +425,25 @@ static int Lua_Input_StopRumble(lua_State* L)
     return 0;
 }
 
+static int Lua_Navigation_GetRandomPoint(lua_State* L)
+{
+    luaL_checkudata(L, 1, "Navigation");
+
+    glm::vec3 point;
+    bool ok = Application::GetInstance().navMesh->GetRandomPoint(point);
+
+    if (ok)
+    {
+        lua_pushnumber(L, point.x);
+        lua_pushnumber(L, point.y);
+        lua_pushnumber(L, point.z);
+        return 3;
+    }
+
+    lua_pushnil(L);
+    return 1;
+}
+
 static int Lua_Time_GetDeltaTime(lua_State* L) {
     lua_pushnumber(L, Time::GetDeltaTimeStatic());
     return 1;
@@ -545,54 +564,6 @@ static int Lua_Navigation_GetMoveDirection(lua_State* L)
     lua_pushnumber(L, dx);
     lua_pushnumber(L, dz);
     return 2;
-
-    //ComponentNavigation* nav = *static_cast<ComponentNavigation**>(lua_touserdata(L, 1));
-    //float threshold = static_cast<float>(luaL_optnumber(L, 2, 0.3));
-
-    //if (!nav || !nav->moving || nav->path.empty())
-    //{
-    //    lua_pushnumber(L, 0); lua_pushnumber(L, 0);
-    //    return 2;
-    //}
-
-    //// Leer posicion desde el Transform del propio owner (C++ interno)
-    //Transform* t = (Transform*)nav->owner->GetComponent(ComponentType::TRANSFORM);
-    //if (!t) { lua_pushnumber(L, 0); lua_pushnumber(L, 0); return 2; }
-
-    //glm::vec3 pos = t->GetGlobalPosition();
-
-    //// Avanzar waypoints si estamos cerca
-    //while (nav->pathIndex < (int)nav->path.size())
-    //{
-    //    const glm::vec3& wp = nav->path[nav->pathIndex];
-    //    float dx = pos.x - wp.x;
-    //    float dz = pos.z - wp.z;
-    //    if (std::sqrt(dx * dx + dz * dz) <= threshold)
-    //        nav->pathIndex++;
-    //    else
-    //        break;
-    //}
-
-    //// Path completado
-    //if (nav->pathIndex >= (int)nav->path.size())
-    //{
-    //    nav->moving = false;
-    //    nav->path.clear();
-    //    nav->pathIndex = 0;
-    //    lua_pushnumber(L, 0); lua_pushnumber(L, 0);
-    //    return 2;
-    //}
-
-    //// Dirección normalizada hacia el waypoint actual
-    //const glm::vec3& wp = nav->path[nav->pathIndex];
-    //float dx = wp.x - pos.x;
-    //float dz = wp.z - pos.z;
-    //float len = std::sqrt(dx * dx + dz * dz);
-    //if (len < 0.001f) { lua_pushnumber(L, 0); lua_pushnumber(L, 0); return 2; }
-
-    //lua_pushnumber(L, dx / len);
-    //lua_pushnumber(L, dz / len);
-    //return 2;
 }
 
 static int Lua_Time_GetRealDeltaTime(lua_State* L) {
@@ -837,6 +808,11 @@ void ScriptManager::RegisterEngineFunctions() {
 
     LOG_CONSOLE("[ScriptManager] Engine functions registered: Engine, Input, Time, Camera");
     // GAMEOBJECT API
+    lua_pushcfunction(L, Lua_Navigation_GetRandomPoint);
+    lua_setfield(L, -2, "GetRandomPoint");
+
+    lua_pop(L, 1);
+
     //UI
     lua_newtable(L);
     lua_pushcfunction(L, Lua_UI_WasClicked);            lua_setfield(L, -2, "WasClicked");
@@ -932,6 +908,13 @@ static int Lua_Rigidbody_SetRotation(lua_State* L) {
     float y = static_cast<float>(luaL_checknumber(L, 3));
     float z = static_cast<float>(luaL_checknumber(L, 4));
     if (rb) rb->SetRotation(glm::vec3(x, y, z));
+    return 0;
+}
+
+static int Lua_Rigidbody_SetUseGravity(lua_State* L) {
+    Rigidbody* rb = *static_cast<Rigidbody**>(luaL_checkudata(L, 1, "Rigidbody"));
+    bool useGravity = lua_toboolean(L, 2);
+    if (rb) rb->SetUseGravity(useGravity);
     return 0;
 }
 
@@ -1492,6 +1475,40 @@ static int Lua_GameObject_GetComponent(lua_State* L) {
         return 1;
     }
 
+    if (strcmp(componentType, "Navigation") == 0)
+    {
+        ComponentNavigation* nav = (ComponentNavigation*)obj->GetComponent(ComponentType::NAVIGATION);
+
+        if (nav) {
+            ComponentNavigation** udata = (ComponentNavigation**)lua_newuserdata(L, sizeof(ComponentNavigation*));
+            *udata = nav;
+            luaL_getmetatable(L, "Navigation");
+            lua_setmetatable(L, -2);
+            return 1;
+        }
+
+
+    }
+
+    if (strcmp(componentType, "Rigidbody") == 0) {
+        Component* comp = obj->GetComponent(ComponentType::RIGIDBODY);
+        Rigidbody* rb = static_cast<Rigidbody*>(comp);
+        if (!rb) {
+            lua_pushnil(L);
+            return 1;
+        }
+
+        Rigidbody** udata = static_cast<Rigidbody**>(
+            lua_newuserdata(L, sizeof(Rigidbody*))
+        );
+        *udata = rb;
+
+        luaL_getmetatable(L, "Rigidbody");
+        lua_setmetatable(L, -2);
+
+        return 1;
+    }
+
     lua_pushnil(L);
     return 1;
 }
@@ -1864,6 +1881,8 @@ void ScriptManager::RegisterComponentAPI() {
     lua_setfield(L, -2, "MovePosition");
     lua_pushcfunction(L, Lua_Rigidbody_SetRotation);
     lua_setfield(L, -2, "SetRotation");
+    lua_pushcfunction(L, Lua_Rigidbody_SetUseGravity);
+    lua_setfield(L, -2, "SetUseGravity");
     lua_pop(L, 1);
 
     // Animation metatable separada

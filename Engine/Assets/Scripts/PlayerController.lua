@@ -8,6 +8,7 @@ local pi    = math.pi
 
 local attackCol
 local attackTimer = 0
+local rollCooldown = 0
 
 _PlayerController_triggerCameraShake = false
 _PlayerController_shakeDuration      = 0.4
@@ -113,7 +114,7 @@ public = {
     speed               = 15.0,
     rollDuration        = 0.4,
     sprintMultiplier    = 1.5,
-    rollMultiplier      = 2.5,
+    rollSpeed           = 37.5,
     stamina             = 100.0,
     health              = 100.0,
     speedIncrease       = 10.0,
@@ -123,15 +124,17 @@ public = {
     rollStaminaCost     = 25,
     usingStamina        = false,
     tiredMultiplier     = 0.7,
-    hpLossCost          = 0.2,   
-    hpRecover           = 0.2,  
+    hpLossCost          = 0.2,
+    hpRecover           = 0.2,
     attackDuration      = 0.5,
     attackCooldown      = 0.5,
+    rollCooldownMax     = 0.5,
     knockbackForce      = 14.0,
     hitShakeDuration    = 0.3,
     hitShakeMagnitude   = 6.0,
-    ROTATION_SPEED      = 780
-
+    ROTATION_SPEED      = 780,
+    hermesWaterMax      = 2.0,
+    flySpeed            = 20.0
 }
 
 local function normalizeInput(x, z)
@@ -175,7 +178,7 @@ local function ApplyMovementAndRotation(self, dt, moveX, moveZ, speedOverride)
     local velY = 0
     
     if Player.rb then
-        velY = Player.rb:GetLinearVelocity().y
+        velY = math.min(0, Player.rb:GetLinearVelocity().y)
     end
 
     if abs(faceDirX) > 0.01 or abs(faceDirZ) > 0.01 then
@@ -187,11 +190,50 @@ local function ApplyMovementAndRotation(self, dt, moveX, moveZ, speedOverride)
         else
             Player.lastAngle = Player.lastAngle + (delta > 0 and maxStep or -maxStep)
         end
-        Player.rb:SetRotation(0, Player.lastAngle, 0)
+        if Player.rb then Player.rb:SetRotation(0, Player.lastAngle, 0) end
     end
 
     if Player.rb then
         Player.rb:SetLinearVelocity(faceDirX * speed, velY, faceDirZ * speed)
+    end
+end
+
+local function UpdateFlyingGodMode(self, dt)
+    local moveX, moveZ, _ = GetMovementInput()
+    local velY = 0
+
+    if Input.GetKey("E") then
+        velY =  self.public.flySpeed
+    elseif Input.GetKey("Q") then
+        velY = -self.public.flySpeed
+    end
+
+    local faceDirX = moveX / INPUT_SCALE
+    local faceDirZ = moveZ / INPUT_SCALE
+
+    local faceDirLen = sqrt(faceDirX * faceDirX + faceDirZ * faceDirZ)
+    if faceDirLen > 0.01 then
+        Player.lastDirX = faceDirX / faceDirLen
+        Player.lastDirZ = faceDirZ / faceDirLen
+
+        local targetAngle = atan2(faceDirX, faceDirZ) * (180.0 / pi)
+        local delta = ((targetAngle - Player.lastAngle + 180) % 360) - 180
+        local maxStep = self.public.ROTATION_SPEED * dt
+        if math.abs(delta) <= maxStep then
+            Player.lastAngle = targetAngle
+        else
+            Player.lastAngle = Player.lastAngle + (delta > 0 and maxStep or -maxStep)
+        end
+        Player.rb:SetRotation(0, Player.lastAngle, 0)
+    end
+
+    local hSpeed = self.public.speed
+    if Input.GetKey("LeftShift") or Input.GetGamepadAxis("LT") > 0.5 then
+        hSpeed = hSpeed + self.public.speedIncrease
+    end
+
+    if Player.rb then
+        Player.rb:SetLinearVelocity(faceDirX * hSpeed, velY, faceDirZ * hSpeed)
     end
 end
 
@@ -247,7 +289,16 @@ States[State.DEAD] = {
         Engine.Log("[Player] Player is DEAD")
         if Player.rb then Player.rb:SetLinearVelocity(0, 0, 0) end
     end,
-    Update = function(self, dt) end
+    Update = function(self, dt)
+        if Player.rb then Player.rb:SetLinearVelocity(0, 0, 0) end
+        if Input.GetKeyDown("1") then
+            self.public.health  = 100
+            self.public.stamina = 100
+            local p = Player.spawnPos
+            self.transform:SetPosition(p.x, p.y, p.z)
+            ChangeState(self, State.IDLE)
+        end
+    end
 }
 
 States[State.IDLE] = {
@@ -260,7 +311,7 @@ States[State.IDLE] = {
     Update = function(self, dt)
         if Player.rb then
             local velocity = Player.rb:GetLinearVelocity()
-            Player.rb:SetLinearVelocity(0, velocity.y, 0)
+            Player.rb:SetLinearVelocity(0, math.min(0, velocity.y), 0)
         end
 
         local moveX, moveZ, inputLen = GetMovementInput()
@@ -276,7 +327,7 @@ States[State.IDLE] = {
             ChangeState(self, State.ATTACK_LIGHT)
         end
         -- Check if can trasition to Roll, AttackLight, Charging y todo eso
-        if (Input.GetKeyDown("LeftCtrl") or Input.GetGamepadButtonDown("B")) and self.public.stamina >= self.public.rollStaminaCost then
+        if (Input.GetKeyDown("LeftCtrl") or Input.GetGamepadButtonDown("B")) and self.public.stamina >= self.public.rollStaminaCost and rollCooldown <= 0 then
             ChangeState(self, State.ROLL)
             return
         end
@@ -297,9 +348,9 @@ States[State.WALK] = {
         end
         local moveX, moveZ, inputLen = GetMovementInput()
         
-        if inputLen > 1 then
-            Player.lastDirX = moveX / INPUT_SCALE
-            Player.lastDirZ = moveZ / INPUT_SCALE
+        if inputLen > 0.01 then
+            Player.lastDirX = moveX / inputLen
+            Player.lastDirZ = moveZ / inputLen
         end
 
         if inputLen <= 0.1 then
@@ -314,7 +365,7 @@ States[State.WALK] = {
 
         -- Check if can trasition to Roll, AttackLight, Charging y todo eso
 
-        if (Input.GetKeyDown("LeftCtrl") or Input.GetGamepadButtonDown("B")) and self.public.stamina >= self.public.rollStaminaCost then
+        if (Input.GetKeyDown("LeftCtrl") or Input.GetGamepadButtonDown("B")) and self.public.stamina >= self.public.rollStaminaCost and rollCooldown <= 0 then
             ChangeState(self, State.ROLL)
             return
         end
@@ -348,13 +399,13 @@ States[State.RUNNING] = {
             return
         end
 
-        if inputLen > 0.1 then
-            Player.lastDirX = moveX / INPUT_SCALE
-            Player.lastDirZ = moveZ / INPUT_SCALE
+        if inputLen > 0.01 then
+            Player.lastDirX = moveX / inputLen
+            Player.lastDirZ = moveZ / inputLen
         end
 
         -- Check if can trasition to Roll, AttackLight, Charging y todo eso
-        if Input.GetKeyDown("LeftCtrl") or Input.GetGamepadButtonDown("B") then
+        if (Input.GetKeyDown("LeftCtrl") or Input.GetGamepadButtonDown("B")) and rollCooldown <= 0 then
             ChangeState(self, State.ROLL)
             return
         end
@@ -382,6 +433,9 @@ States[State.ROLL] = {
         end
         States[State.ROLL].timer = self.public.rollDuration
     end,
+    Exit = function(self)
+        rollCooldown = self.public.rollCooldownMax
+    end,
     Update = function(self, dt)
         -- Move on the direction fixed ignoring the input digo yo, transition to idle at end
         States[State.ROLL].timer = States[State.ROLL].timer - dt
@@ -392,9 +446,8 @@ States[State.ROLL] = {
         end
 
         if Player.rb then
-            local rollSpeed = self.public.speed * self.public.rollMultiplier
             local velocity = Player.rb:GetLinearVelocity()
-            Player.rb:SetLinearVelocity(Player.lastDirX * rollSpeed, velocity.y, Player.lastDirZ * rollSpeed)
+            Player.rb:SetLinearVelocity(Player.lastDirX * self.public.rollSpeed, velocity.y, Player.lastDirZ * self.public.rollSpeed)
         end
     end
 }
@@ -481,6 +534,10 @@ end
 function Start(self)
     Engine.Log("Player inicializado")
 
+    --respawn debug
+    local spawnPos = self.transform.worldPosition
+    Player.spawnPos = spawnPos
+    
     --stamina
     _impactFrameTimer = 0
 
@@ -492,6 +549,8 @@ function Start(self)
     attackCooldown = 0
     attackCol = self.gameObject:GetComponent("Box Collider")
     if attackCol then attackCol:Disable() end 
+    _PlayerController_pendingDamage    = 0
+    _PlayerController_pendingDamagePos = nil
 
     --rigidbody
     Player.rb = self.gameObject:GetComponent("Rigidbody")
@@ -512,6 +571,15 @@ function Update(self, dt)
     if attackCooldown > 0 then
         attackCooldown = attackCooldown - dt
     end
+    if rollCooldown > 0 then
+        rollCooldown = rollCooldown - dt
+    end
+
+    if _PlayerController_pendingDamage and _PlayerController_pendingDamage > 0 then
+        TakeDamage(self, _PlayerController_pendingDamage, _PlayerController_pendingDamagePos)
+        _PlayerController_pendingDamage    = 0
+        _PlayerController_pendingDamagePos = nil
+    end
 
     if _PlayerController_pendingDamage > 0 then
         TakeDamage(self, _PlayerController_pendingDamage, _PlayerController_pendingDamagePos)
@@ -524,7 +592,9 @@ function Update(self, dt)
         ChangeState(self, State.IDLE)
     end
 
-    if Player.currentState and States[Player.currentState] then
+    if Player.godMode then
+        UpdateFlyingGodMode(self, dt)
+    elseif Player.currentState and States[Player.currentState] then
         States[Player.currentState].Update(self, dt)
 
         -- Recuperar stamina si no se está usando
@@ -563,6 +633,13 @@ function Update(self, dt)
     if Input.GetKeyDown("G") then
         Player.godMode = not Player.godMode
         Engine.Log("[Player] GOD MODE: " .. tostring(Player.godMode))
+        if Player.rb then
+            Player.rb:SetUseGravity(not Player.godMode)
+            if not Player.godMode then
+                Player.rb:SetLinearVelocity(0, 0, 0)
+                ChangeState(self, State.IDLE)
+            end
+        end
     end
 
     -- Tecla 2: ganar vida (debug)

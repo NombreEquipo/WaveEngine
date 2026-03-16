@@ -13,129 +13,136 @@ ComponentNavigation::ComponentNavigation(GameObject* owner)
 
 void ComponentNavigation::OnEditor()
 {
-        ImGui::Checkbox("Navigation Static", &isStatic);
+    ImGui::Checkbox("Navigation Static", &isStatic);
 
-        //Select Type
-        const char* items[] = { "Surface", "Agent", "Obstacle" };
-     
-        int currentType = static_cast<int>(type);
-        if (ImGui::Combo("Nav Type", &currentType, items, IM_ARRAYSIZE(items)))
+    //Select Type
+    const char* items[] = { "Surface", "Agent", "Obstacle" };
+
+    int currentType = static_cast<int>(type);
+    if (ImGui::Combo("Nav Type", &currentType, items, IM_ARRAYSIZE(items)))
+    {
+        type = static_cast<NavType>(currentType);
+    }
+
+    ImGui::Spacing();
+
+    if (type == NavType::SURFACE)
+    {
+        ImGui::Text("Surface Settings");
+        ImGui::SliderFloat("Max Slope Angle", &maxSlopeAngle, 0.0f, 90.0f);
+
+        ImGui::Separator();
+        ImGui::Text("--- TEST NAVMESH ---");
+
+        static float testStart[3] = { 0.0f, 0.0f,  0.0f };
+        static float testEnd[3] = { 10.0f, 0.0f, 10.0f };
+
+        ImGui::DragFloat3("Start", testStart, 0.1f);
+        ImGui::DragFloat3("End", testEnd, 0.1f);
+
+        if (ImGui::Button("Test FindPath", ImVec2(-1, 25)))
         {
-            type = static_cast<NavType>(currentType);
+            glm::vec3 start = { testStart[0], testStart[1], testStart[2] };
+            glm::vec3 end = { testEnd[0],   testEnd[1],   testEnd[2] };
+
+            std::vector<glm::vec3> path;
+            bool found = Application::GetInstance().navMesh->FindPath(owner, start, end, path);
+
+            if (found)
+            {
+                LOG_CONSOLE("Camino encontrado! Waypoints: %d", (int)path.size());
+                for (int i = 0; i < (int)path.size(); ++i)
+                    LOG_CONSOLE("  [%d] (%.2f, %.2f, %.2f)", i, path[i].x, path[i].y, path[i].z);
+            }
+            else
+            {
+                LOG_CONSOLE("No se encontro camino. Comprueba que los puntos esten dentro del navmesh.");
+            }
+        }
+    }
+
+    if (type == NavType::AGENT)
+    {
+        ImGui::Text("Agent Settings");
+        ImGui::Separator();
+
+        // Recoger todos los GameObjects de la escena con NavType::SURFACE
+        std::vector<GameObject*> surfaces;
+        std::function<void(GameObject*)> collectSurfaces = [&](GameObject* obj)
+            {
+                if (!obj) return;
+                ComponentNavigation* nav =
+                    (ComponentNavigation*)obj->GetComponent(ComponentType::NAVIGATION);
+                if (nav && nav->type == NavType::SURFACE)
+                    surfaces.push_back(obj);
+                for (GameObject* child : obj->GetChildren())
+                    collectSurfaces(child);
+            };
+        collectSurfaces(Application::GetInstance().scene->GetRoot());
+
+        // Construir lista de nombres para el Combo
+        std::vector<std::string> surfaceNames;
+        surfaceNames.push_back("None");
+        for (GameObject* s : surfaces)
+            surfaceNames.push_back(s->GetName());
+
+        // √çndice actual
+        int currentIndex = 0; // "None"
+        for (int i = 0; i < (int)surfaces.size(); ++i)
+        {
+            if (surfaces[i] == linkedSurface)
+            {
+                currentIndex = i + 1; // +1 por el "None"
+                break;
+            }
+        }
+
+        // Convertir a array de const char* para ImGui
+        std::vector<const char*> namePtrs;
+        for (const auto& n : surfaceNames)
+            namePtrs.push_back(n.c_str());
+
+        ImGui::Text("NavMesh Surface:");
+        if (ImGui::Combo("##NavSurface", &currentIndex, namePtrs.data(), (int)namePtrs.size()))
+        {
+            if (currentIndex == 0)
+            {
+                linkedSurface = nullptr;
+                tempSurfaceUID = 0;
+            }
+            else
+            {
+                linkedSurface = surfaces[currentIndex - 1];
+                tempSurfaceUID = linkedSurface->GetUID();
+                LOG_CONSOLE("Agent linked to surface: %s", linkedSurface->GetName().c_str());
+            }
+        }
+    }
+    ImGui::Spacing();
+
+    if (type != NavType::AGENT) {
+        if (ImGui::Button("Bake NavMesh", ImVec2(-1, 30)))
+        {
+            Application::GetInstance().navMesh->Bake(this->owner);
+
         }
 
         ImGui::Spacing();
 
-        if (type == NavType::SURFACE)
+        if (ImGui::Button("Clear NavMesh", ImVec2(-1, 30)))
         {
-            ImGui::Text("Surface Settings");
-            ImGui::SliderFloat("Max Slope Angle", &maxSlopeAngle, 0.0f, 90.0f);
 
-            ImGui::Separator();
-            ImGui::Text("--- TEST NAVMESH ---");
-
-            static float testStart[3] = { 0.0f, 0.0f,  0.0f };
-            static float testEnd[3] = { 10.0f, 0.0f, 10.0f };
-
-            ImGui::DragFloat3("Start", testStart, 0.1f);
-            ImGui::DragFloat3("End", testEnd, 0.1f);
-
-            if (ImGui::Button("Test FindPath", ImVec2(-1, 25)))
+            if (Application::GetInstance().navMesh)
             {
-                glm::vec3 start = { testStart[0], testStart[1], testStart[2] };
-                glm::vec3 end = { testEnd[0],   testEnd[1],   testEnd[2] };
-
-                std::vector<glm::vec3> path;
-                bool found = Application::GetInstance().navMesh->FindPath(owner, start, end, path);
-
-                if (found)
-                {
-                    LOG_CONSOLE("Camino encontrado! Waypoints: %d", (int)path.size());
-                    for (int i = 0; i < (int)path.size(); ++i)
-                        LOG_CONSOLE("  [%d] (%.2f, %.2f, %.2f)", i, path[i].x, path[i].y, path[i].z);
-                }
-                else
-                {
-                    LOG_CONSOLE("No se encontro camino. Comprueba que los puntos esten dentro del navmesh.");
-                }
+                Application::GetInstance().navMesh->RemoveNavMesh(owner);
             }
+
+
         }
-
-        if (type == NavType::AGENT)
-        {
-            ImGui::Text("Agent Settings");
-            ImGui::Separator();
-
-            ImGui::Text("NavMesh Surface:");
-            ImGui::SameLine();
-
-            const char* surfaceName = linkedSurface ?
-                linkedSurface->GetName().c_str() :
-                "None (Drag Surface Here)";
-
-            ImGui::Button(surfaceName, ImVec2(-1, 25));
-
-            // --- Drag Target ---
-            if (ImGui::BeginDragDropTarget())
-            {
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_GAMEOBJECT"))
-                {
-                    GameObject* dropped =
-                        *(GameObject**)payload->Data;
-
-                    if (dropped)
-                    {
-                        ComponentNavigation* nav =
-                            (ComponentNavigation*)dropped->GetComponent(ComponentType::NAVIGATION);
-
-                        if (nav && nav->type == NavType::SURFACE)
-                        {
-                            linkedSurface = dropped;
-                            tempSurfaceUID = dropped->GetUID();
-                            LOG_CONSOLE("Agent linked to surface: %s", dropped->GetName().c_str());
-                        }
-                        else
-                        {
-                            LOG_CONSOLE("Dropped object is not a NavMesh Surface!");
-                        }
-                    }
-                }
-                ImGui::EndDragDropTarget();
-            }
-
-            if (linkedSurface)
-            {
-                if (ImGui::Button("Clear Surface"))
-                {
-                    linkedSurface = nullptr;
-                }
-            }
-        }
-        ImGui::Spacing();
-
-        if (type != NavType::AGENT) {
-            if (ImGui::Button("Bake NavMesh", ImVec2(-1, 30)))
-            {
-                Application::GetInstance().navMesh->Bake(this->owner);
-
-            }
-
-            ImGui::Spacing();
-
-            if (ImGui::Button("Clear NavMesh", ImVec2(-1, 30)))
-            {
-
-                if (Application::GetInstance().navMesh)
-                {
-                    Application::GetInstance().navMesh->RemoveNavMesh(owner);
-                }
-
-
-            }
-        }
+    }
 }
 
-// 1. En SetDestination ó inicializar currentPolyRef tras encontrar el camino
+// 1. En SetDestination ÔøΩ inicializar currentPolyRef tras encontrar el camino
 bool ComponentNavigation::SetDestination(const glm::vec3& target)
 {
     if (!linkedSurface) { LOG_CONSOLE("Sin superficie enlazada"); return false; }
@@ -145,9 +152,8 @@ bool ComponentNavigation::SetDestination(const glm::vec3& target)
 
     std::vector<glm::vec3> newPath;
     bool found = Application::GetInstance().navMesh->FindPath(linkedSurface, start, target, newPath);
-    if (!found) { LOG_CONSOLE("No se encontrÛ camino"); return false; }
-
-    // Inicializar el polÌgono actual para moveAlongSurface
+    if (!found) { LOG_CONSOLE("No se encontrÔøΩ camino"); return false; }
+    // Inicializar el polÔøΩgono actual para moveAlongSurface
     auto* navData = Application::GetInstance().navMesh->GetNavMeshData(linkedSurface);
     if (navData && navData->navQuery)
     {
@@ -189,13 +195,13 @@ bool ComponentNavigation::SnapPositionToNavMesh(glm::vec3& position)
     return true;
 }
 
-// 3. En Update ó reemplazar el bloque de movimiento libre por moveAlongSurface
+// 3. En Update ÔøΩ reemplazar el bloque de movimiento libre por moveAlongSurface
 void ComponentNavigation::Update(float dt)
 {
-    
+
 }
 
-// 2. En StopMovement ó resetear el poly ref
+// 2. En StopMovement ÔøΩ resetear el poly ref
 void ComponentNavigation::StopMovement()
 {
     moving = false;

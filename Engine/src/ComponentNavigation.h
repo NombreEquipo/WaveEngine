@@ -27,14 +27,14 @@ public:
     float maxSlopeAngle = 35.0f;
     GameObject* linkedSurface = nullptr;
 
-    // Parámetros
+    // Parï¿½metros
     float moveSpeed = 5.0f;
     float arrivalThreshold = 0.25f;
 
-    // API pública
+    // API pï¿½blica
     bool SetDestination(const glm::vec3& worldTarget);
     void StopMovement();
-    void Update(float dt);   // llámalo desde tu sistema de update
+    void Update(float dt);   // llï¿½malo desde tu sistema de update
     bool IsMoving() const { return moving; }
 
 

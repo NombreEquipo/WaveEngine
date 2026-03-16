@@ -11,8 +11,6 @@ local ATTACK_DURATION    = 0.5
 local ATTACK_COL_DELAY   = 0.25
 
 _EnemyDamage_skeleton        = 20
-_PlayerController_pendingDamage    = 0
-_PlayerController_pendingDamagePos = nil
 
 public = {
     maxHp          = 30,
