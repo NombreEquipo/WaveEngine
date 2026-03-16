@@ -177,7 +177,7 @@ local function ApplyMovementAndRotation(self, dt, moveX, moveZ, speedOverride)
     local velY = 0
     
     if Player.rb then
-        velY = Player.rb:GetLinearVelocity().y
+        velY = math.min(0, Player.rb:GetLinearVelocity().y)
     end
 
     if abs(faceDirX) > 0.01 or abs(faceDirZ) > 0.01 then
@@ -298,7 +298,7 @@ States[State.IDLE] = {
     Update = function(self, dt)
         if Player.rb then
             local velocity = Player.rb:GetLinearVelocity()
-            Player.rb:SetLinearVelocity(0, velocity.y, 0)
+            Player.rb:SetLinearVelocity(0, math.min(0, velocity.y), 0)
         end
 
         local moveX, moveZ, inputLen = GetMovementInput()
