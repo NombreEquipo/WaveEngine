@@ -76,8 +76,8 @@
     "prewarm": false,
     "proximityActivation": true,
     "proximityTarget": "Player",
-    "rotSpeedMax": 180.0,
-    "rotSpeedMin": -180.0,
+    "rotSpeedMax": 0.0,
+    "rotSpeedMin": 0.0,
     "shape": 0,
     "simulationSpace": 0,
     "sizeCurve": [
