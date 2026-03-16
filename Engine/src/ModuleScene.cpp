@@ -8,6 +8,7 @@
 #include <functional>
 #include "ComponentMesh.h"
 #include "ComponentCamera.h"
+#include "ComponentNavigation.h"
 #include <fstream>
 
 ModuleScene::ModuleScene() : Module()
@@ -159,6 +160,27 @@ bool ModuleScene::LoadScene(const nlohmann::json& sceneHierarchy)
     if (root)
         root->SolveReferences();
 
+    LOG_CONSOLE("Iniciando Auto-Bake de NavMeshes...");
+
+    std::function<void(GameObject*)> autoBakeNav = [&](GameObject* obj) {
+        if (!obj) return;
+
+        ComponentNavigation* nav = static_cast<ComponentNavigation*>(obj->GetComponent(ComponentType::NAVIGATION));
+
+        if (nav && nav->type == NavType::SURFACE) {
+            LOG_CONSOLE("Auto-Baking superficie: %s", obj->GetName().c_str());
+            Application::GetInstance().navMesh->Bake(obj);
+        }
+
+        for (GameObject* child : obj->GetChildren()) {
+            autoBakeNav(child);
+        }
+        };
+
+    if (root) {
+        autoBakeNav(root);
+    }
+
     LOG_CONSOLE("Scene loaded successfully from JSON");
     return true;
 }
@@ -186,6 +208,11 @@ void ModuleScene::ClearScene()
     LOG_CONSOLE("Clearing scene...");
 
     if (!root) return;
+
+    if (Application::GetInstance().navMesh) {
+        Application::GetInstance().navMesh->CleanUp();
+    }
+
 
     // Selection
     Application::GetInstance().selectionManager->ClearSelection();
