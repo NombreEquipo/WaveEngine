@@ -9,12 +9,16 @@ local pi    = math.pi
 local attackCol
 local attackTimer = 0
 local rollCooldown = 0
+local stepTimer = 0.5
+
 
 _PlayerController_triggerCameraShake = false
 _PlayerController_shakeDuration      = 0.4
 _PlayerController_shakeMagnitude     = 4.0
 _PlayerController_lastAttack         = ""
 _impactFrameTimer                    = 0
+_PlayerController_currentMask        = "None"
+_PlayerController_isDrowning         = false
 
 local INPUT_SCALE = 10
 local STAMINA_BAR_MAX_HEIGHT = 68.0 
@@ -96,6 +100,11 @@ local Player = {
     rb              = nil,
     sprintHeld      = false,
 
+    -- Audio
+    --stepSFX = nil,
+	--currentSurface = "",
+    
+
     -- Potion state
     potionCount         = 4,
     potionHealing       = false,   -- ¿está recuperando vida ahora mismo?
@@ -106,15 +115,16 @@ local Player = {
     potionCooldownMax   = 0.5,
 
     -- Hermes mask
+
     isDrowning       = false,
     hermesGraceTimer = 0.0,
 }
 
 public = {
     speed               = 15.0,
-    rollDuration        = 0.4,
+    rollDuration        = 1.0,
     sprintMultiplier    = 1.5,
-    rollSpeed           = 37.5,
+    rollSpeed           = 15.0,
     stamina             = 100.0,
     health              = 100.0,
     speedIncrease       = 10.0,
@@ -126,7 +136,7 @@ public = {
     tiredMultiplier     = 0.7,
     hpLossCost          = 0.2,
     hpRecover           = 0.2,
-    attackDuration      = 0.5,
+    attackDuration      = 1.0,
     attackCooldown      = 0.5,
     rollCooldownMax     = 0.5,
     knockbackForce      = 14.0,
@@ -136,6 +146,10 @@ public = {
     hermesWaterMax      = 2.0,
     flySpeed            = 20.0
 }
+
+
+
+
 
 local function normalizeInput(x, z)
     local len = sqrt(x*x + z*z)
@@ -260,13 +274,26 @@ local function EquipMask(self, newMask)
     if Player.currentMask == newMask then return end
 
     --HERMES
+        if Player.currentMask == Mask.HERMES and Player.isDrowning then
+        Engine.Log("[Player] Hermes while on water!!")
+        return
+    end
     if Player.currentMask == Mask.HERMES then
         self.public.speedIncrease = self.public.speedIncrease - self.public.speedHermesBonus
         Player.hermesGraceTimer   = 0
-        Player.isDrowning         = false
         if Player.currentState == State.RUNNING then
             self.public.speed = self.public.speed - self.public.speedHermesBonus
         end
+        if Player.isDrowning then
+            Player.isDrowning            = false
+            _PlayerController_isDrowning = false
+            self.public.health           = 0
+            ChangeState(self, State.DEAD)
+            Player.currentMask            = newMask
+            _PlayerController_currentMask = newMask
+            return
+        end
+        Player.isDrowning = false
     end
     if newMask == Mask.HERMES then
         self.public.speedIncrease = self.public.speedIncrease + self.public.speedHermesBonus
@@ -282,6 +309,7 @@ local function EquipMask(self, newMask)
     end
     
     Player.currentMask = newMask
+    _PlayerController_currentMask = newMask
 end
 
 States[State.DEAD] = {
@@ -337,8 +365,16 @@ States[State.IDLE] = {
 States[State.WALK] = {
     Enter = function(self)
         local anim = self.gameObject:GetComponent("Animation")
+        if anim then anim:Play("Running", 0.5) end --TEMPORAL CAMBIAR POR CAMINAR
+
         self.public.usingStamina = false
-        if anim then anim:Play("Walking", 0.5) end
+
+        if anim then 
+            anim:Play("Walking", 0.5) 
+            anim:SetSpeed("Walking", 1.0)
+        end
+
+        
     end,
     
     Update = function(self, dt)
@@ -370,6 +406,17 @@ States[State.WALK] = {
             return
         end
 
+        
+        if Player.stepSFX then
+            stepTimer = stepTimer + dt
+            if stepTimer >= (0.5/self.public.sprintMultiplier) then
+				stepTimer = 0
+                Audio.SetSwitch("Player_Speed", "Walk", Player.stepSFX)
+                Engine.Log("Playing Walk FootSteps SFX")
+                Player.stepSFX:PlayAudioEvent()
+            end
+        end
+        
         -- Movement and rotation
         ApplyMovementAndRotation(self, dt, moveX, moveZ)
     end
@@ -378,7 +425,8 @@ States[State.WALK] = {
 States[State.RUNNING] = {
     Enter = function(self)
         local anim = self.gameObject:GetComponent("Animation")
-        if anim then anim:Play("Walking", 0.5) end
+        if anim then anim:Play("Running", 0.5) end
+
         self.public.usingStamina = true
         self.public.speed = self.public.speed + self.public.speedIncrease
     end,
@@ -420,6 +468,15 @@ States[State.RUNNING] = {
         end
         Engine.Log("[Player] STAMINA: " .. tostring(self.public.stamina))
 
+        if Player.stepSFX then
+           stepTimer = stepTimer + dt
+            if stepTimer >= (0.25/self.public.sprintMultiplier) then
+				stepTimer = 0
+                Audio.SetSwitch("Player_Speed", "Run", Player.stepSFX)
+                Engine.Log("Playing Run FootSteps SFX")
+                Player.stepSFX:PlayAudioEvent()
+            end
+        end
         ApplyMovementAndRotation(self, dt, moveX, moveZ)
     end
 }
@@ -428,6 +485,9 @@ States[State.ROLL] = {
     timer = 0,
     Enter = function(self)
         -- Anim roll, fix direction, stamina...
+        local anim = self.gameObject:GetComponent("Animation")
+        if anim then anim:Play("Roll", 1.0) end
+
         if not Player.godMode then
             self.public.stamina = self.public.stamina - self.public.rollStaminaCost
         end
@@ -465,6 +525,9 @@ States[State.ATTACK_HEAVY] = {
 States[State.ATTACK_LIGHT] = {
     Enter = function(self)
         -- Anim attacklight
+
+        local anim = self.gameObject:GetComponent("Animation")
+        if anim then anim:Play("NormalAttack", 1.0) end
         _PlayerController_lastAttack = "light"
         attackTimer = 0
         if attackCol then attackCol:Enable() end
@@ -545,6 +608,11 @@ function Start(self)
     self.public.health  = 100
     Player.potionCount  = 4
 
+	--steps
+    self.stepTimer = 0
+    Player.stepSFX = self.gameObject:GetComponent("Audio Source")
+    Player.currentSurface = "Dirt" --default surface
+
     --attack
     attackCooldown = 0
     attackCol = self.gameObject:GetComponent("Box Collider")
@@ -561,6 +629,7 @@ function Start(self)
     --masks
     Player.isDrowning       = false
     Player.hermesGraceTimer = 0
+    _PlayerController_currentMask = "None"
 
     ChangeState(self, State.IDLE)
     EquipMask(self, Mask.NONE)
@@ -677,31 +746,61 @@ function Update(self, dt)
             Game.SetTimeScale(1.0)
         end
     end
+
+    --Set switch for surface type in footstep SFX
+    Audio.SetSwitch("Surface_Type", Player.currentSurface, Player.stepSFX)
+
+
 end
 
-function OnTriggerEnter(self, other) end
+
+local surfaces = {"Grass", "Water", "Dirt"}
+
+function OnTriggerEnter(self, other)
+	for i, surface in ipairs(surfaces) do
+		if other:CompareTag(surface) then 
+			Player.currentSurface = surface
+		end
+	end
+
+end
 function OnTriggerExit(self, other) end
 
+
+
+
 function OnCollisionEnter(self, other)
-    if other:CompareTag("Water") then
-        if Player.currentMask == Mask.HERMES then
-            Player.isDrowning       = true
-            Player.hermesGraceTimer = HERMES_GRACE_TIME
-            Engine.Log("[Player] Hermes on water")
-        elseif Player.currentState ~= State.DEAD then
-            self.public.health = 0
-            Engine.Log("[Player] Player is drowning")
-            ChangeState(self, State.DEAD)
-        else
-            Engine.Log("[Player] Player not drowning")
-        end
+
+    if other:CompareTag("Water") and Player.currentMask == Mask.HERMES then
+        Player.isDrowning            = true
+        _PlayerController_isDrowning = true
+        Player.hermesGraceTimer      = HERMES_GRACE_TIME
+        --Player.currentSurface = "Water"
+        Engine.Log("[Player] Hermes on water")
     end
+
+	for i, surface in ipairs(surfaces) do
+		if other:CompareTag(surface) then 
+			Player.currentSurface = surface
+		end
+	end
+
 end
 
 function OnCollisionExit(self, other)
     if other:CompareTag("Water") then
-        Player.isDrowning       = false
-        Player.hermesGraceTimer = 0
+        Player.isDrowning            = false
+        _PlayerController_isDrowning = false
+        Player.hermesGraceTimer      = 0
         Engine.Log("[Player] Player out of water")
     end
 end
+
+
+
+
+
+
+
+
+

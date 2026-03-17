@@ -17,6 +17,8 @@ class ComponentCamara;
 class ComponentPostProcessing;
 class Shader;
 class Texture;
+class ComponentLight;
+class LightManager;
 
 class Renderer : public Module
 {
@@ -131,6 +133,11 @@ public:
     // Perfect Pixel Picking
     UID GetObjectInPixel(const CameraLens* camera, int x, int y);
 
+    // lights
+    void AddLight(ComponentLight* light);
+    void RemoveLight(ComponentLight* light);
+    LightManager* GetLightManager() const { return lightManager.get(); }
+
 private:
 
     void ApplyRenderSettings();
@@ -217,6 +224,7 @@ private:
     std::vector<RenderLine> linesList;
     std::vector<CanvasObject> canvasList;
 
+
     // Post Processing
     int postProcessCurrentW = 0;
     int postProcessCurrentH = 0;
@@ -231,4 +239,7 @@ private:
     unsigned int msaaFBO = 0;
     unsigned int msaaColorBuffer = 0;
     unsigned int msaaDepthStencilRBO = 0;
+
+    std::unique_ptr<LightManager> lightManager;
+
 };

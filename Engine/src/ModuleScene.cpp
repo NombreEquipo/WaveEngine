@@ -8,6 +8,8 @@
 #include <functional>
 #include "ComponentMesh.h"
 #include "ComponentCamera.h"
+#include "ComponentNavigation.h"
+
 #include <fstream>
 
 ModuleScene::ModuleScene() : Module()
@@ -15,7 +17,6 @@ ModuleScene::ModuleScene() : Module()
     name = "ModuleScene";
     root = nullptr;
     renderer = nullptr;
-    filesystem = nullptr;
 }
 
 ModuleScene::~ModuleScene()
@@ -159,7 +160,30 @@ bool ModuleScene::LoadScene(const nlohmann::json& sceneHierarchy)
     if (root)
         root->SolveReferences();
 
+    LOG_CONSOLE("Iniciando Auto-Bake de NavMeshes...");
+
+    std::function<void(GameObject*)> autoBakeNav = [&](GameObject* obj) {
+        if (!obj) return;
+
+        ComponentNavigation* nav = static_cast<ComponentNavigation*>(obj->GetComponent(ComponentType::NAVIGATION));
+
+        if (nav && nav->type == NavType::SURFACE) {
+            LOG_CONSOLE("Auto-Baking superficie: %s", obj->GetName().c_str());
+            Application::GetInstance().navMesh->Bake(obj);
+        }
+
+        for (GameObject* child : obj->GetChildren()) {
+            autoBakeNav(child);
+        }
+        };
+
+    if (root) {
+        autoBakeNav(root);
+    }
+
+
     LOG_CONSOLE("Scene loaded successfully from JSON");
+
     return true;
 }
 
@@ -187,12 +211,25 @@ void ModuleScene::ClearScene()
 
     if (!root) return;
 
+    if (Application::GetInstance().navMesh) {
+        Application::GetInstance().navMesh->CleanUp();
+    }
+
+
     // Selection
+    if (Application::GetInstance().navMesh) {
+        Application::GetInstance().navMesh->CleanUp();
+    }
+
     Application::GetInstance().selectionManager->ClearSelection();
 
     // Childrens
     std::vector<GameObject*> children = root->GetChildren();
     for (GameObject* child : children) {
+        if (child->IsPersistent())
+        {
+            continue;
+        }
         root->RemoveChild(child);
         delete child;
     }
@@ -266,7 +303,9 @@ bool ModuleScene::DeserializeSceneFromString(const std::string& jsonString)
         const nlohmann::json& gameObjectsArray = document["gameObjects"];
 
         for (size_t i = 0; i < gameObjectsArray.size(); ++i) {
+            
             GameObject* obj = GameObject::Deserialize(gameObjectsArray[i], root);
+            
             if (!obj) {
                 LOG_CONSOLE("[ModuleScene] WARNING: Failed to deserialize GameObject at index %zu", i);
             }

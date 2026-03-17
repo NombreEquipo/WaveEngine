@@ -13,6 +13,7 @@ ComponentNavigation::ComponentNavigation(GameObject* owner)
 
 void ComponentNavigation::OnEditor()
 {
+
     ImGui::Checkbox("Navigation Static", &isStatic);
 
     //Select Type
@@ -139,10 +140,13 @@ void ComponentNavigation::OnEditor()
 
 
         }
+
     }
 }
 
 // 1. En SetDestination � inicializar currentPolyRef tras encontrar el camino
+
+
 bool ComponentNavigation::SetDestination(const glm::vec3& target)
 {
     if (!linkedSurface) { LOG_CONSOLE("Sin superficie enlazada"); return false; }
@@ -152,6 +156,7 @@ bool ComponentNavigation::SetDestination(const glm::vec3& target)
 
     std::vector<glm::vec3> newPath;
     bool found = Application::GetInstance().navMesh->FindPath(linkedSurface, start, target, newPath);
+
     if (!found) { LOG_CONSOLE("No se encontr� camino"); return false; }
 
     // Inicializar el pol�gono actual para moveAlongSurface
@@ -165,6 +170,7 @@ bool ComponentNavigation::SetDestination(const glm::vec3& target)
         float nearPt[3];
         navData->navQuery->findNearestPoly(startF, extents, &filter, &currentPolyRef, nearPt);
     }
+
 
     path = std::move(newPath);
     pathIndex = 0;
@@ -196,6 +202,7 @@ bool ComponentNavigation::SnapPositionToNavMesh(glm::vec3& position)
     return true;
 }
 
+
 // 3. En Update � reemplazar el bloque de movimiento libre por moveAlongSurface
 void ComponentNavigation::Update(float dt)
 {
@@ -203,6 +210,7 @@ void ComponentNavigation::Update(float dt)
 }
 
 // 2. En StopMovement � resetear el poly ref
+
 void ComponentNavigation::StopMovement()
 {
     moving = false;

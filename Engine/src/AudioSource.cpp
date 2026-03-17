@@ -23,38 +23,59 @@ AudioSource::AudioSource(GameObject* containerGO)
 
 AudioSource::~AudioSource()
 {
-
-    
     AK::SoundEngine::StopAll(this->goID);
     Application::GetInstance().audio->audioSystem->UnregisterAudioComponent(this);
     AK::SoundEngine::UnregisterGameObj(this->goID);
 }
 
 void AudioSource::SetTransform() {
-    Transform* trans = static_cast<Transform*>(owner->GetComponent(ComponentType::TRANSFORM));
-    if (trans) {
-        // Use the recursive version to ensure we have the absolute truth
-        glm::mat4 globalMat = trans->GetWorldMatrixRecursive();
 
-        // Extract World Position (4th Column)
-        glm::vec3 worldPos = glm::vec3(globalMat[3]);
+    /*float dist = 0*/
+    //if (!enabled) return;
+    if (owner) {
+        Transform* trans = static_cast<Transform*>(owner->GetComponent(ComponentType::TRANSFORM));
+        if (trans) {
+            // Use the recursive version to ensure we have the absolute truth
+            glm::mat4 globalMat = trans->GetWorldMatrixRecursive();
 
-        // Extract World Orientation (Rotation only)
-        glm::vec3 worldForward = glm::normalize(glm::vec3(globalMat * glm::vec4(0, 0, 1, 0)));
-        glm::vec3 worldUp = glm::normalize(glm::vec3(globalMat * glm::vec4(0, 1, 0, 0)));
+            // Extract World Position (4th Column)
+            glm::vec3 worldPos = glm::vec3(globalMat[3]);
 
-        AkSoundPosition soundPos;
-        soundPos.SetPosition(worldPos.x, worldPos.y, worldPos.z);
+            // Extract World Orientation (Rotation only)
+            glm::vec3 worldForward = glm::normalize(glm::vec3(globalMat * glm::vec4(0, 0, 1, 0)));
+            glm::vec3 worldUp = glm::normalize(glm::vec3(globalMat * glm::vec4(0, 1, 0, 0)));
 
-        soundPos.SetOrientation(
-            worldForward.x, worldForward.y, worldForward.z,
-            worldUp.x, worldUp.y, worldUp.z
-        );
+            AkSoundPosition soundPos;
+            soundPos.SetPosition(worldPos.x, worldPos.y, worldPos.z);
 
-        //K::SoundEngine::SetRTPCValue("ObjectVolume", (AkRtpcValue)volume, goID);
-        AK::SoundEngine::SetRTPCValue(AK::GAME_PARAMETERS::AUDIOSOURCE_VOLUME, (AkRtpcValue)(volume), goID);
-        AK::SoundEngine::SetPosition(this->goID, soundPos);
+            soundPos.SetOrientation(
+                worldForward.x, worldForward.y, worldForward.z,
+                worldUp.x, worldUp.y, worldUp.z
+            );
+
+            //K::SoundEngine::SetRTPCValue("ObjectVolume", (AkRtpcValue)volume, goID);
+            if (!enabled) {
+                AK::SoundEngine::SetRTPCValue(AK::GAME_PARAMETERS::AUDIOSOURCE_VOLUME, (AkRtpcValue)(0), goID);
+            }
+            else {
+                AK::SoundEngine::SetRTPCValue(AK::GAME_PARAMETERS::AUDIOSOURCE_VOLUME, (AkRtpcValue)(volume), goID);
+            }
+            
+            AK::SoundEngine::SetPosition(this->goID, soundPos);
+        }
+        //set attenuation radius
+
+       
+        //if (dist != nullptr) {
+        //    float normalized = dist / radius;
+
+        //    //AK::SoundEngine::SetRTPCValue("NormalizedDistance", normalized);
+        //    AK::SoundEngine::SetRTPCValue(L"Attenuation_Radius", normalized, goID);
+        //}
+       
     }
+    
+    
 }
 
 void AudioSource::Serialize(nlohmann::json& componentObj) const {
@@ -134,10 +155,14 @@ void AudioSource::OnEditor() {
     }
 
     if (ImGui::SliderFloat("Volume", &volume, 0.0f, 100.0f)){
-        //Application::GetInstance().audio.get()->audioSystem->SetMusicVolume(volume);
+        
         AK::SoundEngine::SetRTPCValue(AK::GAME_PARAMETERS::AUDIOSOURCE_VOLUME, (AkRtpcValue)(volume), goID);
-
     }
+
+    //if (ImGui::SliderFloat("Attenuation Radius", &radius, 0.0f, 1000.0f)) {
+    //    //Application::GetInstance().audio.get()->audioSystem->SetMusicVolume(volume);
+    //    AK::SoundEngine::SetRTPCValue(AK::GAME_PARAMETERS::AUDIOSOURCE_VOLUME, (AkRtpcValue)(volume), goID);
+    //}
 
     ImGui::Checkbox("Play On Awake", &playOnAwake);
 
@@ -167,6 +192,10 @@ void AudioSource::OnEditor() {
             Application::GetInstance().audio->StopAudio(this, eventID);
         }
     }
+
+    ImGui::Checkbox("Enabled", &enabled);
+
+    
 
     #endif 
 }

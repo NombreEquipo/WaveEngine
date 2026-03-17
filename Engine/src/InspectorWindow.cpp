@@ -39,15 +39,10 @@
 #include "ModuleEditor.h"
 #include "ComponentCommand.h"
 #include "Joint.h"
-#include "FixedJoint.h"
-#include "DistanceJoint.h"
-#include "HingeJoint.h"
-#include "SphericalJoint.h"
-#include "PrismaticJoint.h"
-#include "D6Joint.h"
 #include "ComponentStateCommand.h"
 #include "CreateCommand.h"
 #include "DeleteCommand.h"
+#include "ComponentLight.h"
 
 #include "Log.h"
 #include "ComponentScript.h"
@@ -56,6 +51,7 @@
 #include "ComponentPostProcessing.h"
 #include <filesystem>
 #include <nlohmann/json.hpp>
+#include <algorithm>
 
 static nlohmann::json copiedComponentData;
 static ComponentType copiedComponentType = static_cast<ComponentType>(-1);
@@ -325,6 +321,10 @@ void InspectorWindow::Draw()
             DrawCanvasComponent(component);
 			break;
 
+			// lights
+        case ComponentType::LIGHT:
+            DrawLightComponent(component);
+            break;
 		case ComponentType::UNKNOWN:
             break;
         default:
@@ -976,10 +976,12 @@ void  InspectorWindow::DrawSphereColliderComponent(Component* component)
 
     if (Collider != nullptr)
     {
-        if (ImGui::CollapsingHeader("Sphere Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
-            DrawComponentContextMenu(Collider, true);
-            Collider->OnEditor();
-        }
+        std::string popupID = Collider->name + "ComponentPopup##" + std::to_string((uintptr_t)component);
+        ImGui::PushID(popupID.c_str());
+        bool open = ImGui::CollapsingHeader(Collider->name.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+        DrawComponentContextMenu(Collider, true);
+        if (open) Collider->OnEditor();
+        ImGui::PopID();
     }
 }
 
@@ -1252,9 +1254,12 @@ void InspectorWindow::DrawReverbZoneComponent(Component* component)
 void InspectorWindow::DrawNavigationComponent(Component* component)
 {
     ComponentNavigation* navComp = static_cast<ComponentNavigation*>(component);
+    if (navComp == nullptr) return;
 
-    if (navComp != nullptr)
+    if (ImGui::CollapsingHeader("Navigation & AI", ImGuiTreeNodeFlags_DefaultOpen))
     {
+        DrawComponentContextMenu(navComp, true);
+
         navComp->OnEditor();
     }
 }
@@ -1615,11 +1620,11 @@ void InspectorWindow::DrawScriptComponent(Component* component)
                             std::string currentScene = std::get<std::string>(var.value);
 
                             std::vector<std::string> sceneFiles;
-                            if (std::filesystem::exists("../Scene"))
+                            if (std::filesystem::exists("../Scenes"))
                             {
-                                for (const auto& entry : std::filesystem::directory_iterator("../Scene"))
+                                for (const auto& entry : std::filesystem::directory_iterator("../Scenes"))
                                 {
-                                    if (entry.is_regular_file() && entry.path().extension() == ".json")
+                                    if (entry.is_regular_file() && entry.path().extension() == ".scene")
                                         sceneFiles.push_back(entry.path().filename().string());
                                 }
                             }
@@ -1640,7 +1645,11 @@ void InspectorWindow::DrawScriptComponent(Component* component)
                                 }
                                 for (const auto& file : sceneFiles)
                                 {
-                                    std::string fullPath = "../Scene/" + file;
+                                    
+                                    std::string fullPath = file;
+                                    
+                                    //UID sceneUID = Application::GetInstance().resources.get()->Find(fullPath.c_str(), Resource::Type::SCENE);
+                                    
                                     bool selected = (currentScene == fullPath);
                                     if (ImGui::Selectable(file.c_str(), selected))
                                     {
@@ -1650,7 +1659,7 @@ void InspectorWindow::DrawScriptComponent(Component* component)
                                     if (selected) ImGui::SetItemDefaultFocus();
                                 }
                                 if (sceneFiles.empty())
-                                    ImGui::TextDisabled("No .json files found in Scene");
+                                    ImGui::TextDisabled("No .scene files found in Scene");
                                 ImGui::EndCombo();
                             }
                             break;
@@ -2374,6 +2383,33 @@ void InspectorWindow::DrawAddComponentButton(GameObject* selectedObject)
 
         }
 
+        // Light Component
+        bool hasLight = (selectedObject->GetComponent(ComponentType::LIGHT) != nullptr);
+        if (hasLight) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+
+        if (ImGui::Selectable("Light", false, hasLight ? ImGuiSelectableFlags_Disabled : 0))
+        {
+            Component* newComp = selectedObject->CreateComponent(ComponentType::LIGHT);
+            if (newComp)
+                Application::GetInstance().editor->GetCommandHistory()->PushWithoutExecute(
+                    std::make_unique<AddComponentCommand>(selectedObject, newComp)
+                );
+            LOG_CONSOLE("[Inspector] Light component added to: %s", selectedObject->GetName().c_str());
+            ImGui::CloseCurrentPopup();
+        }
+        if (hasLight) ImGui::PopStyleColor();
+        if (ImGui::IsItemHovered() && !hasLight)
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Add a Light (Directional, Point or Spot)");
+            ImGui::EndTooltip();
+        }
+        else if (ImGui::IsItemHovered() && hasLight)
+        {
+            ImGui::BeginTooltip();
+            ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.5f, 1.0f), "Already has a Light component");
+            ImGui::EndTooltip();
+        }
         ImGui::EndPopup();
     }
 }
@@ -2410,4 +2446,14 @@ void InspectorWindow::DrawPostProcessingComponent(Component* component)
     {
         postProcessing->OnEditor();
     }
+}
+
+void InspectorWindow::DrawLightComponent(Component* component)
+{
+    ComponentLight* lightComp = static_cast<ComponentLight*>(component);
+    if (!lightComp) return;
+
+    bool open = ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen);
+    DrawComponentContextMenu(lightComp, true);
+    if (open) lightComp->OnEditor();
 }

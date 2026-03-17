@@ -6,7 +6,9 @@
 #include "Transform.h"
 #include "GameObject.h"
 #include "Component.h"
+#include "AudioListener.h"
 #include "ModuleScene.h"
+#include "ModuleLoader.h"
 #include "ComponentMesh.h"
 #include "ComponentMaterial.h"
 #include "ComponentScript.h"
@@ -17,8 +19,11 @@
 #include "ResourcePrefab.h"
 #include "ComponentCanvas.h"
 #include "ComponentCamera.h" 
+#include "Rigidbody.h"
 #include "Window.h"        
-#include "ModuleCamera.h"   
+#include "ModuleCamera.h"  
+#include "ModuleAudio.h"
+#include "FileSystem.h"
 #include <SDL3/SDL_scancode.h>
 #include "GameWindow.h"
 #ifndef WAVE_GAME
@@ -28,8 +33,8 @@
 #include "ConsoleWindow.h"
 #include "Application.h"
 #include "ComponentAnimation.h"
+#include "ComponentParticleSystem.h"
 #include "UIManager.h"
-#include "Rigidbody.h"
 #include "LibraryManager.h"
 
 #include <filesystem>
@@ -86,7 +91,8 @@ bool ScriptManager::PostUpdate() {
     if (!pendingSceneLoad.empty()) {
         std::string path = pendingSceneLoad;
         pendingSceneLoad.clear();
-        Application::GetInstance().scene->LoadScene(path);
+       
+        Application::GetInstance().loader->LoadScene(path);
     }
 
     return true;
@@ -114,14 +120,14 @@ bool ScriptManager::LoadScript(const std::string& filepath) {
         LOG_CONSOLE("[ScriptManager] ERROR: Script not found: %s", filepath.c_str());
 
         // Activar flash de error
-        #ifndef WAVE_GAME
+#ifndef WAVE_GAME
         Application& app = Application::GetInstance();
         if (app.editor && app.editor->GetConsoleWindow()) {
             app.editor->GetConsoleWindow()->FlashError();
         }
 
         return false;
-        #endif 
+#endif 
     }
 
     int result = luaL_dofile(L, filepath.c_str());
@@ -131,13 +137,13 @@ bool ScriptManager::LoadScript(const std::string& filepath) {
         LOG_CONSOLE("[ScriptManager] ERROR: %s", error);
         lua_pop(L, 1);
 
-        #ifndef WAVE_GAME
+#ifndef WAVE_GAME
         // Activar flash de error
         Application& app = Application::GetInstance();
         if (app.editor && app.editor->GetConsoleWindow()) {
             app.editor->GetConsoleWindow()->FlashError();
         }
-        #endif // !1
+#endif // !1
         return false;
     }
 
@@ -157,13 +163,13 @@ void ScriptManager::CallGlobalStart() {
             LOG_CONSOLE("[ScriptManager] ERROR in Start(): %s", error);
             lua_pop(L, 1);
 
-            #ifndef WAVE_GAME
+#ifndef WAVE_GAME
             // Activar flash de error
             auto& app = Application::GetInstance();
             if (app.editor && app.editor->GetConsoleWindow()) {
                 app.editor->GetConsoleWindow()->FlashError();
             }
-            #endif
+#endif
         }
     }
     else {
@@ -181,13 +187,13 @@ void ScriptManager::CallGlobalUpdate(float deltaTime) {
             const char* error = lua_tostring(L, -1);
             LOG_CONSOLE("[ScriptManager] ERROR in Update(): %s", error);
             lua_pop(L, 1);
-            #ifndef WAVE_GAME
+#ifndef WAVE_GAME
             // Activar flash de error
             auto& app = Application::GetInstance();
             if (app.editor && app.editor->GetConsoleWindow()) {
                 app.editor->GetConsoleWindow()->FlashError();
             }
-            #endif // !1
+#endif // !1
         }
     }
     else {
@@ -232,16 +238,38 @@ static int Lua_Input_GetKey(lua_State* L) {
 }
 
 static int Lua_Engine_LoadScene(lua_State* L) {
-    const char* path = luaL_checkstring(L, 1);
-    Application::GetInstance().scripts->pendingSceneLoad = std::string(path);
+    const char* scenesPath = luaL_checkstring(L, 1);
+    const char* relativePath = luaL_checkstring(L, 2);
+    std::string normalizedPath = relativePath;
+    
+    std::replace(normalizedPath.begin(), normalizedPath.end(), '/', '\\');
+  
+
+    //while (normalizedPath.rfind("../", 0) == 0)
+    //    normalizedPath.erase(0, 2);
+
+    //std::replace(normalizedPath.begin(), normalizedPath.end(), '/', '\\');
+
+    std::string absolutePath = std::string(scenesPath).append(normalizedPath);
+
+    
+    Application::GetInstance().scripts->pendingSceneLoad = absolutePath;
     return 0;
 }
 
 static int Lua_Engine_GetScenesPath(lua_State* L) {
-    std::string path = (std::filesystem::path(LibraryManager::GetLibraryRoot()).parent_path() / "Scene").string();
+    std::string path = (std::filesystem::path(FileSystem::GetAssetsRoot()) / "Scenes\\" ).string();
     lua_pushstring(L, path.c_str());
     return 1;
 }
+
+static int Lua_Engine_GetAssetsPath(lua_State* L) {
+    std::string path = (std::filesystem::path(FileSystem::GetAssetsRoot())).string();
+    lua_pushstring(L, path.c_str());
+    return 1;
+}
+
+
 
 
 
@@ -260,7 +288,7 @@ static int Lua_Input_GetMousePosition(lua_State* L) {
     int rawX = raw.x;
     int rawY = raw.y;
 
-    #ifndef WAVE_GAME
+#ifndef WAVE_GAME
     auto& app = Application::GetInstance();
 
     // Get the Game window directly
@@ -271,7 +299,7 @@ static int Lua_Input_GetMousePosition(lua_State* L) {
 
         ImVec2 viewportPos = gameWindow->GetViewportPos();
         ImVec2 viewportSize = gameWindow->GetViewportSize();
-        
+
         // Convert to viewport-relative coordinates
         int relativeX = rawX - static_cast<int>(viewportPos.x);
         int relativeY = rawY - static_cast<int>(viewportPos.y);
@@ -284,11 +312,11 @@ static int Lua_Input_GetMousePosition(lua_State* L) {
             return 2;
         }
     }
-    #else 
-        lua_pushnumber(L, static_cast<lua_Number>(rawX));
-        lua_pushnumber(L, static_cast<lua_Number>(rawY));
-        return 2;
-    #endif
+#else 
+    lua_pushnumber(L, static_cast<lua_Number>(rawX));
+    lua_pushnumber(L, static_cast<lua_Number>(rawY));
+    return 2;
+#endif
 
     // If not in game window, return nil
     lua_pushnil(L);
@@ -564,6 +592,7 @@ static int Lua_Navigation_GetMoveDirection(lua_State* L)
     lua_pushnumber(L, dx);
     lua_pushnumber(L, dz);
     return 2;
+
 }
 
 static int Lua_Time_GetRealDeltaTime(lua_State* L) {
@@ -582,18 +611,18 @@ static int Lua_Camera_GetScreenToWorldPlane(lua_State* L) {
     int screenWidth = 800;
     int screenHeight = 600;
 
-    #ifndef WAVE_GAME
+#ifndef WAVE_GAME
     GameWindow* gameWindow = app.editor->GetGameWindow();
     if (gameWindow) {
         ImVec2 viewportSize = gameWindow->GetViewportSize();
         screenWidth = static_cast<int>(viewportSize.x);
         screenHeight = static_cast<int>(viewportSize.y);
     }
-    #else 
-    
+#else 
+
     app.window->GetWindowSize(screenWidth, screenHeight);
 
-    #endif
+#endif
     ComponentCamera* camera = nullptr;
 
 
@@ -642,6 +671,40 @@ static int Lua_Camera_GetScreenToWorldPlane(lua_State* L) {
     return 2;
 }
 
+
+//Audio
+//BGM Transitions
+static int Lua_Audio_SetMusicState(lua_State* L) {
+    const char* stateName = luaL_checkstring(L, 1);
+    const char* stateGroupName = "BGM_State";
+    /*stateName = std::toupper(stateName.c_str());*/
+    
+    Application::GetInstance().audio.get()->audioSystem->SetState(stateGroupName, stateName);
+    AK::SoundEngine::RenderAudio();
+    return 0;
+}
+
+//Audio Switches
+static int Lua_Audio_SetSwitch(lua_State* L) {
+    
+    const char* switchGroupName = luaL_checkstring(L, 1);
+    const char* switchStateName = luaL_checkstring(L, 2);
+    lua_getfield(L, 3, "ptr");                             // slot 3: the table (component)
+    AudioSource* source = *static_cast<AudioSource**>(lua_touserdata(L, -1));
+
+    Application::GetInstance().audio.get()->audioSystem->SetSwitch(switchGroupName, switchStateName, source->goID);
+    AK::SoundEngine::RenderAudio();
+    return 0;
+}
+
+static int Lua_Audio_PlayAudioEvent(lua_State* L) {
+    lua_getfield(L, 1, "ptr");  // get "ptr" from the table (slot 1)
+    AudioSource* source = *static_cast<AudioSource**>(lua_touserdata(L, -1));
+    std::wstring wEventName(source->eventName.begin(), source->eventName.end());
+    Application::GetInstance().audio.get()->audioSystem->PlayEvent(wEventName.c_str(), source->goID);
+    AK::SoundEngine::RenderAudio();
+    return 0;
+}
 // UI
 // UI.WasClicked("ButtonName") → bool
 static int Lua_UI_WasClicked(lua_State* L) {
@@ -656,7 +719,7 @@ static int Lua_UI_SetElementHeight(lua_State* L) {
     float height = static_cast<float>(luaL_checknumber(L, 2));
     Application::GetInstance().scripts->EnqueueOperation([name, height]() {
         UIManager::GetInstance().SetElementHeight(name, height);
-    });
+        });
     return 0;
 }
 
@@ -666,7 +729,7 @@ static int Lua_UI_SetElementWidth(lua_State* L) {
     float width = static_cast<float>(luaL_checknumber(L, 2));
     Application::GetInstance().scripts->EnqueueOperation([name, width]() {
         UIManager::GetInstance().SetElementWidth(name, width);
-    });
+        });
     return 0;
 }
 
@@ -676,7 +739,7 @@ static int Lua_UI_SetElementText(lua_State* L) {
     std::string text(luaL_checkstring(L, 2));
     Application::GetInstance().scripts->EnqueueOperation([name, text]() {
         UIManager::GetInstance().SetElementText(name, text);
-    });
+        });
     return 0;
 }
 
@@ -686,7 +749,7 @@ static int Lua_UI_SetElementVisibility(lua_State* L) {
     bool visible = lua_toboolean(L, 2) != 0;
     Application::GetInstance().scripts->EnqueueOperation([name, visible]() {
         UIManager::GetInstance().SetElementVisibility(name, visible);
-    });
+        });
     return 0;
 }
 
@@ -695,8 +758,9 @@ static int Lua_Game_Exit(lua_State* L) {
     Application::GetInstance().RequestExit();
     return 0;
 }
+
 static int Lua_Game_Pause(lua_State* L) {
-    Application::GetInstance().Pause();
+    Application::GetInstance().PauseGameOnly();
     return 0;
 }
 
@@ -705,6 +769,11 @@ static int Lua_Game_Resume(lua_State* L) {
     return 0;
 }
 
+
+// Forward declarations
+static int Lua_Rigidbody_SetLinearVelocity(lua_State* L);
+static int Lua_Rigidbody_GetLinearVelocity(lua_State* L);
+static int Lua_Rigidbody_AddForce(lua_State* L);
 
 void ScriptManager::RegisterEngineFunctions() {
     if (!L) {
@@ -722,6 +791,8 @@ void ScriptManager::RegisterEngineFunctions() {
     lua_setfield(L, -2, "LoadScene");
     lua_pushcfunction(L, Lua_Engine_GetScenesPath);
     lua_setfield(L, -2, "GetScenesPath");
+    lua_pushcfunction(L, Lua_Engine_GetAssetsPath);
+    lua_setfield(L, -2, "GetAssetsPath");
     lua_setglobal(L, "Engine");
 
     // Input
@@ -767,7 +838,20 @@ void ScriptManager::RegisterEngineFunctions() {
     lua_setfield(L, -2, "GetScreenToWorldPlane");
     lua_setglobal(L, "Camera");
 
-        //Navigation
+
+    //Audio
+    lua_newtable(L);
+    lua_pushcfunction(L, Lua_Audio_SetMusicState);
+    lua_setfield(L, -2, "SetMusicState");
+    lua_pushcfunction(L, Lua_Audio_PlayAudioEvent);
+    lua_setfield(L, -2, "PlayAudioEvent");
+    lua_pushcfunction(L, Lua_Audio_SetSwitch);
+    lua_setfield(L, -2, "SetSwitch");
+    lua_setglobal(L, "Audio");
+
+    
+    //Navigation
+
     luaL_newmetatable(L, "Navigation");
     lua_pushvalue(L, -1);
     lua_setfield(L, -2, "__index");
@@ -785,6 +869,7 @@ void ScriptManager::RegisterEngineFunctions() {
     lua_setfield(L, -2, "AdvanceWaypoint");
     lua_pushcfunction(L, Lua_Navigation_GetMoveDirection);
     lua_setfield(L, -2, "GetMoveDirection");
+
     lua_pushcfunction(L, Lua_Navigation_GetRandomPoint);
     lua_setfield(L, -2, "GetRandomPoint");
 
@@ -799,6 +884,8 @@ void ScriptManager::RegisterEngineFunctions() {
     lua_pushcfunction(L, Lua_UI_SetElementVisibility);  lua_setfield(L, -2, "SetElementVisibility");
     lua_setglobal(L, "UI");
 
+
+    // GAMEOBJECT API
     // Game
     lua_newtable(L);
     lua_pushcfunction(L, Lua_Game_Pause);
@@ -824,7 +911,7 @@ void ScriptManager::RegisterEngineFunctions() {
     lua_setfield(L, -2, "Exit");
     lua_setglobal(L, "Game");
 
-    LOG_CONSOLE("[ScriptManager] Engine functions registered: Engine, Input, Time, Camera, UI, Game");
+    LOG_CONSOLE("[ScriptManager] Engine functions registered: Engine, Input, Time, Camera, Audio, Navigation, UI, Game");
 }
 
 // -------------------------- GAMEOBJECT API -------------------------------------
@@ -865,7 +952,7 @@ static int Lua_Rigidbody_AddForce(lua_State* L) {
     if (rb) {
         Application::GetInstance().scripts->EnqueueOperation([rb, x, y, z, mode]() {
             rb->AddForce(glm::vec3(x, y, z), mode);
-        });
+            });
     }
     return 0;
 }
@@ -909,6 +996,19 @@ static int Lua_Animation_Play(lua_State* L)
     if (anim)
     {
         anim->Play(std::string(animName), blendTime);
+    }
+
+    return 0;
+}
+
+static int Lua_Animation_SetAnimSpeed(lua_State* L) {
+    ComponentAnimation* anim = *static_cast<ComponentAnimation**>(lua_touserdata(L, 1));
+    std::string animName = luaL_checkstring(L, 2);
+    float newSpeed = luaL_checknumber(L, 3);
+    
+
+    if (anim) {
+        anim->SetAnimationSpeed(animName, newSpeed);
     }
 
     return 0;
@@ -1005,6 +1105,22 @@ static int Lua_GameObject_Destroy(lua_State* L) {
     return 0;
 }
 
+static int Lua_GameObject_SetPersistency(lua_State* L)
+{
+    GameObject** udata = static_cast<GameObject**>(luaL_checkudata(L, 1, "GameObject"));
+    bool isPersistent = (bool)luaL_checkinteger(L, 2);
+
+    if (!udata || !*udata) {
+        LOG_CONSOLE("[Lua] ERROR: Invalid GameObject in SetPersistency()");
+        return 0;
+    }
+
+    GameObject* obj = *udata;
+    obj->SetPersistency(isPersistent);
+
+    return 0;
+}
+
 static int Lua_GameObject_Find(lua_State* L) {
     const char* name = luaL_checkstring(L, 1);
 
@@ -1095,7 +1211,7 @@ static int Lua_GameObject_AddComponent_MeshRenderer(lua_State* L) {
     auto& app = Application::GetInstance();
     app.scripts->EnqueueOperation([obj]() {
         if (!obj->IsMarkedForDeletion()) {
-            obj->CreateComponent(ComponentType::MESH); 
+            obj->CreateComponent(ComponentType::MESH);
         }
         });
 
@@ -1118,7 +1234,7 @@ static int Lua_GameObject_AddComponent_Material(lua_State* L) {
     auto& app = Application::GetInstance();
     app.scripts->EnqueueOperation([obj]() {
         if (!obj->IsMarkedForDeletion()) {
-            obj->CreateComponent(ComponentType::MATERIAL); 
+            obj->CreateComponent(ComponentType::MATERIAL);
         }
         });
 
@@ -1266,7 +1382,7 @@ static int Lua_ComponentCanvas_SetOpacity(lua_State* L) {
 
 static int Lua_Collider_Enable(lua_State* L) {
     Component* comp = static_cast<Component*>(lua_touserdata(L, lua_upvalueindex(1)));
-    if (comp) 
+    if (comp)
     {
         Application::GetInstance().scripts->EnqueueOperation([comp]() {
             comp->Enable();
@@ -1278,14 +1394,102 @@ static int Lua_Collider_Enable(lua_State* L) {
 
 static int Lua_Collider_Disable(lua_State* L) {
     Component* comp = static_cast<Component*>(lua_touserdata(L, lua_upvalueindex(1)));
-    if (comp) 
+    if (comp)
     {
-        Application::GetInstance().scripts->EnqueueOperation([comp]() 
+        Application::GetInstance().scripts->EnqueueOperation([comp]()
             {
-            comp->Disable();
-            comp->SetActive(false);
+                comp->Disable();
+                comp->SetActive(false);
             });
     }
+    return 0;
+}
+// Particle system Lua Universal Bindings
+// All functions follow the same pattern used by Animation:
+// local ps = self.gameObject:GetComponent("ParticleSystem")
+// ps:Play() - start of restart emission
+// ps:Stop() - stop emission and let particles die
+// ps:Burst(50) - fire x particles instantly
+// ps:SetEmissionRate(30) - Change emission rate
+// ps:SetLooping(false) - change to finite duration mode
+// ps:SetDuration(0.3) - emit for 0.X s and stop
+// ps:SetOneShotMode(true, 20) - burst of X on Play()
+// local alive   = ps:IsAlive() - bool to check
+// local playing = ps:IsPlaying() - bool to check if particles exists on world
+static int Lua_ParticleSystem_Play(lua_State* L) {
+    ComponentParticleSystem* ps =
+        *static_cast<ComponentParticleSystem**>(lua_touserdata(L, 1));
+    if (ps) ps->Play();
+    return 0;
+}
+
+static int Lua_ParticleSystem_Stop(lua_State* L) {
+    ComponentParticleSystem* ps =
+        *static_cast<ComponentParticleSystem**>(lua_touserdata(L, 1));
+    if (ps) ps->Stop();
+    return 0;
+}
+
+// ps:Burst(count) fires count particles
+static int Lua_ParticleSystem_Burst(lua_State* L) {
+    ComponentParticleSystem* ps =
+        *static_cast<ComponentParticleSystem**>(lua_touserdata(L, 1));
+    int count = static_cast<int>(luaL_optinteger(L, 2, 30));
+    if (ps) ps->ScriptBurst(count);
+    return 0;
+}
+
+// ps:SetEmissionRate(rate) 0 = pause, changing and calling this number will modify by script the emissionrate
+static int Lua_ParticleSystem_SetEmissionRate(lua_State* L) {
+    ComponentParticleSystem* ps =
+        *static_cast<ComponentParticleSystem**>(lua_touserdata(L, 1));
+    float rate = static_cast<float>(luaL_checknumber(L, 2));
+    if (ps) ps->SetEmissionRate(rate);
+    return 0;
+}
+
+// ps:IsPlaying() is a bool to check
+static int Lua_ParticleSystem_IsPlaying(lua_State* L) {
+    ComponentParticleSystem* ps =
+        *static_cast<ComponentParticleSystem**>(lua_touserdata(L, 1));
+    lua_pushboolean(L, ps ? ps->IsPlaying() : false);
+    return 1;
+}
+
+// ps:IsAlive() bool to check if there is any particle left on the world
+// Example: while ps:IsAlive() do whatever
+static int Lua_ParticleSystem_IsAlive(lua_State* L) {
+    ComponentParticleSystem* ps =
+        *static_cast<ComponentParticleSystem**>(lua_touserdata(L, 1));
+    lua_pushboolean(L, ps ? ps->IsAlive() : false);
+    return 1;
+}
+
+// ps:SetLooping(bool)
+static int Lua_ParticleSystem_SetLooping(lua_State* L) {
+    ComponentParticleSystem* ps =
+        *static_cast<ComponentParticleSystem**>(lua_touserdata(L, 1));
+    bool looping = lua_toboolean(L, 2) != 0;
+    if (ps) ps->SetLooping(looping);
+    return 0;
+}
+
+// ps:SetDuration(seconds) in seconds to emit when looping=false
+static int Lua_ParticleSystem_SetDuration(lua_State* L) {
+    ComponentParticleSystem* ps =
+        *static_cast<ComponentParticleSystem**>(lua_touserdata(L, 1));
+    float seconds = static_cast<float>(luaL_checknumber(L, 2));
+    if (ps) ps->SetDuration(seconds);
+    return 0;
+}
+
+// ps->SetOneShotMode(enabled, count) fires exactly count particles and stops, created for sword slash or impacts
+static int Lua_ParticleSystem_SetOneShotMode(lua_State* L) {
+    ComponentParticleSystem* ps =
+        *static_cast<ComponentParticleSystem**>(lua_touserdata(L, 1));
+    bool enabled = lua_toboolean(L, 2) != 0;
+    int count = static_cast<int>(luaL_optinteger(L, 3, 30));
+    if (ps) ps->SetOneShotMode(enabled, count);
     return 0;
 }
 
@@ -1319,7 +1523,7 @@ static int Lua_GameObject_GetComponent(lua_State* L) {
 
     if (strcmp(componentType, "Material") == 0) {
         Component* comp = obj->GetComponent(ComponentType::MATERIAL);
-        ComponentMaterial* mat = static_cast<ComponentMaterial*>(comp);
+        ComponentMaterial* mat = static_cast<ComponentMaterial*>(comp); 
         if (!mat) {
             lua_pushnil(L);
             return 1;
@@ -1362,7 +1566,7 @@ static int Lua_GameObject_GetComponent(lua_State* L) {
         lua_pushcclosure(L, [](lua_State* L) -> int {
             ComponentCanvas* canvas = static_cast<ComponentCanvas*>(
                 lua_touserdata(L, lua_upvalueindex(1)));
-            const char* xamlPath = luaL_checkstring(L, 2); 
+            const char* xamlPath = luaL_checkstring(L, 2);
             std::string path(xamlPath);
             Application::GetInstance().scripts->EnqueueOperation([canvas, path]() {
                 canvas->LoadXAML(path.c_str());
@@ -1384,10 +1588,45 @@ static int Lua_GameObject_GetComponent(lua_State* L) {
 
         ComponentAnimation** udata = static_cast<ComponentAnimation**>(
             lua_newuserdata(L, sizeof(ComponentAnimation*))
-        );
+            );
         *udata = anim;
 
         luaL_getmetatable(L, "Animation");
+        lua_setmetatable(L, -2);
+
+        return 1;
+    }
+   
+    if (strcmp(componentType, "Rigidbody") == 0)
+    {
+        Component* comp = obj->GetComponent(ComponentType::RIGIDBODY);
+        Rigidbody* rb = static_cast<Rigidbody*>(comp);
+        if (!rb) { lua_pushnil(L); return 1; }
+
+        Rigidbody** udata = static_cast<Rigidbody**>(
+            lua_newuserdata(L, sizeof(Rigidbody*))
+            );
+        *udata = rb;
+
+        luaL_getmetatable(L, "Rigidbody");
+        lua_setmetatable(L, -2);
+        return 1;
+    }
+
+    if (strcmp(componentType, "ParticleSystem") == 0) {
+        Component* comp = obj->GetComponent(ComponentType::PARTICLE);
+        ComponentParticleSystem* ps = static_cast<ComponentParticleSystem*>(comp);
+        if (!ps) {
+            lua_pushnil(L);
+            return 1;
+        }
+
+        ComponentParticleSystem** udata = static_cast<ComponentParticleSystem**>(
+            lua_newuserdata(L, sizeof(ComponentParticleSystem*))
+            );
+        *udata = ps;
+
+        luaL_getmetatable(L, "ParticleSystem");
         lua_setmetatable(L, -2);
 
         return 1;
@@ -1435,23 +1674,37 @@ static int Lua_GameObject_GetComponent(lua_State* L) {
 
 
     }
-
-    if (strcmp(componentType, "Rigidbody") == 0) {
-        Component* comp = obj->GetComponent(ComponentType::RIGIDBODY);
-        Rigidbody* rb = static_cast<Rigidbody*>(comp);
-        if (!rb) {
+    
+    if (strcmp(componentType, "Audio Source") == 0) {
+        Component* comp = obj->GetComponent(ComponentType::AUDIOSOURCE);
+        AudioSource* source = static_cast<AudioSource*>(comp);
+        if (!source) {
             lua_pushnil(L);
             return 1;
         }
 
-        Rigidbody** udata = static_cast<Rigidbody**>(
-            lua_newuserdata(L, sizeof(Rigidbody*))
-        );
-        *udata = rb;
+        lua_newtable(L);
 
-        luaL_getmetatable(L, "Rigidbody");
-        lua_setmetatable(L, -2);
+        AudioSource** ud = (AudioSource**)lua_newuserdata(L, sizeof(AudioSource*));
+        *ud = source;
+        lua_setfield(L, -2, "ptr");  // store userdata in table as "ptr"
 
+        lua_pushcfunction(L, Lua_Audio_PlayAudioEvent);  // no upvalue, just a plain function
+        lua_setfield(L, -2, "PlayAudioEvent");
+
+        return 1;
+    }
+
+    if (strcmp(componentType, "Audio Listener") == 0) {
+        Component* comp = obj->GetComponent(ComponentType::LISTENER);
+        AudioListener* listener = static_cast<AudioListener*>(comp);
+        if (!listener) {
+            lua_pushnil(L);
+            return 1;
+        }
+        // Store it as a pointer-to-pointer (full userdata)
+        AudioListener** list = (AudioListener**)lua_newuserdata(L, sizeof(AudioListener*));
+        *list = listener;
         return 1;
     }
 
@@ -1521,6 +1774,11 @@ static int Lua_GameObject_Index(lua_State* L) {
         return 1;
     }
 
+    if (strcmp(key, "SetPersistency") == 0) {
+        lua_pushcfunction(L, Lua_GameObject_SetPersistency);
+        return 1;
+    }
+
     if (strcmp(key, "LoadMesh") == 0) {
         lua_pushcfunction(L, Lua_GameObject_LoadMesh);
         return 1;
@@ -1577,10 +1835,17 @@ void ScriptManager::RegisterGameObjectAPI() {
     lua_pushcfunction(L, Lua_GameObject_Destroy);
     lua_setfield(L, -2, "Destroy");
 
+    lua_pushcfunction(L, Lua_GameObject_SetPersistency);
+    lua_setfield(L, -2, "SetPersistency");
+
     lua_pushcfunction(L, Lua_GameObject_Find);
     lua_setfield(L, -2, "Find");
 
+
+
     lua_setglobal(L, "GameObject");
+
+   
 
     LOG_CONSOLE("[ScriptManager] GameObject API registered");
 }
@@ -1839,6 +2104,8 @@ void ScriptManager::RegisterComponentAPI() {
     lua_setfield(L, -2, "__index");
     lua_pushcfunction(L, Lua_Animation_Play);
     lua_setfield(L, -2, "Play");
+    lua_pushcfunction(L, Lua_Animation_SetAnimSpeed);
+    lua_setfield(L, -2, "SetSpeed");
     lua_pushcfunction(L, Lua_Animation_Stop);
     lua_setfield(L, -2, "Stop");
     lua_pushcfunction(L, Lua_Animation_IsPlaying);
@@ -1846,6 +2113,29 @@ void ScriptManager::RegisterComponentAPI() {
     lua_pushcfunction(L, Lua_Animation_IsPlayingAnimation);
     lua_setfield(L, -2, "IsPlayingAnimation");
     lua_pop(L, 1); 
+
+    luaL_newmetatable(L, "ParticleSystem");
+    lua_pushvalue(L, -1);
+    lua_setfield(L, -2, "__index");
+    lua_pushcfunction(L, Lua_ParticleSystem_Play);
+    lua_setfield(L, -2, "Play");
+    lua_pushcfunction(L, Lua_ParticleSystem_Stop);
+    lua_setfield(L, -2, "Stop");
+    lua_pushcfunction(L, Lua_ParticleSystem_Burst);
+    lua_setfield(L, -2, "Burst");
+    lua_pushcfunction(L, Lua_ParticleSystem_SetEmissionRate);
+    lua_setfield(L, -2, "SetEmissionRate");
+    lua_pushcfunction(L, Lua_ParticleSystem_IsPlaying);
+    lua_setfield(L, -2, "IsPlaying");
+    lua_pushcfunction(L, Lua_ParticleSystem_IsAlive);
+    lua_setfield(L, -2, "IsAlive");
+    lua_pushcfunction(L, Lua_ParticleSystem_SetLooping);
+    lua_setfield(L, -2, "SetLooping");
+    lua_pushcfunction(L, Lua_ParticleSystem_SetDuration);
+    lua_setfield(L, -2, "SetDuration");
+    lua_pushcfunction(L, Lua_ParticleSystem_SetOneShotMode);
+    lua_setfield(L, -2, "SetOneShotMode");
+    lua_pop(L, 1);
 }
 
 // PREFAB API
@@ -1953,6 +2243,7 @@ static int Lua_Prefab_Instantiate(lua_State* L) {
     return 1;
 }
 
+
 void ScriptManager::RegisterPrefabAPI() {
     lua_newtable(L);
 
@@ -1966,9 +2257,11 @@ void ScriptManager::RegisterPrefabAPI() {
 
 }
 
+
+
 static GameWindow* GetGameWindow() {
-    #ifndef WAVE_GAME
+#ifndef WAVE_GAME
     GameWindow* window = Application::GetInstance().editor->GetGameWindow();
     return window;
-    #endif // !1
+#endif // !1
 }

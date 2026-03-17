@@ -12,6 +12,12 @@ struct ColorKey {
     glm::vec4 color;
 };
 
+// Gradient Size
+struct SizeKey {
+    float time = 0.0f;
+    float size = 0.5f;
+};
+
 // Repeated Burst
 struct Burst {
     float time = 0.0f; // Time at which it occurs
@@ -112,9 +118,12 @@ public:
     // Interpolation
     float sizeStart = 0.5f, sizeEnd = 0.0f;
 
+    // Size curve is optional
+    std::vector<SizeKey> sizeCurve;
+
     // Color Simple
     glm::vec4 colorStart = glm::vec4(1.0f);
-    glm::vec4 colorEnd = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f); // Color fade to transparent by default
+    glm::vec4 colorEnd = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f); // Color fade to transparent by default
 
     // Advanced interpolation with color gradients
     std::vector<ColorKey> colorGradient;
@@ -159,6 +168,30 @@ struct EmitterInstance {
     float emissionRate = 20.0f; // Time-based emission
     bool active = true;
 
+    // Duration and loops
+    // looping=true particles run always
+    // looping=false emits only for duration in seconds lasts then stop emitting
+    bool looping = true;
+    float duration = 5.0f;
+    // Internal flag to check is the emission has closed
+    bool stopEmittingFlag = false;
+
+    // OneShot Particle Mode
+    // oneShot=true emits one Burst of oneShotCount
+    bool oneShot = false;
+    // Number of Particles spawned by default
+    int  oneShotCount = 30;
+    // Prevent firing again instantly
+    bool oneShotFired = false;
+
+    // Proximity activation
+    // proximityActivation=true the emitter is auto enabled or disabled
+    bool  proximityActivation = false;
+    // World radius to activate
+    float activationRadius = 15.0f;
+    // Name of the GameObject tracked
+    std::string proximityTarget = "Player";
+
     // Simulation Settings
     SimulationSpace simulationSpace = SimulationSpace::LOCAL;
     float emissionRateDistance = 0.0f; // Emission per distance traveled
@@ -169,6 +202,7 @@ struct EmitterInstance {
 
     // Rendering Options
     bool additiveBlending = false; // Used for Fire or glowing items
+    bool luminanceBlending = false; // RGB brightness
 
     // Texture Resources
     unsigned int textureID = 0; // OpenGL Texture ID
@@ -202,6 +236,14 @@ struct EmitterInstance {
     void KillDeadParticles();
     void Burst(int count); // Explosion
 
+    // Lua Scripting
+    void Play();
+    void Stop();
+    bool IsAlive() const;
+
     // Helper for gradients
     glm::vec4 EvaluateGradient(float t, std::vector<ColorKey>& gradient);
+
+   // Helper for size curve
+    float EvaluateSizeCurve(float t, ModuleEmitterSpawn* spawner);
 };

@@ -28,6 +28,9 @@
 #include "ShaderWater.h"
 #include "ShaderPostPorcessing.h"
 
+#include "LightManager.h"
+#include "ComponentLight.h"
+
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <stack>
@@ -141,6 +144,8 @@ bool Renderer::Start()
         LOG_CONSOLE("ERROR: Failed to compile post processing shader");
         return false;
     }
+
+    lightManager = std::make_unique<LightManager>();
 
     // Fullscreen quad VAO for UI overlay
     float quadVerts[] = {
@@ -666,6 +671,9 @@ void Renderer::DrawRenderList(const std::multimap<float, RenderObject>& map, con
         currentShader->SetMat4("model", renderObject.globalModelMatrix);
         currentShader->SetVec3("viewPos", camera->position);
         currentShader->SetVec3("lightDir", lightDir);
+        // Upload all scene lights 
+        if (lightManager)
+            lightManager->UploadToShader(currentShader);
 
         if (materialComp && materialComp->GetMaterial()) {
             materialComp->GetMaterial()->Bind(currentShader);
@@ -1016,6 +1024,7 @@ void Renderer::DeleteSSBO(unsigned int& ssbo)
 }
 
 
+
 void Renderer::DrawLinesList(const CameraLens* camera)
 {
     if (linesList.empty() || !camera) return;
@@ -1256,6 +1265,7 @@ UID Renderer::GetObjectInPixel(const CameraLens* camera, int x, int y)
         glm::mat4 model = meshComponent->owner->transform->GetGlobalMatrix();
         pickingShader->SetMat4("model", model);
 
+
         if (meshComponent->HasSkinning())
         {
             ComponentSkinnedMesh* skinned = (ComponentSkinnedMesh*)meshComponent;
@@ -1268,6 +1278,7 @@ UID Renderer::GetObjectInPixel(const CameraLens* camera, int x, int y)
         else
         {
             pickingShader->SetBool("hasBones", false);
+
         }
 
         glBindVertexArray(mesh.VAO);
@@ -1299,6 +1310,7 @@ UID Renderer::GetObjectInPixel(const CameraLens* camera, int x, int y)
     return finalUID;
 }
 
+
 void Renderer::SetMSAA(bool enabled) {
     msaaEnabled = enabled;
     if (msaaEnabled)
@@ -1326,4 +1338,14 @@ void Renderer::DrawFullscreenTexture(unsigned int textureID)
     glBindVertexArray(0);
     glUseProgram(0);
     glEnable(GL_DEPTH_TEST);
+}
+
+void Renderer::AddLight(ComponentLight* light)
+{
+    if (lightManager) lightManager->RegisterLight(light);
+}
+
+void Renderer::RemoveLight(ComponentLight* light)
+{
+    if (lightManager) lightManager->UnregisterLight(light);
 }

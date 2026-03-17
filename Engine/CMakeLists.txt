@@ -32,6 +32,8 @@ set(CORE_SRC
     src/Window.h
     src/ModuleGame.cpp 
     src/ModuleGame.h
+    src/FileSystem.h
+    src/FileSystem.cpp
 )
 
 set(EVENTS_SRC 
@@ -158,8 +160,6 @@ set(UTILS_SRC
     src/SelectionManager.cpp
     src/Octree.h
     src/Octree.cpp
-    src/FileUtils.h
-    src/FileUtils.cpp
     src/Backup.h
     src/Backup.cpp
 )
@@ -323,6 +323,15 @@ set(UI_SRC
     src/UiManager.h
     src/UiManager.cpp
 )
+
+set(LIGHTING_SRC
+    src/Lightdata.h
+    src/LightManager.h
+    src/LightManager.cpp
+    src/ComponentLight.h
+    src/ComponentLight.cpp
+)
+
 source_group("Source\\Core" FILES ${CORE_SRC})
 source_group("Source\\Events" FILES ${EVENTS_SRC})
 source_group("Source\\Rendering" FILES ${RENDERING_SRC})
@@ -339,8 +348,9 @@ source_group("Scripting" FILES ${SCRIPTING_SRC})
 source_group("Source\\Physics" FILES ${PHYSICS_SRC})
 source_group("Source\\Navigation" FILES ${NAVIGATION_SRC})
 source_group("Source\\UI" FILES ${UI_SRC})
+source_group("Source\\Lighting" FILES ${LIGHTING_SRC})
 
-set(SRCS ${CORE_SRC} ${RENDERING_SRC} ${VFX_SRC} ${SHADERS_SRC} ${AUDIO_SRC} ${UTILS_SRC} ${EDITOR_SRC} ${GAMEOBJECTS_SRC} ${COMPONENTS_SRC} ${LOADERS_SRC} ${IMPORTERS_SRC} ${SCRIPTING_SRC} ${PHYSICS_SRC} ${EVENTS_SRC} ${NAVIGATION_SRC} ${UI_SRC})
+set(SRCS ${CORE_SRC} ${RENDERING_SRC} ${VFX_SRC} ${SHADERS_SRC} ${AUDIO_SRC} ${UTILS_SRC} ${EDITOR_SRC} ${GAMEOBJECTS_SRC} ${COMPONENTS_SRC} ${LIGHTING_SRC} ${LOADERS_SRC} ${IMPORTERS_SRC} ${SCRIPTING_SRC} ${PHYSICS_SRC} ${EVENTS_SRC} ${NAVIGATION_SRC} ${UI_SRC})
 
 add_executable(Engine ${SRCS})
 
@@ -408,6 +418,7 @@ target_include_directories(Engine PRIVATE BEFORE
     "${WWISE_SDK_DIR}"
     "${WWISE_SDK_DIR}/include/Common"
     "${WWISE_SDK_DIR}/include/Win32"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Audio/GeneratedSoundBanks"
 )
 set(WWISE_IO_SOURCES
     "${WWISE_SDK_DIR}/include/Common/AkFileLocationBase.cpp"
@@ -533,7 +544,7 @@ endif()
 
 # =========== End NoesisGUI ===========
 # Game (standalone)
-set(SRCS ${CORE_SRC} ${RENDERING_SRC} ${VFX_SRC} ${SHADERS_SRC} ${AUDIO_SRC} ${UTILS_SRC} ${GAMEOBJECTS_SRC} ${COMPONENTS_SRC} ${LOADERS_SRC} ${IMPORTERS_SRC} ${SCRIPTING_SRC} ${PHYSICS_SRC} ${EVENTS_SRC} ${NAVIGATION_SRC} ${UI_SRC})
+set(SRCS ${CORE_SRC} ${RENDERING_SRC} ${VFX_SRC} ${SHADERS_SRC} ${AUDIO_SRC} ${UTILS_SRC} ${GAMEOBJECTS_SRC} ${LIGHTING_SRC} ${COMPONENTS_SRC} ${LOADERS_SRC} ${IMPORTERS_SRC} ${SCRIPTING_SRC} ${PHYSICS_SRC} ${EVENTS_SRC} ${NAVIGATION_SRC} ${UI_SRC})
 
 add_executable(Game ${SRCS})
 
@@ -587,6 +598,7 @@ target_include_directories(Game PRIVATE BEFORE
     "${WWISE_SDK_DIR}"
     "${WWISE_SDK_DIR}/include/Common"
     "${WWISE_SDK_DIR}/include/Win32"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Audio/GeneratedSoundBanks"
 )
 
 target_sources(Game PRIVATE
