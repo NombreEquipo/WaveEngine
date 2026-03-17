@@ -32,6 +32,7 @@
 #include "ConsoleWindow.h"
 #include "Application.h"
 #include "ComponentAnimation.h"
+#include "ComponentParticleSystem.h"
 #include "UIManager.h"
 #include "LibraryManager.h"
 
@@ -1400,6 +1401,93 @@ static int Lua_Collider_Disable(lua_State* L) {
                 comp->SetActive(false);
             });
     }
+
+// Particle system Lua Universal Bindings
+// All functions follow the same pattern used by Animation:
+// local ps = self.gameObject:GetComponent("ParticleSystem")
+// ps:Play() - start of restart emission
+// ps:Stop() - stop emission and let particles die
+// ps:Burst(50) - fire x particles instantly
+// ps:SetEmissionRate(30) - Change emission rate
+// ps:SetLooping(false) - change to finite duration mode
+// ps:SetDuration(0.3) - emit for 0.X s and stop
+// ps:SetOneShotMode(true, 20) - burst of X on Play()
+// local alive   = ps:IsAlive() - bool to check
+// local playing = ps:IsPlaying() - bool to check if particles exists on world
+static int Lua_ParticleSystem_Play(lua_State* L) {
+    ComponentParticleSystem* ps =
+        *static_cast<ComponentParticleSystem**>(lua_touserdata(L, 1));
+    if (ps) ps->Play();
+    return 0;
+}
+
+static int Lua_ParticleSystem_Stop(lua_State* L) {
+    ComponentParticleSystem* ps =
+        *static_cast<ComponentParticleSystem**>(lua_touserdata(L, 1));
+    if (ps) ps->Stop();
+    return 0;
+}
+
+// ps:Burst(count) fires count particles
+static int Lua_ParticleSystem_Burst(lua_State* L) {
+    ComponentParticleSystem* ps =
+        *static_cast<ComponentParticleSystem**>(lua_touserdata(L, 1));
+    int count = static_cast<int>(luaL_optinteger(L, 2, 30));
+    if (ps) ps->ScriptBurst(count);
+    return 0;
+}
+
+// ps:SetEmissionRate(rate) 0 = pause, changing and calling this number will modify by script the emissionrate
+static int Lua_ParticleSystem_SetEmissionRate(lua_State* L) {
+    ComponentParticleSystem* ps =
+        *static_cast<ComponentParticleSystem**>(lua_touserdata(L, 1));
+    float rate = static_cast<float>(luaL_checknumber(L, 2));
+    if (ps) ps->SetEmissionRate(rate);
+    return 0;
+}
+
+// ps:IsPlaying() is a bool to check
+static int Lua_ParticleSystem_IsPlaying(lua_State* L) {
+    ComponentParticleSystem* ps =
+        *static_cast<ComponentParticleSystem**>(lua_touserdata(L, 1));
+    lua_pushboolean(L, ps ? ps->IsPlaying() : false);
+    return 1;
+}
+
+// ps:IsAlive() bool to check if there is any particle left on the world
+// Example: while ps:IsAlive() do whatever
+static int Lua_ParticleSystem_IsAlive(lua_State* L) {
+    ComponentParticleSystem* ps =
+        *static_cast<ComponentParticleSystem**>(lua_touserdata(L, 1));
+    lua_pushboolean(L, ps ? ps->IsAlive() : false);
+    return 1;
+}
+
+// ps:SetLooping(bool)
+static int Lua_ParticleSystem_SetLooping(lua_State* L) {
+    ComponentParticleSystem* ps =
+        *static_cast<ComponentParticleSystem**>(lua_touserdata(L, 1));
+    bool looping = lua_toboolean(L, 2) != 0;
+    if (ps) ps->SetLooping(looping);
+    return 0;
+}
+
+// ps:SetDuration(seconds) in seconds to emit when looping=false
+static int Lua_ParticleSystem_SetDuration(lua_State* L) {
+    ComponentParticleSystem* ps =
+        *static_cast<ComponentParticleSystem**>(lua_touserdata(L, 1));
+    float seconds = static_cast<float>(luaL_checknumber(L, 2));
+    if (ps) ps->SetDuration(seconds);
+    return 0;
+}
+
+// ps->SetOneShotMode(enabled, count) fires exactly count particles and stops, created for sword slash or impacts
+static int Lua_ParticleSystem_SetOneShotMode(lua_State* L) {
+    ComponentParticleSystem* ps =
+        *static_cast<ComponentParticleSystem**>(lua_touserdata(L, 1));
+    bool enabled = lua_toboolean(L, 2) != 0;
+    int count = static_cast<int>(luaL_optinteger(L, 3, 30));
+    if (ps) ps->SetOneShotMode(enabled, count);
     return 0;
 }
 
@@ -1506,7 +1594,6 @@ static int Lua_GameObject_GetComponent(lua_State* L) {
 
         return 1;
     }
-
    
     if (strcmp(componentType, "Rigidbody") == 0)
     {
@@ -1520,6 +1607,24 @@ static int Lua_GameObject_GetComponent(lua_State* L) {
         *udata = rb;
 
         luaL_getmetatable(L, "Rigidbody");
+
+        return 1;
+    }
+
+    if (strcmp(componentType, "ParticleSystem") == 0) {
+        Component* comp = obj->GetComponent(ComponentType::PARTICLE);
+        ComponentParticleSystem* ps = static_cast<ComponentParticleSystem*>(comp);
+        if (!ps) {
+            lua_pushnil(L);
+            return 1;
+        }
+
+        ComponentParticleSystem** udata = static_cast<ComponentParticleSystem**>(
+            lua_newuserdata(L, sizeof(ComponentParticleSystem*))
+            );
+        *udata = ps;
+
+        luaL_getmetatable(L, "ParticleSystem");
         lua_setmetatable(L, -2);
 
         return 1;
@@ -2001,9 +2106,30 @@ void ScriptManager::RegisterComponentAPI() {
     lua_setfield(L, -2, "IsPlaying");
     lua_pushcfunction(L, Lua_Animation_IsPlayingAnimation);
     lua_setfield(L, -2, "IsPlayingAnimation");
-
     lua_pop(L, 1); 
 
+    luaL_newmetatable(L, "ParticleSystem");
+    lua_pushvalue(L, -1);
+    lua_setfield(L, -2, "__index");
+    lua_pushcfunction(L, Lua_ParticleSystem_Play);
+    lua_setfield(L, -2, "Play");
+    lua_pushcfunction(L, Lua_ParticleSystem_Stop);
+    lua_setfield(L, -2, "Stop");
+    lua_pushcfunction(L, Lua_ParticleSystem_Burst);
+    lua_setfield(L, -2, "Burst");
+    lua_pushcfunction(L, Lua_ParticleSystem_SetEmissionRate);
+    lua_setfield(L, -2, "SetEmissionRate");
+    lua_pushcfunction(L, Lua_ParticleSystem_IsPlaying);
+    lua_setfield(L, -2, "IsPlaying");
+    lua_pushcfunction(L, Lua_ParticleSystem_IsAlive);
+    lua_setfield(L, -2, "IsAlive");
+    lua_pushcfunction(L, Lua_ParticleSystem_SetLooping);
+    lua_setfield(L, -2, "SetLooping");
+    lua_pushcfunction(L, Lua_ParticleSystem_SetDuration);
+    lua_setfield(L, -2, "SetDuration");
+    lua_pushcfunction(L, Lua_ParticleSystem_SetOneShotMode);
+    lua_setfield(L, -2, "SetOneShotMode");
+    lua_pop(L, 1);
 }
 
 // PREFAB API
