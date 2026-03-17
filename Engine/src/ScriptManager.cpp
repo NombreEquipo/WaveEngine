@@ -1734,6 +1734,8 @@ void ScriptManager::RegisterGameObjectAPI() {
     lua_pushcfunction(L, Lua_GameObject_Find);
     lua_setfield(L, -2, "Find");
 
+
+    lua_setglobal(L, "GameObject");
    
 
     LOG_CONSOLE("[ScriptManager] GameObject API registered");
