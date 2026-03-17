@@ -172,18 +172,6 @@ bool ComponentNavigation::SetDestination(const glm::vec3& target)
     }
 
 
-    // Inicializar el pol�gono actual para moveAlongSurface
-    auto* navData = Application::GetInstance().navMesh->GetNavMeshData(linkedSurface);
-    if (navData && navData->navQuery)
-    {
-        dtQueryFilter filter;
-        filter.setIncludeFlags(0xFFFF);
-        float extents[3] = { 2.f, 4.f, 2.f };
-        float startF[3] = { start.x, start.y, start.z };
-        float nearPt[3];
-        navData->navQuery->findNearestPoly(startF, extents, &filter, &currentPolyRef, nearPt);
-    }
-
     path = std::move(newPath);
     pathIndex = 0;
     moving = true;
