@@ -25,7 +25,7 @@
                 },
                 {
                     "active": true,
-                    "aspectRatio": 1.7869318723678589,
+                    "aspectRatio": 1.6789772510528564,
                     "farPlane": 1000.0,
                     "fov": 60.0,
                     "nearPlane": 0.30000001192092896,
@@ -56,6 +56,21 @@
                             "value": 0.30000001192092896
                         },
                         {
+                            "name": "shakeFrequency",
+                            "type": 0,
+                            "value": 25.0
+                        },
+                        {
+                            "name": "shakeDuration",
+                            "type": 0,
+                            "value": 0.4000000059604645
+                        },
+                        {
+                            "name": "zoomSpeed",
+                            "type": 0,
+                            "value": 3.0
+                        },
+                        {
                             "name": "followSpeed",
                             "type": 0,
                             "value": 5.0
@@ -66,22 +81,7 @@
                             "value": 0.30000001192092896
                         },
                         {
-                            "name": "shakeDuration",
-                            "type": 0,
-                            "value": 0.4000000059604645
-                        },
-                        {
-                            "name": "shakeFrequency",
-                            "type": 0,
-                            "value": 25.0
-                        },
-                        {
                             "name": "zoomMax",
-                            "type": 0,
-                            "value": 3.0
-                        },
-                        {
-                            "name": "zoomSpeed",
                             "type": 0,
                             "value": 3.0
                         }
@@ -33616,7 +33616,7 @@
                             "speedMax": 0.25,
                             "speedMin": 0.0,
                             "textureCols": 1,
-                            "texturePath": "C:\\Users\\Tonil\\Documents\\GitHub\\WaveEngine\\Engine\\Assets\\Environment\\Statues_Sparks.png",
+                            "texturePath": "C:\\Users\\alons\\Documents\\GitHub\\WaveEngine\\Engine\\Assets\\Environment\\Statues_Sparks.png",
                             "textureRows": 1,
                             "textureUID": 14600480670017023417,
                             "type": 7
@@ -35023,9 +35023,9 @@
                         24.759897232055664
                     ],
                     "rotation": [
-                        -90.00025939941406,
+                        -90.00045776367188,
                         88.27603149414063,
-                        -0.00022703177819494158
+                        -0.000454065331723541
                     ],
                     "scale": [
                         2.905557155609131,
@@ -46560,24 +46560,9 @@
                     "active": true,
                     "publicVariables": [
                         {
-                            "name": "chaseUpdateRate",
-                            "type": 0,
-                            "value": 0.5
-                        },
-                        {
-                            "name": "dirSmoothing",
-                            "type": 0,
-                            "value": 12.0
-                        },
-                        {
-                            "name": "moveSpeed",
+                            "name": "stopSmoothing",
                             "type": 0,
                             "value": 10.0
-                        },
-                        {
-                            "name": "rotationSpeed",
-                            "type": 0,
-                            "value": 15.0
                         },
                         {
                             "name": "chaseRange",
@@ -46590,29 +46575,9 @@
                             "value": 10.0
                         },
                         {
-                            "name": "patrolRadius",
-                            "type": 0,
-                            "value": 5.0
-                        },
-                        {
-                            "name": "maxHp",
-                            "type": 0,
-                            "value": 30.0
-                        },
-                        {
-                            "name": "attackRange",
-                            "type": 0,
-                            "value": 2.0
-                        },
-                        {
                             "name": "dashForce",
                             "type": 0,
                             "value": 25.0
-                        },
-                        {
-                            "name": "knockbackForce",
-                            "type": 0,
-                            "value": 5.0
                         },
                         {
                             "name": "dodgeChance",
@@ -46620,14 +46585,49 @@
                             "value": 0.5
                         },
                         {
-                            "name": "stopSmoothing",
+                            "name": "moveSpeed",
                             "type": 0,
                             "value": 10.0
+                        },
+                        {
+                            "name": "knockbackForce",
+                            "type": 0,
+                            "value": 5.0
+                        },
+                        {
+                            "name": "attackRange",
+                            "type": 0,
+                            "value": 2.0
+                        },
+                        {
+                            "name": "dirSmoothing",
+                            "type": 0,
+                            "value": 12.0
+                        },
+                        {
+                            "name": "maxHp",
+                            "type": 0,
+                            "value": 30.0
                         },
                         {
                             "name": "idleWaitTime",
                             "type": 0,
                             "value": 3.0
+                        },
+                        {
+                            "name": "chaseUpdateRate",
+                            "type": 0,
+                            "value": 0.5
+                        },
+                        {
+                            "name": "rotationSpeed",
+                            "type": 0,
+                            "value": 15.0
+                        },
+                        {
+                            "name": "patrolRadius",
+                            "type": 0,
+                            "value": 5.0
                         }
                     ],
                     "scriptUID": 2354537265489101487,
@@ -49786,7 +49786,7 @@
                             "speedMax": 0.30000001192092896,
                             "speedMin": 0.05000000074505806,
                             "textureCols": 1,
-                            "texturePath": "C:\\Users\\Tonil\\Documents\\GitHub\\WaveEngine\\Engine\\Assets\\Player\\MainCharacter_Smoke_Running_Trail.png",
+                            "texturePath": "C:\\Users\\alons\\Documents\\GitHub\\WaveEngine\\Engine\\Assets\\Player\\MainCharacter_Smoke_Running_Trail.png",
                             "textureRows": 1,
                             "textureUID": 17065513980760032408,
                             "type": 7
@@ -49864,9 +49864,9 @@
                     "active": true,
                     "publicVariables": [
                         {
-                            "name": "rollStaminaCost",
+                            "name": "hitShakeDuration",
                             "type": 0,
-                            "value": 25.0
+                            "value": 0.30000001192092896
                         },
                         {
                             "name": "health",
@@ -49874,14 +49874,14 @@
                             "value": 100.0
                         },
                         {
-                            "name": "attackDuration",
-                            "type": 0,
-                            "value": 1.0
-                        },
-                        {
-                            "name": "speedHermesBonus",
+                            "name": "rollSpeed",
                             "type": 0,
                             "value": 15.0
+                        },
+                        {
+                            "name": "staminaCost",
+                            "type": 0,
+                            "value": 0.10000000149011612
                         },
                         {
                             "name": "speed",
@@ -49889,44 +49889,14 @@
                             "value": 15.0
                         },
                         {
-                            "name": "hpLossCost",
-                            "type": 0,
-                            "value": 0.20000000298023224
-                        },
-                        {
                             "name": "hpRecover",
                             "type": 0,
                             "value": 0.20000000298023224
                         },
                         {
-                            "name": "tiredMultiplier",
-                            "type": 0,
-                            "value": 0.699999988079071
-                        },
-                        {
-                            "name": "rollSpeed",
-                            "type": 0,
-                            "value": 15.0
-                        },
-                        {
-                            "name": "rollDuration",
-                            "type": 0,
-                            "value": 1.0
-                        },
-                        {
-                            "name": "rollCooldownMax",
-                            "type": 0,
-                            "value": 0.5
-                        },
-                        {
-                            "name": "sprintMultiplier",
-                            "type": 0,
-                            "value": 1.5
-                        },
-                        {
-                            "name": "hermesWaterMax",
-                            "type": 0,
-                            "value": 2.0
+                            "name": "usingStamina",
+                            "type": 2,
+                            "value": false
                         },
                         {
                             "name": "speedIncrease",
@@ -49939,24 +49909,9 @@
                             "value": 100.0
                         },
                         {
-                            "name": "usingStamina",
-                            "type": 2,
-                            "value": false
-                        },
-                        {
-                            "name": "hitShakeMagnitude",
+                            "name": "ROTATION_SPEED",
                             "type": 0,
-                            "value": 6.0
-                        },
-                        {
-                            "name": "hitShakeDuration",
-                            "type": 0,
-                            "value": 0.30000001192092896
-                        },
-                        {
-                            "name": "knockbackForce",
-                            "type": 0,
-                            "value": 14.0
+                            "value": 780.0
                         },
                         {
                             "name": "flySpeed",
@@ -49964,9 +49919,49 @@
                             "value": 20.0
                         },
                         {
+                            "name": "hermesWaterMax",
+                            "type": 0,
+                            "value": 2.0
+                        },
+                        {
+                            "name": "tiredMultiplier",
+                            "type": 0,
+                            "value": 0.699999988079071
+                        },
+                        {
+                            "name": "hitShakeMagnitude",
+                            "type": 0,
+                            "value": 6.0
+                        },
+                        {
+                            "name": "rollCooldownMax",
+                            "type": 0,
+                            "value": 0.5
+                        },
+                        {
+                            "name": "rollStaminaCost",
+                            "type": 0,
+                            "value": 25.0
+                        },
+                        {
                             "name": "attackCooldown",
                             "type": 0,
                             "value": 0.5
+                        },
+                        {
+                            "name": "sprintMultiplier",
+                            "type": 0,
+                            "value": 1.5
+                        },
+                        {
+                            "name": "hpLossCost",
+                            "type": 0,
+                            "value": 0.20000000298023224
+                        },
+                        {
+                            "name": "rollDuration",
+                            "type": 0,
+                            "value": 1.0
                         },
                         {
                             "name": "staminaRecover",
@@ -49974,14 +49969,19 @@
                             "value": 0.10000000149011612
                         },
                         {
-                            "name": "staminaCost",
+                            "name": "knockbackForce",
                             "type": 0,
-                            "value": 0.10000000149011612
+                            "value": 14.0
                         },
                         {
-                            "name": "ROTATION_SPEED",
+                            "name": "speedHermesBonus",
                             "type": 0,
-                            "value": 780.0
+                            "value": 15.0
+                        },
+                        {
+                            "name": "attackDuration",
+                            "type": 0,
+                            "value": 1.0
                         }
                     ],
                     "scriptUID": 8002383071243665151,
@@ -49989,12 +49989,6 @@
                 },
                 {
                     "Animations": [
-                        {
-                            "UID": 16149177110653669407,
-                            "loop": true,
-                            "name": "Charge",
-                            "speed": 1.0
-                        },
                         {
                             "UID": 6306895655090560396,
                             "loop": true,
@@ -50017,12 +50011,6 @@
                             "UID": 1768106870769744311,
                             "loop": true,
                             "name": "Running",
-                            "speed": 1.0
-                        },
-                        {
-                            "UID": 10896066334709553572,
-                            "loop": true,
-                            "name": "Walk",
                             "speed": 1.0
                         }
                     ],
@@ -50131,7 +50119,7 @@
                             "speedMax": 0.07999999821186066,
                             "speedMin": 0.009999999776482582,
                             "textureCols": 1,
-                            "texturePath": "C:\\Users\\Tonil\\Documents\\GitHub\\WaveEngine\\Engine\\Assets\\Environment\\Trees_Leafs.png",
+                            "texturePath": "C:\\Users\\alons\\Documents\\GitHub\\WaveEngine\\Engine\\Assets\\Environment\\Trees_Leafs.png",
                             "textureRows": 1,
                             "textureUID": 11107368379844993512,
                             "type": 7
@@ -50225,7 +50213,7 @@
                             "speedMax": 0.07999999821186066,
                             "speedMin": 0.009999999776482582,
                             "textureCols": 1,
-                            "texturePath": "C:\\Users\\Tonil\\Documents\\GitHub\\WaveEngine\\Engine\\Assets\\Environment\\Trees_Leafs.png",
+                            "texturePath": "C:\\Users\\alons\\Documents\\GitHub\\WaveEngine\\Engine\\Assets\\Environment\\Trees_Leafs.png",
                             "textureRows": 1,
                             "textureUID": 11107368379844993512,
                             "type": 7
@@ -50319,7 +50307,7 @@
                             "speedMax": 0.07999999821186066,
                             "speedMin": 0.009999999776482582,
                             "textureCols": 1,
-                            "texturePath": "C:\\Users\\Tonil\\Documents\\GitHub\\WaveEngine\\Engine\\Assets\\Environment\\Trees_Leafs.png",
+                            "texturePath": "C:\\Users\\alons\\Documents\\GitHub\\WaveEngine\\Engine\\Assets\\Environment\\Trees_Leafs.png",
                             "textureRows": 1,
                             "textureUID": 11107368379844993512,
                             "type": 7
@@ -50413,7 +50401,7 @@
                             "speedMax": 0.07999999821186066,
                             "speedMin": 0.009999999776482582,
                             "textureCols": 1,
-                            "texturePath": "C:\\Users\\Tonil\\Documents\\GitHub\\WaveEngine\\Engine\\Assets\\Environment\\Trees_Leafs.png",
+                            "texturePath": "C:\\Users\\alons\\Documents\\GitHub\\WaveEngine\\Engine\\Assets\\Environment\\Trees_Leafs.png",
                             "textureRows": 1,
                             "textureUID": 11107368379844993512,
                             "type": 7
@@ -50507,7 +50495,7 @@
                             "speedMax": 0.07999999821186066,
                             "speedMin": 0.009999999776482582,
                             "textureCols": 1,
-                            "texturePath": "C:\\Users\\Tonil\\Documents\\GitHub\\WaveEngine\\Engine\\Assets\\Environment\\Trees_Leafs.png",
+                            "texturePath": "C:\\Users\\alons\\Documents\\GitHub\\WaveEngine\\Engine\\Assets\\Environment\\Trees_Leafs.png",
                             "textureRows": 1,
                             "textureUID": 11107368379844993512,
                             "type": 7
@@ -50601,7 +50589,7 @@
                             "speedMax": 0.07999999821186066,
                             "speedMin": 0.009999999776482582,
                             "textureCols": 1,
-                            "texturePath": "C:\\Users\\Tonil\\Documents\\GitHub\\WaveEngine\\Engine\\Assets\\Environment\\Trees_Leafs.png",
+                            "texturePath": "C:\\Users\\alons\\Documents\\GitHub\\WaveEngine\\Engine\\Assets\\Environment\\Trees_Leafs.png",
                             "textureRows": 1,
                             "textureUID": 11107368379844993512,
                             "type": 7
@@ -50695,7 +50683,7 @@
                             "speedMax": 0.07999999821186066,
                             "speedMin": 0.009999999776482582,
                             "textureCols": 1,
-                            "texturePath": "C:\\Users\\Tonil\\Documents\\GitHub\\WaveEngine\\Engine\\Assets\\Environment\\Trees_Leafs.png",
+                            "texturePath": "C:\\Users\\alons\\Documents\\GitHub\\WaveEngine\\Engine\\Assets\\Environment\\Trees_Leafs.png",
                             "textureRows": 1,
                             "textureUID": 11107368379844993512,
                             "type": 7
@@ -50789,7 +50777,7 @@
                             "speedMax": 0.07999999821186066,
                             "speedMin": 0.009999999776482582,
                             "textureCols": 1,
-                            "texturePath": "C:\\Users\\Tonil\\Documents\\GitHub\\WaveEngine\\Engine\\Assets\\Environment\\Trees_Leafs.png",
+                            "texturePath": "C:\\Users\\alons\\Documents\\GitHub\\WaveEngine\\Engine\\Assets\\Environment\\Trees_Leafs.png",
                             "textureRows": 1,
                             "textureUID": 11107368379844993512,
                             "type": 7
@@ -50871,6 +50859,131 @@
             "name": "Canvas",
             "tag": "",
             "uid": 7006587703851725196
+        },
+        {
+            "active": true,
+            "children": [],
+            "components": [
+                {
+                    "active": true,
+                    "position": [
+                        6.0,
+                        8.0,
+                        19.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "type": 0
+                },
+                {
+                    "Center": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "DynamicFriction": 0.5,
+                    "Restitution": 0.6000000238418579,
+                    "Size": [
+                        15.0,
+                        2.0,
+                        2.0
+                    ],
+                    "StaticFriction": 0.5,
+                    "Trigger": true,
+                    "active": true,
+                    "type": 10
+                },
+                {
+                    "AngularDamping": 0.0,
+                    "FreezePos": [
+                        false,
+                        false,
+                        false
+                    ],
+                    "FreezeRot": [
+                        false,
+                        false,
+                        false
+                    ],
+                    "LinearDamping": 0.0,
+                    "Mass": 1.0,
+                    "Type": 0,
+                    "UseCCD": false,
+                    "UseGravity": true,
+                    "active": true,
+                    "type": 8
+                },
+                {
+                    "active": true,
+                    "publicVariables": [
+                        {
+                            "name": "sequenceId",
+                            "type": 1,
+                            "value": "checkpointInfo"
+                        }
+                    ],
+                    "scriptUID": 15343636359601001083,
+                    "type": 6
+                }
+            ],
+            "name": "DialogueSystem",
+            "tag": "",
+            "uid": 9359284246612293512
+        },
+        {
+            "active": true,
+            "children": [],
+            "components": [
+                {
+                    "active": true,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "type": 0
+                },
+                {
+                    "active": true,
+                    "opacity": 1.0,
+                    "type": 30,
+                    "uiLayer": 0,
+                    "xamlPath": "dialogSystem.xaml"
+                },
+                {
+                    "active": true,
+                    "publicVariables": [
+                        {
+                            "name": "updateWhenPaused",
+                            "type": 2,
+                            "value": true
+                        }
+                    ],
+                    "scriptUID": 13795469733682645829,
+                    "type": 6
+                }
+            ],
+            "name": "DialogueCanvas",
+            "tag": "",
+            "uid": 11069281815663450477
         }
     ],
     "version": 1
