@@ -717,9 +717,7 @@ static int Lua_UI_WasClicked(lua_State* L) {
 static int Lua_UI_SetElementHeight(lua_State* L) {
     std::string name(luaL_checkstring(L, 1));
     float height = static_cast<float>(luaL_checknumber(L, 2));
-    Application::GetInstance().scripts->EnqueueOperation([name, height]() {
-        UIManager::GetInstance().SetElementHeight(name, height);
-        });
+    UIManager::GetInstance().SetElementHeight(name, height);
     return 0;
 }
 
@@ -727,9 +725,7 @@ static int Lua_UI_SetElementHeight(lua_State* L) {
 static int Lua_UI_SetElementWidth(lua_State* L) {
     std::string name(luaL_checkstring(L, 1));
     float width = static_cast<float>(luaL_checknumber(L, 2));
-    Application::GetInstance().scripts->EnqueueOperation([name, width]() {
-        UIManager::GetInstance().SetElementWidth(name, width);
-        });
+    UIManager::GetInstance().SetElementWidth(name, width);
     return 0;
 }
 
