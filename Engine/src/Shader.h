@@ -32,6 +32,10 @@ public:
 protected:
 
     std::unordered_map<std::string, int> m_UniformLocationCache;
+    std::unordered_map<std::string, int>   m_UniformCacheInt;
+    std::unordered_map<std::string, float> m_UniformCacheFloat;
+    std::unordered_map<std::string, glm::vec2> m_UniformCacheVec2;
+    std::unordered_map<std::string, glm::vec4> m_UniformCacheVec4;
 
     unsigned int CompileShader(unsigned int type, const char* source);
 

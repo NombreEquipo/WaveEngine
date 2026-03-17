@@ -150,8 +150,11 @@ void Shader::SetVec3(const std::string& name, const glm::vec3& value)
     glUniform3fv(GetUniformLocation(name), 1, &value[0]);
 }
 
-void Shader::SetFloat(const std::string& name, float value) 
+void Shader::SetFloat(const std::string& name, float value)
 {
+    auto& cached = m_UniformCacheFloat[name];
+    if (cached == value) return;
+    cached = value;
     glUniform1f(GetUniformLocation(name), value);
 }
 
@@ -160,22 +163,35 @@ void Shader::SetMat4( const std::string& name, const glm::mat4& mat)
     glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, &mat[0][0]);
 }
 
-void Shader::SetInt( const std::string& name, const int value) 
+void Shader::SetInt(const std::string& name, int value)
 {
+    auto& cached = m_UniformCacheInt[name];
+    if (cached == value) return;
+    cached = value;
     glUniform1i(GetUniformLocation(name), value);
 }
 
-void Shader::SetVec4( const std::string& name, const glm::vec4& value) 
+void Shader::SetVec4(const std::string& name, const glm::vec4& value)
 {
+    auto& cached = m_UniformCacheVec4[name];
+    if (cached == value) return;
+    cached = value;
     glUniform4fv(GetUniformLocation(name), 1, &value[0]);
 }
 
-void Shader::SetVec2( const std::string& name, const glm::vec2& value) 
+void Shader::SetVec2(const std::string& name, const glm::vec2& value)
 {
+    auto& cached = m_UniformCacheVec2[name];
+    if (cached == value) return;
+    cached = value;
     glUniform2fv(GetUniformLocation(name), 1, &value[0]);
 }
 
-void Shader::SetBool(const std::string& name, bool value) 
+void Shader::SetBool(const std::string& name, bool value)
 {
-    glUniform1i(GetUniformLocation(name), (int)value);
+    auto& cached = m_UniformCacheInt[name]; 
+    int v = (int)value;
+    if (cached == v) return;
+    cached = v;
+    glUniform1i(GetUniformLocation(name), v);
 }

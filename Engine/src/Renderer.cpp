@@ -510,7 +510,7 @@ void Renderer::BuildRenderLists(const CameraLens* camera)
         if (!mesh || !mesh->owner || !mesh->owner->transform) continue;
         if (!mesh->owner->IsActive()) continue;
 
-        Mesh resMesh = mesh->GetMesh();
+        const Mesh& resMesh = mesh->GetMesh();
         if (!resMesh.IsValid()) continue;
 
         glm::mat4 globalModelMatrix = mesh->owner->transform->GetGlobalMatrix();
@@ -646,10 +646,11 @@ void Renderer::DrawRenderList(const std::multimap<float, RenderObject>& map, con
         }
 
 	Shader* lastShader = nullptr; // Para evitar cambiar de shader innecesariamente (cache de estado)
+    Material* lastMaterial = nullptr;
 
     for (auto pair = map.rbegin(); pair != map.rend(); ++pair)
     {
-        RenderObject renderObject = pair->second;
+        const RenderObject& renderObject = pair->second;
         ComponentMesh* meshComp = renderObject.mesh;
         ComponentMaterial* materialComp = meshComp->GetAttachedMaterial();
 
@@ -666,14 +667,12 @@ void Renderer::DrawRenderList(const std::multimap<float, RenderObject>& map, con
         }
 
         Shader* currentShader = defaultShader.get();
+        Material* currentMaterial = nullptr;
 
-        if (materialComp && materialComp->GetMaterial()) {
-            Material* data = materialComp->GetMaterial();
-            switch (data->GetType()) {
-            case MaterialType::STANDARD:
+        if (materialComp) {
+            currentMaterial = materialComp->GetMaterial();
+            if (currentMaterial && currentMaterial->GetType() == MaterialType::STANDARD) {
                 currentShader = standardShader.get();
-                break;
-                //(SKINNING, WATER, etc.)
             }
         }
 
@@ -684,16 +683,22 @@ void Renderer::DrawRenderList(const std::multimap<float, RenderObject>& map, con
             // Si cambias de shader, datos globales se envíen al nuevo shader activo
             currentShader->SetVec3("viewPos", camera->position);
             currentShader->SetVec3("lightDir", lightDir);
+
+            //lastMaterial = nullptr;
         }
 
         currentShader->SetMat4("model", renderObject.globalModelMatrix);
 
-        if (materialComp && materialComp->GetMaterial()) {
-            materialComp->GetMaterial()->Bind(currentShader);
-        }
-        else {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, defaultTexture->GetID());
+        if (currentMaterial != lastMaterial) {
+            if (currentMaterial) {
+                currentMaterial->Bind(currentShader);
+            }
+            else {
+                // Si no hay material, usamos la textura por defecto
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, defaultTexture->GetID());
+            }
+            lastMaterial = currentMaterial; // Actualizamos el caché
         }
 
         DrawMesh(meshComp);
