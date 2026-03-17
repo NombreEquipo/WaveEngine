@@ -25,7 +25,7 @@
                 },
                 {
                     "active": true,
-                    "aspectRatio": 1.1859649419784546,
+                    "aspectRatio": 0.6542553305625916,
                     "farPlane": 1000.0,
                     "fov": 60.0,
                     "nearPlane": 0.30000001192092896,
@@ -65,23 +65,6 @@
                     "active": true,
                     "primitiveType": "Cube",
                     "type": 1
-                },
-                {
-                    "active": true,
-                    "publicVariables": [
-                        {
-                            "name": "temp1",
-                            "type": 5,
-                            "value": "../Scenes/Temp1.scene"
-                        },
-                        {
-                            "name": "temp2",
-                            "type": 5,
-                            "value": "../Scenes/Temp2.scene"
-                        }
-                    ],
-                    "scriptUID": 1677025167670271402,
-                    "type": 6
                 },
                 {
                     "active": true,

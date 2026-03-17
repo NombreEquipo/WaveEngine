@@ -243,8 +243,8 @@ static int Lua_Engine_LoadScene(lua_State* L) {
     std::replace(normalizedPath.begin(), normalizedPath.end(), '/', '\\');
   
 
-    while (normalizedPath.rfind("../", 0) == 0)
-        normalizedPath.erase(0, 2);
+    //while (normalizedPath.rfind("../", 0) == 0)
+    //    normalizedPath.erase(0, 2);
 
     //std::replace(normalizedPath.begin(), normalizedPath.end(), '/', '\\');
 
@@ -256,7 +256,7 @@ static int Lua_Engine_LoadScene(lua_State* L) {
 }
 
 static int Lua_Engine_GetScenesPath(lua_State* L) {
-    std::string path = (std::filesystem::path(LibraryManager::GetAssetsRoot()) / "Scenes").string();
+    std::string path = (std::filesystem::path(LibraryManager::GetAssetsRoot()) / "Scenes\\" ).string();
     lua_pushstring(L, path.c_str());
     return 1;
 }
@@ -1132,6 +1132,22 @@ static int Lua_GameObject_Destroy(lua_State* L) {
     return 0;
 }
 
+static int Lua_GameObject_SetPersistency(lua_State* L)
+{
+    GameObject** udata = static_cast<GameObject**>(luaL_checkudata(L, 1, "GameObject"));
+    bool isPersistent = (bool)luaL_checkinteger(L, 2);
+
+    if (!udata || !*udata) {
+        LOG_CONSOLE("[Lua] ERROR: Invalid GameObject in SetPersistency()");
+        return 0;
+    }
+
+    GameObject* obj = *udata;
+    obj->SetPersistency(isPersistent);
+
+    return 0;
+}
+
 static int Lua_GameObject_Find(lua_State* L) {
     const char* name = luaL_checkstring(L, 1);
 
@@ -1698,6 +1714,11 @@ static int Lua_GameObject_Index(lua_State* L) {
         return 1;
     }
 
+    if (strcmp(key, "SetPersistency") == 0) {
+        lua_pushcfunction(L, Lua_GameObject_SetPersistency);
+        return 1;
+    }
+
     if (strcmp(key, "LoadMesh") == 0) {
         lua_pushcfunction(L, Lua_GameObject_LoadMesh);
         return 1;
@@ -1754,8 +1775,13 @@ void ScriptManager::RegisterGameObjectAPI() {
     lua_pushcfunction(L, Lua_GameObject_Destroy);
     lua_setfield(L, -2, "Destroy");
 
+    lua_pushcfunction(L, Lua_GameObject_SetPersistency);
+    lua_setfield(L, -2, "SetPersistency");
+
     lua_pushcfunction(L, Lua_GameObject_Find);
     lua_setfield(L, -2, "Find");
+
+   
 
     LOG_CONSOLE("[ScriptManager] GameObject API registered");
 }

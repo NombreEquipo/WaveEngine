@@ -25,7 +25,7 @@
                 },
                 {
                     "active": true,
-                    "aspectRatio": 1.3859648704528809,
+                    "aspectRatio": 1.539893627166748,
                     "farPlane": 1000.0,
                     "fov": 60.0,
                     "nearPlane": 0.30000001192092896,
@@ -72,12 +72,12 @@
                         {
                             "name": "temp2",
                             "type": 5,
-                            "value": "../Scenes/Level1-audio.scene"
+                            "value": "Temp2.scene"
                         },
                         {
                             "name": "temp1",
                             "type": 5,
-                            "value": "../Scenes/UI-NoesisGUI-Test.scene"
+                            "value": "Temp1.scene"
                         }
                     ],
                     "scriptUID": 1677025167670271402,
@@ -87,9 +87,21 @@
                     "active": true,
                     "materialUID": 10365454792224019955,
                     "type": 3
+                },
+                {
+                    "active": true,
+                    "isDefault": true,
+                    "type": 25
+                },
+                {
+                    "active": true,
+                    "eventName": "MUS_BGM",
+                    "playOnAwake": false,
+                    "type": 26,
+                    "volume": 100.0
                 }
             ],
-            "name": "Cube",
+            "name": "PersistentCube",
             "tag": "",
             "uid": 639769431511057513
         },
