@@ -21,53 +21,35 @@ _PlayerController_currentMask        = "None"
 _PlayerController_isDrowning         = false
 
 local INPUT_SCALE = 10
-local STAMINA_BAR_MAX_HEIGHT = 68.0 
-local HEALTH_BAR_MAX_HEIGHT  = 68.0 
+local STAMINA_BAR_MAX_HEIGHT = 56.0 
+local HEALTH_BAR_MAX_HEIGHT  = 74.0 
 local HERMES_GRACE_TIME      = 0.2
 
+local lastStamina = -1
+local lastHealth  = -1
+
 local function UpdateStaminaBar(stamina)
+    Engine.Log("[UI] UpdateStaminaBar llamado: " .. tostring(stamina))
+    if stamina == lastStamina then return end
+    lastStamina = stamina
     local fill = (stamina / 100.0) * STAMINA_BAR_MAX_HEIGHT
-    UI.SetElementHeight("StaminaGrid", fill) 
+    Engine.Log("[UI] SetElementHeight StaminaGrid: " .. tostring(fill))
+    UI.SetElementHeight("StaminaGrid", fill)
 end
 
 local function UpdateHealthBar(health)
+    if health == lastHealth then return end
+    lastHealth = health
     local fill = (health / 100.0) * HEALTH_BAR_MAX_HEIGHT
-    UI.SetElementHeight("HealthGrid", fill) 
+    UI.SetElementHeight("HealthGrid", fill)
 end
 
 local function UpdatePotionUI(potions)
-    for i = 1, 4 do
-        local imageName = "Potion_Image" .. tostring(i)
-        if (4 - i) < potions then
-            UI.SetElementVisibility(imageName, true)
-        else
-            UI.SetElementVisibility(imageName, false)
-        end
-    end
-end
+    UI.SetElementText("PotionsNumber", tostring(potions))
 
-local STAMINA_BAR_MAX_HEIGHT = 68.0 
-local HEALTH_BAR_MAX_HEIGHT  = 68.0 
-
-local function UpdateStaminaBar(stamina)
-    local fill = (stamina / 100.0) * STAMINA_BAR_MAX_HEIGHT
-    UI.SetElementHeight("StaminaGrid", fill) 
-end
-
-local function UpdateHealthBar(health)
-    local fill = (health / 100.0) * HEALTH_BAR_MAX_HEIGHT
-    UI.SetElementHeight("HealthGrid", fill) 
-end
-
-local function UpdatePotionUI(potions)
-    for i = 1, 4 do
-        local imageName = "Potion_Image" .. tostring(i)
-        if (4 - i) < potions then
-            UI.SetElementVisibility(imageName, true)
-        else
-            UI.SetElementVisibility(imageName, false)
-        end
-    end
+    -- Ocultar imagen y texto si no quedan pociones
+    UI.SetElementVisibility("Potion_Image", potions > 0)
+    UI.SetElementVisibility("PotionsNumber", potions > 0)
 end
 
 -- MASKS
@@ -107,12 +89,12 @@ local Player = {
     
 
     -- Potion state
-    potionCount         = 4,
-    potionHealing       = false,   -- ¿está recuperando vida ahora mismo?
-    potionHealRemaining = 0.0,     -- vida que queda por recuperar
-    potionHealTotal     = 30.0,    -- vida total que da cada poción
-    potionHealRate      = 15.0,    -- vida por segundo que se recupera
-    potionCooldown      = 0.0,     -- cooldown para evitar spam de la tecla 3
+    potionCount         = 2,
+    potionHealing       = false,   
+    potionHealRemaining = 0.0,   
+    potionHealTotal     = 30.0,   
+    potionHealRate      = 30.0, 
+    potionCooldown      = 0.0,   
     potionCooldownMax   = 0.5,
 
     -- Hermes mask
@@ -130,13 +112,13 @@ public = {
     health              = 100.0,
     speedIncrease       = 10.0,
     speedHermesBonus    = 15.0,
-    staminaCost         = 0.1,
-    staminaRecover      = 0.1,
+    staminaCost      = 80.0,   -- Baja 80 puntos por segundo al correr
+    staminaRecover   = 50.0,   
     rollStaminaCost     = 25,
     usingStamina        = false,
     tiredMultiplier     = 0.7,
-    hpLossCost          = 0.2,
-    hpRecover           = 0.2,
+    hpLossCost       = 30.0,  
+    hpRecover        = 30.0,  
     attackDuration      = 1.0,
     attackCooldown      = 0.5,
     rollCooldownMax     = 0.5,
@@ -364,6 +346,11 @@ States[State.IDLE] = {
             ChangeState(self, State.ROLL)
             return
         end
+
+        -- Recuperar stamina
+        if self.public.stamina < 100 then
+            self.public.stamina = math.min(100, self.public.stamina + (self.public.staminaRecover * dt))
+        end
     end
 }
 
@@ -425,6 +412,11 @@ States[State.WALK] = {
         
         -- Movement and rotation
         ApplyMovementAndRotation(self, dt, moveX, moveZ)
+
+        -- Recuperar stamina
+        if self.public.stamina < 100 then
+            self.public.stamina = math.min(100, self.public.stamina + (self.public.staminaRecover * dt))
+        end
     end
 }
 
@@ -474,7 +466,7 @@ States[State.RUNNING] = {
         end
 
         if not Player.godMode then
-            self.public.stamina = self.public.stamina - self.public.staminaCost
+            self.public.stamina = self.public.stamina - (self.public.staminaCost * dt)
         end
         Engine.Log("[Player] STAMINA: " .. tostring(self.public.stamina))
 
@@ -631,6 +623,8 @@ end
 function Start(self)
     Engine.Log("Player inicializado")
 
+    self.public.staminaCost  = 20.0   
+    self.public.staminaRecover = 15.0 
     --respawn debug
     local spawnPos = self.transform.worldPosition
     Player.spawnPos = spawnPos
@@ -640,7 +634,7 @@ function Start(self)
 
     self.public.stamina = 100
     self.public.health  = 100
-    Player.potionCount  = 4
+    Player.potionCount  = 2
 
 	--steps
     self.stepTimer = 0
@@ -675,13 +669,13 @@ function Start(self)
     else
         Engine.Log("[Player] No SmokeTrail child found")
     end
-	
     ChangeState(self, State.IDLE)
     EquipMask(self, Mask.NONE)
     UpdatePotionUI(Player.potionCount)
 end
 
 function Update(self, dt)
+      Engine.Log("[dt] " .. tostring(dt))
     if attackCooldown > 0 then
         attackCooldown = attackCooldown - dt
     end
@@ -707,7 +701,7 @@ function Update(self, dt)
 
         -- Recuperar stamina si no se está usando
         if not self.public.usingStamina and self.public.stamina < 100 then
-            self.public.stamina = self.public.stamina + self.public.staminaRecover
+            self.public.stamina = self.public.stamina + (self.public.staminaRecover * dt)
         end
     end
 
@@ -793,7 +787,9 @@ function Update(self, dt)
     end
 
     --Set switch for surface type in footstep SFX
-    Audio.SetSwitch("Surface_Type", Player.currentSurface, Player.stepSFX)
+ if Player.stepSFX then
+        Audio.SetSwitch("Surface_Type", Player.currentSurface, Player.stepSFX)
+    end
 
 
 end
@@ -810,9 +806,6 @@ function OnTriggerEnter(self, other)
 
 end
 function OnTriggerExit(self, other) end
-
-
-
 
 function OnCollisionEnter(self, other)
 
@@ -840,10 +833,3 @@ function OnCollisionExit(self, other)
         Engine.Log("[Player] Player out of water")
     end
 end
-
-
-
-
-
-
-
