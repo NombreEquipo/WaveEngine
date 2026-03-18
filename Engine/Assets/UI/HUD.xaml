@@ -75,7 +75,7 @@ d:DesignWidth="1920" d:DesignHeight="1080">
             </Viewbox>
 
             <!-- Pocion -->
-            <Viewbox x:Name="Potion" Grid.Row="0" Stretch="Uniform" Grid.Column="2" Margin="61,24,34,98">
+            <Viewbox x:Name="Potion" Stretch="Uniform" Grid.Column="2" Grid.Row="2" Margin="61,67,34,55">
                 <Grid RenderTransformOrigin="0.5,0.5" Width="54" Height="66">
                     <Grid.RenderTransform>
                         <TransformGroup>
