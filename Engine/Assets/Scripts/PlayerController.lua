@@ -1,5 +1,4 @@
 -- PlayerController.lua
--- Hybrid input (keyboard + gamepad).
 
 local sqrt  = math.sqrt
 local abs   = math.abs
@@ -11,15 +10,13 @@ local attackTimer = 0
 local rollCooldown = 0
 local stepTimer = 0.5
 
---audiosources (ewwwww bruda-)
+--audiosources
 local attackSource 
 local voiceSource
 local hitSource
 local itemSource
 local equipSource
 local changeSource
-
-
 
 _PlayerController_triggerCameraShake = false
 _PlayerController_shakeDuration      = 0.4
@@ -63,10 +60,7 @@ local Player = {
     godMode         = false,
     rb              = nil,
     sprintHeld      = false,
-
 	smokePS         = nil,
-
-
     -- Audio
     stepSFX 		= nil,
     voiceSFX 		= nil,
@@ -77,15 +71,6 @@ local Player = {
     hitSFX          = nil,
 	currentSurface = "",
     
-
-    -- Potion state
-    potionHealing       = false,   
-    potionHealRemaining = 0.0,   
-    potionHealTotal     = 30.0,   
-    potionHealRate      = 30.0, 
-    potionCooldown      = 0.0,   
-    potionCooldownMax   = 0.5,
-
     -- Hermes mask
 
     isDrowning       = false,
@@ -96,7 +81,6 @@ public = {
     speed               = 15.0,
     rollDuration        = 1.0,
     sprintMultiplier    = 1.5,
-    potionCount         = 2,
     rollSpeed           = 15.0,
     stamina             = 100.0,
     health              = 100.0,
@@ -557,23 +541,6 @@ States[State.ATTACK_LIGHT] = {
     end
 }
 
-local function UpdatePotionHeal(self, dt)
-    if Player.potionHealing then
-        local healThisTick = Player.potionHealRate * dt
-        local actualHeal   = math.min(healThisTick, Player.potionHealRemaining)
-        local maxHeal      = math.min(actualHeal, 100.0 - self.public.health)
-
-        self.public.health          = self.public.health + maxHeal
-        Player.potionHealRemaining  = Player.potionHealRemaining - actualHeal
-
-        Engine.Log("[Player] POTION HEAL: +" .. tostring(maxHeal) .. " | HP: " .. tostring(self.public.health))
-
-        if Player.potionHealRemaining <= 0 or self.public.health >= 100.0 then
-            Player.potionHealing       = false
-            Player.potionHealRemaining = 0.0
-        end
-    end
-end
 
 local function TakeDamage(self, amount, attackerPos)
     if Player.currentState == State.DEAD then return end
@@ -595,8 +562,6 @@ local function TakeDamage(self, amount, attackerPos)
         if len > 0.001 then dx = dx / len; dz = dz / len end
         Player.rb:AddForce(dx * self.public.knockbackForce, 0, dz * self.public.knockbackForce, 2)
     end
-
-    -- UI logic is now in HUDController
 
     if self.public.health <= 0 then
         Engine.Log("[Player] DEAD")
@@ -620,7 +585,6 @@ function Start(self)
 
     self.public.stamina = 100
     self.public.health  = 100
-    self.public.potionCount  = 2
 
 	--steps
     self.stepTimer = 0
@@ -732,21 +696,6 @@ function Update(self, dt)
         end
     end
 
-    if Player.potionCooldown > 0 then
-        Player.potionCooldown = Player.potionCooldown - dt
-    end
-
-    if Input.GetKey("3") and Player.potionCooldown <= 0 then
-        if self.public.potionCount > 0 and self.public.health < 100 and not Player.potionHealing then
-            self.public.potionCount          = self.public.potionCount - 1
-            Player.potionHealing        = true
-            Player.potionHealRemaining  = Player.potionHealTotal
-            Player.potionCooldown       = Player.potionCooldownMax
-            Engine.Log("[Player] POCION USADA | Restantes: " .. tostring(self.public.potionCount))
-        end
-    end
-
-    UpdatePotionHeal(self, dt)
 
     if Input.GetKey("7") and not Player.godMode then
         self.public.health = math.max(0, self.public.health - self.public.hpLossCost)
@@ -822,10 +771,9 @@ function ResetPlayer(self)
     self.public.stamina = 100
 
     -- Pociones
-    self.public.potionCount         = 2
-    Player.potionHealing       = false
-    Player.potionHealRemaining = 0.0
-    Player.potionCooldown      = 0.0
+    if _G.PotionSystem then
+        _G.PotionSystem:ResetPotions()
+    end
 
     -- Cooldowns
     attackCooldown = 0
