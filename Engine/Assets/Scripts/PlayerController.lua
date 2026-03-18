@@ -32,36 +32,7 @@ _G._PlayerController_isDead          = false
 _G.PlayerInstance                    = nil
 
 local INPUT_SCALE = 10
-local STAMINA_BAR_MAX_HEIGHT = 56.0 
-local HEALTH_BAR_MAX_HEIGHT  = 74.0 
 local HERMES_GRACE_TIME      = 0.2
-
-local lastStamina = -1
-local lastHealth  = -1
-
-local function UpdateStaminaBar(stamina)
-    Engine.Log("[UI] UpdateStaminaBar llamado: " .. tostring(stamina))
-    if stamina == lastStamina then return end
-    lastStamina = stamina
-    local fill = (stamina / 100.0) * STAMINA_BAR_MAX_HEIGHT
-    Engine.Log("[UI] SetElementHeight StaminaGrid: " .. tostring(fill))
-    UI.SetElementHeight("StaminaGrid", fill)
-end
-
-local function UpdateHealthBar(health)
-    if health == lastHealth then return end
-    lastHealth = health
-    local fill = (health / 100.0) * HEALTH_BAR_MAX_HEIGHT
-    UI.SetElementHeight("HealthGrid", fill)
-end
-
-local function UpdatePotionUI(potions)
-    UI.SetElementText("PotionsNumber", tostring(potions))
-
-    -- Ocultar imagen y texto si no quedan pociones
-    UI.SetElementVisibility("Potion_Image", potions > 0)
-    UI.SetElementVisibility("PotionsNumber", potions > 0)
-end
 
 -- MASKS
 local Mask = {
@@ -108,7 +79,6 @@ local Player = {
     
 
     -- Potion state
-    potionCount         = 2,
     potionHealing       = false,   
     potionHealRemaining = 0.0,   
     potionHealTotal     = 30.0,   
@@ -126,6 +96,7 @@ public = {
     speed               = 15.0,
     rollDuration        = 1.0,
     sprintMultiplier    = 1.5,
+    potionCount         = 2,
     rollSpeed           = 15.0,
     stamina             = 100.0,
     health              = 100.0,
@@ -625,7 +596,7 @@ local function TakeDamage(self, amount, attackerPos)
         Player.rb:AddForce(dx * self.public.knockbackForce, 0, dz * self.public.knockbackForce, 2)
     end
 
-    UpdateHealthBar(self.public.health)
+    -- UI logic is now in HUDController
 
     if self.public.health <= 0 then
         Engine.Log("[Player] DEAD")
@@ -649,7 +620,7 @@ function Start(self)
 
     self.public.stamina = 100
     self.public.health  = 100
-    Player.potionCount  = 2
+    self.public.potionCount  = 2
 
 	--steps
     self.stepTimer = 0
@@ -728,7 +699,6 @@ function Start(self)
 
     ChangeState(self, State.IDLE)
     EquipMask(self, Mask.NONE)
-    UpdatePotionUI(Player.potionCount)
 end
 
 
@@ -767,13 +737,12 @@ function Update(self, dt)
     end
 
     if Input.GetKey("3") and Player.potionCooldown <= 0 then
-        if Player.potionCount > 0 and self.public.health < 100 and not Player.potionHealing then
-            Player.potionCount          = Player.potionCount - 1
+        if self.public.potionCount > 0 and self.public.health < 100 and not Player.potionHealing then
+            self.public.potionCount          = self.public.potionCount - 1
             Player.potionHealing        = true
             Player.potionHealRemaining  = Player.potionHealTotal
             Player.potionCooldown       = Player.potionCooldownMax
-            Engine.Log("[Player] POCION USADA | Restantes: " .. tostring(Player.potionCount))
-            UpdatePotionUI(Player.potionCount)
+            Engine.Log("[Player] POCION USADA | Restantes: " .. tostring(self.public.potionCount))
         end
     end
 
@@ -804,9 +773,6 @@ function Update(self, dt)
     if not (Input.GetKey("LeftShift") or Input.GetGamepadAxis("LT") > 0.5) then
         Player.sprintHeld = false
     end
-
-    UpdateStaminaBar(self.public.stamina)
-    UpdateHealthBar(self.public.health)
 
     --hermes
     if Input.GetKeyDown("8") then 
@@ -856,7 +822,7 @@ function ResetPlayer(self)
     self.public.stamina = 100
 
     -- Pociones
-    Player.potionCount         = 2
+    self.public.potionCount         = 2
     Player.potionHealing       = false
     Player.potionHealRemaining = 0.0
     Player.potionCooldown      = 0.0
@@ -883,12 +849,9 @@ function ResetPlayer(self)
     end
 
     -- Forzar redibujado de UI
-    lastHealth  = -1
-    lastStamina = -1
-    UpdatePotionUI(Player.potionCount)
-    UpdateHealthBar(100)
-    UpdateStaminaBar(100)
-
+    if _G.ForceRefreshHUD then
+        _G.ForceRefreshHUD()
+    end
     -- Volver al estado inicial
     ChangeState(self, State.IDLE)
     Engine.Log("[Player] Reset completado")
