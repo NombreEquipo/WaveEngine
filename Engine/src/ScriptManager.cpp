@@ -218,6 +218,13 @@ static int Lua_Engine_Log(lua_State* L) {
 static const std::unordered_map<std::string, SDL_Scancode> keyMap = {
     {"W", SDL_SCANCODE_W}, {"A", SDL_SCANCODE_A}, {"S", SDL_SCANCODE_S},
     {"D", SDL_SCANCODE_D}, {"Q", SDL_SCANCODE_Q}, {"E", SDL_SCANCODE_E},
+    {"R", SDL_SCANCODE_R}, {"F", SDL_SCANCODE_F}, {"G", SDL_SCANCODE_G},
+    {"Z", SDL_SCANCODE_Z}, {"X", SDL_SCANCODE_X}, {"C", SDL_SCANCODE_C},
+    {"V", SDL_SCANCODE_V}, {"B", SDL_SCANCODE_B}, {"N", SDL_SCANCODE_N},
+    {"M", SDL_SCANCODE_M}, {"J", SDL_SCANCODE_J}, {"K", SDL_SCANCODE_K}, 
+    {"L", SDL_SCANCODE_L}, {"U", SDL_SCANCODE_U}, {"I", SDL_SCANCODE_I},
+    {"O", SDL_SCANCODE_O}, {"P", SDL_SCANCODE_P}, {"Y", SDL_SCANCODE_Y},
+    {"H", SDL_SCANCODE_H}, {"T", SDL_SCANCODE_T},
     {"Space", SDL_SCANCODE_SPACE}, {"Escape", SDL_SCANCODE_ESCAPE},
     {"LeftShift", SDL_SCANCODE_LSHIFT}, {"RightShift", SDL_SCANCODE_RSHIFT},
     {"LeftCtrl", SDL_SCANCODE_LCTRL}, {"RightCtrl", SDL_SCANCODE_RCTRL},

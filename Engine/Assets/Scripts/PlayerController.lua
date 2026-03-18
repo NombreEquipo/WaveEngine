@@ -779,9 +779,8 @@ function Update(self, dt)
 
     UpdatePotionHeal(self, dt)
 
-    if Input.GetKey("1") and not Player.godMode then
+    if Input.GetKey("7") and not Player.godMode then
         self.public.health = math.max(0, self.public.health - self.public.hpLossCost)
-        if Player.hitSFX then Player.hitSFX:PlayAudioEvent() end
         Engine.Log("[Player] HEALTH: " .. tostring(self.public.health))
     end
 
@@ -797,7 +796,7 @@ function Update(self, dt)
         end
     end
 
-    if Input.GetKey("2") then
+    if Input.GetKey("8") then
         self.public.health = math.min(100, self.public.health + self.public.hpRecover)
         Engine.Log("[Player] HEALTH: " .. tostring(self.public.health))
     end
