@@ -14,6 +14,7 @@
 #include "ComponentPostProcessing.h"
 #include "Texture.h"
 #include "Material.h"
+#include "MaterialStandard.h"
 
 #include "Shader.h"
 #include "ShaderDepthVisualization.h"
@@ -533,7 +534,7 @@ void Renderer::BuildRenderLists(const CameraLens* camera)
             }
             else
             {
-                opaqueList.emplace(distanceToCamera, renderObject);
+                opaqueList.push_back(renderObject);
             }
         }
     }
@@ -569,6 +570,11 @@ void Renderer::BuildRenderLists(const CameraLens* camera)
 
         canvasList.push_back(canvasObject);
     }
+    std::sort(opaqueList.begin(), opaqueList.end(), [](const RenderObject& a, const RenderObject& b) {
+        auto* matA = a.mesh->GetAttachedMaterial() ? a.mesh->GetAttachedMaterial()->GetMaterial() : nullptr;
+        auto* matB = b.mesh->GetAttachedMaterial() ? b.mesh->GetAttachedMaterial()->GetMaterial() : nullptr;
+        return matA < matB;
+        });
 }
 
 void Renderer::DrawPostProcessing(const CameraLens* camera)
@@ -637,6 +643,77 @@ void Renderer::DrawPostProcessing(const CameraLens* camera)
     glUseProgram(0);
 }
 
+void Renderer::DrawRenderList(const std::vector<RenderObject>& list, const CameraLens* camera)
+{
+    // Upload all scene lights 
+    if (lightManager)
+        if (standardShader) {
+            standardShader->Use();
+            lightManager->UploadToShader(standardShader.get());
+        }
+
+    Shader* lastShader = nullptr; // Para evitar cambiar de shader innecesariamente (cache de estado)
+    Material* lastMaterial = nullptr;
+
+
+    for (const RenderObject& renderObject : list)
+    {
+        ComponentMesh* meshComp = renderObject.mesh;
+        ComponentMaterial* materialComp = meshComp->GetAttachedMaterial();
+
+        if (meshComp->GetDrawNormals()) normalsList.push_back(renderObject);
+        if (meshComp->GetDrawMesh()) meshLinesList.push_back(renderObject);
+        if (meshComp->owner->IsSelected()) {
+            stencilList.push_back(renderObject);
+            glStencilFunc(GL_ALWAYS, 1, 0xFF);
+            glStencilMask(0xFF);
+        }
+        else {
+            glStencilFunc(GL_ALWAYS, 0, 0xFF);
+            glStencilMask(0x00);
+        }
+
+        Shader* currentShader = defaultShader.get();
+        Material* currentMaterial = nullptr;
+
+        if (materialComp) {
+            currentMaterial = materialComp->GetMaterial();
+            if (currentMaterial && currentMaterial->GetType() == MaterialType::STANDARD) {
+                currentShader = standardShader.get();
+            }
+        }
+
+        if (currentShader != lastShader) {
+            currentShader->Use();
+            lastShader = currentShader;
+
+            currentShader->SetVec3("viewPos", camera->position);
+            currentShader->SetVec3("lightDir", lightDir);
+
+            //lastMaterial = nullptr;
+        }
+
+        currentShader->SetMat4("model", renderObject.globalModelMatrix);
+
+        UID currentUID = currentMaterial
+            ? static_cast<MaterialStandard*>(currentMaterial)->GetAlbedoMapUID()
+            : 0;
+
+        if (currentMaterial != lastMaterial) {
+            if (currentMaterial) {
+                currentMaterial->Bind(currentShader);
+            }
+            else {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, defaultTexture->GetID());
+            }
+            lastMaterial = currentMaterial;
+        }
+        DrawMesh(meshComp);
+    }
+}
+
+
 void Renderer::DrawRenderList(const std::multimap<float, RenderObject>& map, const CameraLens* camera)
 {
     // Upload all scene lights 
@@ -648,6 +725,7 @@ void Renderer::DrawRenderList(const std::multimap<float, RenderObject>& map, con
 
 	Shader* lastShader = nullptr; // Para evitar cambiar de shader innecesariamente (cache de estado)
     Material* lastMaterial = nullptr;
+    UID lastMaterialUID = 0;
 
     for (auto pair = map.rbegin(); pair != map.rend(); ++pair)
     {
@@ -690,18 +768,21 @@ void Renderer::DrawRenderList(const std::multimap<float, RenderObject>& map, con
 
         currentShader->SetMat4("model", renderObject.globalModelMatrix);
 
-        if (currentMaterial != lastMaterial) {
+        UID currentUID = currentMaterial
+            ? static_cast<MaterialStandard*>(currentMaterial)->GetAlbedoMapUID()
+            : 0;
+
+        if (currentUID != lastMaterialUID || currentUID == 0) {
             if (currentMaterial) {
                 currentMaterial->Bind(currentShader);
             }
             else {
-                // Si no hay material, usamos la textura por defecto
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, defaultTexture->GetID());
             }
-            lastMaterial = currentMaterial; // Actualizamos el caché
+            lastMaterial = currentMaterial;
+            lastMaterialUID = currentUID;
         }
-
         DrawMesh(meshComp);
     }
 }
