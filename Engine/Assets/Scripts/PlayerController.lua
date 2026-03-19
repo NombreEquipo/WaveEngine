@@ -1,5 +1,4 @@
 -- PlayerController.lua
--- Hybrid input (keyboard + gamepad).
 
 local sqrt  = math.sqrt
 local abs   = math.abs
@@ -11,6 +10,13 @@ local attackTimer = 0
 local rollCooldown = 0
 local stepTimer = 0.5
 
+--audiosources
+local attackSource 
+local voiceSource
+local hitSource
+local itemSource
+local equipSource
+local changeSource
 
 _PlayerController_triggerCameraShake = false
 _PlayerController_shakeDuration      = 0.4
@@ -19,56 +25,11 @@ _PlayerController_lastAttack         = ""
 _impactFrameTimer                    = 0
 _PlayerController_currentMask        = "None"
 _PlayerController_isDrowning         = false
+_G._PlayerController_isDead          = false  
+_G.PlayerInstance                    = nil
 
 local INPUT_SCALE = 10
-local STAMINA_BAR_MAX_HEIGHT = 68.0 
-local HEALTH_BAR_MAX_HEIGHT  = 68.0 
 local HERMES_GRACE_TIME      = 0.2
-
-local function UpdateStaminaBar(stamina)
-    local fill = (stamina / 100.0) * STAMINA_BAR_MAX_HEIGHT
-    UI.SetElementHeight("StaminaGrid", fill) 
-end
-
-local function UpdateHealthBar(health)
-    local fill = (health / 100.0) * HEALTH_BAR_MAX_HEIGHT
-    UI.SetElementHeight("HealthGrid", fill) 
-end
-
-local function UpdatePotionUI(potions)
-    for i = 1, 4 do
-        local imageName = "Potion_Image" .. tostring(i)
-        if (4 - i) < potions then
-            UI.SetElementVisibility(imageName, true)
-        else
-            UI.SetElementVisibility(imageName, false)
-        end
-    end
-end
-
-local STAMINA_BAR_MAX_HEIGHT = 68.0 
-local HEALTH_BAR_MAX_HEIGHT  = 68.0 
-
-local function UpdateStaminaBar(stamina)
-    local fill = (stamina / 100.0) * STAMINA_BAR_MAX_HEIGHT
-    UI.SetElementHeight("StaminaGrid", fill) 
-end
-
-local function UpdateHealthBar(health)
-    local fill = (health / 100.0) * HEALTH_BAR_MAX_HEIGHT
-    UI.SetElementHeight("HealthGrid", fill) 
-end
-
-local function UpdatePotionUI(potions)
-    for i = 1, 4 do
-        local imageName = "Potion_Image" .. tostring(i)
-        if (4 - i) < potions then
-            UI.SetElementVisibility(imageName, true)
-        else
-            UI.SetElementVisibility(imageName, false)
-        end
-    end
-end
 
 -- MASKS
 local Mask = {
@@ -99,22 +60,17 @@ local Player = {
     godMode         = false,
     rb              = nil,
     sprintHeld      = false,
-
 	smokePS         = nil,
     -- Audio
-    --stepSFX = nil,
-	--currentSurface = "",
+    stepSFX 		= nil,
+    voiceSFX 		= nil,
+    swordSFX 		= nil,
+    pickMaskSFX     = nil,
+    changeMaskSFX   = nil,
+    itemPickSFX     = nil,
+    hitSFX          = nil,
+	currentSurface = "",
     
-
-    -- Potion state
-    potionCount         = 4,
-    potionHealing       = false,   -- ¿está recuperando vida ahora mismo?
-    potionHealRemaining = 0.0,     -- vida que queda por recuperar
-    potionHealTotal     = 30.0,    -- vida total que da cada poción
-    potionHealRate      = 15.0,    -- vida por segundo que se recupera
-    potionCooldown      = 0.0,     -- cooldown para evitar spam de la tecla 3
-    potionCooldownMax   = 0.5,
-
     -- Hermes mask
 
     isDrowning       = false,
@@ -130,13 +86,13 @@ public = {
     health              = 100.0,
     speedIncrease       = 10.0,
     speedHermesBonus    = 15.0,
-    staminaCost         = 0.1,
-    staminaRecover      = 0.1,
+    staminaCost      = 80.0,
+    staminaRecover   = 50.0,   
     rollStaminaCost     = 25,
     usingStamina        = false,
     tiredMultiplier     = 0.7,
-    hpLossCost          = 0.2,
-    hpRecover           = 0.2,
+    hpLossCost       = 30.0,  
+    hpRecover        = 30.0,  
     attackDuration      = 1.0,
     attackCooldown      = 0.5,
     rollCooldownMax     = 0.5,
@@ -147,9 +103,6 @@ public = {
     hermesWaterMax      = 2.0,
     flySpeed            = 20.0
 }
-
-
-
 
 
 local function normalizeInput(x, z)
@@ -275,8 +228,10 @@ end
 local function EquipMask(self, newMask)
     if Player.currentMask == newMask then return end
 
+    
+
     --HERMES
-        if Player.currentMask == Mask.HERMES and Player.isDrowning then
+    if Player.currentMask == Mask.HERMES and Player.isDrowning then
         Engine.Log("[Player] Hermes while on water!!")
         return
     end
@@ -318,14 +273,18 @@ States[State.DEAD] = {
     Enter  = function(self)
         Engine.Log("[Player] Player is DEAD")
         if Player.rb then Player.rb:SetLinearVelocity(0, 0, 0) end
+        _G._PlayerController_isDead = true 
+        if Player.voiceSFX then Player.voiceSFX:PlayAudioEvent() end
     end,
     Update = function(self, dt)
         if Player.rb then Player.rb:SetLinearVelocity(0, 0, 0) end
+        -- Debug: reset manual con tecla 1
         if Input.GetKeyDown("1") then
             self.public.health  = 100
             self.public.stamina = 100
             local p = Player.spawnPos
             self.transform:SetPosition(p.x, p.y, p.z)
+            _G._PlayerController_isDead = false  -- NUEVO
             ChangeState(self, State.IDLE)
         end
     end
@@ -359,10 +318,14 @@ States[State.IDLE] = {
         if GetAttackInput(self) == 2 then
             ChangeState(self, State.CHARGING)
         end
-        -- Check if can trasition to Roll, AttackLight, Charging y todo eso
         if (Input.GetKeyDown("LeftCtrl") or Input.GetGamepadButtonDown("B")) and self.public.stamina >= self.public.rollStaminaCost and rollCooldown <= 0 then
             ChangeState(self, State.ROLL)
             return
+        end
+
+        -- Recuperar stamina
+        if self.public.stamina < 100 then
+            self.public.stamina = math.min(100, self.public.stamina + (self.public.staminaRecover * dt))
         end
     end
 }
@@ -370,13 +333,13 @@ States[State.IDLE] = {
 States[State.WALK] = {
     Enter = function(self)
         local anim = self.gameObject:GetComponent("Animation")
-        if anim then anim:Play("Walk", 0.5) end --TEMPORAL CAMBIAR POR CAMINAR
+        --if anim then anim:Play("Walk", 0.5) end --TEMPORAL CAMBIAR POR CAMINAR
 
         self.public.usingStamina = false
 
         if anim then 
-            anim:Play("Walking", 0.5) 
-            anim:SetSpeed("Walking", 1.0)
+            anim:Play("Running", 0.5) 
+            anim:SetSpeed("Running", 1)
         end
     end,
     
@@ -405,33 +368,38 @@ States[State.WALK] = {
             ChangeState(self, State.CHARGING)
             return
         end
-        -- Check if can trasition to Roll, AttackLight, Charging y todo eso
 
         if (Input.GetKeyDown("LeftCtrl") or Input.GetGamepadButtonDown("B")) and self.public.stamina >= self.public.rollStaminaCost and rollCooldown <= 0 then
             ChangeState(self, State.ROLL)
             return
         end
 
-        
         if Player.stepSFX then
             stepTimer = stepTimer + dt
-            if stepTimer >= (0.5/self.public.sprintMultiplier) then
+            if stepTimer >= (0.5 / self.public.sprintMultiplier) then
 				stepTimer = 0
                 Audio.SetSwitch("Player_Speed", "Walk", Player.stepSFX)
-                --Engine.Log("Playing Walk FootSteps SFX")
                 Player.stepSFX:PlayAudioEvent()
             end
         end
         
-        -- Movement and rotation
         ApplyMovementAndRotation(self, dt, moveX, moveZ)
+
+        -- Recuperar stamina
+        if self.public.stamina < 100 then
+            self.public.stamina = math.min(100, self.public.stamina + (self.public.staminaRecover * dt))
+        end
     end
 }
 
 States[State.RUNNING] = {
     Enter = function(self)
         local anim = self.gameObject:GetComponent("Animation")
-        if anim then anim:Play("Running", 0.5) end
+        if anim then 
+            anim:Play("Running", 0.5) 
+            anim:SetSpeed("Running", 2.0)
+
+        end
 
         self.public.usingStamina = true
         self.public.speed = self.public.speed + self.public.speedIncrease
@@ -462,7 +430,6 @@ States[State.RUNNING] = {
             Player.lastDirZ = moveZ / inputLen
         end
 
-        -- Check if can trasition to Roll, AttackLight, Charging y todo eso
         if (Input.GetKeyDown("LeftCtrl") or Input.GetGamepadButtonDown("B")) and rollCooldown <= 0 then
             ChangeState(self, State.ROLL)
             return
@@ -474,7 +441,7 @@ States[State.RUNNING] = {
         end
 
         if not Player.godMode then
-            self.public.stamina = self.public.stamina - self.public.staminaCost
+            self.public.stamina = self.public.stamina - (self.public.staminaCost * dt)
         end
         Engine.Log("[Player] STAMINA: " .. tostring(self.public.stamina))
 
@@ -483,7 +450,6 @@ States[State.RUNNING] = {
             if stepTimer >= (0.25/self.public.sprintMultiplier) then
 				stepTimer = 0
                 Audio.SetSwitch("Player_Speed", "Run", Player.stepSFX)
-                --Engine.Log("Playing Run FootSteps SFX")
                 Player.stepSFX:PlayAudioEvent()
             end
         end
@@ -494,7 +460,6 @@ States[State.RUNNING] = {
 States[State.ROLL] = {
     timer = 0,
     Enter = function(self)
-        -- Anim roll, fix direction, stamina..
         if not Player.godMode then
             self.public.stamina = self.public.stamina - self.public.rollStaminaCost
         end
@@ -507,7 +472,6 @@ States[State.ROLL] = {
         rollCooldown = self.public.rollCooldownMax
     end,
     Update = function(self, dt)
-        -- Move on the direction fixed ignoring the input digo yo, transition to idle at end
         States[State.ROLL].timer = States[State.ROLL].timer - dt
 
         if States[State.ROLL].timer <= 0 then
@@ -525,8 +489,6 @@ States[State.ROLL] = {
 
 States[State.CHARGING] = {
     Enter = function(self)
-        -- Anim attacklight
-
         local anim = self.gameObject:GetComponent("Animation")
         if anim then anim:Play("Charge", 1.0) end
         _PlayerController_lastAttack = "charge"
@@ -534,7 +496,6 @@ States[State.CHARGING] = {
         if attackCol then attackCol:Enable() end
     end,
     Update = function(self, dt)
-        -- wait anim end and return idle
         attackTimer = attackTimer + dt
         if attackTimer >= self.public.attackDuration then
             attackCooldown = self.public.attackCooldown
@@ -558,8 +519,6 @@ States[State.ATTACK_HEAVY] = {
 
 States[State.ATTACK_LIGHT] = {
     Enter = function(self)
-        -- Anim attacklight
-
         local anim = self.gameObject:GetComponent("Animation")
         if anim then anim:Play("NormalAttack", 1.0) end
         _PlayerController_lastAttack = "light"
@@ -567,10 +526,13 @@ States[State.ATTACK_LIGHT] = {
         if attackCol then attackCol:Enable() end
     end,
     Update = function(self, dt)
-        -- wait anim end and return idle
         attackTimer = attackTimer + dt
         if attackTimer >= self.public.attackDuration then
+            if Player.swordSFX then 
+                Player.swordSFX:PlayAudioEvent() 
+            end
             attackCooldown = self.public.attackCooldown
+
             ChangeState(self, State.IDLE)
         end
     end,
@@ -579,24 +541,6 @@ States[State.ATTACK_LIGHT] = {
     end
 }
 
-local function UpdatePotionHeal(self, dt)
-    if Player.potionHealing then
-        local healThisTick = Player.potionHealRate * dt
-        local actualHeal   = math.min(healThisTick, Player.potionHealRemaining)
-        local maxHeal      = math.min(actualHeal, 100.0 - self.public.health)
-
-        self.public.health          = self.public.health + maxHeal
-        Player.potionHealRemaining  = Player.potionHealRemaining - actualHeal
-
-        Engine.Log("[Player] POTION HEAL: +" .. tostring(maxHeal) .. " | HP: " .. tostring(self.public.health))
-
-        -- Terminar curación cuando se agota la cantidad o la vida ya está llena
-        if Player.potionHealRemaining <= 0 or self.public.health >= 100.0 then
-            Player.potionHealing       = false
-            Player.potionHealRemaining = 0.0
-        end
-    end
-end
 
 local function TakeDamage(self, amount, attackerPos)
     if Player.currentState == State.DEAD then return end
@@ -610,6 +554,7 @@ local function TakeDamage(self, amount, attackerPos)
     _PlayerController_shakeMagnitude     = self.public.hitShakeMagnitude
 
     if self.public.health > 0 and Player.rb and attackerPos then
+        if Player.hitSFX then Player.hitSFX:PlayAudioEvent() end
         local playerPos = self.transform.worldPosition
         local dx = playerPos.x - attackerPos.x
         local dz = playerPos.z - attackerPos.z
@@ -617,8 +562,6 @@ local function TakeDamage(self, amount, attackerPos)
         if len > 0.001 then dx = dx / len; dz = dz / len end
         Player.rb:AddForce(dx * self.public.knockbackForce, 0, dz * self.public.knockbackForce, 2)
     end
-
-    UpdateHealthBar(self.public.health)
 
     if self.public.health <= 0 then
         Engine.Log("[Player] DEAD")
@@ -630,42 +573,82 @@ end
 
 function Start(self)
     Engine.Log("Player inicializado")
+    _G.PlayerInstance = self
 
-    --respawn debug
-    local spawnPos = self.transform.worldPosition
+    self.public.staminaCost    = 20.0   
+    self.public.staminaRecover = 15.0 
+
+    local spawnPos  = self.transform.worldPosition
     Player.spawnPos = spawnPos
     
-    --stamina
     _impactFrameTimer = 0
 
     self.public.stamina = 100
     self.public.health  = 100
-    Player.potionCount  = 4
 
 	--steps
     self.stepTimer = 0
+
+    voiceSource = GameObject.Find("VoiceSource")
+    attackSource = GameObject.Find("AttackSource")
+    hitSource = GameObject.Find("HitSource")
+    equipSource = GameObject.Find("EquipSource")
+    changeSource = GameObject.Find("ChangeSource")
+    itemSource = GameObject.Find("ItemSource")
+
     Player.stepSFX = self.gameObject:GetComponent("Audio Source")
+    Player.voiceSFX = voiceSource:GetComponent("Audio Source")
+    Player.swordSFX = attackSource:GetComponent("Audio Source")
+    Player.hitSFX = hitSource:GetComponent("Audio Source")
+    Player.pickMaskSFX = equipSource:GetComponent("Audio Source")
+    Player.changeMaskSFX = changeSource:GetComponent("Audio Source")
+    Player.itemPickSFX = itemSource:GetComponent("Audio Source")
+
+    if not Player.stepSFX then
+ 		Engine.Log("[PLAYER AUDIO] Unable to retrieve the player's AudioSource") 
+	end
+
+    if not Player.voiceSFX then 
+		Engine.Log("[PLAYER AUDIO] Unable to retrieve VoiceSource") 
+	end
+
+    if not Player.swordSFX then 
+		Engine.Log("[PLAYER AUDIO] Unable to retrieve SwordSource") 
+	end
+
+    if not Player.hitSFX then 
+		Engine.Log("[PLAYER AUDIO] Unable to retrieve hitSource") 
+	end
+
+    if not Player.pickMaskSFX then 
+		Engine.Log("[PLAYER AUDIO] Unable to retrieve equipSource") 
+	end
+    
+    if not Player.changeMaskSFX then 
+		Engine.Log("[PLAYER AUDIO] Unable to retrieve changeSource") 
+	end
+
+    if not Player.itemPickSFX then 
+		Engine.Log("[PLAYER AUDIO] Unable to retrieve changeSource") 
+	end
+
     Player.currentSurface = "Dirt" --default surface
 
-    --attack
     attackCooldown = 0
     attackCol = self.gameObject:GetComponent("Box Collider")
     if attackCol then attackCol:Disable() end 
     _PlayerController_pendingDamage    = 0
     _PlayerController_pendingDamagePos = nil
 
-    --rigidbody
     Player.rb = self.gameObject:GetComponent("Rigidbody")
     if not Player.rb then
         Engine.Log("[Player] No rigidbody found")
     end
     
-    --masks
     Player.isDrowning       = false
     Player.hermesGraceTimer = 0
     _PlayerController_currentMask = "None"
 	
-    --smoke trail particle
     local smokeObj = GameObject.Find("SmokeTrail")
     if smokeObj then
         Player.smokePS = smokeObj:GetComponent("ParticleSystem")
@@ -675,13 +658,16 @@ function Start(self)
     else
         Engine.Log("[Player] No SmokeTrail child found")
     end
-	
+
+    _G._PlayerController_isDead = false
+
     ChangeState(self, State.IDLE)
     EquipMask(self, Mask.NONE)
-    UpdatePotionUI(Player.potionCount)
 end
 
+
 function Update(self, dt)
+    Engine.Log("[dt] " .. tostring(dt))
     if attackCooldown > 0 then
         attackCooldown = attackCooldown - dt
     end
@@ -705,39 +691,17 @@ function Update(self, dt)
     elseif Player.currentState and States[Player.currentState] then
         States[Player.currentState].Update(self, dt)
 
-        -- Recuperar stamina si no se está usando
         if not self.public.usingStamina and self.public.stamina < 100 then
-            self.public.stamina = self.public.stamina + self.public.staminaRecover
+            self.public.stamina = self.public.stamina + (self.public.staminaRecover * dt)
         end
     end
 
-    -- Cooldown de la tecla de poción (evita consumir varias en un frame)
-    if Player.potionCooldown > 0 then
-        Player.potionCooldown = Player.potionCooldown - dt
-    end
 
-    -- Tecla 3: usar poción
-    if Input.GetKey("3") and Player.potionCooldown <= 0 then
-        if Player.potionCount > 0 and self.public.health < 100 and not Player.potionHealing then
-            Player.potionCount          = Player.potionCount - 1
-            Player.potionHealing        = true
-            Player.potionHealRemaining  = Player.potionHealTotal
-            Player.potionCooldown       = Player.potionCooldownMax
-            Engine.Log("[Player] POCION USADA | Restantes: " .. tostring(Player.potionCount))
-            UpdatePotionUI(Player.potionCount)
-        end
-    end
-
-    -- Aplicar curación gradual de la poción
-    UpdatePotionHeal(self, dt)
-
-    -- Tecla 1: perder vida (debug)
-    if Input.GetKey("1") and not Player.godMode then
+    if Input.GetKey("7") and not Player.godMode then
         self.public.health = math.max(0, self.public.health - self.public.hpLossCost)
         Engine.Log("[Player] HEALTH: " .. tostring(self.public.health))
     end
 
-    -- Tecla G: toggle god mode (debug)
     if Input.GetKeyDown("G") then
         Player.godMode = not Player.godMode
         Engine.Log("[Player] GOD MODE: " .. tostring(Player.godMode))
@@ -750,8 +714,7 @@ function Update(self, dt)
         end
     end
 
-    -- Tecla 2: ganar vida (debug)
-    if Input.GetKey("2") then
+    if Input.GetKey("8") then
         self.public.health = math.min(100, self.public.health + self.public.hpRecover)
         Engine.Log("[Player] HEALTH: " .. tostring(self.public.health))
     end
@@ -760,12 +723,15 @@ function Update(self, dt)
         Player.sprintHeld = false
     end
 
-    UpdateStaminaBar(self.public.stamina)
-    UpdateHealthBar(self.public.health)
-
     --hermes
-    if Input.GetKeyDown("8") then EquipMask(self, Mask.HERMES) end --debug
-    if Input.GetKeyDown("9") then EquipMask(self, Mask.NONE) end --debug
+    if Input.GetKeyDown("8") then 
+        EquipMask(self, Mask.HERMES) 
+        if Player.pickMaskSFX then Player.pickMaskSFX:PlayAudioEvent() end
+    end --debug
+    if Input.GetKeyDown("9") then 
+        EquipMask(self, Mask.NONE) 
+        if Player.changeMaskSFX then Player.changeMaskSFX:PlayAudioEvent() end
+    end --debug
 
     if Player.isDrowning and Player.currentMask == Mask.HERMES and Player.currentState ~= State.DEAD then
         if Player.currentState == State.RUNNING then
@@ -792,10 +758,51 @@ function Update(self, dt)
         end
     end
 
-    --Set switch for surface type in footstep SFX
-    Audio.SetSwitch("Surface_Type", Player.currentSurface, Player.stepSFX)
+    if Player.stepSFX then
+        Audio.SetSwitch("Surface_Type", Player.currentSurface, Player.stepSFX)
+    end
+end
 
+function ResetPlayer(self)
+    Engine.Log("[Player] ResetPlayer llamado")
 
+    -- Vida y stamina al máximo
+    self.public.health  = 100
+    self.public.stamina = 100
+
+    -- Pociones
+    if _G.PotionSystem then
+        _G.PotionSystem:ResetPotions()
+    end
+
+    -- Cooldowns
+    attackCooldown = 0
+    rollCooldown   = 0
+
+    -- Limpiar flags globales
+    _G._PlayerController_isDead           = false
+    _PlayerController_pendingDamage    = 0
+    _PlayerController_pendingDamagePos = nil
+
+    -- Masks
+    Player.isDrowning            = false
+    _PlayerController_isDrowning = false
+    Player.hermesGraceTimer      = 0
+    EquipMask(self, Mask.NONE)
+
+    -- Reposicionar al spawn
+    local p = Player.spawnPos
+    if p then
+        self.transform:SetPosition(p.x, p.y, p.z)
+    end
+
+    -- Forzar redibujado de UI
+    if _G.ForceRefreshHUD then
+        _G.ForceRefreshHUD()
+    end
+    -- Volver al estado inicial
+    ChangeState(self, State.IDLE)
+    Engine.Log("[Player] Reset completado")
 end
 
 
@@ -807,20 +814,15 @@ function OnTriggerEnter(self, other)
 			Player.currentSurface = surface
 		end
 	end
-
 end
+
 function OnTriggerExit(self, other) end
 
-
-
-
 function OnCollisionEnter(self, other)
-
     if other:CompareTag("Water") and Player.currentMask == Mask.HERMES then
         Player.isDrowning            = true
         _PlayerController_isDrowning = true
         Player.hermesGraceTimer      = HERMES_GRACE_TIME
-        --Player.currentSurface = "Water"
         Engine.Log("[Player] Hermes on water")
     end
 
@@ -829,7 +831,6 @@ function OnCollisionEnter(self, other)
 			Player.currentSurface = surface
 		end
 	end
-
 end
 
 function OnCollisionExit(self, other)
@@ -840,10 +841,3 @@ function OnCollisionExit(self, other)
         Engine.Log("[Player] Player out of water")
     end
 end
-
-
-
-
-
-
-
