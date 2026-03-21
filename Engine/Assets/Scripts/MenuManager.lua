@@ -56,10 +56,11 @@ function Start(self)
     end
 
     current = canvas:GetCurrentXAML()
+	
     Engine.Log("[Transition] current detectado: '" .. tostring(current) .. "'")
 
     if not current or current == "" then
-        current = "HUD.xaml"
+        current = "MainMenu.xaml"
         Engine.Log("[Transition] WARN: Canvas sin XAML, usando fallback HUD")
     end
     Engine.Log("[Transition] XAML inicial: " .. current)
@@ -76,9 +77,13 @@ function Start(self)
         Engine.Log("[Menu Audio] WARN: Menu sin Audio Source, no habrá música de fondo")
     else
         menuAudio:PlayAudioEvent()
+		--Audio.SetMusicState()
     end
 
+	NavigateTo("MainMenu.xaml")
     Engine.Log("[Transition] Listo")
+
+
 end
 
 function Update(self, dt)
@@ -132,6 +137,7 @@ function Update(self, dt)
 
         -- Main Menu
         if UI.WasClicked("StartButton") then
+			Engine.Log("StartButtonClicked")
             NavigateTo("HUD.xaml")
         end
         if UI.WasClicked("SettingsButton") then
@@ -215,7 +221,7 @@ function Update(self, dt)
     
                 Game.Resume()
                 Audio.SetMusicState("Level1")
-                Engine.LoadScene(assetsPath, "../Scenes/Level1-audio.scene")
+                --Engine.LoadScene(assetsPath, "../Scenes/Level1-audio.scene")
             end
         else
             Game.Pause()
