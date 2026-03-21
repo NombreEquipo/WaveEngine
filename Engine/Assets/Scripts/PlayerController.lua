@@ -78,7 +78,8 @@ local Player = {
     hermesDeathRespawn = false,
     hermesDeathTimer   = 0.0,
     hermesPendingUnequip = false,
-    baseSpeed = 15.0
+    baseSpeed = 15.0,
+    isGrounded = false
 }
 
 public = {
@@ -230,12 +231,12 @@ local function ChangeState(self, newState)
 end
 
 local function EquipMask(self, newMask)
-    if Player.currentMask == newMask then return end
+    if Player.currentMask == newMask or Player.currentState == State.DEAD then return end
 
     --HERMES
     if Player.currentMask == Mask.HERMES and Player.isDrowning then
         Engine.Log("[Player] Hermes quitado sobre el agua")
-        Player.currentMask = Mask.NONE
+        Player.currentMask = newMask
         Player.hermesPendingUnequip = true
         Player.hermesDeathRespawn = true
         Player.hermesDeathTimer   = 2.0
@@ -245,16 +246,6 @@ local function EquipMask(self, newMask)
     end
     if Player.currentMask == Mask.HERMES then
         Player.hermesGraceTimer   = 0
-        if Player.isDrowning then
-            Player.isDrowning            = false
-            _PlayerController_isDrowning = false
-            self.public.health           = 0
-            ChangeState(self, State.DEAD)
-            Player.currentMask            = newMask
-            _PlayerController_currentMask = newMask 
-            return
-        end
-        Player.isDrowning = false
     end
 
     --NONE
@@ -710,7 +701,6 @@ function Update(self, dt)
             self.public.stamina = math.min(100, self.public.stamina + (self.public.staminaRecover * dt))
         end
     end
-
     if Input.GetKey("7") and not Player.godMode then
         self.public.health = math.max(0, self.public.health - self.public.hpLossCost)
         Engine.Log("[Player] HEALTH: " .. tostring(self.public.health))
@@ -837,7 +827,6 @@ function OnTriggerExit(self, other) end
 function OnCollisionEnter(self, other)
     if other:CompareTag("Water") and Player.currentMask == Mask.HERMES then
         Player.isDrowning            = true
-        _PlayerController_isDrowning = true
         Player.hermesGraceTimer      = HERMES_GRACE_TIME
         Engine.Log("[Player] Hermes on water")
     end
@@ -847,6 +836,10 @@ function OnCollisionEnter(self, other)
 			Player.currentSurface = surface
 		end
 	end
+
+    if other:CompareTag("Dirt") then
+        Player.isGrounded = true
+    end
 end
 
 function OnCollisionExit(self, other)
@@ -858,5 +851,6 @@ function OnCollisionExit(self, other)
     end
     if other:CompareTag("Dirt") then
         Player.respawnPos = self.transform.worldPosition
+        Player.isGrounded = false
     end
 end
