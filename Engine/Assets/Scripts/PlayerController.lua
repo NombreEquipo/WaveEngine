@@ -72,9 +72,13 @@ local Player = {
 	currentSurface = "",
     
     -- Hermes mask
-
+    respawnPos       = nil,
     isDrowning       = false,
     hermesGraceTimer = 0.0,
+    hermesDeathRespawn = false,
+    hermesDeathTimer   = 0.0,
+    hermesPendingUnequip = false,
+    baseSpeed = 15.0
 }
 
 public = {
@@ -228,37 +232,32 @@ end
 local function EquipMask(self, newMask)
     if Player.currentMask == newMask then return end
 
-    
-
     --HERMES
     if Player.currentMask == Mask.HERMES and Player.isDrowning then
-        Engine.Log("[Player] Hermes while on water!!")
+        Engine.Log("[Player] Hermes quitado sobre el agua")
+        Player.currentMask = Mask.NONE
+        Player.hermesPendingUnequip = true
+        Player.hermesDeathRespawn = true
+        Player.hermesDeathTimer   = 2.0
+        if Player.rb then Player.rb:SetLinearVelocity(0, 0, 0) end
+        ChangeState(self, State.DEAD)
         return
     end
     if Player.currentMask == Mask.HERMES then
-        self.public.speedIncrease = self.public.speedIncrease - self.public.speedHermesBonus
         Player.hermesGraceTimer   = 0
-        if Player.currentState == State.RUNNING then
-            self.public.speed = self.public.speed - self.public.speedHermesBonus
-        end
         if Player.isDrowning then
             Player.isDrowning            = false
             _PlayerController_isDrowning = false
             self.public.health           = 0
             ChangeState(self, State.DEAD)
             Player.currentMask            = newMask
-            _PlayerController_currentMask = newMask
+            _PlayerController_currentMask = newMask 
             return
         end
         Player.isDrowning = false
     end
-    if newMask == Mask.HERMES then
-        self.public.speedIncrease = self.public.speedIncrease + self.public.speedHermesBonus
-        if Player.currentState == State.RUNNING then
-            self.public.speed = self.public.speed + self.public.speedHermesBonus
-        end
-    end
 
+    --NONE
     if newMask == Mask.NONE then
         Engine.Log("[Player] Unequipping mask")
     else
@@ -286,6 +285,27 @@ States[State.DEAD] = {
             self.transform:SetPosition(p.x, p.y, p.z)
             _G._PlayerController_isDead = false  -- NUEVO
             ChangeState(self, State.IDLE)
+        end
+
+        --respawn Hermes (aquí molaría hacer un fade out y algun sonidillo y tal)
+        if Player.hermesDeathRespawn then
+            Player.hermesDeathTimer = Player.hermesDeathTimer - dt
+            if Player.hermesDeathTimer <= 0 then
+                Player.hermesDeathRespawn = false    
+                Player.isDrowning = false
+                _PlayerController_isDrowning = false
+                Player.hermesGraceTimer = 0
+                self.public.stamina = 0
+                local rp = Player.respawnPos
+                self.transform:SetPosition(rp.x, rp.y, rp.z)
+                if Player.rb then Player.rb:SetLinearVelocity(0, 0, 0) end
+                _G._PlayerController_isDead = false
+                ChangeState(self, State.IDLE)
+                if Player.hermesPendingUnequip then
+                    _PlayerController_currentMask = "None" 
+                    Player.hermesPendingUnequip = false    
+                end
+            end
         end
     end
 }
@@ -392,12 +412,15 @@ States[State.RUNNING] = {
         end
 
         self.public.usingStamina = true
-        self.public.speed = self.public.speed + self.public.speedIncrease
-		
+        self.public.speed = Player.baseSpeed + self.public.speedIncrease
+        if Player.currentMask == Mask.HERMES then
+            self.public.speed = self.public.speed + self.public.speedHermesBonus
+        end		
+
 		if Player.smokePS then Player.smokePS:Play() end 
     end,
     Exit = function(self)
-        self.public.speed = self.public.speed - self.public.speedIncrease
+        self.public.speed = Player.baseSpeed
         self.public.usingStamina = false
 		
 		if Player.smokePS then Player.smokePS:Stop() end
@@ -570,6 +593,8 @@ function Start(self)
 
     local spawnPos  = self.transform.worldPosition
     Player.spawnPos = spawnPos
+    Player.respawnPos = spawnPos
+    Player.baseSpeed = self.public.speed
     
     _impactFrameTimer = 0
 
@@ -732,8 +757,10 @@ function Update(self, dt)
             if Player.hermesGraceTimer > 0 then
                 Player.hermesGraceTimer = Player.hermesGraceTimer - dt
             else
-                self.public.health = 0
                 Engine.Log("[Player] Out of hermes :( )")
+                Player.hermesDeathRespawn = true
+                Player.hermesDeathTimer   = 2.0
+                if Player.rb then Player.rb:SetLinearVelocity(0, 0, 0) end
                 ChangeState(self, State.DEAD)
             end
         end
@@ -828,5 +855,8 @@ function OnCollisionExit(self, other)
         _PlayerController_isDrowning = false
         Player.hermesGraceTimer      = 0
         Engine.Log("[Player] Player out of water")
+    end
+    if other:CompareTag("Dirt") then
+        Player.respawnPos = self.transform.worldPosition
     end
 end
