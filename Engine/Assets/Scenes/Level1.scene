@@ -7,47 +7,6 @@
                 {
                     "active": true,
                     "position": [
-                        -9.0,
-                        7.0,
-                        -153.0
-                    ],
-                    "rotation": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "scale": [
-                        19.776763916015625,
-                        3.955353260040283,
-                        19.776763916015625
-                    ],
-                    "type": 0
-                },
-                {
-                    "Center": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "DynamicFriction": 0.5,
-                    "Restitution": 0.6000000238418579,
-                    "StaticFriction": 0.5,
-                    "Trigger": true,
-                    "active": true,
-                    "type": 16
-                }
-            ],
-            "name": "Floor_copy_copy",
-            "tag": "",
-            "uid": 6765177089224536067
-        },
-        {
-            "active": true,
-            "children": [],
-            "components": [
-                {
-                    "active": true,
-                    "position": [
                         27.806081771850586,
                         32.06370162963867,
                         3.040863037109375
@@ -66,7 +25,7 @@
                 },
                 {
                     "active": true,
-                    "aspectRatio": 1.2350877523422241,
+                    "aspectRatio": 1.6330472230911255,
                     "farPlane": 1000.0,
                     "fov": 60.0,
                     "nearPlane": 0.30000001192092896,
@@ -92,24 +51,9 @@
                             "value": 0.4000000059604645
                         },
                         {
-                            "name": "zoomSpeed",
+                            "name": "zoomMax",
                             "type": 0,
                             "value": 3.0
-                        },
-                        {
-                            "name": "playerName",
-                            "type": 1,
-                            "value": "Player"
-                        },
-                        {
-                            "name": "followSpeed",
-                            "type": 0,
-                            "value": 5.0
-                        },
-                        {
-                            "name": "shakeMagnitude",
-                            "type": 0,
-                            "value": 0.30000001192092896
                         },
                         {
                             "name": "zoomMin",
@@ -117,14 +61,29 @@
                             "value": 0.30000001192092896
                         },
                         {
-                            "name": "zoomMax",
+                            "name": "followSpeed",
                             "type": 0,
-                            "value": 3.0
+                            "value": 5.0
+                        },
+                        {
+                            "name": "playerName",
+                            "type": 1,
+                            "value": "Player"
+                        },
+                        {
+                            "name": "shakeMagnitude",
+                            "type": 0,
+                            "value": 0.30000001192092896
                         },
                         {
                             "name": "shakeFrequency",
                             "type": 0,
                             "value": 25.0
+                        },
+                        {
+                            "name": "zoomSpeed",
+                            "type": 0,
+                            "value": 3.0
                         }
                     ],
                     "scriptUID": 3302217500676688058,
@@ -2783,6 +2742,15 @@
                                     "Trigger": false,
                                     "active": true,
                                     "type": 10
+                                },
+                                {
+                                    "ArrivalThreshold": 0.25,
+                                    "IsStatic": true,
+                                    "MaxSlope": 35.0,
+                                    "MoveSpeed": 5.0,
+                                    "NavType": 0,
+                                    "active": true,
+                                    "type": 24
                                 }
                             ],
                             "name": "f3",
@@ -2944,6 +2912,15 @@
                                     "UseGravity": true,
                                     "active": true,
                                     "type": 8
+                                },
+                                {
+                                    "ArrivalThreshold": 0.25,
+                                    "IsStatic": true,
+                                    "MaxSlope": 35.0,
+                                    "MoveSpeed": 5.0,
+                                    "NavType": 0,
+                                    "active": true,
+                                    "type": 24
                                 }
                             ],
                             "name": "f12",
@@ -3020,6 +2997,15 @@
                                     "UseGravity": true,
                                     "active": true,
                                     "type": 8
+                                },
+                                {
+                                    "ArrivalThreshold": 0.25,
+                                    "IsStatic": true,
+                                    "MaxSlope": 35.0,
+                                    "MoveSpeed": 5.0,
+                                    "NavType": 0,
+                                    "active": true,
+                                    "type": 24
                                 }
                             ],
                             "name": "f14",
@@ -3181,6 +3167,15 @@
                                     "UseGravity": true,
                                     "active": true,
                                     "type": 8
+                                },
+                                {
+                                    "ArrivalThreshold": 0.25,
+                                    "IsStatic": true,
+                                    "MaxSlope": 35.0,
+                                    "MoveSpeed": 5.0,
+                                    "NavType": 0,
+                                    "active": true,
+                                    "type": 24
                                 }
                             ],
                             "name": "f18",
@@ -42156,22 +42151,38 @@
                             "type": 6
                         },
                         {
+                            "AngularDamping": 0.0,
+                            "FreezePos": [
+                                false,
+                                false,
+                                false
+                            ],
+                            "FreezeRot": [
+                                false,
+                                false,
+                                false
+                            ],
+                            "LinearDamping": 0.0,
+                            "Mass": 1.0,
+                            "Type": 0,
+                            "UseCCD": false,
+                            "UseGravity": true,
+                            "active": true,
+                            "type": 8
+                        },
+                        {
                             "Center": [
                                 0.0,
-                                5.0,
+                                0.0,
                                 0.0
                             ],
                             "DynamicFriction": 0.5,
+                            "Radius": 250.0,
                             "Restitution": 0.6000000238418579,
-                            "Size": [
-                                300.0,
-                                100.0,
-                                300.0
-                            ],
                             "StaticFriction": 0.5,
                             "Trigger": true,
                             "active": true,
-                            "type": 10
+                            "type": 11
                         }
                     ],
                     "name": "SkeletonMesh",
@@ -46513,9 +46524,9 @@
                 {
                     "active": true,
                     "position": [
-                        41.0,
+                        36.0,
                         7.0,
-                        -49.0
+                        -66.0
                     ],
                     "rotation": [
                         0.0,
@@ -46545,7 +46556,7 @@
                     "Mass": 100.0,
                     "Type": 1,
                     "UseCCD": false,
-                    "UseGravity": true,
+                    "UseGravity": false,
                     "active": true,
                     "type": 8
                 },
@@ -46590,54 +46601,9 @@
                             "value": 10.0
                         },
                         {
-                            "name": "moveSpeed",
-                            "type": 0,
-                            "value": 10.0
-                        },
-                        {
                             "name": "dodgeChance",
                             "type": 0,
                             "value": 0.5
-                        },
-                        {
-                            "name": "dashForce",
-                            "type": 0,
-                            "value": 25.0
-                        },
-                        {
-                            "name": "knockbackForce",
-                            "type": 0,
-                            "value": 5.0
-                        },
-                        {
-                            "name": "maxHp",
-                            "type": 0,
-                            "value": 30.0
-                        },
-                        {
-                            "name": "dirSmoothing",
-                            "type": 0,
-                            "value": 12.0
-                        },
-                        {
-                            "name": "attackRange",
-                            "type": 0,
-                            "value": 2.0
-                        },
-                        {
-                            "name": "patrolRadius",
-                            "type": 0,
-                            "value": 5.0
-                        },
-                        {
-                            "name": "chaseUpdateRate",
-                            "type": 0,
-                            "value": 0.5
-                        },
-                        {
-                            "name": "idleWaitTime",
-                            "type": 0,
-                            "value": 3.0
                         },
                         {
                             "name": "chaseRange",
@@ -46645,12 +46611,57 @@
                             "value": 15.0
                         },
                         {
+                            "name": "knockbackForce",
+                            "type": 0,
+                            "value": 5.0
+                        },
+                        {
+                            "name": "attackRange",
+                            "type": 0,
+                            "value": 2.0
+                        },
+                        {
+                            "name": "idleWaitTime",
+                            "type": 0,
+                            "value": 3.0
+                        },
+                        {
+                            "name": "patrolRadius",
+                            "type": 0,
+                            "value": 5.0
+                        },
+                        {
+                            "name": "dirSmoothing",
+                            "type": 0,
+                            "value": 12.0
+                        },
+                        {
+                            "name": "dashForce",
+                            "type": 0,
+                            "value": 25.0
+                        },
+                        {
+                            "name": "maxHp",
+                            "type": 0,
+                            "value": 30.0
+                        },
+                        {
                             "name": "rotationSpeed",
                             "type": 0,
                             "value": 15.0
                         },
                         {
+                            "name": "chaseUpdateRate",
+                            "type": 0,
+                            "value": 0.5
+                        },
+                        {
                             "name": "stopSmoothing",
+                            "type": 0,
+                            "value": 10.0
+                        },
+                        {
+                            "name": "moveSpeed",
                             "type": 0,
                             "value": 10.0
                         }
@@ -50140,74 +50151,14 @@
                             "value": 15.0
                         },
                         {
-                            "name": "rollStaminaCost",
+                            "name": "tiredMultiplier",
                             "type": 0,
-                            "value": 25.0
-                        },
-                        {
-                            "name": "attackDuration",
-                            "type": 0,
-                            "value": 1.0
-                        },
-                        {
-                            "name": "rollCooldownMax",
-                            "type": 0,
-                            "value": 0.5
-                        },
-                        {
-                            "name": "staminaRecover",
-                            "type": 0,
-                            "value": 0.10000000149011612
-                        },
-                        {
-                            "name": "hitShakeDuration",
-                            "type": 0,
-                            "value": 0.30000001192092896
-                        },
-                        {
-                            "name": "stamina",
-                            "type": 0,
-                            "value": 100.0
-                        },
-                        {
-                            "name": "usingStamina",
-                            "type": 2,
-                            "value": false
-                        },
-                        {
-                            "name": "rollSpeed",
-                            "type": 0,
-                            "value": 15.0
-                        },
-                        {
-                            "name": "attackCooldown",
-                            "type": 0,
-                            "value": 0.5
+                            "value": 0.699999988079071
                         },
                         {
                             "name": "knockbackForce",
                             "type": 0,
                             "value": 14.0
-                        },
-                        {
-                            "name": "rollDuration",
-                            "type": 0,
-                            "value": 1.0
-                        },
-                        {
-                            "name": "sprintMultiplier",
-                            "type": 0,
-                            "value": 1.5
-                        },
-                        {
-                            "name": "hitShakeMagnitude",
-                            "type": 0,
-                            "value": 6.0
-                        },
-                        {
-                            "name": "speed",
-                            "type": 0,
-                            "value": 15.0
                         },
                         {
                             "name": "health",
@@ -50220,9 +50171,9 @@
                             "value": 780.0
                         },
                         {
-                            "name": "speedIncrease",
+                            "name": "hermesWaterMax",
                             "type": 0,
-                            "value": 10.0
+                            "value": 2.0
                         },
                         {
                             "name": "flySpeed",
@@ -50235,14 +50186,74 @@
                             "value": 0.20000000298023224
                         },
                         {
+                            "name": "staminaRecover",
+                            "type": 0,
+                            "value": 0.10000000149011612
+                        },
+                        {
+                            "name": "usingStamina",
+                            "type": 2,
+                            "value": false
+                        },
+                        {
+                            "name": "hitShakeMagnitude",
+                            "type": 0,
+                            "value": 6.0
+                        },
+                        {
+                            "name": "rollCooldownMax",
+                            "type": 0,
+                            "value": 0.5
+                        },
+                        {
+                            "name": "speedIncrease",
+                            "type": 0,
+                            "value": 10.0
+                        },
+                        {
+                            "name": "hitShakeDuration",
+                            "type": 0,
+                            "value": 0.30000001192092896
+                        },
+                        {
+                            "name": "attackCooldown",
+                            "type": 0,
+                            "value": 0.5
+                        },
+                        {
                             "name": "hpLossCost",
                             "type": 0,
                             "value": 0.20000000298023224
                         },
                         {
-                            "name": "hermesWaterMax",
+                            "name": "sprintMultiplier",
                             "type": 0,
-                            "value": 2.0
+                            "value": 1.5
+                        },
+                        {
+                            "name": "stamina",
+                            "type": 0,
+                            "value": 100.0
+                        },
+                        {
+                            "name": "attackDuration",
+                            "type": 0,
+                            "value": 1.0
+                        },
+                        {
+                            "name": "rollDuration",
+                            "type": 0,
+                            "value": 1.0
+                        },
+                        {
+                            "name": "speed",
+                            "type": 0,
+                            "value": 15.0
+                        },
+                        {
+                            "name": "rollStaminaCost",
+                            "type": 0,
+                            "value": 25.0
                         },
                         {
                             "name": "staminaCost",
@@ -50250,9 +50261,9 @@
                             "value": 0.10000000149011612
                         },
                         {
-                            "name": "tiredMultiplier",
+                            "name": "rollSpeed",
                             "type": 0,
-                            "value": 0.699999988079071
+                            "value": 15.0
                         }
                     ],
                     "scriptUID": 8002383071243665151,
@@ -51281,7 +51292,7 @@
             "uid": 11069281815663450477
         },
         {
-            "active": true,
+            "active": false,
             "children": [],
             "components": [
                 {
@@ -51378,24 +51389,14 @@
                             "value": 10.0
                         },
                         {
-                            "name": "moveSpeed",
+                            "name": "chaseRange",
                             "type": 0,
-                            "value": 10.0
+                            "value": 15.0
                         },
                         {
                             "name": "knockbackForce",
                             "type": 0,
                             "value": 5.0
-                        },
-                        {
-                            "name": "maxHp",
-                            "type": 0,
-                            "value": 30.0
-                        },
-                        {
-                            "name": "dirSmoothing",
-                            "type": 0,
-                            "value": 12.0
                         },
                         {
                             "name": "attackRange",
@@ -51408,9 +51409,9 @@
                             "value": 5.0
                         },
                         {
-                            "name": "chaseUpdateRate",
+                            "name": "dirSmoothing",
                             "type": 0,
-                            "value": 0.5
+                            "value": 12.0
                         },
                         {
                             "name": "idleWaitTime",
@@ -51418,9 +51419,9 @@
                             "value": 3.0
                         },
                         {
-                            "name": "chaseRange",
+                            "name": "maxHp",
                             "type": 0,
-                            "value": 15.0
+                            "value": 30.0
                         },
                         {
                             "name": "rotationSpeed",
@@ -51428,7 +51429,17 @@
                             "value": 15.0
                         },
                         {
+                            "name": "chaseUpdateRate",
+                            "type": 0,
+                            "value": 0.5
+                        },
+                        {
                             "name": "stopSmoothing",
+                            "type": 0,
+                            "value": 10.0
+                        },
+                        {
+                            "name": "moveSpeed",
                             "type": 0,
                             "value": 10.0
                         }
@@ -58518,68 +58529,6 @@
             "name": "Floor_copy",
             "tag": "",
             "uid": 11894068617459505048
-        },
-        {
-            "active": true,
-            "children": [],
-            "components": [
-                {
-                    "active": true,
-                    "position": [
-                        -9.0,
-                        7.0,
-                        -153.0
-                    ],
-                    "rotation": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "scale": [
-                        19.776763916015625,
-                        3.955353260040283,
-                        19.776763916015625
-                    ],
-                    "type": 0
-                },
-                {
-                    "Center": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "DynamicFriction": 0.5,
-                    "Restitution": 0.6000000238418579,
-                    "StaticFriction": 0.5,
-                    "Trigger": true,
-                    "active": true,
-                    "type": 16
-                },
-                {
-                    "active": true,
-                    "publicVariables": [
-                        {
-                            "name": "temp1",
-                            "type": 5,
-                            "value": "Level1.scene"
-                        },
-                        {
-                            "name": "temp2",
-                            "type": 5,
-                            "value": "Blockout1.scene"
-                        }
-                    ],
-                    "scriptUID": 1677025167670271402,
-                    "type": 6
-                },
-                {
-                    "active": true,
-                    "type": 1
-                }
-            ],
-            "name": "Floor_copy_copy",
-            "tag": "",
-            "uid": 6765177089224536067
         },
         {
             "active": true,
@@ -69380,13 +69329,13 @@
                         {
                             "active": true,
                             "position": [
-                                -2.6902434825897217,
-                                1.0288035869598389,
-                                0.0
+                                -2.69024658203125,
+                                1.028803825378418,
+                                -3.814697265625e-06
                             ],
                             "rotation": [
                                 0.0,
-                                0.0,
+                                -1.0529153087190934e-06,
                                 0.0
                             ],
                             "scale": [
@@ -69578,9 +69527,9 @@
                 {
                     "active": true,
                     "position": [
-                        -9.0,
-                        2.7506017684936523,
-                        -153.0
+                        0.0,
+                        0.0,
+                        0.0
                     ],
                     "rotation": [
                         0.0,
@@ -69588,46 +69537,99 @@
                         0.0
                     ],
                     "scale": [
-                        19.776763916015625,
-                        0.7910706400871277,
-                        19.776763916015625
+                        1.0,
+                        1.0,
+                        1.0
                     ],
                     "type": 0
                 },
                 {
                     "active": true,
-                    "primitiveType": "Cylinder",
                     "type": 1
+                }
+            ],
+            "name": "Pyramid",
+            "tag": "",
+            "uid": 8188204757633377770
+        },
+        {
+            "active": true,
+            "children": [],
+            "components": [
+                {
+                    "active": true,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "type": 0
+                },
+                {
+                    "active": true,
+                    "type": 1
+                }
+            ],
+            "name": "Pyramid",
+            "tag": "",
+            "uid": 12223469423837594931
+        },
+        {
+            "active": true,
+            "children": [],
+            "components": [
+                {
+                    "active": true,
+                    "position": [
+                        -4.0,
+                        6.600000381469727,
+                        -73.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "type": 0
+                },
+                {
+                    "active": true,
+                    "meshUID": 18393031770038485519,
+                    "type": 1
+                },
+                {
+                    "active": true,
+                    "materialUID": 2400817325553667489,
+                    "type": 3
                 },
                 {
                     "Center": [
                         0.0,
-                        4.5,
+                        0.0,
                         0.0
                     ],
                     "DynamicFriction": 0.5,
+                    "Radius": 20.0,
                     "Restitution": 0.6000000238418579,
                     "StaticFriction": 0.5,
                     "Trigger": true,
                     "active": true,
-                    "type": 16
-                },
-                {
-                    "active": true,
-                    "publicVariables": [
-                        {
-                            "name": "musicState",
-                            "type": 1,
-                            "value": "Level1"
-                        },
-                        {
-                            "name": "targetScene",
-                            "type": 5,
-                            "value": "Blockout1.scene"
-                        }
-                    ],
-                    "scriptUID": 15960625596687993822,
-                    "type": 6
+                    "type": 11
                 },
                 {
                     "AngularDamping": 0.0,
@@ -69648,11 +69650,16 @@
                     "UseGravity": true,
                     "active": true,
                     "type": 8
+                },
+                {
+                    "active": true,
+                    "scriptUID": 12749869038866807971,
+                    "type": 6
                 }
             ],
-            "name": "Floor_copy_copy",
+            "name": "Roca2_fixed",
             "tag": "",
-            "uid": 16092701238396245637
+            "uid": 15990740265386626020
         }
     ],
     "version": 1
