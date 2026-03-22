@@ -25,7 +25,7 @@
                 },
                 {
                     "active": true,
-                    "aspectRatio": 1.9303977489471436,
+                    "aspectRatio": 1.8039772510528564,
                     "farPlane": 1000.0,
                     "fov": 60.0,
                     "nearPlane": 0.30000001192092896,
@@ -37,17 +37,12 @@
                     "active": true,
                     "publicVariables": [
                         {
-                            "name": "shakeFrequency",
-                            "type": 0,
-                            "value": 25.0
-                        },
-                        {
                             "name": "followSpeed",
                             "type": 0,
                             "value": 5.0
                         },
                         {
-                            "name": "zoomMax",
+                            "name": "zoomSpeed",
                             "type": 0,
                             "value": 3.0
                         },
@@ -62,6 +57,16 @@
                             "value": "Player"
                         },
                         {
+                            "name": "shakeFrequency",
+                            "type": 0,
+                            "value": 25.0
+                        },
+                        {
+                            "name": "zoomMax",
+                            "type": 0,
+                            "value": 3.0
+                        },
+                        {
                             "name": "zoomMin",
                             "type": 0,
                             "value": 0.30000001192092896
@@ -70,11 +75,6 @@
                             "name": "shakeDuration",
                             "type": 0,
                             "value": 0.4000000059604645
-                        },
-                        {
-                            "name": "zoomSpeed",
-                            "type": 0,
-                            "value": 3.0
                         }
                     ],
                     "scriptUID": 3302217500676688058,
@@ -3422,7 +3422,7 @@
                             "speedMax": 0.30000001192092896,
                             "speedMin": 0.05000000074505806,
                             "textureCols": 1,
-                            "texturePath": "C:\\Users\\User\\Desktop\\WaveEngine\\Engine\\Assets\\Player\\MainCharacter_Smoke_Running_Trail.png",
+                            "texturePath": "C:\\Users\\alons\\Documents\\GitHub\\WaveEngine\\Engine\\Assets\\Player\\MainCharacter_Smoke_Running_Trail.png",
                             "textureRows": 1,
                             "textureUID": 17065513980760032408,
                             "type": 7
@@ -3533,104 +3533,9 @@
                             "value": 1.5
                         },
                         {
-                            "name": "usingStamina",
-                            "type": 2,
-                            "value": false
-                        },
-                        {
-                            "name": "tiredMultiplier",
-                            "type": 0,
-                            "value": 0.699999988079071
-                        },
-                        {
-                            "name": "speedIncrease",
-                            "type": 0,
-                            "value": 5.0
-                        },
-                        {
-                            "name": "stamina",
-                            "type": 0,
-                            "value": 100.0
-                        },
-                        {
-                            "name": "speed",
-                            "type": 0,
-                            "value": 9.0
-                        },
-                        {
-                            "name": "staminaCost",
-                            "type": 0,
-                            "value": 0.10000000149011612
-                        },
-                        {
-                            "name": "rollStaminaCost",
-                            "type": 0,
-                            "value": 25.0
-                        },
-                        {
-                            "name": "attackDuration",
-                            "type": 0,
-                            "value": 1.0
-                        },
-                        {
                             "name": "knockbackForce",
                             "type": 0,
                             "value": 14.0
-                        },
-                        {
-                            "name": "hpLossCost",
-                            "type": 0,
-                            "value": 0.20000000298023224
-                        },
-                        {
-                            "name": "staminaRecover",
-                            "type": 0,
-                            "value": 0.10000000149011612
-                        },
-                        {
-                            "name": "ROTATION_SPEED",
-                            "type": 0,
-                            "value": 780.0
-                        },
-                        {
-                            "name": "rollCooldownMax",
-                            "type": 0,
-                            "value": 0.5
-                        },
-                        {
-                            "name": "rollDuration",
-                            "type": 0,
-                            "value": 1.0
-                        },
-                        {
-                            "name": "speedHermesBonus",
-                            "type": 0,
-                            "value": 15.0
-                        },
-                        {
-                            "name": "hitShakeMagnitude",
-                            "type": 0,
-                            "value": 6.0
-                        },
-                        {
-                            "name": "hitShakeDuration",
-                            "type": 0,
-                            "value": 0.30000001192092896
-                        },
-                        {
-                            "name": "flySpeed",
-                            "type": 0,
-                            "value": 20.0
-                        },
-                        {
-                            "name": "attackCooldown",
-                            "type": 0,
-                            "value": 0.5
-                        },
-                        {
-                            "name": "rollSpeed",
-                            "type": 0,
-                            "value": 15.0
                         },
                         {
                             "name": "hpRecover",
@@ -3638,14 +3543,109 @@
                             "value": 0.20000000298023224
                         },
                         {
-                            "name": "hermesWaterMax",
+                            "name": "speedIncrease",
                             "type": 0,
-                            "value": 2.0
+                            "value": 5.0
+                        },
+                        {
+                            "name": "attackDuration",
+                            "type": 0,
+                            "value": 1.0
+                        },
+                        {
+                            "name": "tiredMultiplier",
+                            "type": 0,
+                            "value": 0.699999988079071
+                        },
+                        {
+                            "name": "staminaRecover",
+                            "type": 0,
+                            "value": 0.10000000149011612
+                        },
+                        {
+                            "name": "usingStamina",
+                            "type": 2,
+                            "value": false
+                        },
+                        {
+                            "name": "stamina",
+                            "type": 0,
+                            "value": 100.0
+                        },
+                        {
+                            "name": "rollSpeed",
+                            "type": 0,
+                            "value": 15.0
+                        },
+                        {
+                            "name": "rollDuration",
+                            "type": 0,
+                            "value": 1.0
+                        },
+                        {
+                            "name": "rollCooldownMax",
+                            "type": 0,
+                            "value": 0.5
+                        },
+                        {
+                            "name": "attackCooldown",
+                            "type": 0,
+                            "value": 0.5
+                        },
+                        {
+                            "name": "hpLossCost",
+                            "type": 0,
+                            "value": 0.20000000298023224
                         },
                         {
                             "name": "health",
                             "type": 0,
                             "value": 100.0
+                        },
+                        {
+                            "name": "hitShakeDuration",
+                            "type": 0,
+                            "value": 0.30000001192092896
+                        },
+                        {
+                            "name": "staminaCost",
+                            "type": 0,
+                            "value": 0.10000000149011612
+                        },
+                        {
+                            "name": "hermesWaterMax",
+                            "type": 0,
+                            "value": 2.0
+                        },
+                        {
+                            "name": "hitShakeMagnitude",
+                            "type": 0,
+                            "value": 6.0
+                        },
+                        {
+                            "name": "speed",
+                            "type": 0,
+                            "value": 9.0
+                        },
+                        {
+                            "name": "ROTATION_SPEED",
+                            "type": 0,
+                            "value": 780.0
+                        },
+                        {
+                            "name": "speedHermesBonus",
+                            "type": 0,
+                            "value": 15.0
+                        },
+                        {
+                            "name": "flySpeed",
+                            "type": 0,
+                            "value": 20.0
+                        },
+                        {
+                            "name": "rollStaminaCost",
+                            "type": 0,
+                            "value": 25.0
                         }
                     ],
                     "scriptUID": 8002383071243665151,
@@ -3727,120 +3727,6 @@
                                 {
                                     "active": true,
                                     "position": [
-                                        44.315128326416016,
-                                        10.0,
-                                        -67.94246673583984
-                                    ],
-                                    "rotation": [
-                                        0.46507248282432556,
-                                        90.0,
-                                        0.0
-                                    ],
-                                    "scale": [
-                                        52.24037170410156,
-                                        0.10000000149011612,
-                                        28.2240047454834
-                                    ],
-                                    "type": 0
-                                },
-                                {
-                                    "active": true,
-                                    "primitiveType": "Cube",
-                                    "type": 1
-                                },
-                                {
-                                    "active": true,
-                                    "materialUID": 5774806756921454133,
-                                    "type": 3
-                                }
-                            ],
-                            "name": "Wall_copy_copy_copy_copy_copy_copy",
-                            "tag": "",
-                            "uid": 7833969053321716424
-                        },
-                        {
-                            "active": true,
-                            "children": [],
-                            "components": [
-                                {
-                                    "active": true,
-                                    "position": [
-                                        11.171163558959961,
-                                        4.0,
-                                        -28.63303565979004
-                                    ],
-                                    "rotation": [
-                                        0.0,
-                                        89.9720230102539,
-                                        0.0
-                                    ],
-                                    "scale": [
-                                        11.66400146484375,
-                                        10.640449523925781,
-                                        2.880000352859497
-                                    ],
-                                    "type": 0
-                                },
-                                {
-                                    "active": true,
-                                    "primitiveType": "Cube",
-                                    "type": 1
-                                },
-                                {
-                                    "active": true,
-                                    "materialUID": 5774806756921454133,
-                                    "type": 3
-                                }
-                            ],
-                            "name": "Wall_copy_copy",
-                            "tag": "",
-                            "uid": 17612529839260557123
-                        },
-                        {
-                            "active": true,
-                            "children": [],
-                            "components": [
-                                {
-                                    "active": true,
-                                    "position": [
-                                        36.22016525268555,
-                                        4.0,
-                                        -40.5972785949707
-                                    ],
-                                    "rotation": [
-                                        -180.0,
-                                        30.027984619140625,
-                                        -180.0
-                                    ],
-                                    "scale": [
-                                        11.66400146484375,
-                                        10.640449523925781,
-                                        2.880000352859497
-                                    ],
-                                    "type": 0
-                                },
-                                {
-                                    "active": true,
-                                    "primitiveType": "Cube",
-                                    "type": 1
-                                },
-                                {
-                                    "active": true,
-                                    "materialUID": 5774806756921454133,
-                                    "type": 3
-                                }
-                            ],
-                            "name": "Wall_copy_copy_copy_copy",
-                            "tag": "",
-                            "uid": 7963973206736796571
-                        },
-                        {
-                            "active": true,
-                            "children": [],
-                            "components": [
-                                {
-                                    "active": true,
-                                    "position": [
                                         19.0,
                                         -2.0,
                                         -14.0
@@ -3879,94 +3765,18 @@
                                 {
                                     "active": true,
                                     "position": [
-                                        -2.7685489654541016,
-                                        9.266060829162598,
-                                        -55.09378433227539
+                                        45.840789794921875,
+                                        5.122336387634277,
+                                        6.497396469116211
                                     ],
                                     "rotation": [
-                                        0.0,
-                                        89.98021697998047,
-                                        0.0
-                                    ],
-                                    "scale": [
-                                        25.551876068115234,
-                                        0.10000000149011612,
-                                        53.22902297973633
-                                    ],
-                                    "type": 0
-                                },
-                                {
-                                    "active": true,
-                                    "primitiveType": "Cube",
-                                    "type": 1
-                                },
-                                {
-                                    "active": true,
-                                    "materialUID": 16705899255316169491,
-                                    "type": 3
-                                },
-                                {
-                                    "AngularDamping": 0.0,
-                                    "FreezePos": [
-                                        false,
-                                        false,
-                                        false
-                                    ],
-                                    "FreezeRot": [
-                                        false,
-                                        false,
-                                        false
-                                    ],
-                                    "LinearDamping": 0.0,
-                                    "Mass": 1.0,
-                                    "Type": 0,
-                                    "UseCCD": false,
-                                    "UseGravity": true,
-                                    "active": true,
-                                    "type": 8
-                                },
-                                {
-                                    "Center": [
-                                        0.0,
-                                        0.0,
-                                        0.0
-                                    ],
-                                    "DynamicFriction": 0.5,
-                                    "Restitution": 0.6000000238418579,
-                                    "Size": [
-                                        1.0,
-                                        1.0,
-                                        1.0
-                                    ],
-                                    "StaticFriction": 0.5,
-                                    "Trigger": false,
-                                    "active": true,
-                                    "type": 10
-                                }
-                            ],
-                            "name": "Wall_copy_copy",
-                            "tag": "",
-                            "uid": 4493820684408653813
-                        },
-                        {
-                            "active": true,
-                            "children": [],
-                            "components": [
-                                {
-                                    "active": true,
-                                    "position": [
-                                        44.840789794921875,
-                                        5.999981880187988,
-                                        14.497396469116211
-                                    ],
-                                    "rotation": [
-                                        -180.0,
+                                        180.0,
                                         44.999996185302734,
-                                        -180.0
+                                        180.0
                                     ],
                                     "scale": [
-                                        10.0,
-                                        16.0,
+                                        40.0,
+                                        13.475502014160156,
                                         1.8929816484451294
                                     ],
                                     "type": 0
@@ -4031,47 +3841,9 @@
                                 {
                                     "active": true,
                                     "position": [
-                                        15.721303939819336,
-                                        4.0,
-                                        -37.149024963378906
-                                    ],
-                                    "rotation": [
-                                        0.0,
-                                        44.999996185302734,
-                                        0.0
-                                    ],
-                                    "scale": [
-                                        14.693830490112305,
-                                        10.381333351135254,
-                                        2.880000114440918
-                                    ],
-                                    "type": 0
-                                },
-                                {
-                                    "active": true,
-                                    "primitiveType": "Cube",
-                                    "type": 1
-                                },
-                                {
-                                    "active": true,
-                                    "materialUID": 5774806756921454133,
-                                    "type": 3
-                                }
-                            ],
-                            "name": "Wall",
-                            "tag": "",
-                            "uid": 7920810758292100615
-                        },
-                        {
-                            "active": true,
-                            "children": [],
-                            "components": [
-                                {
-                                    "active": true,
-                                    "position": [
-                                        29.739845275878906,
+                                        28.739845275878906,
                                         -1.0,
-                                        6.229217052459717
+                                        5.229217052459717
                                     ],
                                     "rotation": [
                                         0.0,
@@ -4081,7 +3853,7 @@
                                     "scale": [
                                         27.207916259765625,
                                         0.10000000149011612,
-                                        20.0
+                                        22.709331512451172
                                     ],
                                     "type": 0
                                 },
@@ -4192,153 +3964,6 @@
         },
         {
             "active": true,
-            "children": [],
-            "components": [
-                {
-                    "active": true,
-                    "position": [
-                        15.174002647399902,
-                        4.0,
-                        -115.75763702392578
-                    ],
-                    "rotation": [
-                        0.46509143710136414,
-                        90.0,
-                        0.0
-                    ],
-                    "scale": [
-                        50.37556838989258,
-                        9.999999046325684,
-                        85.16395568847656
-                    ],
-                    "type": 0
-                },
-                {
-                    "active": true,
-                    "primitiveType": "Cube",
-                    "type": 1
-                },
-                {
-                    "active": true,
-                    "materialUID": 9216898606219444385,
-                    "type": 3
-                }
-            ],
-            "name": "Wall_copy_copy_copy_copy_copy_copy_copy_copy",
-            "tag": "",
-            "uid": 1778759799516256179
-        },
-        {
-            "active": true,
-            "children": [],
-            "components": [
-                {
-                    "active": true,
-                    "position": [
-                        22.391254425048828,
-                        4.0,
-                        -57.287437438964844
-                    ],
-                    "rotation": [
-                        0.0,
-                        89.98021697998047,
-                        0.0
-                    ],
-                    "scale": [
-                        30.068572998046875,
-                        10.381333351135254,
-                        2.880000114440918
-                    ],
-                    "type": 0
-                },
-                {
-                    "active": true,
-                    "primitiveType": "Cube",
-                    "type": 1
-                },
-                {
-                    "active": true,
-                    "materialUID": 9216898606219444385,
-                    "type": 3
-                }
-            ],
-            "name": "Wall_copy_copy",
-            "tag": "",
-            "uid": 8657249516743283419
-        },
-        {
-            "active": true,
-            "children": [],
-            "components": [
-                {
-                    "active": true,
-                    "position": [
-                        31.937257766723633,
-                        4.0,
-                        -57.287437438964844
-                    ],
-                    "rotation": [
-                        0.0,
-                        89.98021697998047,
-                        0.0
-                    ],
-                    "scale": [
-                        30.068571090698242,
-                        10.381333351135254,
-                        2.879999876022339
-                    ],
-                    "type": 0
-                },
-                {
-                    "active": true,
-                    "primitiveType": "Cube",
-                    "type": 1
-                }
-            ],
-            "name": "Wall_copy_copy_copy_copy",
-            "tag": "",
-            "uid": 6050645740080398600
-        },
-        {
-            "active": true,
-            "children": [],
-            "components": [
-                {
-                    "active": true,
-                    "position": [
-                        -3.359443426132202,
-                        9.266059875488281,
-                        -51.39716720581055
-                    ],
-                    "rotation": [
-                        0.0,
-                        44.971988677978516,
-                        0.0
-                    ],
-                    "scale": [
-                        25.55187225341797,
-                        0.10000000149011612,
-                        51.42279815673828
-                    ],
-                    "type": 0
-                },
-                {
-                    "active": true,
-                    "primitiveType": "Cube",
-                    "type": 1
-                },
-                {
-                    "active": true,
-                    "materialUID": 16705899255316169491,
-                    "type": 3
-                }
-            ],
-            "name": "Wall_copy_copy_copy_copy",
-            "tag": "",
-            "uid": 83279096963882079
-        },
-        {
-            "active": true,
             "children": [
                 {
                     "active": true,
@@ -4347,389 +3972,9 @@
                         {
                             "active": true,
                             "position": [
-                                3.4019393920898438,
-                                22.018918991088867,
-                                -41.26837921142578
-                            ],
-                            "rotation": [
-                                0.0,
-                                44.999996185302734,
-                                0.0
-                            ],
-                            "scale": [
-                                0.8460721969604492,
-                                9.800000190734863,
-                                52.84909439086914
-                            ],
-                            "type": 0
-                        },
-                        {
-                            "active": true,
-                            "primitiveType": "Cube",
-                            "type": 1
-                        },
-                        {
-                            "active": true,
-                            "materialUID": 5774806756921454133,
-                            "type": 3
-                        }
-                    ],
-                    "name": "Cube_copy_copy_copy_copy_copy_copy_copy_copy",
-                    "tag": "",
-                    "uid": 18298297472172556292
-                },
-                {
-                    "active": true,
-                    "children": [],
-                    "components": [
-                        {
-                            "active": true,
-                            "position": [
-                                19.401939392089844,
-                                22.018918991088867,
-                                -31.26837921142578
-                            ],
-                            "rotation": [
-                                0.0,
-                                -45.000003814697266,
-                                0.0
-                            ],
-                            "scale": [
-                                0.8460721969604492,
-                                9.800000190734863,
-                                8.455855369567871
-                            ],
-                            "type": 0
-                        },
-                        {
-                            "active": true,
-                            "primitiveType": "Cube",
-                            "type": 1
-                        },
-                        {
-                            "active": true,
-                            "materialUID": 5774806756921454133,
-                            "type": 3
-                        }
-                    ],
-                    "name": "Cube_copy_copy_copy_copy_copy_copy_copy_copy_copy_copy",
-                    "tag": "",
-                    "uid": 13031969320554288957
-                },
-                {
-                    "active": true,
-                    "children": [],
-                    "components": [
-                        {
-                            "active": true,
-                            "position": [
-                                29.401939392089844,
-                                22.018918991088867,
-                                -42.26837921142578
-                            ],
-                            "rotation": [
-                                0.0,
-                                -45.000003814697266,
-                                0.0
-                            ],
-                            "scale": [
-                                0.8460721969604492,
-                                9.800000190734863,
-                                8.455855369567871
-                            ],
-                            "type": 0
-                        },
-                        {
-                            "active": true,
-                            "primitiveType": "Cube",
-                            "type": 1
-                        },
-                        {
-                            "active": true,
-                            "materialUID": 5774806756921454133,
-                            "type": 3
-                        }
-                    ],
-                    "name": "Cube_copy_copy_copy_copy_copy_copy_copy_copy",
-                    "tag": "",
-                    "uid": 1953295441108587585
-                },
-                {
-                    "active": true,
-                    "children": [],
-                    "components": [
-                        {
-                            "active": true,
-                            "position": [
-                                20.401939392089844,
-                                22.018918991088867,
-                                -57.26837921142578
-                            ],
-                            "rotation": [
-                                0.0,
-                                44.999996185302734,
-                                0.0
-                            ],
-                            "scale": [
-                                0.8460721969604492,
-                                9.800000190734863,
-                                52.84909439086914
-                            ],
-                            "type": 0
-                        },
-                        {
-                            "active": true,
-                            "primitiveType": "Cube",
-                            "type": 1
-                        },
-                        {
-                            "active": true,
-                            "materialUID": 5774806756921454133,
-                            "type": 3
-                        }
-                    ],
-                    "name": "Cube_copy_copy_copy_copy_copy_copy",
-                    "tag": "",
-                    "uid": 15288490317001326328
-                },
-                {
-                    "active": true,
-                    "children": [],
-                    "components": [
-                        {
-                            "active": true,
-                            "position": [
-                                7.887762069702148,
+                                54.51602554321289,
                                 14.0,
-                                -54.59013366699219
-                            ],
-                            "rotation": [
-                                0.0,
-                                45.02798843383789,
-                                0.0
-                            ],
-                            "scale": [
-                                26.789400100708008,
-                                1.8925222158432007,
-                                45.5419807434082
-                            ],
-                            "type": 0
-                        },
-                        {
-                            "active": true,
-                            "primitiveType": "Cube",
-                            "type": 1
-                        },
-                        {
-                            "active": true,
-                            "materialUID": 5774806756921454133,
-                            "type": 3
-                        },
-                        {
-                            "Center": [
-                                0.0,
-                                0.0,
-                                0.0
-                            ],
-                            "DynamicFriction": 0.5,
-                            "Restitution": 0.6000000238418579,
-                            "Size": [
-                                1.0,
-                                1.0,
-                                1.0
-                            ],
-                            "StaticFriction": 0.5,
-                            "Trigger": false,
-                            "active": true,
-                            "type": 10
-                        },
-                        {
-                            "AngularDamping": 0.0,
-                            "FreezePos": [
-                                false,
-                                false,
-                                false
-                            ],
-                            "FreezeRot": [
-                                false,
-                                false,
-                                false
-                            ],
-                            "LinearDamping": 0.0,
-                            "Mass": 1.0,
-                            "Type": 0,
-                            "UseCCD": false,
-                            "UseGravity": true,
-                            "active": true,
-                            "type": 8
-                        }
-                    ],
-                    "name": "Floor_copy_copy_copy_copy_copy_copy",
-                    "tag": "",
-                    "uid": 12018268501329447177
-                },
-                {
-                    "active": true,
-                    "children": [],
-                    "components": [
-                        {
-                            "active": true,
-                            "position": [
-                                26.88776206970215,
-                                14.0,
-                                -34.59013366699219
-                            ],
-                            "rotation": [
-                                0.0,
-                                45.02799606323242,
-                                0.0
-                            ],
-                            "scale": [
-                                10.71575927734375,
-                                1.8925222158432007,
-                                10.71575927734375
-                            ],
-                            "type": 0
-                        },
-                        {
-                            "active": true,
-                            "primitiveType": "Cube",
-                            "type": 1
-                        },
-                        {
-                            "active": true,
-                            "materialUID": 5774806756921454133,
-                            "type": 3
-                        },
-                        {
-                            "Center": [
-                                0.0,
-                                0.0,
-                                0.0
-                            ],
-                            "DynamicFriction": 0.5,
-                            "Restitution": 0.6000000238418579,
-                            "Size": [
-                                1.0,
-                                1.0,
-                                1.0
-                            ],
-                            "StaticFriction": 0.5,
-                            "Trigger": false,
-                            "active": true,
-                            "type": 10
-                        },
-                        {
-                            "AngularDamping": 0.0,
-                            "FreezePos": [
-                                false,
-                                false,
-                                false
-                            ],
-                            "FreezeRot": [
-                                false,
-                                false,
-                                false
-                            ],
-                            "LinearDamping": 0.0,
-                            "Mass": 1.0,
-                            "Type": 0,
-                            "UseCCD": false,
-                            "UseGravity": true,
-                            "active": true,
-                            "type": 8
-                        }
-                    ],
-                    "name": "Floor_copy_copy_copy_copy_copy_copy",
-                    "tag": "",
-                    "uid": 18439171370121553905
-                },
-                {
-                    "active": true,
-                    "children": [],
-                    "components": [
-                        {
-                            "active": true,
-                            "position": [
-                                54.88776397705078,
-                                14.0,
-                                -42.59013366699219
-                            ],
-                            "rotation": [
-                                0.0,
-                                45.02799606323242,
-                                0.0
-                            ],
-                            "scale": [
-                                41.79146194458008,
-                                1.1355133056640625,
-                                38.57673645019531
-                            ],
-                            "type": 0
-                        },
-                        {
-                            "active": true,
-                            "primitiveType": "Cube",
-                            "type": 1
-                        },
-                        {
-                            "Center": [
-                                0.0,
-                                0.0,
-                                0.0
-                            ],
-                            "DynamicFriction": 0.5,
-                            "Restitution": 0.6000000238418579,
-                            "Size": [
-                                1.0,
-                                1.0,
-                                1.0
-                            ],
-                            "StaticFriction": 0.5,
-                            "Trigger": false,
-                            "active": true,
-                            "type": 10
-                        },
-                        {
-                            "AngularDamping": 0.0,
-                            "FreezePos": [
-                                false,
-                                false,
-                                false
-                            ],
-                            "FreezeRot": [
-                                false,
-                                false,
-                                false
-                            ],
-                            "LinearDamping": 0.0,
-                            "Mass": 1.0,
-                            "Type": 0,
-                            "UseCCD": false,
-                            "UseGravity": true,
-                            "active": true,
-                            "type": 8
-                        },
-                        {
-                            "active": true,
-                            "materialUID": 5774806756921454133,
-                            "type": 3
-                        }
-                    ],
-                    "name": "Floor_copy_copy_copy_copy_copy_copy_copy_copy_copy_copy",
-                    "tag": "",
-                    "uid": 4473992097023548436
-                },
-                {
-                    "active": true,
-                    "children": [],
-                    "components": [
-                        {
-                            "active": true,
-                            "position": [
-                                64.88776397705078,
-                                14.0,
-                                -10.59013557434082
+                                -1.6715607643127441
                             ],
                             "rotation": [
                                 0.0,
@@ -4739,83 +3984,7 @@
                             "scale": [
                                 21.4315185546875,
                                 1.5140178203582764,
-                                21.4315185546875
-                            ],
-                            "type": 0
-                        },
-                        {
-                            "active": true,
-                            "primitiveType": "Cube",
-                            "type": 1
-                        },
-                        {
-                            "Center": [
-                                0.0,
-                                0.0,
-                                0.0
-                            ],
-                            "DynamicFriction": 0.5,
-                            "Restitution": 0.6000000238418579,
-                            "Size": [
-                                1.0,
-                                1.0,
-                                1.0
-                            ],
-                            "StaticFriction": 0.5,
-                            "Trigger": false,
-                            "active": true,
-                            "type": 10
-                        },
-                        {
-                            "AngularDamping": 0.0,
-                            "FreezePos": [
-                                false,
-                                false,
-                                false
-                            ],
-                            "FreezeRot": [
-                                false,
-                                false,
-                                false
-                            ],
-                            "LinearDamping": 0.0,
-                            "Mass": 1.0,
-                            "Type": 0,
-                            "UseCCD": false,
-                            "UseGravity": true,
-                            "active": true,
-                            "type": 8
-                        },
-                        {
-                            "active": true,
-                            "materialUID": 5774806756921454133,
-                            "type": 3
-                        }
-                    ],
-                    "name": "Floor_copy_copy_copy_copy_copy_copy_copy_copy",
-                    "tag": "",
-                    "uid": 16400437347711955651
-                },
-                {
-                    "active": true,
-                    "children": [],
-                    "components": [
-                        {
-                            "active": true,
-                            "position": [
-                                49.88776397705078,
-                                14.0,
-                                4.40986442565918
-                            ],
-                            "rotation": [
-                                0.0,
-                                45.02799606323242,
-                                0.0
-                            ],
-                            "scale": [
-                                21.4315185546875,
-                                1.5140178203582764,
-                                21.4315185546875
+                                43.180049896240234
                             ],
                             "type": 0
                         },
@@ -4879,14 +4048,14 @@
                         {
                             "active": true,
                             "position": [
-                                19.88776206970215,
+                                -3.723522424697876,
                                 14.0,
-                                -15.59013557434082
+                                -8.020940780639648
                             ],
                             "rotation": [
-                                0.0,
-                                45.02798843383789,
-                                0.0
+                                -0.0024667587131261826,
+                                45.018550872802734,
+                                -0.028026031330227852
                             ],
                             "scale": [
                                 26.789400100708008,
@@ -4955,199 +4124,9 @@
                         {
                             "active": true,
                             "position": [
-                                32.401939392089844,
-                                10.018918991088867,
-                                -22.26837730407715
-                            ],
-                            "rotation": [
-                                0.0,
-                                44.999996185302734,
-                                0.0
-                            ],
-                            "scale": [
-                                0.8460721969604492,
-                                9.800000190734863,
-                                18.497182846069336
-                            ],
-                            "type": 0
-                        },
-                        {
-                            "active": true,
-                            "primitiveType": "Cube",
-                            "type": 1
-                        },
-                        {
-                            "active": true,
-                            "materialUID": 5774806756921454133,
-                            "type": 3
-                        }
-                    ],
-                    "name": "Cube_copy_copy_copy_copy_copy_copy",
-                    "tag": "",
-                    "uid": 2257158941449261330
-                },
-                {
-                    "active": true,
-                    "children": [],
-                    "components": [
-                        {
-                            "active": true,
-                            "position": [
-                                43.401939392089844,
-                                10.018918991088867,
-                                -24.26837730407715
-                            ],
-                            "rotation": [
-                                0.0,
-                                44.999996185302734,
-                                0.0
-                            ],
-                            "scale": [
-                                0.8460721969604492,
-                                9.800000190734863,
-                                29.360605239868164
-                            ],
-                            "type": 0
-                        },
-                        {
-                            "active": true,
-                            "primitiveType": "Cube",
-                            "type": 1
-                        },
-                        {
-                            "active": true,
-                            "materialUID": 5774806756921454133,
-                            "type": 3
-                        }
-                    ],
-                    "name": "Cube_copy_copy_copy_copy",
-                    "tag": "",
-                    "uid": 15599772921521764925
-                },
-                {
-                    "active": true,
-                    "children": [],
-                    "components": [
-                        {
-                            "active": true,
-                            "position": [
-                                46.401939392089844,
-                                0.01891946792602539,
-                                -7.268377304077148
-                            ],
-                            "rotation": [
-                                0.0,
-                                -45.000003814697266,
-                                0.0
-                            ],
-                            "scale": [
-                                0.8460721969604492,
-                                29.0,
-                                32.622894287109375
-                            ],
-                            "type": 0
-                        },
-                        {
-                            "active": true,
-                            "primitiveType": "Cube",
-                            "type": 1
-                        },
-                        {
-                            "active": true,
-                            "materialUID": 5774806756921454133,
-                            "type": 3
-                        }
-                    ],
-                    "name": "Cube_copy_copy",
-                    "tag": "",
-                    "uid": 18351059266453720159
-                },
-                {
-                    "active": true,
-                    "children": [],
-                    "components": [
-                        {
-                            "active": true,
-                            "position": [
-                                47.88776397705078,
-                                7.0,
-                                -14.59013557434082
-                            ],
-                            "rotation": [
-                                0.0,
-                                45.02798843383789,
-                                0.0
-                            ],
-                            "scale": [
-                                10.332000732421875,
-                                0.11480001360177994,
-                                10.332000732421875
-                            ],
-                            "type": 0
-                        },
-                        {
-                            "active": true,
-                            "primitiveType": "Cube",
-                            "type": 1
-                        },
-                        {
-                            "active": true,
-                            "materialUID": 5774806756921454133,
-                            "type": 3
-                        },
-                        {
-                            "Center": [
-                                0.0,
-                                0.0,
-                                0.0
-                            ],
-                            "DynamicFriction": 0.5,
-                            "Restitution": 0.6000000238418579,
-                            "Size": [
-                                1.0,
-                                1.0,
-                                1.0
-                            ],
-                            "StaticFriction": 0.5,
-                            "Trigger": false,
-                            "active": true,
-                            "type": 10
-                        },
-                        {
-                            "AngularDamping": 0.0,
-                            "FreezePos": [
-                                false,
-                                false,
-                                false
-                            ],
-                            "FreezeRot": [
-                                false,
-                                false,
-                                false
-                            ],
-                            "LinearDamping": 0.0,
-                            "Mass": 1.0,
-                            "Type": 0,
-                            "UseCCD": false,
-                            "UseGravity": true,
-                            "active": true,
-                            "type": 8
-                        }
-                    ],
-                    "name": "Floor_copy_copy_copy_copy",
-                    "tag": "",
-                    "uid": 4289520298970294076
-                },
-                {
-                    "active": true,
-                    "children": [],
-                    "components": [
-                        {
-                            "active": true,
-                            "position": [
-                                29.401941299438477,
+                                21.320241928100586,
                                 3.018918991088867,
-                                -6.268377304077148
+                                -1.8775241374969482
                             ],
                             "rotation": [
                                 0.0,
@@ -5156,8 +4135,8 @@
                             ],
                             "scale": [
                                 0.846072256565094,
-                                23.0,
-                                29.360605239868164
+                                17.848356246948242,
+                                12.569847106933594
                             ],
                             "type": 0
                         },
@@ -5183,128 +4162,19 @@
                         {
                             "active": true,
                             "position": [
-                                36.63927459716797,
-                                10.16925048828125,
-                                -23.82025909423828
+                                28.506452560424805,
+                                3.245201826095581,
+                                -22.37826156616211
                             ],
                             "rotation": [
-                                23.648286819458008,
-                                45.0,
-                                1.328160215052776e-05
+                                15.788214683532715,
+                                -2.3700736164755654e-06,
+                                -1.4614294741477352e-05
                             ],
                             "scale": [
-                                8.936559677124023,
-                                1.9974759817123413,
-                                20.15834617614746
-                            ],
-                            "type": 0
-                        },
-                        {
-                            "active": true,
-                            "primitiveType": "Cube",
-                            "type": 1
-                        },
-                        {
-                            "active": true,
-                            "materialUID": 5774806756921454133,
-                            "type": 3
-                        },
-                        {
-                            "Center": [
-                                0.0,
-                                0.0,
-                                0.0
-                            ],
-                            "DynamicFriction": 0.5,
-                            "Restitution": 0.6000000238418579,
-                            "StaticFriction": 0.5,
-                            "Trigger": false,
-                            "active": true,
-                            "type": 15
-                        },
-                        {
-                            "AngularDamping": 0.0,
-                            "FreezePos": [
-                                false,
-                                false,
-                                false
-                            ],
-                            "FreezeRot": [
-                                false,
-                                false,
-                                false
-                            ],
-                            "LinearDamping": 0.0,
-                            "Mass": 1.0,
-                            "Type": 0,
-                            "UseCCD": false,
-                            "UseGravity": true,
-                            "active": true,
-                            "type": 8
-                        }
-                    ],
-                    "name": "Cube_copy_copy",
-                    "tag": "",
-                    "uid": 18286953856655576919
-                },
-                {
-                    "active": true,
-                    "children": [],
-                    "components": [
-                        {
-                            "active": true,
-                            "position": [
-                                37.840789794921875,
-                                5.999981880187988,
-                                7.497396469116211
-                            ],
-                            "rotation": [
-                                180.0,
-                                44.999996185302734,
-                                180.0
-                            ],
-                            "scale": [
-                                10.000001907348633,
-                                16.0,
-                                1.8929818868637085
-                            ],
-                            "type": 0
-                        },
-                        {
-                            "active": true,
-                            "primitiveType": "Cube",
-                            "type": 1
-                        },
-                        {
-                            "active": true,
-                            "materialUID": 5774806756921454133,
-                            "type": 3
-                        }
-                    ],
-                    "name": "Wall_copy_copy_copy_copy",
-                    "tag": "",
-                    "uid": 6496608617849783581
-                },
-                {
-                    "active": true,
-                    "children": [],
-                    "components": [
-                        {
-                            "active": true,
-                            "position": [
-                                37.63927459716797,
-                                2.169250965118408,
-                                -4.820259094238281
-                            ],
-                            "rotation": [
-                                23.648298263549805,
-                                -45.000003814697266,
-                                0.0
-                            ],
-                            "scale": [
-                                13.404839515686035,
-                                1.9974759817123413,
-                                20.158348083496094
+                                5.147458553314209,
+                                1.2783846855163574,
+                                38.860687255859375
                             ],
                             "type": 0
                         },
@@ -5363,47 +4233,9 @@
                         {
                             "active": true,
                             "position": [
-                                54.6940803527832,
-                                6.000040054321289,
-                                13.097986221313477
-                            ],
-                            "rotation": [
-                                -180.0,
-                                -45.000003814697266,
-                                180.0
-                            ],
-                            "scale": [
-                                18.52082633972168,
-                                16.0,
-                                1.8929818868637085
-                            ],
-                            "type": 0
-                        },
-                        {
-                            "active": true,
-                            "primitiveType": "Cube",
-                            "type": 1
-                        },
-                        {
-                            "active": true,
-                            "materialUID": 5774806756921454133,
-                            "type": 3
-                        }
-                    ],
-                    "name": "Wall_copy_copy_copy_copy",
-                    "tag": "",
-                    "uid": 4925288369534006535
-                },
-                {
-                    "active": true,
-                    "children": [],
-                    "components": [
-                        {
-                            "active": true,
-                            "position": [
-                                39.559993743896484,
+                                41.559993743896484,
                                 -1.0000611543655396,
-                                13.944122314453125
+                                11.944122314453125
                             ],
                             "rotation": [
                                 0.0,
@@ -5411,7 +4243,7 @@
                                 0.0
                             ],
                             "scale": [
-                                9.316511154174805,
+                                15.838068962097168,
                                 0.0820000022649765,
                                 5.317083358764648
                             ],
@@ -5439,9 +4271,9 @@
                         {
                             "active": true,
                             "position": [
-                                12.887762069702148,
+                                11.056655883789063,
                                 -1.0,
-                                3.4098639488220215
+                                1.5283162593841553
                             ],
                             "rotation": [
                                 0.0,
@@ -5477,9 +4309,9 @@
                         {
                             "active": true,
                             "position": [
-                                9.630916595458984,
-                                5.918520450592041,
-                                0.8974063396453857
+                                7.630916595458984,
+                                4.707613468170166,
+                                -1.1025936603546143
                             ],
                             "rotation": [
                                 -180.0,
@@ -5488,7 +4320,7 @@
                             ],
                             "scale": [
                                 1.0,
-                                16.0,
+                                14.297459602355957,
                                 11.531549453735352
                             ],
                             "type": 0
@@ -5515,9 +4347,9 @@
                         {
                             "active": true,
                             "position": [
-                                16.553388595581055,
-                                6.018919467926025,
-                                0.9996912479400635
+                                12.553388595581055,
+                                4.80801248550415,
+                                -3.0003087520599365
                             ],
                             "rotation": [
                                 180.0,
@@ -5526,8 +4358,8 @@
                             ],
                             "scale": [
                                 0.9990290403366089,
-                                16.0,
-                                10.116960525512695
+                                14.297459602355957,
+                                13.168342590332031
                             ],
                             "type": 0
                         },
@@ -5571,6 +4403,300 @@
             "name": "Beach",
             "tag": "",
             "uid": 12859611264680793101
+        },
+        {
+            "active": true,
+            "children": [],
+            "components": [
+                {
+                    "active": true,
+                    "position": [
+                        25.551624298095703,
+                        3.018918752670288,
+                        -23.912221908569336
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "scale": [
+                        0.8460721969604492,
+                        17.848356246948242,
+                        34.86037063598633
+                    ],
+                    "type": 0
+                },
+                {
+                    "active": true,
+                    "primitiveType": "Cube",
+                    "type": 1
+                },
+                {
+                    "active": true,
+                    "materialUID": 5774806756921454133,
+                    "type": 3
+                }
+            ],
+            "name": "Cube_copy_copy",
+            "tag": "",
+            "uid": 3105868036230405958
+        },
+        {
+            "active": true,
+            "children": [],
+            "components": [
+                {
+                    "active": true,
+                    "position": [
+                        31.596641540527344,
+                        3.018918752670288,
+                        -22.915119171142578
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "scale": [
+                        0.8460721969604492,
+                        17.848356246948242,
+                        34.03461837768555
+                    ],
+                    "type": 0
+                },
+                {
+                    "active": true,
+                    "primitiveType": "Cube",
+                    "type": 1
+                },
+                {
+                    "active": true,
+                    "materialUID": 5774806756921454133,
+                    "type": 3
+                }
+            ],
+            "name": "Cube_copy_copy_copy_copy",
+            "tag": "",
+            "uid": 2400120740047198779
+        },
+        {
+            "active": true,
+            "children": [],
+            "components": [
+                {
+                    "active": true,
+                    "position": [
+                        29.744672775268555,
+                        8.822515487670898,
+                        -77.14196014404297
+                    ],
+                    "rotation": [
+                        -4.253729102288162e-08,
+                        90.0,
+                        -1.694165803201031e-05
+                    ],
+                    "scale": [
+                        71.83621978759766,
+                        0.6539644002914429,
+                        46.40780258178711
+                    ],
+                    "type": 0
+                },
+                {
+                    "active": true,
+                    "primitiveType": "Cube",
+                    "type": 1
+                },
+                {
+                    "active": true,
+                    "materialUID": 5774806756921454133,
+                    "type": 3
+                },
+                {
+                    "AngularDamping": 0.0,
+                    "FreezePos": [
+                        false,
+                        false,
+                        false
+                    ],
+                    "FreezeRot": [
+                        false,
+                        false,
+                        false
+                    ],
+                    "LinearDamping": 0.0,
+                    "Mass": 1.0,
+                    "Type": 0,
+                    "UseCCD": false,
+                    "UseGravity": true,
+                    "active": true,
+                    "type": 8
+                },
+                {
+                    "Center": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "DynamicFriction": 0.5,
+                    "Restitution": 0.6000000238418579,
+                    "Size": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "StaticFriction": 0.5,
+                    "Trigger": false,
+                    "active": true,
+                    "type": 10
+                }
+            ],
+            "name": "Floor_copy_copy_copy_copy_copy_copy",
+            "tag": "",
+            "uid": 10318609058626172662
+        },
+        {
+            "active": true,
+            "children": [],
+            "components": [
+                {
+                    "active": true,
+                    "position": [
+                        0.15140390396118164,
+                        10.455674171447754,
+                        -48.571136474609375
+                    ],
+                    "rotation": [
+                        0.017512237653136253,
+                        45.000003814697266,
+                        5.30603792014972e-08
+                    ],
+                    "scale": [
+                        26.789400100708008,
+                        2.539807081222534,
+                        46.407806396484375
+                    ],
+                    "type": 0
+                },
+                {
+                    "active": true,
+                    "primitiveType": "Cube",
+                    "type": 1
+                }
+            ],
+            "name": "Floor_copy_copy_copy_copy_copy_copy_copy_copy",
+            "tag": "",
+            "uid": 9580472889492680107
+        },
+        {
+            "active": true,
+            "children": [],
+            "components": [
+                {
+                    "active": true,
+                    "position": [
+                        57.37643814086914,
+                        10.483625411987305,
+                        -48.51495361328125
+                    ],
+                    "rotation": [
+                        -179.9824981689453,
+                        45.000003814697266,
+                        180.0
+                    ],
+                    "scale": [
+                        26.789400100708008,
+                        2.8062143325805664,
+                        46.407806396484375
+                    ],
+                    "type": 0
+                },
+                {
+                    "active": true,
+                    "primitiveType": "Cube",
+                    "type": 1
+                }
+            ],
+            "name": "Floor_copy_copy_copy_copy_copy_copy_copy_copy_copy_copy",
+            "tag": "",
+            "uid": 11160418999688749600
+        },
+        {
+            "active": true,
+            "children": [],
+            "components": [
+                {
+                    "active": true,
+                    "position": [
+                        13.592598915100098,
+                        8.87253189086914,
+                        -67.8910140991211
+                    ],
+                    "rotation": [
+                        0.0,
+                        45.000003814697266,
+                        0.0
+                    ],
+                    "scale": [
+                        20.277921676635742,
+                        0.6539642810821533,
+                        21.72361183166504
+                    ],
+                    "type": 0
+                },
+                {
+                    "active": true,
+                    "primitiveType": "Cube",
+                    "type": 1
+                },
+                {
+                    "active": true,
+                    "materialUID": 8755486269715718534,
+                    "type": 3
+                }
+            ],
+            "name": "Floor_copy_copy_copy_copy_copy_copy_copy_copy",
+            "tag": "",
+            "uid": 1237968272018282577
+        },
+        {
+            "active": true,
+            "children": [],
+            "components": [
+                {
+                    "active": true,
+                    "position": [
+                        44.37480545043945,
+                        8.872533798217773,
+                        -57.076847076416016
+                    ],
+                    "rotation": [
+                        0.0,
+                        45.000003814697266,
+                        0.0
+                    ],
+                    "scale": [
+                        8.861662864685059,
+                        0.6539642810821533,
+                        5.010363578796387
+                    ],
+                    "type": 0
+                },
+                {
+                    "active": true,
+                    "primitiveType": "Cube",
+                    "type": 1
+                },
+                {
+                    "active": true,
+                    "materialUID": 8755486269715718534,
+                    "type": 3
+                }
+            ],
+            "name": "Floor_copy_copy_copy_copy_copy_copy_copy_copy_copy_copy",
+            "tag": "",
+            "uid": 3836171872996468538
         }
     ],
     "version": 1
