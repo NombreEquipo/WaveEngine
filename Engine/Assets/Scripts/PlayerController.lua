@@ -234,6 +234,7 @@ local function EquipMask(self, newMask)
     if Player.currentMask == newMask or Player.currentState == State.DEAD then return end
 
     --HERMES
+    if Player.currentMask == Mask.HERMES and Player.isDrowning == false and Player.isGrounded == false then return end --por discutir
     if Player.currentMask == Mask.HERMES and Player.isDrowning then
         Engine.Log("[Player] Hermes quitado sobre el agua")
         Player.currentMask = newMask
@@ -265,6 +266,8 @@ States[State.DEAD] = {
         if Player.rb then Player.rb:SetLinearVelocity(0, 0, 0) end
         _G._PlayerController_isDead = true 
         if Player.voiceSFX then Player.voiceSFX:PlayAudioEvent() end
+        local anim = self.gameObject:GetComponent("Animation")
+        if anim then anim:Play("Idle", 0.5) end
     end,
     Update = function(self, dt)
         if Player.rb then Player.rb:SetLinearVelocity(0, 0, 0) end
@@ -283,8 +286,6 @@ States[State.DEAD] = {
             Player.hermesDeathTimer = Player.hermesDeathTimer - dt
             if Player.hermesDeathTimer <= 0 then
                 Player.hermesDeathRespawn = false    
-                Player.isDrowning = false
-                _PlayerController_isDrowning = false
                 Player.hermesGraceTimer = 0
                 self.public.stamina = 0
                 local rp = Player.respawnPos
